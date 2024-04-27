@@ -1,0 +1,89 @@
+
+
+@font-face {
+    font-family: 'Pretendard-Regular';
+    src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/noonfonts_2107@1.1/Pretendard-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+}
+
+
+/*기본*/
+html, body{font-family: 'Pretendard-Regular'; font-size: 18px;}
+a{text-decoration: none; color: #0b0b0b}
+ul, dl{padding: 0; list-style: none}
+
+/*bootstrarp 커스터마이징*/
+.btn{padding: 5px 10px 4px}
+.btn-primary{background: #03a9f4;border: 1px solid #03a9f4;}
+.badge{font-size: 13px; font-weight: 500; border-radius: 3px; padding: 3px 4px; vertical-align: text-bottom; margin-right: 5px}
+.text-bg-primary{background: #03a9f4;}
+.offcanvas-header{flex-direction: column!important;}
+.offcanvas-header .btn-close{position: absolute; right: 20px; top: 20px}
+.width-100{width:100%}
+
+
+/*마손리*/
+.grid-sizer,.grid-item {width: 16.66%; padding: 3px;}
+.grid-item .member-card{border: 1px solid #999; padding: 12px 12px 11px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer}
+.grid-item .member-card.leader{height: 122px;    flex-direction: column;     justify-content: space-between;}
+.grid-item .member-card.leader .photo{display: inline-block; height: 64px; width: 64px; background: #efefef; border-radius: 32px;}
+.grid-item .member-card.new {}
+.grid-item .member-card .member-wrap{display: flex; align-items: center;}
+.grid-item .member-card .member-wrap .att-stamp{background: #dc3545; height: 20px; width: 20px; border-radius: 15px; justify-content: center; align-items: center; display: flex; font-size: 12px; color:#fff; margin-left: 2px}
+.grid-item--width2 { width: 40%; }
+.grid-item--width100{width: 100% !important; height: 0; padding: 0}
+
+@media screen and (max-width: 1200px){
+    .grid-sizer,.grid-item{width: 25%}
+}
+@media screen and (max-width: 768px){
+    .grid-sizer,.grid-item{width: 33.33%}
+}
+@media screen and (max-width: 576px){
+    .grid-sizer,.grid-item{width: 50%}
+}
+
+/*버튼커스터마이징*/
+
+
+/*레이아웃 기본*/
+
+/*헤더*/
+.header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px;}
+
+/*일반*/
+.btn-gnb{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; right: 10px; top: -3px;}
+
+.group-list-wrap{display: inline-block;width: 100%;text-align: right;position: absolute;bottom: 0;padding: 15px;border-top: 1px solid #ccc;background: #efefef;}
+.group-list-wrap .group-list{}
+.group-list-wrap .group-list ul li{cursor: pointer; display: flex;justify-content: flex-start; align-items: center; position: relative}
+.group-list-wrap .group-list ul li .btn-setting{position: absolute; right: 0}
+.group-list-wrap .group-list ul li.active{color:#0000FF}
+.group-list-wrap .group-list ul li.active::before{content: '선택그룹'; display: inline-block; background: #0000FF; color: #fff; font-size: 12px;padding: 1px 3px;border-radius: 3px;}
+
+.total-list-wrap{display: flex;justify-content: center;}
+.total-list {display: flex; justify-content: center; align-items: center;}
+.total-list dt, .total-list dd{display: inline-block; margin: 0}
+.total-list dt{padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500}
+
+.total-att-list {display: flex; justify-content: center; align-items: center;}
+.total-att-list dt, .total-att-list dd{display: inline-block; margin: 0}
+.total-att-list dt{padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500}
+
+.total-att-list dt:nth-child(1){background:#ffc107}
+.total-att-list dt:nth-child(2){background:#9cc4ff}
+.total-att-list dt:nth-child(3){background:#8bc34a}
+
+
+
+/*푸터*/
+footer{position:relative; height:200px}
+footer .btn-new{position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #03a9f4;box-shadow: 0 0 5px 0 #aaa;}
+footer .btn-new i{font-size:30px}
+
+
+/*모달(출석체크)*/
+.att-btn-list{display: flex; flex-direction: column; margin-bottom:20px}
+.att-btn-list .btn-group{}
+.att-btn-list .btn-group .btn{line-height: 20px;min-height: 60px;display: flex;align-items: center;font-size: 18px;justify-content: center;}

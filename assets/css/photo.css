@@ -1,0 +1,14 @@
+
+.school-wrapper .att-list br{display: none}
+.school-wrapper .att-list li{width: 10%}
+.school-wrapper .att-list li .photo{display:inline-block; width: 100%; height: 10vw; background: #efefef; border-radius: 10px 10px 0 0;}
+.school-wrapper .att-list li .card{font-size: 1.2vw; padding: 5px 0; text-align: center; border-radius: 0 0 10px 10px;}
+.school-wrapper .att-list li .btn-more{padding: 3px 8px;}
+
+
+@media screen and (max-width: 768px){
+    .school-wrapper .att-list br{display: block}
+    .school-wrapper .att-list li{width: 25%; line-height: 3vw;}
+    .school-wrapper .att-list li .photo{height: 25vw}
+    .school-wrapper .att-list li .card{font-size: 3.3vw; padding: 7px 0 10px;}
+}
