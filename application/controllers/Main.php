@@ -56,8 +56,18 @@ class Main extends CI_Controller {
 
             // 활성화된 그룹의 출석 종류 가져오기
             $active_group_id = $this->input->cookie('activeGroup');
-            $this->load->model('Attendance_model');
-            $data['attendance_types'] = $this->Attendance_model->get_attendance_types_by_group($active_group_id);
+            if ($active_group_id) {
+                $active_group = $this->Group_model->get_group_by_id($active_group_id);
+                $data['group_name'] = $active_group['group_name'];
+                $data['leader_name'] = $active_group['leader_name'];
+                $data['new_name'] = $active_group['new_name'];
+            }
+
+
+
+
+
+
 
 
             $this->load->view('main', $data);
@@ -324,12 +334,17 @@ class Main extends CI_Controller {
         if ($this->input->is_ajax_request()) {
             $group_id = $this->input->post('group_id');
             $group_name = $this->input->post('group_name');
-
+            $leader_name = $this->input->post('leader_name');
+            $new_name = $this->input->post('new_name');
 
             $this->load->model('Group_model');
-            $result = $this->Group_model->update_group($group_id, $group_name);
+            $result = $this->Group_model->update_group($group_id, $group_name, $leader_name, $new_name);
 
-
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
 
             echo json_encode($response);
         }

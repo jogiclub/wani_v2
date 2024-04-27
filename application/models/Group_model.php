@@ -23,8 +23,10 @@ class Group_model extends CI_Model {
         $this->db->insert('wb_group_user', $data);
     }
 
+
+
     public function get_group_by_id($group_id) {
-        $this->db->select('group_name');
+        $this->db->select('group_name, leader_name, new_name');
         $this->db->from('wb_group');
         $this->db->where('group_id', $group_id);
         $this->db->where('wb_group.del_yn', 'N');
@@ -43,9 +45,14 @@ class Group_model extends CI_Model {
         return $result['group_id'] ?? null;
     }
 
-    public function update_group($group_id, $group_name) {
+    public function update_group($group_id, $group_name, $leader_name, $new_name) {
         $this->db->where('group_id', $group_id);
-        $this->db->update('wb_group', array('group_name' => $group_name, 'modi_date' => date('Y-m-d H:i:s')));
+        $this->db->update('wb_group', array(
+            'group_name' => $group_name,
+            'leader_name' => $leader_name,
+            'new_name' => $new_name,
+            'modi_date' => date('Y-m-d H:i:s')
+        ));
         return $this->db->affected_rows() > 0;
     }
 
@@ -58,7 +65,7 @@ class Group_model extends CI_Model {
     }
 
     public function get_user_groups($user_id) {
-        $this->db->select('wb_group.group_id as group_id, wb_group.group_name');
+        $this->db->select('wb_group.group_id as group_id, wb_group.group_name, wb_group.leader_name, wb_group.new_name');
         $this->db->from('wb_group');
         $this->db->join('wb_group_user', 'wb_group.group_id = wb_group_user.group_id');
         $this->db->where('wb_group_user.user_id', $user_id);

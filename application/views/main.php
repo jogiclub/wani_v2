@@ -162,7 +162,7 @@
                             <li class="mt-1 mb-1">
                                 <?php echo $group['group_name']; ?>
 
-                                <a class="btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>"><i class="bi bi-gear"></i></a>
+                                <a class="btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>"><i class="bi bi-gear"></i></a>
 
                             </li>
                         <?php endforeach; ?>
@@ -195,9 +195,15 @@
                     <input type="hidden" id="edit_group_id" name="edit_group_id">
                 </div>
 
+                <div class="mb-3">
+                    <label for="edit_leader_name" class="form-label">리더명</label>
+                    <input type="text" class="form-control" id="edit_leader_name" name="edit_leader_name" required>
+                </div>
 
-
-
+                <div class="mb-3">
+                    <label for="edit_new_name" class="form-label">새방문자명</label>
+                    <input type="text" class="form-control" id="edit_new_name" name="edit_new_name" required>
+                </div>
 
 
             </div>
@@ -270,13 +276,22 @@
 <script src="/assets/js/common.js?2"></script>
 <script>
 
+
+
+
+
+
     // 수정 버튼 클릭 이벤트
     $(document).on('click', '.btn-setting', function() {
         var groupId = $(this).data('group-id');
         var groupName = $(this).data('group-name');
+        var leaderName = $(this).data('leader-name');
+        var newName = $(this).data('new-name');
 
         $('#edit_group_id').val(groupId);
         $('#edit_group_name').val(groupName);
+        $('#edit_leader_name').val(leaderName);
+        $('#edit_new_name').val(newName);
 
         // 해당 그룹의 출석 종류 데이터 가져오기
         $.ajax({
@@ -288,9 +303,6 @@
                 var attendanceTypes = response.attendance_types;
                 var checkCategory = $('.check-category');
                 checkCategory.empty();
-
-        
-
                 $('#settingGroupModal').modal('show');
             }
         });
@@ -512,13 +524,16 @@
 
                 if (member.leader_yn === 'Y') {
                     memberCard.find('.member-card').addClass('leader');
-                    memberCard.find('.member-card .member-wrap').prepend('<span class="badge text-bg-primary">리더</span>');
+                    memberCard.find('.member-card .member-wrap').prepend('<span class="badge text-bg-primary"><?php echo $leader_name; ?></span>');
                     memberCard.find('.member-card').prepend('<span class="photo"></span>');
                 }
 
+
+
+
                 if (member.new_yn === 'Y') {
                     memberCard.find('.member-card').addClass('new');
-                    memberCard.find('.member-card').prepend('<span class="badge text-bg-warning">새가족</span>');
+                    memberCard.find('.member-card').prepend('<span class="badge text-bg-warning"><?php echo $new_name; ?></span>');
                 }
 
 
@@ -757,195 +772,6 @@
 
 
 
-    $(document).ready(function() {
-
-
-
-        var attendanceTypeCount = 0;
-
-        // 출석종류 추가 버튼 클릭 이벤트
-        $(document).on('click', '.add-attendance-type', function() {
-            var parentElement = $(this).closest('.check-category');
-            attendanceTypeCount++;
-            var newAttendanceType = `
-            <div class="input-group">
-                <input type="text" class="form-control attendance-type-name" value="출석종류${attendanceTypeCount}">
-                <button type="button" class="btn btn-sm btn-danger delete-attendance-type">삭제</button>
-                <button type="button" class="btn btn-sm btn-primary add-sub-attendance-type">하위추가</button>
-            </div>
-            <ul class="list-group attendance-types-list"></ul>
-        `;
-            parentElement.append(newAttendanceType);
-        });
-
-        // 하위 출석종류 추가 버튼 클릭 이벤트
-        $(document).on('click', '.add-sub-attendance-type', function() {
-            var parentElement = $(this).closest('.input-group').next('.attendance-types-list');
-            var newSubAttendanceType = `
-            <li class="list-group-item ui-sortable-handle">
-                <div class="input-group">
-                    <input type="text" class="form-control attendance-type-class-name" value="출석항목">
-                    <input type="text" class="form-control attendance-type-nickname" value="출">
-                    <button type="button" class="btn btn-sm btn-danger delete-sub-attendance-type">삭제</button>
-                </div>
-            </li>
-        `;
-            parentElement.append(newSubAttendanceType);
-        });
-
-        // 출석종류 삭제 버튼 클릭 이벤트
-        $(document).on('click', '.delete-attendance-type', function() {
-            $(this).closest('.input-group').next('.attendance-types-list').remove();
-            $(this).closest('.input-group').remove();
-        });
-
-        // 하위 출석종류 삭제 버튼 클릭 이벤트
-        $(document).on('click', '.delete-sub-attendance-type', function() {
-            $(this).closest('.list-group-item').remove();
-        });
-
-
-        // 그룹 수정 저장 버튼 클릭 이벤트
-        $('#updateGroup').click(function() {
-            var groupId = $('#edit_group_id').val();
-            var groupName = $('#edit_group_name').val();
-            var attendanceTypes = [];
-
-            $('.check-category .input-group').each(function() {
-                var attendanceTypeName = $(this).find('.attendance-type-name').val();
-                var subAttendanceTypes = [];
-
-                $(this).next('.attendance-types-list').find('.list-group-item').each(function() {
-                    var className = $(this).find('.attendance-type-class-name').val();
-                    var nickname = $(this).find('.attendance-type-nickname').val();
-                    subAttendanceTypes.push({
-                        class_name: className,
-                        nickname: nickname
-                    });
-                });
-
-                attendanceTypes.push({
-                    name: attendanceTypeName,
-                    sub_types: subAttendanceTypes
-                });
-            });
-
-            // 서버로 데이터 전송
-            $.ajax({
-                url: '/main/update_group',
-                method: 'POST',
-                data: {
-                    group_id: groupId,
-                    group_name: groupName
-                },
-                success: function(response) {
-                    // 성공 처리
-                    $('#settingGroupModal').modal('hide');
-                    // 그룹 목록 새로고침 등의 작업 수행
-                    refreshGroupList();
-                },
-                error: function(xhr, status, error) {
-                    // 실패 처리
-                    console.log(error);
-                }
-            });
-        });
-
-
-
-        // 이전 주 버튼 클릭 이벤트
-        $('.prev-week').click(function() {
-            var currentWeekRange = $('.current-week').text();
-            var currentDate = getDateFromWeekRange(currentWeekRange);
-
-            var prevDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
-            var prevWeekRange = getWeekRangeFromDate(prevDate);
-
-            updateWeekRange(prevWeekRange);
-        });
-
-        // 다음 주 버튼 클릭 이벤트
-        $('.next-week').click(function() {
-            var currentWeekRange = $('.current-week').text();
-            var currentDate = getDateFromWeekRange(currentWeekRange);
-            var nextDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
-            var nextWeekRange = getWeekRangeFromDate(nextDate);
-
-            updateWeekRange(nextWeekRange);
-        });
-
-        // 드롭다운 메뉴 항목 클릭 이벤트
-        $('.dropdown-menu .dropdown-item').click(function(e) {
-            e.preventDefault();
-            var weekRange = $(this).text();
-            updateWeekRange(weekRange);
-        });
-
-
-
-
-
-
-
-
-
-        function getDateFromWeekRange(weekRange) {
-            var parts = weekRange.split('~');
-            var startDateStr = parts[0].trim().replace('년', '-').replace('월', '-').replace('일', '').replace(/\(\d+주차\)/, '').trim();
-            return new Date(startDateStr);
-        }
-
-
-
-        function getWeekRangeFromDate(date) {
-            var currentDate = new Date(date);
-            var sundayTimestamp = getSunday(currentDate).getTime();
-            var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
-            var week = getWeekNumber(currentDate);
-            var startDate = formatDate(new Date(sundayTimestamp));
-            var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
-            return `${startDate}~${endDate} (${week}주차)`;
-        }
-
-
-        function getSunday(date) {
-            var day = date.getDay();
-            var diff = date.getDate() - day;
-            return new Date(date.setDate(diff));
-        }
-
-
-        function getWeekNumber(date) {
-            var currentDate = new Date(date.getTime());
-            var startDate = new Date(currentDate.getFullYear(), 0, 1); // 현재 연도의 1월 1일
-            var days = Math.floor((currentDate - startDate) / (24 * 60 * 60 * 1000));
-            var weekNumber = Math.ceil(days / 7);
-            return weekNumber;
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    });
 
 
 
@@ -1118,6 +944,138 @@
     }
 
 
+
+
+
+    $(document).ready(function() {
+
+
+        // 그룹 수정 저장 버튼 클릭 이벤트
+        $('#updateGroup').click(function() {
+            var groupId = $('#edit_group_id').val();
+            var groupName = $('#edit_group_name').val();
+            var leaderName = $('#edit_leader_name').val();
+            var newName = $('#edit_new_name').val();
+
+
+            // 서버로 데이터 전송
+            $.ajax({
+                url: '/main/update_group',
+                method: 'POST',
+                data: {
+                    group_id: groupId,
+                    group_name: groupName,
+                    leader_name: leaderName,
+                    new_name: newName
+                },
+                success: function(response) {
+                    // 성공 처리
+                    $('#settingGroupModal').modal('hide');
+                    // 그룹 목록 새로고침 등의 작업 수행
+                    refreshGroupList();
+                },
+                error: function(xhr, status, error) {
+                    // 실패 처리
+                    console.log(error);
+                }
+            });
+        });
+
+
+
+        // 이전 주 버튼 클릭 이벤트
+        $('.prev-week').click(function() {
+            var currentWeekRange = $('.current-week').text();
+            var currentDate = getDateFromWeekRange(currentWeekRange);
+
+            var prevDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
+            var prevWeekRange = getWeekRangeFromDate(prevDate);
+
+            updateWeekRange(prevWeekRange);
+        });
+
+        // 다음 주 버튼 클릭 이벤트
+        $('.next-week').click(function() {
+            var currentWeekRange = $('.current-week').text();
+            var currentDate = getDateFromWeekRange(currentWeekRange);
+            var nextDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
+            var nextWeekRange = getWeekRangeFromDate(nextDate);
+
+            updateWeekRange(nextWeekRange);
+        });
+
+        // 드롭다운 메뉴 항목 클릭 이벤트
+        $('.dropdown-menu .dropdown-item').click(function(e) {
+            e.preventDefault();
+            var weekRange = $(this).text();
+            updateWeekRange(weekRange);
+        });
+
+
+
+
+
+
+
+
+
+        function getDateFromWeekRange(weekRange) {
+            var parts = weekRange.split('~');
+            var startDateStr = parts[0].trim().replace('년', '-').replace('월', '-').replace('일', '').replace(/\(\d+주차\)/, '').trim();
+            return new Date(startDateStr);
+        }
+
+
+
+        function getWeekRangeFromDate(date) {
+            var currentDate = new Date(date);
+            var sundayTimestamp = getSunday(currentDate).getTime();
+            var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
+            var week = getWeekNumber(currentDate);
+            var startDate = formatDate(new Date(sundayTimestamp));
+            var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
+            return `${startDate}~${endDate} (${week}주차)`;
+        }
+
+
+        function getSunday(date) {
+            var day = date.getDay();
+            var diff = date.getDate() - day;
+            return new Date(date.setDate(diff));
+        }
+
+
+        function getWeekNumber(date) {
+            var currentDate = new Date(date.getTime());
+            var startDate = new Date(currentDate.getFullYear(), 0, 1); // 현재 연도의 1월 1일
+            var days = Math.floor((currentDate - startDate) / (24 * 60 * 60 * 1000));
+            var weekNumber = Math.ceil(days / 7);
+            return weekNumber;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    });
 
 
 </script>
