@@ -13,3 +13,5 @@
 /phpunit.xml
 /simple-check.iml
 /vcs.xml
+/deployment.xml
+/webServers.xml
