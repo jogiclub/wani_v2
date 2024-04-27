@@ -52,7 +52,7 @@
 
             <div class="col-xl-12">
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="QR코드 또는 이름을 입력하세요!" aria-label="QR코드 또는 이름을 입력하세요!" aria-describedby="basic-addon2">
+                    <input type="text" class="form-control" placeholder="QR코드 또는 이름을 입력하세요!" aria-label="QR코드 또는 이름을 입력하세요!" aria-describedby="basic-addon2" id="input-search">
                     <button class="input-group-text" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
                     <button class="input-group-text" id="btn-print"><i class="bi bi-printer"></i> QR인쇄</button>
                     <button class="input-group-text" id="btn-birth"><i class="bi bi-cake"></i> 월별생일자</button>
@@ -197,18 +197,6 @@
 
 
 
-                <div class="mb-3">
-                    <label for="edit_group_name" class="form-label">출석종류</label>
-                    <div class="check-category-wrap">
-                        <button type="button" class="btn btn-sm btn-primary add-attendance-type">출석종류추가</button>
-                        <div class="check-category">
-                            <!-- 출석종류 목록을 동적으로 생성 -->
-                            <?php foreach ($attendance_types as $type): ?>
-                                <!-- 출석종류 항목 생성 -->
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
 
 
 
@@ -524,7 +512,7 @@
 
                 if (member.leader_yn === 'Y') {
                     memberCard.find('.member-card').addClass('leader');
-                    memberCard.find('.member-card .member-wrap').prepend('<span class="badge text-bg-primary">목자</span>');
+                    memberCard.find('.member-card .member-wrap').prepend('<span class="badge text-bg-primary">리더</span>');
                     memberCard.find('.member-card').prepend('<span class="photo"></span>');
                 }
 
@@ -1093,6 +1081,44 @@
             loadMembers(activeGroupId, startDate, endDate, false);
         }
     }
+
+
+    //한글자 이상 검색
+    $('#input-search').on('input', function() {
+        var searchText = $(this).val().trim();
+
+        if (searchText.length >= 1) {
+            searchMembers(searchText);
+        } else {
+            resetMemberList();
+        }
+    });
+
+
+    function searchMembers(searchText) {
+        $('.grid-item').each(function() {
+            var memberName = $(this).find('.member-wrap').text().trim();
+
+            if (memberName.includes(searchText)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+
+        // Masonry 레이아웃 업데이트
+        $('.grid').masonry('layout');
+    }
+
+    function resetMemberList() {
+        $('.grid-item').show();
+
+        // Masonry 레이아웃 업데이트
+        $('.grid').masonry('layout');
+    }
+
+
+
 
 </script>
 

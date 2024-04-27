@@ -1,5 +1,5 @@
 본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있는
-회원들을 관리하고 출석을 확인하는 프로그램입니다.
+회원들을 관리하고 출석을 체크하는 프로그램입니다.
 
 2024.04.25
 현재 prev-week, next-week를 클릭하면 00주차가 사라지는 버그가있음.
@@ -240,3 +240,12 @@ AUTO_INCREMENT=87
 
 
 ssh-keygen -t rsa -C "gitlab.webhows" -b 4096
+
+
+
+본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있는
+회원들을 관리하고 출석을 체크하는 프로그램입니다.
+
+input-search에 두글자 이상되면 grid-item에 해당 글자가 있는지 like 검색으로 확인하고 만약 있다면
+해당 grid-item만 남기고 모든 grid-item 제거해줘! 그런 다음 masonry를 다시 정리해줘!
+위 작업은 front에서만 동작되도록 해줘!

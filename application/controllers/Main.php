@@ -426,14 +426,12 @@ class Main extends CI_Controller {
             $response = array(
                 'attendance_types' => $attendance_types
             );
-
-//            print_r($response);
-//            exit;
-
-
-
             echo json_encode($response);
         }
     }
+
+
+
+
 
 }
