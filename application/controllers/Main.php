@@ -63,19 +63,47 @@ class Main extends CI_Controller {
                 $data['new_name'] = $active_group['new_name'];
             }
 
-
-
-
-
-
-
+            $this->load->model('Attendance_model');
+            $data['attendance_types'] = $this->Attendance_model->get_attendance_types_by_group($active_group_id);
 
             $this->load->view('main', $data);
         } else {
-            redirect('main/login');
+            redirect('login/index');
         }
     }
 
+
+
+    public function save_single_attendance() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('member_idx');
+            $att_type_idx = $this->input->post('att_type_idx');
+            $att_type_category_idx = $this->input->post('att_type_category_idx');
+            $group_id = $this->input->post('group_id');
+            $att_date = $this->input->post('att_date');
+
+            // 기존 출석 정보 삭제
+            $this->load->model('Attendance_model');
+            $this->Attendance_model->delete_attendance_by_category($member_idx, $att_type_category_idx, $att_date);
+
+            // 새로운 출석 정보 저장
+            $data = array(
+                'att_date' => $att_date,
+                'att_type_idx' => $att_type_idx,
+                'member_idx' => $member_idx,
+                'group_id' => $group_id
+            );
+            $result = $this->Attendance_model->save_single_attendance($data);
+
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
 
 
 
@@ -183,11 +211,13 @@ class Main extends CI_Controller {
             $attendance_data = json_decode($this->input->post('attendance_data'), true);
             $group_id = $this->input->post('group_id');
             $att_date = $this->input->post('att_date');
+            $start_date = $this->input->post('start_date');
+            $end_date = $this->input->post('end_date');
 
             $this->load->model('Attendance_model');
 
             // 해당 날짜의 모든 출석 정보 삭제
-            $this->Attendance_model->delete_attendance_by_date($member_idx, $att_date);
+            $this->Attendance_model->delete_attendance_by_date_range($member_idx, $start_date, $end_date);
 
             if (!empty($attendance_data) && is_array($attendance_data)) {
                 foreach ($attendance_data as $att_type_idx) {
@@ -211,83 +241,7 @@ class Main extends CI_Controller {
     }
 
 
-    public function google_login() {
-        require_once APPPATH . '../vendor/autoload.php';
 
-        $client = new Google_Client();
-        $config = [
-            'client_id' => '665369034498-bf7jrt09lasbit0f5cb4ppne8rs67nt8.apps.googleusercontent.com',
-            'client_secret' => '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',
-            'redirect_uris' => ['https://simple.webhows.com/main/google_login'],
-            'access_type' => 'offline',
-            'approval_prompt' => 'force',
-        ];
-        $client->setAuthConfig($config);
-        $client->addScope('email');
-        $client->addScope('profile');
-        $redirect_uri = 'https://simple.webhows.com/main/google_login';
-        $client->setRedirectUri($redirect_uri);
-
-        if (isset($_GET['code'])) {
-            $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
-
-            if (isset($token['access_token'])) {
-                $client->setAccessToken($token['access_token']);
-
-                // 리프레시 토큰 저장
-                if (isset($token['refresh_token'])) {
-                    $this->session->set_userdata('refresh_token', $token['refresh_token']);
-                }
-
-                $this->session->set_userdata('access_token', $token['access_token']);
-
-                // 사용자 정보 가져오기
-                $oauth = new Google\Service\Oauth2($client);
-                $user_info = $oauth->userinfo->get();
-
-                $user_data = array(
-                    'name' => $user_info->name,
-                    'email' => $user_info->email,
-                    'picture' => $user_info->picture,
-                );
-
-                $this->session->set_userdata($user_data);
-
-                // 사용자 정보를 wb_user 테이블에 저장
-                $this->load->model('User_model');
-                $user_id = $user_info->email;
-                $user_name = $user_info->name;
-                $user_exists = $this->User_model->check_user($user_id);
-
-                if (!$user_exists) {
-                    $data = array(
-                        'user_id' => $user_id,
-                        'user_name' => $user_name,
-                        'group_id' => '',
-                        'user_grade' => 1,
-                        'user_mail' => $user_info->email,
-                        'regi_date' => date('Y-m-d H:i:s'),
-                        'modi_date' => date('Y-m-d H:i:s')
-                    );
-                    $this->User_model->insert_user($data);
-                }
-
-                redirect('main');
-            } else {
-                redirect('main/login');
-            }
-        } else {
-            $auth_url = $client->createAuthUrl();
-            redirect($auth_url);
-        }
-    }
-
-
-
-
-    public function login() {
-        $this->load->view('login');
-    }
 
 
 
@@ -309,68 +263,6 @@ class Main extends CI_Controller {
     }
 
 
-
-    public function add_group() {
-        if ($this->input->is_ajax_request()) {
-            $group_name = $this->input->post('group_name');
-            $user_id = $this->session->userdata('email');
-
-            $this->load->model('Group_model');
-            $group_id = $this->Group_model->create_group($group_name);
-
-            if ($group_id) {
-                $this->Group_model->add_user_to_group($user_id, $group_id);
-                $response = array('status' => 'success');
-            } else {
-                $response = array('status' => 'error');
-            }
-
-            echo json_encode($response);
-        }
-    }
-
-
-    public function update_group() {
-        if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
-            $group_name = $this->input->post('group_name');
-            $leader_name = $this->input->post('leader_name');
-            $new_name = $this->input->post('new_name');
-
-            $this->load->model('Group_model');
-            $result = $this->Group_model->update_group($group_id, $group_name, $leader_name, $new_name);
-
-            if ($result) {
-                $response = array('status' => 'success');
-            } else {
-                $response = array('status' => 'error');
-            }
-
-            echo json_encode($response);
-        }
-    }
-
-    public function update_del_yn() {
-        if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
-
-
-            $this->load->model('Group_model');
-            $result = $this->Group_model->update_del_yn($group_id);
-
-            if ($result) {
-                $response = array('status' => 'success');
-            } else {
-                $response = array('status' => 'error');
-            }
-
-            echo json_encode($response);
-        } else {
-            // AJAX 요청이 아닌 경우 에러 처리
-            $response = array('status' => 'error', 'message' => 'Invalid request');
-            echo json_encode($response);
-        }
-    }
 
     public function get_groups() {
         if ($this->input->is_ajax_request()) {
@@ -414,36 +306,20 @@ class Main extends CI_Controller {
         $config = [
             'client_id' => '665369034498-bf7jrt09lasbit0f5cb4ppne8rs67nt8.apps.googleusercontent.com',
             'client_secret' => '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',
-            'redirect_uris' => ['https://simple.webhows.com/main/google_login'],
+            'redirect_uris' => ['https://wani.im/login']
         ];
         $client->setAuthConfig($config);
         $client->revokeToken($this->session->userdata('access_token'));
 
         // 로그인 페이지로 리디렉션
-        redirect('main/login');
+        redirect('login');
     }
 
 
 
-    public function edit_group($group_id) {
-        $this->load->model('Attendance_model');
-        $data['attendance_types'] = $this->Attendance_model->get_attendance_types_by_group($group_id);
-
-        $this->load->view('edit_group_modal', $data);
-    }
 
 
-    public function get_attendance_types_by_group() {
-        if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
-            $this->load->model('Attendance_model');
-            $attendance_types = $this->Attendance_model->get_attendance_types_by_group($group_id);
-            $response = array(
-                'attendance_types' => $attendance_types
-            );
-            echo json_encode($response);
-        }
-    }
+
 
 
 

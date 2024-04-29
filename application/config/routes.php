@@ -53,13 +53,15 @@ $route['default_controller'] = 'main';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
-$route['main/google_login'] = 'main/google_login';
+$route['login/index'] = 'login/index';
+$route['login/google_login'] = 'login/google_login';
+
+$route['mypage/add_group'] = 'mypage/add_group';
+$route['mypage/get_groups'] = 'mypage/get_groups';
+$route['mypage/delete_group'] = 'mypage/delete_group';
+
 $route['main/profile'] = 'main/profile';
 $route['main/logout'] = 'main/logout';
-$route['main/add_group'] = 'main/add_group';
-$route['main/get_groups'] = 'main/get_groups';
-$route['main/delete_group'] = 'main/delete_group';
-$route['main/login'] = 'main/login';
 $route['main/get_members'] = 'main/get_members';
 $route['main/save_attendance'] = 'main/save_attendance';
 $route['main/get_attendance_types'] = 'main/get_attendance_types';

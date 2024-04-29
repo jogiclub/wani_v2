@@ -58,7 +58,7 @@ ul, dl{padding: 0; list-style: none}
 .group-list-wrap{display: inline-block;width: 100%;text-align: right;position: absolute;bottom: 0;padding: 15px;border-top: 1px solid #ccc;background: #efefef;}
 .group-list-wrap .group-list{}
 .group-list-wrap .group-list ul li{cursor: pointer; display: flex;justify-content: flex-start; align-items: center; position: relative}
-.group-list-wrap .group-list ul li .btn-setting{position: absolute; right: 0}
+.group-list-wrap .group-list ul li .btn-group-select{position: absolute; right: 0}
 .group-list-wrap .group-list ul li.active{color:#0000FF}
 .group-list-wrap .group-list ul li.active::before{content: '선택그룹'; display: inline-block; background: #0000FF; color: #fff; font-size: 12px;padding: 1px 3px;border-radius: 3px;}
 
@@ -87,3 +87,7 @@ footer .btn-new i{font-size:30px}
 .att-btn-list{display: flex; flex-direction: column; margin-bottom:20px}
 .att-btn-list .btn-group{}
 .att-btn-list .btn-group .btn{line-height: 20px;min-height: 60px;display: flex;align-items: center;font-size: 18px;justify-content: center;}
+
+
+/*index*/
+table tr th, table tr td{text-align: center; font-weight: 500}

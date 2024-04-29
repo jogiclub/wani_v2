@@ -33,8 +33,32 @@
     <div class="container-xl">
         <div class="row">
 
+
+
+
+
             <div class="col-12 text-center position-relative">
-                <h2 class="mb-1"><?php echo $group_name; ?></h2>
+                <?php if (count($groups) === 1): ?>
+                    <h2 class="mb-1"><?php echo $group_name; ?></h2>
+                <?php else: ?>
+                    <div class="dropdown dropdwon-group-select">
+                        <h2 class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="selected-group-name"><?php echo $group_name; ?></span>
+                        </h2>
+                        <ul class="dropdown-menu group-list">
+                            <?php if (empty($groups)): ?>
+                                <li>개설된 그룹이 없습니다.</li>
+                            <?php else: ?>
+                                <?php foreach ($groups as $group): ?>
+                                    <li class="mt-1 mb-1">
+                                        <a href="#" class="dropdown-item btn-group-select" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>"><?php echo $group['group_name']; ?></a>
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                <?php endif; ?>
+
                 <button class="btn-gnb" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><i class="bi bi-list"></i></button>
             </div>
 
@@ -44,15 +68,32 @@
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-1" autocomplete="off" checked>
                     <label class="btn btn-outline-primary" for="mode-1"><i class="bi bi-clipboard-check"></i> 출석모드</label>
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-2" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="mode-2"><i class="bi bi-journals"></i> 심방모드</label>
+                    <label class="btn btn-outline-primary" for="mode-2"><i class="bi bi-person-badge"></i> 관리모드</label>
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-3" autocomplete="off">
-                    <label class="btn btn-outline-primary" for="mode-3"><i class="bi bi-person-badge"></i> 관리모드</label>
+                    <label class="btn btn-outline-primary" for="mode-3"><i class="bi bi-journals"></i> 메모모드</label>
                 </div>
             </div>
 
             <div class="col-xl-12">
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="QR코드 또는 이름을 입력하세요!" aria-label="QR코드 또는 이름을 입력하세요!" aria-describedby="basic-addon2" id="input-search">
+
+
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type">주일</button>
+                    <ul class="dropdown-menu dropdown-att-type">
+                        <?php $prev_category_idx = null; ?>
+                        <?php foreach ($attendance_types as $type): ?>
+                            <?php if ($prev_category_idx !== null && $prev_category_idx !== $type['att_type_category_idx']): ?>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
+                            <li><a class="dropdown-item" href="#" data-att-type-idx="<?php echo $type['att_type_idx']; ?>" data-att-type-nickname="<?php echo $type['att_type_nickname']; ?>" data-att-type-category-idx="<?php echo $type['att_type_category_idx']; ?>"><?php echo $type['att_type_name']; ?></a></li>
+                            <?php $prev_category_idx = $type['att_type_category_idx']; ?>
+                        <?php endforeach; ?>
+                    </ul>
+
+
+
+                    <input type="text" class="form-control" placeholder="QR코드 또는 이름을 입력하세요!" aria-label="QR코드 또는 이름을 입력하세요!" aria-describedby="basic-addon2" id="input-search" value="검색중..." disabled>
+
                     <button class="input-group-text" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
                     <button class="input-group-text" id="btn-print"><i class="bi bi-printer"></i> QR인쇄</button>
                     <button class="input-group-text" id="btn-birth"><i class="bi bi-cake"></i> 월별생일자</button>
@@ -68,7 +109,7 @@
                         <button type="button" class="btn btn-outline-primary dropdown-toggle current-week" data-bs-toggle="dropdown" aria-expanded="false">
                             <?php echo $current_week_range; ?>
                         </button>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu dropdown-current-week">
                             <?php foreach ($all_week_ranges as $week_range): ?>
                                 <li><a class="dropdown-item" href="#"><?php echo $week_range; ?></a></li>
                             <?php endforeach; ?>
@@ -117,27 +158,6 @@
 
 
 
-<!-- 그룹 추가 모달 -->
-<div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="groupModalLabel">그룹 추가</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="group_name" class="form-label">그룹명</label>
-                    <input type="text" class="form-control" id="group_name" name="group_name" required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" id="saveGroup">저장</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- 사이드 메뉴 -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
@@ -151,25 +171,7 @@
 
 
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        <div class="group-list-wrap">
-            <a href="#" class="btn btn-primary btn-sm add-group" data-bs-toggle="modal" data-bs-target="#groupModal">그룹추가</a>
-            <div class="group-list mt-3">
-                <ul>
-                    <?php if (empty($groups)): ?>
-                        <li>개설된 그룹이 없습니다.</li>
-                    <?php else: ?>
-                        <?php foreach ($groups as $group): ?>
-                            <li class="mt-1 mb-1">
-                                <?php echo $group['group_name']; ?>
 
-                                <a class="btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>"><i class="bi bi-gear"></i></a>
-
-                            </li>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </ul>
-            </div>
-        </div>
 
     </div>
     <div class="offcanvas-body">
@@ -179,42 +181,6 @@
 
 
 
-
-<!-- 그룹 수정 모달 -->
-<div class="modal fade" id="settingGroupModal" tabindex="-1" aria-labelledby="settingGroupModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="settingGroupModalLabel">그룹 설정</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <label for="edit_group_name" class="form-label">그룹명</label>
-                    <input type="text" class="form-control" id="edit_group_name" name="edit_group_name" required>
-                    <input type="hidden" id="edit_group_id" name="edit_group_id">
-                </div>
-
-                <div class="mb-3">
-                    <label for="edit_leader_name" class="form-label">리더명</label>
-                    <input type="text" class="form-control" id="edit_leader_name" name="edit_leader_name" required>
-                </div>
-
-                <div class="mb-3">
-                    <label for="edit_new_name" class="form-label">새방문자명</label>
-                    <input type="text" class="form-control" id="edit_new_name" name="edit_new_name" required>
-                </div>
-
-
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-danger btn-sm float-end btn-del">삭제</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" id="updateGroup">저장</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 
 
@@ -276,37 +242,52 @@
 <script src="/assets/js/common.js?2"></script>
 <script>
 
-
-
-
-
-
-    // 수정 버튼 클릭 이벤트
-    $(document).on('click', '.btn-setting', function() {
+    $(document).on('click', '.btn-group-select', function(e) {
+        e.preventDefault();
         var groupId = $(this).data('group-id');
         var groupName = $(this).data('group-name');
         var leaderName = $(this).data('leader-name');
         var newName = $(this).data('new-name');
 
-        $('#edit_group_id').val(groupId);
-        $('#edit_group_name').val(groupName);
-        $('#edit_leader_name').val(leaderName);
-        $('#edit_new_name').val(newName);
+        $('#selected-group-name').text(groupName);
 
-        // 해당 그룹의 출석 종류 데이터 가져오기
-        $.ajax({
-            url: '<?php echo base_url("main/get_attendance_types_by_group"); ?>',
-            method: 'POST',
-            data: { group_id: groupId },
-            dataType: 'json',
-            success: function(response) {
-                var attendanceTypes = response.attendance_types;
-                var checkCategory = $('.check-category');
-                checkCategory.empty();
-                $('#settingGroupModal').modal('show');
-            }
-        });
+        // 선택한 그룹의 데이터로 member-list 업데이트
+        var currentWeekRange = $('.current-week').text();
+        var startDate = getWeekStartDate(currentWeekRange);
+        var endDate = getWeekEndDate(currentWeekRange);
+        loadMembers(groupId, startDate, endDate);
+
+        // 쿠키에 선택한 그룹 정보 저장
+        setCookie('activeGroup', groupId, 7);
     });
+
+
+    // 쿠키에 저장된 att-type-idx 값 가져오기
+    var attTypeIdxCookie = getCookie('att-type-idx');
+
+    if (attTypeIdxCookie) {
+        // 쿠키 값이 있으면 해당 값으로 dropdown-toggle-att-type 설정
+        var attTypeName = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdxCookie + '"]').text();
+        $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdxCookie);
+    } else {
+        // 쿠키 값이 없으면 data-att-type-idx 값이 제일 작은 값으로 설정
+        var firstAttType = $('.dropdown-att-type .dropdown-item:first');
+        var attTypeName = firstAttType.text();
+        var attTypeIdx = firstAttType.data('att-type-idx');
+        $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
+        setCookie('att-type-idx', attTypeIdx, 7);
+    }
+
+    // dropdown-att-type 항목 클릭 이벤트
+    $('.dropdown-att-type .dropdown-item').click(function(e) {
+        e.preventDefault();
+        var attTypeName = $(this).text();
+        var attTypeIdx = $(this).data('att-type-idx');
+        $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
+        setCookie('att-type-idx', attTypeIdx, 7);
+    });
+
+
 
 
 
@@ -316,7 +297,7 @@
     //새로운 멤버를 추가
     $('#saveNewMember').click(function() {
         var member_name = $('#member_name').val();
-        var activeGroupId = $('.group-list li.active .btn-setting').data('group-id');
+        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
 
         $.ajax({
             url: '<?php echo base_url("main/add_member"); ?>',
@@ -391,7 +372,7 @@
 
     // 출석 유형 로드 및 표시
     function loadAttendanceTypes(memberIdx, attendanceData) {
-        var groupId = $('.group-list li.active .btn-setting').data('group-id');
+        var groupId = $('.group-list li.active .btn-group-select').data('group-id');
 
         $.ajax({
             url: '<?php echo base_url("main/get_attendance_types"); ?>',
@@ -433,6 +414,8 @@
                 }
 
                 $('#attendanceTypes').html(html);
+                // 버튼 클릭 이벤트 추가
+
                 $('#attendanceModal').modal('show');
             }
         });
@@ -444,7 +427,7 @@
     $('#saveAttendance').click(function() {
         var memberIdx = $('#selectedMemberIdx').val();
         var attendanceData = [];
-        var activeGroupId = $('.group-list li.active .btn-setting').data('group-id');
+        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
 
         // 현재 선택된 주차 범위 가져오기
         var currentWeekRange = $('.current-week').text();
@@ -470,7 +453,9 @@
                 member_idx: memberIdx,
                 attendance_data: JSON.stringify(attendanceData),
                 group_id: activeGroupId,
-                att_date: attDate
+                att_date: attDate,
+                start_date: startDate,
+                end_date: endDate
             },
             dataType: 'json',
             success: function(response) {
@@ -484,6 +469,8 @@
             }
         });
     });
+
+
     // 쿠키 설정 함수
     function setCookie(name, value, days) {
         var expires = "";
@@ -528,28 +515,47 @@
                     memberCard.find('.member-card').prepend('<span class="photo"></span>');
                 }
 
-
-
-
                 if (member.new_yn === 'Y') {
                     memberCard.find('.member-card').addClass('new');
                     memberCard.find('.member-card').prepend('<span class="badge text-bg-warning"><?php echo $new_name; ?></span>');
                 }
 
+                if (member.att_type_data) {
+                    var attTypeData = member.att_type_data.split('|');
+                    var attStamps = attTypeData.map(function(attData) {
+                        var attDataArr = attData.split(',');
+                        var attType = attDataArr[0].trim();
+                        var attTypeIdx = attDataArr[1].trim();
+                        var attTypeCategoryIdx = attDataArr[2].trim();
 
-                if (member.att_type_nicknames) {
-                    var attTypes = member.att_type_nicknames.split(',');
-                    var attTypesHtml = attTypes.map(function(attType) {
                         // 출석 유형별 숫자 카운트
-                        if (attTypeCount[attType.trim()]) {
-                            attTypeCount[attType.trim()]++;
+                        if (attTypeCount[attType]) {
+                            attTypeCount[attType]++;
                         } else {
-                            attTypeCount[attType.trim()] = 1;
+                            attTypeCount[attType] = 1;
                         }
-                        return '<span class="att-stamp">' + attType.trim() + '</span>';
+
+                        return {
+                            attType: attType,
+                            attTypeIdx: attTypeIdx,
+                            attTypeCategoryIdx: attTypeCategoryIdx
+                        };
+                    });
+
+                    // att-stamp를 data-att-type-idx 순서로 정렬
+                    attStamps.sort(function(a, b) {
+                        return a.attTypeIdx - b.attTypeIdx;
+                    });
+
+                    var attTypesHtml = attStamps.map(function(attStamp) {
+                        return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '">' + attStamp.attType + '</span>';
                     }).join(' ');
+
                     memberCard.find('.member-wrap').append(attTypesHtml);
                 }
+
+
+
 
                 memberList.append(memberCard);
             });
@@ -609,47 +615,6 @@
     }
 
 
-    // 그룹추가 등 이후에 리프래시
-    function refreshGroupList(callback) {
-        $.ajax({
-            url: '<?php echo base_url("main/get_groups"); ?>',
-            method: 'GET',
-            dataType: 'json',
-            success: function(groups) {
-                var groupList = $('.group-list ul');
-                var activeGroupId = getCookie('activeGroup');
-
-                groupList.empty();
-
-                if (groups.length === 0) {
-                    groupList.append('<li>개설된 그룹이 없습니다.</li>');
-                } else {
-                    $.each(groups, function(index, group) {
-                        var listItem = $('<li class="mt-1 mb-1">' + group.group_name + ' <a class="btn-setting" data-group-id="' + group.group_id + '" data-group-name="' + group.group_name + '"><i class="bi bi-gear-fill"></i></a></li>');
-                        groupList.append(listItem);
-
-                        if (group.group_id == activeGroupId) {
-                            listItem.addClass('active');
-                            $('h2.mb-1').text(group.group_name);
-                            loadMembers(group.group_id, getWeekStartDate(getCurrentWeekRange()), getWeekEndDate(getCurrentWeekRange()));
-                        }
-                    });
-
-                    if (!activeGroupId || $('.group-list ul li.active').length === 0) {
-                        var firstGroup = $('.group-list ul li:first-child');
-                        firstGroup.addClass('active');
-                        setCookie('activeGroup', firstGroup.find('.btn-setting').data('group-id'), 7);
-                        $('h2.mb-1').text(firstGroup.text().trim());
-                        loadMembers(firstGroup.find('.btn-setting').data('group-id'), getWeekStartDate(getCurrentWeekRange()), getWeekEndDate(getCurrentWeekRange()));
-                    }
-                }
-
-                if (callback && typeof callback === 'function') {
-                    callback();
-                }
-            }
-        });
-    }
 
 
 
@@ -728,24 +693,47 @@
                 // 모든 멤버의 att-stamp 제거
                 $('.member-card .member-wrap .att-stamp').remove();
 
+
+
                 $.each(attendanceData, function(memberIdx, attTypeNicknames) {
                     var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
                     var attStampsContainer = memberCard.find('.member-wrap');
 
                     if (attTypeNicknames) {
-                        var attTypes = attTypeNicknames.split(',');
-                        var attTypesHtml = attTypes.map(function(attType) {
+                        var attStamps = attTypeNicknames.split(',').map(function(attTypeData) {
+                            var attTypeArr = attTypeData.split('|');
+                            var attTypeNickname = attTypeArr[0].trim();
+                            var attTypeIdx = attTypeArr[1].trim();
+                            var attTypeCategoryIdx = attTypeArr[2].trim();
+
                             // 출석 유형별 숫자 카운트
-                            if (attTypeCount[attType.trim()]) {
-                                attTypeCount[attType.trim()]++;
+                            if (attTypeCount[attTypeNickname]) {
+                                attTypeCount[attTypeNickname]++;
                             } else {
-                                attTypeCount[attType.trim()] = 1;
+                                attTypeCount[attTypeNickname] = 1;
                             }
-                            return '<span class="att-stamp">' + attType.trim() + '</span>';
+
+                            return {
+                                attTypeNickname: attTypeNickname,
+                                attTypeIdx: attTypeIdx,
+                                attTypeCategoryIdx: attTypeCategoryIdx
+                            };
+                        });
+
+                        // att-stamp를 data-att-type-idx 순서로 정렬
+                        attStamps.sort(function(a, b) {
+                            return a.attTypeIdx - b.attTypeIdx;
+                        });
+
+                        var attTypesHtml = attStamps.map(function(attStamp) {
+                            return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '">' + attStamp.attTypeNickname + '</span>';
                         }).join(' ');
+
                         attStampsContainer.append(attTypesHtml);
                     }
                 });
+
+
 
                 // 출석 유형별 숫자 출력
                 var totalAttList = $('.total-att-list');
@@ -772,69 +760,15 @@
 
 
 
-
-
-
     $('#initialize').click(function() {
         // 출석 유형 초기화
         $('#attendanceTypes input[type="radio"]').prop('checked', false);
     });
 
 
-    $('#saveGroup').click(function() {
-        var group_name = $('#group_name').val();
-
-        $.ajax({
-            url: '<?php echo base_url("main/add_group"); ?>',
-            method: 'POST',
-            data: { group_name: group_name },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status == 'success') {
-                    $('#groupModal').modal('hide');
-                    $('#group_name').val('');
-                    refreshGroupList();
-                } else {
-                    alert('그룹 추가에 실패했습니다.');
-                }
-            }
-        });
-    });
 
 
 
-
-
-    // 삭제 버튼 클릭 이벤트
-    $(document).on('click', '.btn-del', function() {
-        var groupId = $('#edit_group_id').val();
-
-        if (confirm('정말 삭제하시겠습니까?')) {
-            $.ajax({
-                url: '<?php echo base_url("main/update_del_yn"); ?>',
-                method: 'POST',
-                data: { group_id: groupId },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status == 'success') {
-                        $('#settingGroupModal').modal('hide');
-                        refreshGroupList(function() {
-                            var firstGroup = $('.group-list ul li:first-child');
-                            if (firstGroup.length > 0) {
-                                var firstGroupId = firstGroup.find('.btn-setting').data('group-id');
-                                firstGroup.addClass('active');
-                                setCookie('activeGroup', firstGroupId, 7);
-                                $('h2.mb-1').text(firstGroup.text().trim());
-                                loadMembers(firstGroupId, getWeekStartDate(getCurrentWeekRange()), getWeekEndDate(getCurrentWeekRange()));
-                            }
-                        });
-                    } else {
-                        alert('그룹 삭제에 실패했습니다.');
-                    }
-                }
-            });
-        }
-    });
 
 
     // 현재 선택된 주차 범위 가져오기 함수 추가
@@ -859,7 +793,7 @@
         // 활성화된 그룹이 없거나 쿠키에 저장된 그룹이 없는 경우 첫 번째 그룹 활성화
         if (groups.length > 0) {
             var firstGroup = groups.first();
-            var firstGroupId = firstGroup.find('.btn-setting').data('group-id');
+            var firstGroupId = firstGroup.find('.btn-group-select').data('group-id');
             firstGroup.addClass('active');
             setCookie('activeGroup', firstGroupId, 7);
 
@@ -872,29 +806,7 @@
     }
 
 
-    // 그룹 클릭 이벤트 핸들러 수정
-    $(document).on('click', '.group-list li', function() {
-        var groupId = $(this).find('.btn-setting').data('group-id');
-        var groupName = $(this).find('.btn-setting').data('group-name');
 
-        // 모든 group-list 항목에서 active 클래스 제거
-        $('.group-list li').removeClass('active');
-        // 클릭한 group-list 항목에 active 클래스 추가
-        $(this).addClass('active');
-
-        // 쿠키에 활성화된 그룹 ID 저장
-        setCookie('activeGroup', groupId, 7);
-
-        // <h2> 태그의 내용을 선택된 그룹의 group_name으로 변경
-        $('h2.mb-1').text(groupName);
-
-        // 현재 선택된 주차 범위 가져오기
-        var currentWeekRange = $('.current-week').text();
-        var startDate = getWeekStartDate(currentWeekRange);
-        var endDate = getWeekEndDate(currentWeekRange);
-
-        loadMembers(groupId, startDate, endDate);
-    });
 
 
     // 주차 범위 업데이트 함수 수정
@@ -902,16 +814,21 @@
         $('.current-week').text(weekRange);
         var startDate = getWeekStartDate(weekRange);
         var endDate = getWeekEndDate(weekRange);
-        var activeGroupId = $('.group-list li.active .btn-setting').data('group-id');
+        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
         if (activeGroupId) {
-            loadMembers(activeGroupId, startDate, endDate, false);
+            updateAttStamps(activeGroupId, startDate, endDate);
         }
     }
 
 
-    //한글자 이상 검색
+
+    // 한글자 이상 입력하면 검색,  숫자 입력 시 검색 기능 비활성화
     $('#input-search').on('input', function() {
         var searchText = $(this).val().trim();
+        if (/^\d+$/.test(searchText)) {
+            // 숫자만 입력된 경우 검색 기능 비활성화
+            return;
+        }
 
         if (searchText.length >= 1) {
             searchMembers(searchText);
@@ -943,43 +860,165 @@
         $('.grid').masonry('layout');
     }
 
+    $('#input-search').on('keypress', function(e) {
+        if (e.which === 13) {
+            addAttStamp();
+        }
+    });
+
+
+
+
+    $('#btn-submit').on('click', function() {
+        addAttStamp();
+    });
+
+
+
+
+    function addAttStamp() {
+        var memberIdx = $('#input-search').val().trim();
+        if (/^\d+$/.test(memberIdx)) {
+            var attTypeIdx = $('#dropdown-toggle-att-type').data('att-type-idx');
+            var attTypeNickname = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-nickname');
+            var attTypeCategoryIdx = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-category-idx');
+
+            // 해당 member-idx를 가진 멤버에게 att-stamp 추가
+            var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
+            if (memberCard.length > 0) {
+                var existingAttStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]');
+                if (existingAttStamp.length > 0) {
+                    alert('이미 출석체크를 하였습니다.');
+                    $('#input-search').val('').focus();
+                    return;
+                }
+
+                // 동일한 att_type_category_idx를 가진 모든 att-stamp 삭제
+                var existingCategoryStamps = memberCard.find('.att-stamp[data-att-type-category-idx="' + attTypeCategoryIdx + '"]');
+                // console.log(existingCategoryStamps);
+                if (existingCategoryStamps.length > 0) {
+                    existingCategoryStamps.remove();
+                }
+
+                var attStamp = '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '">' + attTypeNickname + '</span>';
+                memberCard.find('.member-wrap').append(attStamp);
+
+                // 서버에 출석 정보 저장
+                saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx);
+            } else {
+                alert('해당하는 정보가 없습니다.');
+            }
+        }
+        $('#input-search').val('').focus();
+    }
+
+
+
+
+
+
+
+    function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx) {
+        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+        var today = new Date();
+        var attDate = formatDate(today);
+
+        $.ajax({
+            url: '<?php echo base_url("main/save_single_attendance"); ?>',
+            method: 'POST',
+            data: {
+                member_idx: memberIdx,
+                att_type_idx: attTypeIdx,
+                att_type_category_idx: attTypeCategoryIdx,
+                group_id: activeGroupId,
+                att_date: attDate
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    console.log('출석 정보 저장 완료');
+                } else {
+                    console.log('출석 정보 저장 실패');
+                }
+            }
+        });
+    }
+
+
+    // dropdown-att-type 항목 클릭 이벤트
+    $('.dropdown-att-type').on('click', '.dropdown-item', function(e) {
+        e.preventDefault();
+        var attTypeName = $(this).text();
+        var attTypeIdx = $(this).data('att-type-idx');
+        $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
+
+        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+        setCookie('att-type-idx_' + activeGroupId, attTypeIdx, 7);
+    });
+
+
+    function updateAttendanceTypes(groupId) {
+        // 그룹별 att-type-idx 쿠키 삭제
+        deleteCookie('att-type-idx_' + groupId);
+
+        $.ajax({
+            url: '<?php echo base_url("main/get_attendance_types_by_group"); ?>',
+            method: 'POST',
+            data: { group_id: groupId },
+            dataType: 'json',
+            success: function(response) {
+                var attendanceTypes = response.attendance_types;
+                var dropdownAttType = $('.dropdown-att-type');
+                dropdownAttType.empty();
+
+                var prevCategoryIdx = null;
+                $.each(attendanceTypes, function(index, type) {
+                    if (prevCategoryIdx !== null && prevCategoryIdx !== type.att_type_category_idx) {
+                        dropdownAttType.append('<li><hr class="dropdown-divider"></li>');
+                    }
+                    dropdownAttType.append('<li><a class="dropdown-item" href="#" data-att-type-idx="' + type.att_type_idx + '" data-att-type-nickname="' + type.att_type_nickname + '">' + type.att_type_name + '</a></li>');
+                    prevCategoryIdx = type.att_type_category_idx;
+                });
+
+                // data-att-type-idx가 가장 작은 값으로 설정
+                var firstAttType = $('.dropdown-att-type .dropdown-item:first');
+                var attTypeName = firstAttType.text();
+                var attTypeIdx = firstAttType.data('att-type-idx');
+
+                // dropdown-toggle-att-type 텍스트와 data-att-type-idx 값을 직접 설정
+                $('#dropdown-toggle-att-type').text(attTypeName);
+                $('#dropdown-toggle-att-type').data('att-type-idx', attTypeIdx);
+
+                // 선택된 출석 유형 쿠키에 저장
+                setCookie('att-type-idx_' + groupId, attTypeIdx, 7);
+            }
+        });
+    }
+
+
+
+    // 쿠키 삭제 함수
+    function deleteCookie(name) {
+        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;';
+    }
+
+
+
+
+
+
+
+
 
 
 
 
     $(document).ready(function() {
 
-
-        // 그룹 수정 저장 버튼 클릭 이벤트
-        $('#updateGroup').click(function() {
-            var groupId = $('#edit_group_id').val();
-            var groupName = $('#edit_group_name').val();
-            var leaderName = $('#edit_leader_name').val();
-            var newName = $('#edit_new_name').val();
+        // 페이지 로드 시 input-search에 포커스 설정
+        $('#input-search').focus();
 
 
-            // 서버로 데이터 전송
-            $.ajax({
-                url: '/main/update_group',
-                method: 'POST',
-                data: {
-                    group_id: groupId,
-                    group_name: groupName,
-                    leader_name: leaderName,
-                    new_name: newName
-                },
-                success: function(response) {
-                    // 성공 처리
-                    $('#settingGroupModal').modal('hide');
-                    // 그룹 목록 새로고침 등의 작업 수행
-                    refreshGroupList();
-                },
-                error: function(xhr, status, error) {
-                    // 실패 처리
-                    console.log(error);
-                }
-            });
-        });
 
 
 
@@ -1005,7 +1044,7 @@
         });
 
         // 드롭다운 메뉴 항목 클릭 이벤트
-        $('.dropdown-menu .dropdown-item').click(function(e) {
+        $('.dropdown-current-week .dropdown-item').click(function(e) {
             e.preventDefault();
             var weekRange = $(this).text();
             updateWeekRange(weekRange);
@@ -1057,7 +1096,36 @@
 
 
 
+        // 오늘 날짜가 current-week의 기간 안에 있는지 확인하고 input-search 활성화/비활성화
+        function updateInputSearchState() {
+            var currentWeekRange = $('.current-week').text();
+            var startDate = getWeekStartDate(currentWeekRange);
+            var endDate = getWeekEndDate(currentWeekRange);
+            var today = new Date();
+            var formattedToday = formatDate(today);
 
+            if (formattedToday >= startDate && formattedToday <= endDate) {
+                $('#input-search').prop('disabled', false).val('').attr('placeholder', 'QR코드 또는 이름을 입력하세요!').focus();
+            } else {
+                $('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
+                resetMemberList();
+            }
+        }
+
+        // 페이지 로드 시 input-search 상태 업데이트
+        updateInputSearchState();
+
+        // 주차 범위 업데이트 시 input-search 상태 업데이트
+        function updateWeekRange(weekRange) {
+            $('.current-week').text(weekRange);
+            var startDate = getWeekStartDate(weekRange);
+            var endDate = getWeekEndDate(weekRange);
+            var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+            if (activeGroupId) {
+                updateAttStamps(activeGroupId, startDate, endDate);
+            }
+            updateInputSearchState();
+        }
 
 
 

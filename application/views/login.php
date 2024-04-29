@@ -16,7 +16,7 @@
         <div class="col-md-6">
             <h2 class="text-center">로그인</h2>
             <div class="d-grid">
-                <a href="<?php echo base_url('main/google_login'); ?>" class="btn btn-danger"><i class="bi bi-google"></i> 구글로그인</a>
+                <a href="<?php echo base_url('login/google_login'); ?>" class="btn btn-danger"><i class="bi bi-google"></i> 구글로그인</a>
             </div>
         </div>
     </div>

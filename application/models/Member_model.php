@@ -19,7 +19,7 @@ class Member_model extends CI_Model {
         $this->db->where('m.del_yn', 'N');
 
         if ($start_date && $end_date) {
-            $this->db->select('GROUP_CONCAT(at.att_type_nickname SEPARATOR ",") AS att_type_nicknames');
+            $this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ",", at.att_type_idx, ",", at.att_type_category_idx) SEPARATOR "|") AS att_type_data');
             $this->db->join('wb_member_att a', 'm.member_idx = a.member_idx AND a.att_date >= "' . $start_date . '" AND a.att_date <= "' . $end_date . '"', 'left');
             $this->db->join('wb_att_type at', 'a.att_type_idx = at.att_type_idx', 'left');
             $this->db->group_by('m.member_idx');
@@ -29,12 +29,10 @@ class Member_model extends CI_Model {
         $this->db->order_by('m.leader_yn ASC');
         $this->db->order_by('m.member_idx ASC');
 
-//        $query = $this->db->get_compiled_select();
-//        print_r($query);
-//        exit;
-
         $query = $this->db->get();
 
         return $query->result_array();
     }
 }
+
+
