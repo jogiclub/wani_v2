@@ -12,6 +12,9 @@ class Attendance_model extends CI_Model {
         $this->db->order_by('att_type_category_idx', 'ASC');
         $this->db->order_by('att_type_idx', 'ASC');
 
+//        print_r($this->db->last_query());
+//        exit;
+
         $query = $this->db->get();
         return $query->result_array();
     }
@@ -88,16 +91,6 @@ class Attendance_model extends CI_Model {
         return $attendance_data;
     }
 
-
-    public function get_attendance_types_by_group($group_id) {
-        $this->db->select('att_type_idx, att_type_name, att_type_category_idx, att_type_nickname');
-        $this->db->from('wb_att_type');
-        $this->db->where('group_id', $group_id);
-        $this->db->order_by('att_type_category_idx', 'ASC');
-        $this->db->order_by('att_type_idx', 'ASC');
-        $query = $this->db->get();
-        return $query->result_array();
-    }
 
 
     public function save_single_attendance($data) {

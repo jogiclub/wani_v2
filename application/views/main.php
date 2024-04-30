@@ -38,26 +38,9 @@
 
 
             <div class="col-12 text-center position-relative">
-                <?php if (count($groups) === 1): ?>
-                    <h2 class="mb-1"><?php echo $group_name; ?></h2>
-                <?php else: ?>
-                    <div class="dropdown dropdwon-group-select">
-                        <h2 class="dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span id="selected-group-name"><?php echo $group_name; ?></span>
-                        </h2>
-                        <ul class="dropdown-menu group-list">
-                            <?php if (empty($groups)): ?>
-                                <li>개설된 그룹이 없습니다.</li>
-                            <?php else: ?>
-                                <?php foreach ($groups as $group): ?>
-                                    <li class="mt-1 mb-1">
-                                        <a href="#" class="dropdown-item btn-group-select" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>"><?php echo $group['group_name']; ?></a>
-                                    </li>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </ul>
-                    </div>
-                <?php endif; ?>
+
+                <h2 class="mb-1 group-name"></h2>
+
 
                 <button class="btn-gnb" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><i class="bi bi-list"></i></button>
             </div>
@@ -71,6 +54,8 @@
                     <label class="btn btn-outline-primary" for="mode-2"><i class="bi bi-person-badge"></i> 관리모드</label>
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-3" autocomplete="off">
                     <label class="btn btn-outline-primary" for="mode-3"><i class="bi bi-journals"></i> 메모모드</label>
+                    <input type="radio" class="btn-check" name="vbtn-radio" id="mode-4" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="mode-4"><i class="bi bi-cake2"></i> 생일모드</label>
                 </div>
             </div>
 
@@ -78,25 +63,24 @@
                 <div class="input-group">
 
 
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type">주일</button>
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"><?php echo $default_attendance_type; ?></button>
                     <ul class="dropdown-menu dropdown-att-type">
                         <?php $prev_category_idx = null; ?>
                         <?php foreach ($attendance_types as $type): ?>
                             <?php if ($prev_category_idx !== null && $prev_category_idx !== $type['att_type_category_idx']): ?>
                                 <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
-                            <li><a class="dropdown-item" href="#" data-att-type-idx="<?php echo $type['att_type_idx']; ?>" data-att-type-nickname="<?php echo $type['att_type_nickname']; ?>" data-att-type-category-idx="<?php echo $type['att_type_category_idx']; ?>"><?php echo $type['att_type_name']; ?></a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" data-att-type-idx="<?php echo $type['att_type_idx']; ?>" data-att-type-nickname="<?php echo $type['att_type_nickname']; ?>" data-att-type-category-idx="<?php echo $type['att_type_category_idx']; ?>">
+                                    <?php echo $type['att_type_name']; ?>
+                                </a>
+                            </li>
                             <?php $prev_category_idx = $type['att_type_category_idx']; ?>
                         <?php endforeach; ?>
                     </ul>
-
-
-
                     <input type="text" class="form-control" placeholder="QR코드 또는 이름을 입력하세요!" aria-label="QR코드 또는 이름을 입력하세요!" aria-describedby="basic-addon2" id="input-search" value="검색중..." disabled>
-
                     <button class="input-group-text" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
-                    <button class="input-group-text" id="btn-print"><i class="bi bi-printer"></i> QR인쇄</button>
-                    <button class="input-group-text" id="btn-birth"><i class="bi bi-cake"></i> 월별생일자</button>
+
                 </div>
             </div>
 
@@ -242,41 +226,69 @@
 <script src="/assets/js/common.js?2"></script>
 <script>
 
-    $(document).on('click', '.btn-group-select', function(e) {
-        e.preventDefault();
-        var groupId = $(this).data('group-id');
-        var groupName = $(this).data('group-name');
-        var leaderName = $(this).data('leader-name');
-        var newName = $(this).data('new-name');
+    // 페이지 최초 로드 시 그룹 정보 확인
+    var postGroupId = '<?php echo isset($postGroup['group_id']) ? $postGroup['group_id'] : ''; ?>';
+    var postGroupName = '<?php echo isset($postGroup['group_name']) ? $postGroup['group_name'] : ''; ?>';
+    $('.group-name').text(postGroupName);
+    var activeGroupId = getCookie('activeGroup');
 
-        $('#selected-group-name').text(groupName);
-
-        // 선택한 그룹의 데이터로 member-list 업데이트
+    if (postGroupId) {
+        // postGroup이 있는 경우 해당 그룹 정보 사용
         var currentWeekRange = $('.current-week').text();
         var startDate = getWeekStartDate(currentWeekRange);
         var endDate = getWeekEndDate(currentWeekRange);
-        loadMembers(groupId, startDate, endDate);
 
-        // 쿠키에 선택한 그룹 정보 저장
-        setCookie('activeGroup', groupId, 7);
-    });
+        loadMembers(postGroupId, startDate, endDate);
+        setCookie('activeGroup', postGroupId, 7);
+    } else if (activeGroupId) {
+        // postGroup이 없고 쿠키에 저장된 그룹이 있는 경우 해당 그룹 정보 사용
+        var currentWeekRange = $('.current-week').text();
+        var startDate = getWeekStartDate(currentWeekRange);
+        var endDate = getWeekEndDate(currentWeekRange);
+        loadMembers(activeGroupId, startDate, endDate);
+    } else {
+        // postGroup도 없고 쿠키에 저장된 그룹도 없는 경우 첫 번째 그룹 활성화
+        var firstGroupId = '<?php echo $groups[0]['group_id'] ?? ''; ?>';
+        if (firstGroupId) {
+            setCookie('activeGroup', firstGroupId, 7);
+            var currentWeekRange = $('.current-week').text();
+            var startDate = getWeekStartDate(currentWeekRange);
+            var endDate = getWeekEndDate(currentWeekRange);
+            loadMembers(firstGroupId, startDate, endDate);
+        } else {
+            alert('활성화 된 그룹이 없습니다! 그룹 생성 후 다시 시도해주세요!');
+        }
+
+    }
+
+
+
+    // 현재 선택된 주차 범위 가져오기 함수 추가
+    function getCurrentWeekRange() {
+        return $('.current-week').text();
+    }
+
+
+
+
+
 
 
     // 쿠키에 저장된 att-type-idx 값 가져오기
-    var attTypeIdxCookie = getCookie('att-type-idx');
+    // var attTypeIdxCookie = getCookie('att-type-idx');
 
-    if (attTypeIdxCookie) {
+    // if (attTypeIdxCookie) {
         // 쿠키 값이 있으면 해당 값으로 dropdown-toggle-att-type 설정
-        var attTypeName = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdxCookie + '"]').text();
-        $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdxCookie);
-    } else {
-        // 쿠키 값이 없으면 data-att-type-idx 값이 제일 작은 값으로 설정
+        // var attTypeName = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdxCookie + '"]').text();
+        // $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdxCookie);
+    // } else {
+        // 쿠키 값이 없으면 첫 번째 출석 유형으로 설정
         var firstAttType = $('.dropdown-att-type .dropdown-item:first');
         var attTypeName = firstAttType.text();
         var attTypeIdx = firstAttType.data('att-type-idx');
         $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
-        setCookie('att-type-idx', attTypeIdx, 7);
-    }
+        // setCookie('att-type-idx', attTypeIdx, 7);
+    // }
 
     // dropdown-att-type 항목 클릭 이벤트
     $('.dropdown-att-type .dropdown-item').click(function(e) {
@@ -284,7 +296,7 @@
         var attTypeName = $(this).text();
         var attTypeIdx = $(this).data('att-type-idx');
         $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
-        setCookie('att-type-idx', attTypeIdx, 7);
+        // setCookie('att-type-idx', attTypeIdx, 7);
     });
 
 
@@ -297,7 +309,7 @@
     //새로운 멤버를 추가
     $('#saveNewMember').click(function() {
         var member_name = $('#member_name').val();
-        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+        var activeGroupId = getCookie('activeGroup');
 
         $.ajax({
             url: '<?php echo base_url("main/add_member"); ?>',
@@ -372,7 +384,7 @@
 
     // 출석 유형 로드 및 표시
     function loadAttendanceTypes(memberIdx, attendanceData) {
-        var groupId = $('.group-list li.active .btn-group-select').data('group-id');
+        var groupId = getCookie('activeGroup');
 
         $.ajax({
             url: '<?php echo base_url("main/get_attendance_types"); ?>',
@@ -427,7 +439,7 @@
     $('#saveAttendance').click(function() {
         var memberIdx = $('#selectedMemberIdx').val();
         var attendanceData = [];
-        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+        var activeGroupId = getCookie('activeGroup');
 
         // 현재 선택된 주차 범위 가져오기
         var currentWeekRange = $('.current-week').text();
@@ -760,51 +772,6 @@
 
 
 
-    $('#initialize').click(function() {
-        // 출석 유형 초기화
-        $('#attendanceTypes input[type="radio"]').prop('checked', false);
-    });
-
-
-
-
-
-
-
-    // 현재 선택된 주차 범위 가져오기 함수 추가
-    function getCurrentWeekRange() {
-        return $('.current-week').text();
-    }
-
-
-    // 페이지 최초 로드 시 쿠키에 저장된 활성화된 그룹 확인
-    var activeGroupId = getCookie('activeGroup');
-    var groups = $('.group-list ul li');
-
-    if (activeGroupId && $('a[data-group-id="' + activeGroupId + '"]').length > 0) {
-        $('a[data-group-id="' + activeGroupId + '"]').parent('li').addClass('active');
-
-        var currentWeekRange = $('.current-week').text();
-        var startDate = getWeekStartDate(currentWeekRange);
-        var endDate = getWeekEndDate(currentWeekRange);
-
-        loadMembers(activeGroupId, startDate, endDate);
-    } else {
-        // 활성화된 그룹이 없거나 쿠키에 저장된 그룹이 없는 경우 첫 번째 그룹 활성화
-        if (groups.length > 0) {
-            var firstGroup = groups.first();
-            var firstGroupId = firstGroup.find('.btn-group-select').data('group-id');
-            firstGroup.addClass('active');
-            setCookie('activeGroup', firstGroupId, 7);
-
-            var currentWeekRange = $('.current-week').text();
-            var startDate = getWeekStartDate(currentWeekRange);
-            var endDate = getWeekEndDate(currentWeekRange);
-
-            loadMembers(firstGroupId, startDate, endDate);
-        }
-    }
-
 
 
 
@@ -814,7 +781,7 @@
         $('.current-week').text(weekRange);
         var startDate = getWeekStartDate(weekRange);
         var endDate = getWeekEndDate(weekRange);
-        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+        var activeGroupId = getCookie('activeGroup');
         if (activeGroupId) {
             updateAttStamps(activeGroupId, startDate, endDate);
         }
@@ -919,7 +886,7 @@
 
 
     function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx) {
-        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+        var activeGroupId = getCookie('activeGroup');
         var today = new Date();
         var attDate = formatDate(today);
 
@@ -952,17 +919,17 @@
         var attTypeIdx = $(this).data('att-type-idx');
         $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
 
-        var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
-        setCookie('att-type-idx_' + activeGroupId, attTypeIdx, 7);
+        // var activeGroupId = getCookie('activeGroup');
+        // setCookie('att-type-idx_' + activeGroupId, attTypeIdx, 7);
     });
 
 
     function updateAttendanceTypes(groupId) {
         // 그룹별 att-type-idx 쿠키 삭제
-        deleteCookie('att-type-idx_' + groupId);
+        // deleteCookie('att-type-idx_' + groupId);
 
         $.ajax({
-            url: '<?php echo base_url("main/get_attendance_types_by_group"); ?>',
+            url: '<?php echo base_url("main/get_attendance_types"); ?>',
             method: 'POST',
             data: { group_id: groupId },
             dataType: 'json',
@@ -990,7 +957,7 @@
                 $('#dropdown-toggle-att-type').data('att-type-idx', attTypeIdx);
 
                 // 선택된 출석 유형 쿠키에 저장
-                setCookie('att-type-idx_' + groupId, attTypeIdx, 7);
+                // setCookie('att-type-idx_' + groupId, attTypeIdx, 7);
             }
         });
     }
@@ -1120,7 +1087,7 @@
             $('.current-week').text(weekRange);
             var startDate = getWeekStartDate(weekRange);
             var endDate = getWeekEndDate(weekRange);
-            var activeGroupId = $('.group-list li.active .btn-group-select').data('group-id');
+            var activeGroupId = getCookie('activeGroup');
             if (activeGroupId) {
                 updateAttStamps(activeGroupId, startDate, endDate);
             }

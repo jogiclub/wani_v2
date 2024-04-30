@@ -35,7 +35,7 @@
     <div class="container-xl">
 
 
-        <button href="#" class="btn btn-primary btn-sm add-group" data-bs-toggle="modal" data-bs-target="#groupModal">그룹추가</button>
+        <button class="btn btn-primary btn-sm add-group">그룹추가</button>
 
 
 
@@ -46,9 +46,12 @@
         <thead>
             <tr>
                 <th scope="col">그룹명</th>
+
+                <th scope="col">그룹수정</th>
                 <th scope="col">회원수</th>
+                <th scope="col">QR인쇄</th>
                 <th scope="col">사용자수</th>
-                <th scope="col">기본설정</th>
+
                 <th scope="col">사용자설정</th>
                 <th scope="col">출석타입설정</th>
                 <th scope="col">그룹복사</th>
@@ -61,19 +64,23 @@
                 <td>개설된 그룹이 없습니다.</td>
             <?php else: ?>
                 <?php foreach ($groups as $group): ?>
-                    <tr>
+                    <tr data-group-id="<?php echo $group['group_id']; ?>">
                         <td>
-                            <?php echo $group['group_name']; ?>
+                            <span class="open-group-main"><?php echo $group['group_name']; ?></span>
                         </td>
-                        <td>10명</td>
-                        <td>10명</td>
                         <td>
-                            <a class="btn btn-light btn-sm" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">기본설정</a>
+                            <a class="btn btn-secondary btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a>
                         </td>
+                        <td><?php echo $group['member_count']; ?>명</td>
+                        <td><a href="" class="btn btn-light btn-sm">QR인쇄</a></td>
+                        <td>10명</td>
+
+
+                        
                         <td><a href="" class="btn btn-light btn-sm">사용자설정</a></td>
                         <td><a href="" class="btn btn-light btn-sm">출석타입설정</a></td>
                         <td><a href="" class="btn btn-light btn-sm">그룹복사</a></td>
-                        <td><a href="" class="btn btn-danger btn-sm">그룹삭제</a></td>
+                        <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -88,6 +95,8 @@
 
     </div>
 </main>
+
+
 
 
 <!-- 그룹 수정 모달 -->
@@ -114,17 +123,17 @@
                     <label for="edit_new_name" class="form-label">새방문자명</label>
                     <input type="text" class="form-control" id="edit_new_name" name="edit_new_name" required>
                 </div>
-
-
             </div>
             <div class="modal-footer">
-                <button class="btn btn-danger btn-sm float-end btn-del">삭제</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
                 <button type="button" class="btn btn-primary" id="updateGroup">저장</button>
             </div>
         </div>
     </div>
 </div>
+
+
+
 
 <!-- 그룹 추가 모달 -->
 <div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
@@ -148,9 +157,16 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+
 
 
 <script>
+
+
+
     // 그룹 수정 버튼 클릭 이벤트
     $(document).on('click', '.btn-setting', function() {
         var groupId = $(this).data('group-id');
@@ -167,31 +183,136 @@
     });
 
 
-    // 그룹 클릭 이벤트 핸들러 수정
-    $(document).on('click', '.group-list li', function() {
-        var groupId = $(this).find('.btn-setting').data('group-id');
-        var groupName = $(this).find('.btn-setting').data('group-name');
 
-        // 모든 group-list 항목에서 active 클래스 제거
-        $('.group-list li').removeClass('active');
-        // 클릭한 group-list 항목에 active 클래스 추가
-        $(this).addClass('active');
 
-        // 쿠키에 활성화된 그룹 ID 저장
-        setCookie('activeGroup', groupId, 7);
+    // 그룹명 클릭 이벤트
+    $(document).on('click', '.open-group-main', function() {
+        var groupId = $(this).closest('tr').data('group-id');
+        var groupName = $(this).closest('tr').find('td:first-child').text().trim();
+        var form = $('<form></form>');
+        form.attr('method', 'post');
+        form.attr('action', '<?php echo base_url("main/index"); ?>');
 
-        // <h2> 태그의 내용을 선택된 그룹의 group_name으로 변경
-        $('h2.mb-1').text(groupName);
+        var groupIdField = $('<input></input>');
+        groupIdField.attr('type', 'hidden');
+        groupIdField.attr('name', 'group_id');
+        groupIdField.attr('value', groupId);
 
-        // 현재 선택된 주차 범위 가져오기
-        var currentWeekRange = $('.current-week').text();
-        var startDate = getWeekStartDate(currentWeekRange);
-        var endDate = getWeekEndDate(currentWeekRange);
+        var groupNameField = $('<input></input>');
+        groupNameField.attr('type', 'hidden');
+        groupNameField.attr('name', 'group_name');
+        groupNameField.attr('value', groupName);
 
-        // 선택된 그룹에 맞게 dropdown-toggle-att-type 갱신
-        updateAttendanceTypes(groupId);
-
-        // 멤버 목록 로드
-        loadMembers(groupId, startDate, endDate);
+        form.append(groupIdField);
+        form.append(groupNameField);
+        $(document.body).append(form);
+        form.submit();
     });
+
+
+
+
+    // 그룹 수정 저장 버튼 클릭 이벤트
+    $(document).on('click', '#updateGroup', function() {
+        var groupId = $('#edit_group_id').val();
+        var groupName = $('#edit_group_name').val();
+        var leaderName = $('#edit_leader_name').val();
+        var newName = $('#edit_new_name').val();
+
+        $.ajax({
+            url: '<?php echo base_url('mypage/update_group'); ?>',
+            type: 'POST',
+            data: {
+                group_id: groupId,
+                group_name: groupName,
+                leader_name: leaderName,
+                new_name: newName
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    $('tr[data-group-id="' + groupId + '"] td:nth-child(1)').text(groupName);
+                    $('#settingGroupModal').modal('hide');
+                } else {
+                    alert('그룹 수정에 실패했습니다.');
+                }
+            },
+            error: function() {
+                alert('서버 오류가 발생했습니다.');
+            }
+        });
+    });
+
+
+
+    $(document).on('click', '#saveGroup', function() {
+        var groupName = $('#group_name').val();
+
+        if (groupName.trim() === '') {
+            alert('그룹명을 입력해주세요.');
+            return;
+        }
+
+        $.ajax({
+            url: '<?php echo base_url('mypage/add_group'); ?>',
+            type: 'POST',
+            data: { group_name: groupName },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('그룹 추가에 실패했습니다.');
+                }
+            },
+            error: function() {
+                alert('서버 오류가 발생했습니다.');
+            }
+        });
+    });
+
+
+    $(document).on('click', '.btn-del-group', function(e) {
+        e.preventDefault();
+        var groupId = $(this).data('group-id');
+
+        if (confirm('정말로 그룹을 삭제하시겠습니까?')) {
+            $.ajax({
+                url: '<?php echo base_url('mypage/update_del_yn'); ?>',
+                type: 'POST',
+                data: { group_id: groupId },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $('tr[data-group-id="' + groupId + '"]').remove();
+                    } else {
+                        alert('그룹 삭제에 실패했습니다.');
+                    }
+                },
+                error: function() {
+                    alert('서버 오류가 발생했습니다.');
+                }
+            });
+        }
+    });
+
+    $(document).on('click', '.add-group', function() {
+        $.ajax({
+            url: '<?php echo base_url('mypage/add_group'); ?>',
+            type: 'POST',
+            data: { group_name: '새그룹' },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('그룹 추가에 실패했습니다.');
+                }
+            },
+            error: function() {
+                alert('서버 오류가 발생했습니다.');
+            }
+        });
+    });
+
 </script>

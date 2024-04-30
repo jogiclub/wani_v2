@@ -21,6 +21,7 @@ ul, dl{padding: 0; list-style: none}
 .offcanvas-header{flex-direction: column!important;}
 .offcanvas-header .btn-close{position: absolute; right: 20px; top: 20px}
 .width-100{width:100%}
+.btn-xs{font-size: 13px}
 
 
 /*마손리*/

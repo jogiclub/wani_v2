@@ -49,26 +49,6 @@ class Mypage extends CI_Controller
     }
 
 
-    public function update_group() {
-        if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
-            $group_name = $this->input->post('group_name');
-            $leader_name = $this->input->post('leader_name');
-            $new_name = $this->input->post('new_name');
-
-            $this->load->model('Group_model');
-            $result = $this->Group_model->update_group($group_id, $group_name, $leader_name, $new_name);
-
-            if ($result) {
-                $response = array('status' => 'success');
-            } else {
-                $response = array('status' => 'error');
-            }
-
-            echo json_encode($response);
-        }
-    }
-
     public function update_del_yn() {
         if ($this->input->is_ajax_request()) {
             $group_id = $this->input->post('group_id');
@@ -90,6 +70,32 @@ class Mypage extends CI_Controller
             echo json_encode($response);
         }
     }
+
+
+
+
+
+    public function update_group() {
+        if ($this->input->is_ajax_request()) {
+            $group_id = $this->input->post('group_id');
+            $group_name = $this->input->post('group_name');
+            $leader_name = $this->input->post('leader_name');
+            $new_name = $this->input->post('new_name');
+
+            $this->load->model('Group_model');
+            $result = $this->Group_model->update_group($group_id, $group_name, $leader_name, $new_name);
+
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
+
+
 
 
 

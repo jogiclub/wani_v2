@@ -14,10 +14,40 @@ class Main extends CI_Controller {
     public function index() {
         if ($this->session->userdata('email')) {
             $data['user'] = $this->session->userdata();
-
             $user_id = $this->session->userdata('email');
+
             $this->load->model('Group_model');
-            $data['groups'] = $this->Group_model->get_user_groups($user_id);
+            $postGroupId = $this->input->post('group_id');
+            $activeGroupId = $this->input->cookie('activeGroup');
+
+            if ($postGroupId) {
+                $postGroup = $this->Group_model->get_group_by_id($postGroupId);
+                $data['group_name'] = $postGroup['group_name'];
+                $data['postGroup'] = $postGroup; // postGroup 데이터를 뷰 파일에 전달
+                $this->input->set_cookie('activeGroup', $postGroupId, 86400); // 쿠키 설정 (만료 시간: 1일)
+                $currentGroupId = $postGroupId;
+            } else if ($activeGroupId) {
+                $activeGroup = $this->Group_model->get_group_by_id($activeGroupId);
+                $data['group_name'] = $activeGroup['group_name'];
+                $currentGroupId = $activeGroupId;
+            } else {
+                $min_group_id = $this->Group_model->get_min_group_id($user_id);
+                if ($min_group_id) {
+                    $activeGroup = $this->Group_model->get_group_by_id($min_group_id);
+                    $data['group_name'] = $activeGroup['group_name'];
+                    $currentGroupId = $min_group_id;
+                    $this->input->set_cookie('activeGroup', $min_group_id, 86400); // 쿠키 설정 (만료 시간: 1일)
+                } else {
+                    $data['group_name'] = ''; // 그룹이 없는 경우 기본값 설정
+                }
+            }
+
+            // 활성화된 그룹의 일반 세팅 정보 가져오기
+            if ($currentGroupId) {
+                $active_group = $this->Group_model->get_group_by_id($currentGroupId);
+                $data['leader_name'] = $active_group['leader_name'];
+                $data['new_name'] = $active_group['new_name'];
+            }
 
             // 현재 주차 범위 계산
             $currentDate = date('Y-m-d');
@@ -35,37 +65,11 @@ class Main extends CI_Controller {
 
             $data['all_week_ranges'] = array_reverse($allWeekRanges);
 
-            // 활성화된 그룹의 group_name 가져오기
-            $activeGroupId = $this->input->cookie('activeGroup');
-            if ($activeGroupId) {
-                $activeGroup = $this->Group_model->get_group_by_id($activeGroupId);
-                $data['group_name'] = $activeGroup['group_name'];
-            } else {
-                $user_id = $this->session->userdata('email');
-                $this->load->model('Group_model');
-                $min_group_id = $this->Group_model->get_min_group_id($user_id);
-
-                if ($min_group_id) {
-                    $activeGroup = $this->Group_model->get_group_by_id($min_group_id);
-                    $data['group_name'] = $activeGroup['group_name'];
-                    $this->input->set_cookie('activeGroup', $min_group_id, 86400); // 쿠키 설정 (만료 시간: 1일)
-                } else {
-                    $data['group_name'] = ''; // 그룹이 없는 경우 기본값 설정
-                }
-            }
-
-            // 활성화된 그룹의 출석 종류 가져오기
-            $active_group_id = $this->input->cookie('activeGroup');
-            if ($active_group_id) {
-                $active_group = $this->Group_model->get_group_by_id($active_group_id);
-                $data['group_name'] = $active_group['group_name'];
-                $data['leader_name'] = $active_group['leader_name'];
-                $data['new_name'] = $active_group['new_name'];
-            }
+            // 활성화된 그룹의 출석타입 정보 가져오기
 
             $this->load->model('Attendance_model');
-            $data['attendance_types'] = $this->Attendance_model->get_attendance_types_by_group($active_group_id);
-
+            $data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentGroupId);
+//            $data['default_attendance_type'] = $data['attendance_types'][0]['att_type_name'] ?? '';
             $this->load->view('main', $data);
         } else {
             redirect('login/index');
@@ -196,6 +200,8 @@ class Main extends CI_Controller {
             $group_id = $this->input->post('group_id');
             $this->load->model('Attendance_model');
             $attendance_types = $this->Attendance_model->get_attendance_types($group_id);
+//            print_r($attendance_types);
+//            exit;
             $response = array(
                 'attendance_types' => $attendance_types
             );
