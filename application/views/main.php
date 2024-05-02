@@ -72,11 +72,7 @@
                         <?php endforeach; ?>
                     </ul>
                     <button type="button" class="input-group-text next-week"><i class="bi bi-chevron-right"></i></button>
-
-
-
-                    <input type="text" class="form-control" placeholder="QR코드 또는 이름을 입력하세요!" aria-label="QR코드 또는 이름을 입력하세요!" aria-describedby="basic-addon2" id="input-search" value="검색중..." disabled>
-                    <button class="btn btn-primary" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
+                    <input type="text" class="form-control" placeholder="검색중..." aria-label="검색중..." aria-describedby="basic-addon2" id="input-search" value="검색중..." disabled>
                     <div class="att-dropdown-wrap">
                         <button class="input-group-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
                         <ul class="dropdown-menu dropdown-att-type">
@@ -94,6 +90,8 @@
                             <?php endforeach; ?>
                         </ul>
                     </div>
+                    <button class="btn btn-primary" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
+
 
                 </div>
             </div>
@@ -354,6 +352,7 @@
     var postGroupId = '<?php echo isset($postGroup['group_id']) ? $postGroup['group_id'] : ''; ?>';
     var postGroupName = '<?php echo isset($postGroup['group_name']) ? $postGroup['group_name'] : ''; ?>';
     $('.group-name').text(postGroupName);
+    // $('.group-name').prepend('<img src="/assets/images/logo.png" style="height: 34px; margin-right: 10px">');
     var activeGroupId = getCookie('activeGroup');
 
     if (postGroupId) {

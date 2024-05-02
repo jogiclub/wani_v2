@@ -35,7 +35,7 @@
     <div class="container-xl">
 
 
-        <button class="btn btn-primary btn-sm add-group">그룹추가</button>
+
 
 
 
@@ -61,7 +61,7 @@
             <tbody class="table-group-divider">
 
             <?php if (empty($groups)): ?>
-                <td>개설된 그룹이 없습니다.</td>
+                <td colspan="20" style="padding: 20px 0">개설된 그룹이 없습니다.<br/>오른쪽 하단의 그룹 추가 버튼을 선택하여 첫번째 그룹을 만들어보세요!</td>
             <?php else: ?>
                 <?php foreach ($groups as $group): ?>
                     <tr data-group-id="<?php echo $group['group_id']; ?>">
@@ -95,7 +95,9 @@
 
     </div>
 </main>
-
+<footer>
+    <button class="btn btn-primary btn-sm add-group"><i class="bi bi-folder-plus"></i></button>
+</footer>
 
 
 
