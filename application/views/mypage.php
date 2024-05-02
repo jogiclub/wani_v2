@@ -21,9 +21,9 @@
     <meta name="twitter:card" content="심플체크" />
 
     <title>심플체크</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/themes/base/jquery-ui.min.css" integrity="sha512-8PjjnSP8Bw/WNPxF6wkklW6qlQJdWJc/3w/ZQPvZ/1bjVDkrrSqLe9mfPYrMxtnzsXFPc434+u4FHLnLjXTSsg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="/assets/css/common.css?<?php echo date('Ymdhis');?>">
 
 </head>
@@ -66,7 +66,7 @@
                 <?php foreach ($groups as $group): ?>
                     <tr data-group-id="<?php echo $group['group_id']; ?>">
                         <td>
-                            <span class="open-group-main"><?php echo $group['group_name']; ?></span>
+                            <a class="btn btn-light btn-sm open-group-main d-block"><?php echo $group['group_name']; ?></a>
                         </td>
                         <td>
                             <a class="btn btn-secondary btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a>
@@ -157,162 +157,15 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
-
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js" integrity="sha512-ykZ1QQr0Jy/4ZkvKuqWn4iF3lqPZyij9iRv6sGqLRdTPkY69YX6+7wvVGmsdBbiIfN/8OdsI7HABjvEok6ZopQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/jquery-ui.min.js" integrity="sha512-Ww1y9OuQ2kehgVWSD/3nhgfrb424O3802QYP/A5gPXoM4+rRjiKrjHdGxQKrMGQykmsJ/86oGdHszfcVgUr4hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" integrity="sha512-JRlcvSZAXT8+5SQQAvklXGJuxXTouyq8oIMaYERZQasB8SBDHZaUbeASsJWpk0UUrf89DP3/aefPPrlMR1h1yQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>-->
+<script src="/assets/js/common.js?<?php echo date('Ymdhis');?>"></script>
+<script src="/assets/js/mypage.js?<?php echo date('Ymdhis');?>"></script>
 
 <script>
 
-
-
-    // 그룹 수정 버튼 클릭 이벤트
-    $(document).on('click', '.btn-setting', function() {
-        var groupId = $(this).data('group-id');
-        var groupName = $(this).data('group-name');
-        var leaderName = $(this).data('leader-name');
-        var newName = $(this).data('new-name');
-
-        $('#edit_group_id').val(groupId);
-        $('#edit_group_name').val(groupName);
-        $('#edit_leader_name').val(leaderName);
-        $('#edit_new_name').val(newName);
-
-        $('#settingGroupModal').modal('show');
-    });
-
-
-
-
-    // 그룹명 클릭 이벤트
-    $(document).on('click', '.open-group-main', function() {
-        var groupId = $(this).closest('tr').data('group-id');
-        var groupName = $(this).closest('tr').find('td:first-child').text().trim();
-        var form = $('<form></form>');
-        form.attr('method', 'post');
-        form.attr('action', '<?php echo base_url("main/index"); ?>');
-
-        var groupIdField = $('<input></input>');
-        groupIdField.attr('type', 'hidden');
-        groupIdField.attr('name', 'group_id');
-        groupIdField.attr('value', groupId);
-
-        var groupNameField = $('<input></input>');
-        groupNameField.attr('type', 'hidden');
-        groupNameField.attr('name', 'group_name');
-        groupNameField.attr('value', groupName);
-
-        form.append(groupIdField);
-        form.append(groupNameField);
-        $(document.body).append(form);
-        form.submit();
-    });
-
-
-
-
-    // 그룹 수정 저장 버튼 클릭 이벤트
-    $(document).on('click', '#updateGroup', function() {
-        var groupId = $('#edit_group_id').val();
-        var groupName = $('#edit_group_name').val();
-        var leaderName = $('#edit_leader_name').val();
-        var newName = $('#edit_new_name').val();
-
-        $.ajax({
-            url: '<?php echo base_url('mypage/update_group'); ?>',
-            type: 'POST',
-            data: {
-                group_id: groupId,
-                group_name: groupName,
-                leader_name: leaderName,
-                new_name: newName
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    $('tr[data-group-id="' + groupId + '"] td:nth-child(1)').text(groupName);
-                    $('#settingGroupModal').modal('hide');
-                } else {
-                    alert('그룹 수정에 실패했습니다.');
-                }
-            },
-            error: function() {
-                alert('서버 오류가 발생했습니다.');
-            }
-        });
-    });
-
-
-
-    $(document).on('click', '#saveGroup', function() {
-        var groupName = $('#group_name').val();
-
-        if (groupName.trim() === '') {
-            alert('그룹명을 입력해주세요.');
-            return;
-        }
-
-        $.ajax({
-            url: '<?php echo base_url('mypage/add_group'); ?>',
-            type: 'POST',
-            data: { group_name: groupName },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    location.reload();
-                } else {
-                    alert('그룹 추가에 실패했습니다.');
-                }
-            },
-            error: function() {
-                alert('서버 오류가 발생했습니다.');
-            }
-        });
-    });
-
-
-    $(document).on('click', '.btn-del-group', function(e) {
-        e.preventDefault();
-        var groupId = $(this).data('group-id');
-
-        if (confirm('정말로 그룹을 삭제하시겠습니까?')) {
-            $.ajax({
-                url: '<?php echo base_url('mypage/update_del_yn'); ?>',
-                type: 'POST',
-                data: { group_id: groupId },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        $('tr[data-group-id="' + groupId + '"]').remove();
-                    } else {
-                        alert('그룹 삭제에 실패했습니다.');
-                    }
-                },
-                error: function() {
-                    alert('서버 오류가 발생했습니다.');
-                }
-            });
-        }
-    });
-
-    $(document).on('click', '.add-group', function() {
-        $.ajax({
-            url: '<?php echo base_url('mypage/add_group'); ?>',
-            type: 'POST',
-            data: { group_name: '새그룹' },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    location.reload();
-                } else {
-                    alert('그룹 추가에 실패했습니다.');
-                }
-            },
-            error: function() {
-                alert('서버 오류가 발생했습니다.');
-            }
-        });
-    });
 
 </script>

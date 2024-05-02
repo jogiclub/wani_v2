@@ -13,7 +13,7 @@ class Member_model extends CI_Model {
     }
 
     public function get_group_members($group_id, $start_date = null, $end_date = null) {
-        $this->db->select('m.member_idx, m.member_name, m.photo, m.leader_yn, m.new_yn');
+        $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn');
         $this->db->from('wb_member m');
         $this->db->where('m.group_id', $group_id);
         $this->db->where('m.del_yn', 'N');
@@ -33,6 +33,24 @@ class Member_model extends CI_Model {
 
         return $query->result_array();
     }
+
+    public function get_member_by_idx($member_idx) {
+        $this->db->select('*');
+        $this->db->from('wb_member');
+        $this->db->where('member_idx', $member_idx);
+
+        $query = $this->db->get();
+
+        return $query->row_array();
+    }
+
+    public function update_member($member_idx, $data) {
+        $this->db->where('member_idx', $member_idx);
+        $this->db->update('wb_member', $data);
+
+        return $this->db->affected_rows() > 0;
+    }
+
 }
 
 

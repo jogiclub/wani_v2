@@ -141,6 +141,140 @@ class Main extends CI_Controller {
         }
     }
 
+    public function get_member_info() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('member_idx');
+
+            $this->load->model('Member_model');
+            $member_info = $this->Member_model->get_member_by_idx($member_idx);
+
+            echo json_encode($member_info);
+        }
+    }
+
+    public function save_member_info() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('member_idx');
+            $grade = $this->input->post('grade');
+            $area = $this->input->post('area');
+            $member_name = $this->input->post('member_name');
+            $member_nick = $this->input->post('member_nick');
+            $member_phone = $this->input->post('member_phone');
+            $member_birth = $this->input->post('member_birth');
+            $school = $this->input->post('school');
+            $address = $this->input->post('address');
+            $member_etc = $this->input->post('member_etc');
+            $leader_yn = $this->input->post('leader_yn') ? 'Y' : 'N';
+            $new_yn = $this->input->post('new_yn') ? 'Y' : 'N';
+
+            $data = array(
+                'grade' => $grade,
+                'area' => $area,
+                'member_name' => $member_name,
+                'member_nick' => $member_nick,
+                'member_phone' => $member_phone,
+                'member_birth' => $member_birth,
+                'school' => $school,
+                'address' => $address,
+                'member_etc' => $member_etc,
+                'leader_yn' => $leader_yn,
+                'new_yn' => $new_yn
+            );
+
+            // 사진 업로드 처리
+            if (!empty($_FILES['photo']['name'])) {
+                $group_id = $this->input->post('group_id');
+                $upload_path = './uploads/member_photos/' . $group_id . '/';
+                $config['upload_path'] = $upload_path;
+                $config['allowed_types'] = 'gif|jpg|png';
+                $config['max_size'] = 5120; // 최대 업로드 크기를 5MB로 변경
+                $config['file_name'] = 'member_' . $member_idx;
+                $config['overwrite'] = true; // 같은 이름의 이미지 덮어쓰기 옵션 추가
+
+                // 업로드 경로 확인 및 없으면 생성
+                if (!is_dir($config['upload_path'])) {
+                    mkdir($config['upload_path'], 0777, true);
+                }
+
+                $this->load->library('upload', $config);
+
+                if ($this->upload->do_upload('photo')) {
+                    $upload_data = $this->upload->data();
+
+                    // 이미지 크기 조정
+                    $this->load->library('image_lib');
+                    $image_config['image_library'] = 'gd2';
+                    $image_config['source_image'] = $upload_data['full_path'];
+                    $image_config['maintain_ratio'] = TRUE;
+                    $image_config['width'] = 200;
+
+                    $this->image_lib->clear();
+                    $this->image_lib->initialize($image_config);
+
+                    if (!$this->image_lib->resize()) {
+                        // 이미지 리사이즈 실패 시 오류 메시지 전달
+                        $response = array('status' => 'error', 'message' => $this->image_lib->display_errors());
+                        echo json_encode($response);
+                        return;
+                    }
+
+                    $data['photo'] = $upload_data['file_name'];
+
+                    // photo_url을 response에 포함
+                    $photo_url = base_url('uploads/member_photos/' . $group_id . '/' . $upload_data['file_name']);
+                    $response = array('status' => 'success', 'photo_url' => $photo_url);
+
+                } else {
+                    $upload_error = $this->upload->display_errors();
+                    log_message('error', 'Image upload failed: ' . $upload_error);
+                    $response = array('status' => 'error', 'message' => $upload_error);
+                    echo json_encode($response);
+                    return;
+                }
+            }
+
+            $this->load->model('Member_model');
+            $result = $this->Member_model->update_member($member_idx, $data);
+
+            if ($result) {
+                if (!isset($response)) {
+                    $response = array('status' => 'success');
+                }
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
+    public function save_memo() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('member_idx');
+            $memo_type = $this->input->post('memo_type');
+            $memo_content = $this->input->post('memo_content');
+
+            $data = array(
+                'memo_type' => $memo_type,
+                'memo_content' => $memo_content,
+                'regi_date' => date('Y-m-d H:i:s'),
+                'user_id' => $this->session->userdata('email'),
+                'member_idx' => $member_idx
+            );
+
+            $this->load->model('Memo_model');
+            $result = $this->Memo_model->save_memo($data);
+
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
+
+
     public function get_attendance_data() {
         if ($this->input->is_ajax_request()) {
             $group_id = $this->input->post('group_id');
