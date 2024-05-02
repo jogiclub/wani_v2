@@ -43,6 +43,7 @@
             <div class="col-12 text-center position-relative">
                 <h2 class="mb-1 group-name"></h2>
                 <button class="btn-gnb" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><i class="bi bi-list"></i></button>
+                <button class="btn-home" type="button" onclick="go_url('/mypage')"><i class="bi bi-arrow-left-short"></i></button>
             </div>
 
 
@@ -72,23 +73,27 @@
                     </ul>
                     <button type="button" class="input-group-text next-week"><i class="bi bi-chevron-right"></i></button>
 
-                    <button class="input-group-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
-                    <ul class="dropdown-menu dropdown-att-type">
-                        <?php $prev_category_idx = null; ?>
-                        <?php foreach ($attendance_types as $type): ?>
-                            <?php if ($prev_category_idx !== null && $prev_category_idx !== $type['att_type_category_idx']): ?>
-                                <li><hr class="dropdown-divider"></li>
-                            <?php endif; ?>
-                            <li>
-                                <a class="dropdown-item" href="#" data-att-type-idx="<?php echo $type['att_type_idx']; ?>" data-att-type-nickname="<?php echo $type['att_type_nickname']; ?>" data-att-type-category-idx="<?php echo $type['att_type_category_idx']; ?>">
-                                    <?php echo $type['att_type_name']; ?>
-                                </a>
-                            </li>
-                            <?php $prev_category_idx = $type['att_type_category_idx']; ?>
-                        <?php endforeach; ?>
-                    </ul>
+
+
                     <input type="text" class="form-control" placeholder="QR코드 또는 이름을 입력하세요!" aria-label="QR코드 또는 이름을 입력하세요!" aria-describedby="basic-addon2" id="input-search" value="검색중..." disabled>
                     <button class="btn btn-primary" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
+                    <div class="att-dropdown-wrap">
+                        <button class="input-group-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
+                        <ul class="dropdown-menu dropdown-att-type">
+                            <?php $prev_category_idx = null; ?>
+                            <?php foreach ($attendance_types as $type): ?>
+                                <?php if ($prev_category_idx !== null && $prev_category_idx !== $type['att_type_category_idx']): ?>
+                                    <li><hr class="dropdown-divider"></li>
+                                <?php endif; ?>
+                                <li>
+                                    <a class="dropdown-item" href="#" data-att-type-idx="<?php echo $type['att_type_idx']; ?>" data-att-type-nickname="<?php echo $type['att_type_nickname']; ?>" data-att-type-category-idx="<?php echo $type['att_type_category_idx']; ?>">
+                                        <?php echo $type['att_type_name']; ?>
+                                    </a>
+                                </li>
+                                <?php $prev_category_idx = $type['att_type_category_idx']; ?>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
 
                 </div>
             </div>
@@ -335,6 +340,7 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.8/umd/popper.min.js" integrity="sha512-TPh2Oxlg1zp+kz3nFA0C5vVC6leG/6mm1z9+mA81MI5eaUVqasPLO8Cuk4gMF4gUfP5etR73rgU/8PNMsSesoQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js" integrity="sha512-ykZ1QQr0Jy/4ZkvKuqWn4iF3lqPZyij9iRv6sGqLRdTPkY69YX6+7wvVGmsdBbiIfN/8OdsI7HABjvEok6ZopQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/jquery-ui.min.js" integrity="sha512-Ww1y9OuQ2kehgVWSD/3nhgfrb424O3802QYP/A5gPXoM4+rRjiKrjHdGxQKrMGQykmsJ/86oGdHszfcVgUr4hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

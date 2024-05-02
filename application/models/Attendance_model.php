@@ -70,6 +70,8 @@ class Attendance_model extends CI_Model {
 
 
 
+
+
     public function get_group_attendance_data($group_id, $start_date, $end_date) {
         $this->db->select("a.member_idx, GROUP_CONCAT(CONCAT(at.att_type_nickname, '|', at.att_type_idx, '|', at.att_type_category_idx) ORDER BY at.att_type_category_idx, at.att_type_idx SEPARATOR ',') AS att_type_nicknames");
         $this->db->from('wb_member_att a');

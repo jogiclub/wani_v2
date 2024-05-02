@@ -65,10 +65,14 @@ ul, dl{padding: 0; list-style: none}
 
 
 /*헤더*/
-.header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px;}
+.header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: inline-block}
+
+.att-dropdown-wrap{position: absolute; right: 80px; z-index: 1; top: 3px;}
+.att-dropdown-wrap button{border: 0;background: none; font-size: 16px}
 
 /*일반*/
-.btn-gnb{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; right: 10px; top: -3px;}
+.btn-gnb{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; right: 10px; top: 0;}
+.btn-home{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; left: 10px; top: 0;}
 
 .group-list-wrap{display: inline-block;width: 100%;text-align: right;position: absolute;bottom: 0;padding: 15px;border-top: 1px solid #ccc;background: #efefef;}
 .group-list-wrap .group-list{}
@@ -91,7 +95,7 @@ ul, dl{padding: 0; list-style: none}
 .total-att-list dt:nth-child(3){background:#8bc34a}
 
 .mode-list label{border: 0; border-radius: 0; background: #fff!important; color:#999; padding: 10px}
-.mode-list .btn-check:checked+.btn{border-bottom: 2px solid #212529; color:#212529!important;}
+.mode-list .btn-check:checked+.btn{border-bottom: 2px solid #03a9f4; color:#03a9f4!important;}
 
 /*푸터*/
 footer{position:relative; height:200px}
