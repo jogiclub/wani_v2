@@ -94,21 +94,31 @@ $('#saveMember').click(function() {
 });
 
 
+// 모드 버튼 클릭 이벤트 처리
+$('.mode-list .btn-check').on('click', function() {
+    var selectedMode = $(this).attr('id');
+    setCookie('selectedMode', selectedMode, 7); // 쿠키에 선택한 모드 저장 (유효기간 7일)
+});
 
 // mode-1 버튼 클릭 이벤트 처리
 $('#mode-1').on('click', function() {
+    $('.member-card').removeClass('on');
     $('#input-search').prop('disabled', false).val('').attr('placeholder', '이름검색 또는 QR체크!').focus();
 });
 // mode-2 버튼 클릭 이벤트 처리
 $('#mode-2').on('click', function() {
+    $('.member-card').addClass('on');
     $('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
     resetMemberList();
 });
 $('#mode-3').on('click', function() {
+
+    $('.member-card').addClass('on');
     $('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
     resetMemberList();
 });
 $('#mode-4').on('click', function() {
+    $('.member-card').addClass('on');
     $('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
     resetMemberList();
 });
@@ -913,6 +923,10 @@ function addAttStamp() {
 
             // 서버에 출석 정보 저장
             saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx);
+
+            // 토스트 띄우기
+            showToast(memberIdx);
+
         } else {
             alert('해당하는 정보가 없습니다.');
         }
@@ -921,7 +935,19 @@ function addAttStamp() {
 }
 
 
-
+function showToast(memberIdx) {
+    $.ajax({
+        url: '/main/get_member_info',
+        method: 'POST',
+        data: { member_idx: memberIdx },
+        dataType: 'json',
+        success: function(response) {
+            var memberNick = response.member_nick;
+            $('.toast-body').text(memberNick);
+            $('#liveToast').toast('show');
+        }
+    });
+}
 
 
 
@@ -1042,6 +1068,15 @@ $(document).ready(function() {
     $('#input-search').focus();
 
 
+    // 페이지 로드 시 쿠키에 저장된 모드 확인
+    var selectedMode = getCookie('selectedMode');
+    if (selectedMode) {
+        // 쿠키에 저장된 모드가 있을 경우 해당 모드 활성화
+        $('#' + selectedMode).prop('checked', true);
+    } else {
+        // 쿠키에 저장된 모드가 없을 경우 mode-1 활성화
+        $('#mode-1').prop('checked', true);
+    }
 
 
 
