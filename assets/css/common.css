@@ -34,6 +34,7 @@ ul, dl{padding: 0; list-style: none}
 
 .grid-item .member-card.off{opacity: 0.5; box-shadow: none;}
 .grid-item .member-card.on{opacity: 1; box-shadow: 0 0 3px 0 #ddd!important;}
+.grid-item .member-card.birth{background:url('/assets/images/bg_birth.jpg?3') center center/cover;}
 .grid-item--width2 { width: 40%; }
 .grid-item--width100{width: 100% !important; height: 0; padding: 0}
 .no-member{width: 100%; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 20px 0; text-align: center}

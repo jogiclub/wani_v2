@@ -570,7 +570,7 @@ function displayMembers(members) {
                 var formattedBirthDate = currentYear + '.' + birthMonth + '.' + birthDate;
 
                 if (formattedBirthDate >= startDate && formattedBirthDate <= endDate) {
-                    memberCard.find('.member-card').css('background','url("/assets/images/bg_birth.jpg?2") center center/cover');
+                    memberCard.find('.member-card').addClass('birth');
                 }
             }
 
@@ -827,10 +827,10 @@ function updateBirthIcons(startDate, endDate) {
 
             if (formattedBirthDate >= startDate && formattedBirthDate <= endDate) {
                 if (!memberCard.find('.birth').length) {
-                    memberCard.css('background','url("/assets/images/bg_birth.jpg?2") center center/cover');
+                    memberCard.addClass('birth');
                 }
             } else {
-                memberCard.css('background','none');
+                memberCard.removeClass('birth');
             }
         }
 
@@ -905,6 +905,7 @@ function addAttStamp() {
         if (memberCard.length > 0) {
             var existingAttStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]');
             if (existingAttStamp.length > 0) {
+                playNoSound();
                 alert('이미 출석체크를 하였습니다.');
                 $('#input-search').val('').focus();
                 return;
@@ -927,11 +928,38 @@ function addAttStamp() {
             // 토스트 띄우기
             showToast(memberIdx);
 
+            // 생일 여부 확인 후 사운드 재생
+            var isBirthday = memberCard.hasClass('birth');
+            if (isBirthday) {
+                playBirthSound();
+            } else {
+                playOkSound();
+            }
+
         } else {
+            playNoSound()
             alert('해당하는 정보가 없습니다.');
+
         }
     }
     $('#input-search').val('').focus();
+}
+
+
+
+function playOkSound() {
+    var audio = document.getElementById('sound-ok');
+    audio.play();
+}
+
+function playNoSound() {
+    var audio = document.getElementById('sound-no');
+    audio.play();
+}
+
+function playBirthSound() {
+    var audio = document.getElementById('sound-birth');
+    audio.play();
 }
 
 
