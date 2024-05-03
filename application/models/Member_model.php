@@ -13,7 +13,7 @@ class Member_model extends CI_Model {
     }
 
     public function get_group_members($group_id, $start_date = null, $end_date = null) {
-        $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn');
+        $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth');
         $this->db->from('wb_member m');
         $this->db->where('m.group_id', $group_id);
         $this->db->where('m.del_yn', 'N');

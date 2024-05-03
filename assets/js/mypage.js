@@ -411,3 +411,40 @@ $(document).on('click', '#addAttendanceTypeCategory', function() {
         }
     });
 });
+
+
+
+
+// 사용자 목록 버튼 클릭 이벤트
+$(document).on('click', '.btn-user-setting', function() {
+    var groupId = $(this).data('group-id');
+
+    // 사용자 목록 가져오기
+    $.ajax({
+        url: '/mypage/get_group_users',
+        type: 'POST',
+        data: { group_id: groupId },
+        dataType: 'json',
+        success: function(response) {
+            var tableBody = $('#userListTableBody');
+            tableBody.empty();
+
+            $.each(response, function(index, user) {
+                var row = '<tr>';
+                row += '<td>' + user.user_id + '</td>';
+                row += '<td>' + user.user_name + '</td>';
+                row += '<td>' + user.user_grade + '</td>';
+                row += '<td>' + user.user_mail + '</td>';
+                row += '<td>' + user.user_hp + '</td>';
+                row += '</tr>';
+
+                tableBody.append(row);
+            });
+
+            $('#userListModal').modal('show');
+        },
+        error: function() {
+            alert('사용자 목록을 가져오는데 실패했습니다.');
+        }
+    });
+});

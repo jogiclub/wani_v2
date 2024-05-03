@@ -26,7 +26,7 @@ class Group_model extends CI_Model {
 
 
     public function get_user_groups($user_id) {
-        $this->db->select('wb_group.group_id as group_id, wb_group.group_name, wb_group.leader_name, wb_group.new_name, COUNT(wb_member.member_idx) as member_count');
+        $this->db->select('wb_group.group_id, wb_group.group_name, wb_group.leader_name, wb_group.new_name, COUNT(wb_member.member_idx) as member_count');
         $this->db->from('wb_group');
         $this->db->join('wb_group_user', 'wb_group.group_id = wb_group_user.group_id');
         $this->db->join('wb_member', 'wb_group.group_id = wb_member.group_id AND wb_member.del_yn = "N"', 'left');

@@ -25,6 +25,7 @@ ul, dl{padding: 0; list-style: none}
 .grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;}
 .grid-item .member-card.leader .badge i{color:#0d9af0;}
 .grid-item .member-card.new .badge i{color: #ff8000;}
+.grid-item .member-card .birth i{color: #CB3227}
 .grid-item .member-card .bedge-leader{}
 .grid-item .member-card .member-wrap{display: flex; align-items: center; width: 100%}
 .grid-item .member-card .member-wrap .member-name{width: 40%;line-height: 20px;}

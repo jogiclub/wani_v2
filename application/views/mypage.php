@@ -73,12 +73,14 @@
                         </td>
                         <td><?php echo $group['member_count']; ?>명</td>
                         <td><a href="" class="btn btn-light btn-sm">QR인쇄</a></td>
-                        <td>10명</td>
-
-
-                        
+                        <td><a class="btn btn-secondary btn-sm btn-user-setting" data-group-id="<?php echo $group['group_id']; ?>"><?php echo $group['user_count']; ?>명</a></td>
                         <td><a href="" class="btn btn-light btn-sm">사용자설정</a></td>
-                        <td><a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">출석타입설정</a></td>
+                        <td>
+                            <a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">
+                                <?php echo $group['att_count']; ?> 개
+                            </a>
+                        </td>
+
                         <td><a href="" class="btn btn-light btn-sm">그룹복사</a></td>
                         <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
                     </tr>
@@ -218,6 +220,34 @@
         </div>
     </div>
 </div>
+<!-- 사용자 목록 모달 -->
+<div class="modal fade" id="userListModal" tabindex="-1" aria-labelledby="userListModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userListModalLabel">사용자 목록</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>아이디</th>
+                        <th>이름</th>
+                        <th>권한</th>
+                        <th>이메일</th>
+                        <th>휴대폰번호</th>
+                    </tr>
+                    </thead>
+                    <tbody id="userListTableBody">
+                    <!-- 사용자 목록이 여기에 동적으로 추가됩니다. -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js" integrity="sha512-ykZ1QQr0Jy/4ZkvKuqWn4iF3lqPZyij9iRv6sGqLRdTPkY69YX6+7wvVGmsdBbiIfN/8OdsI7HABjvEok6ZopQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

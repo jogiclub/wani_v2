@@ -23,4 +23,21 @@ class User_model extends CI_Model {
         return $query->result_array();
     }
 
+    public function get_group_user_count($group_id) {
+        $this->db->where('group_id', $group_id);
+        $this->db->from('wb_group_user');
+        return $this->db->count_all_results();
+    }
+
+
+    public function get_group_users($group_id) {
+        $this->db->select('wb_user.user_id, wb_user.user_name, wb_user.user_grade, wb_user.user_mail, wb_user.user_hp');
+        $this->db->from('wb_user');
+        $this->db->join('wb_group_user', 'wb_user.user_id = wb_group_user.user_id');
+        $this->db->where('wb_group_user.group_id', $group_id);
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+
+
 }

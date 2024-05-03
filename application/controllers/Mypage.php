@@ -17,13 +17,23 @@ class Mypage extends CI_Controller
 
             $user_id = $this->session->userdata('email');
             $this->load->model('Group_model');
-            $data['groups'] = $this->Group_model->get_user_groups($user_id);
+            $groups = $this->Group_model->get_user_groups($user_id);
+
+            // 각 그룹별 att_type_idx 개수 가져오기
+            $this->load->model('Attendance_model');
+            foreach ($groups as &$group) {
+                $group['att_count'] = $this->Attendance_model->get_attendance_type_count($group['group_id']);
+                $group['user_count'] = $this->User_model->get_group_user_count($group['group_id']);
+            }
+
+            $data['groups'] = $groups;
 
             $this->load->view('mypage', $data);
         } else {
             redirect('main/login');
         }
     }
+
 
 
 
@@ -260,6 +270,22 @@ class Mypage extends CI_Controller
             echo json_encode($response);
         }
     }
+    public function get_attendance_type_count($group_id) {
+        $this->load->model('Attendance_model');
+        $count = $this->Attendance_model->get_attendance_type_count($group_id);
+        return $count;
+    }
 
+
+    public function get_group_users() {
+        if ($this->input->is_ajax_request()) {
+            $group_id = $this->input->post('group_id');
+
+            $this->load->model('User_model');
+            $users = $this->User_model->get_group_users($group_id);
+
+            echo json_encode($users);
+        }
+    }
 
 }
