@@ -78,7 +78,7 @@
 
                         
                         <td><a href="" class="btn btn-light btn-sm">사용자설정</a></td>
-                        <td><a href="" class="btn btn-light btn-sm">출석타입설정</a></td>
+                        <td><a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">출석타입설정</a></td>
                         <td><a href="" class="btn btn-light btn-sm">그룹복사</a></td>
                         <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
                     </tr>
@@ -134,8 +134,68 @@
     </div>
 </div>
 
+<!--출석 타입 설정 기능-->
+<div class="modal fade" id="attendanceTypeModal" tabindex="-1" aria-labelledby="attendanceTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceTypeModalLabel">출석 타입 설정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
 
 
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="inputAttendanceTypeCategory" placeholder="새 카테고리 이름">
+                    <button type="button" class="btn btn-primary" id="addAttendanceTypeCategory">새 카테고리 추가</button>
+                </div>
+
+                <div class="input-group mb-3 add-category-wrap">
+                    <select class="form-select selectAttendanceTypeCategory" aria-label="selectAttendanceTypeCategory" id="selectAttendanceTypeCategory">
+                        <?php foreach ($attendance_type_categories as $category): ?>
+                            <option value="<?php echo $category['att_type_category_idx']; ?>"><?php echo $category['att_type_category_name']; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button type="button" class="btn btn-primary" id="addAttendanceType">출석타입 추가</button>
+                </div>
+
+
+                <div class="table-responsive-xl">
+                    <table class="table align-middle">
+                        <colgroup>
+                            <col style="width: 120px">
+                            <col>
+                            <col style="width: 50px">
+                            <col style="width: 50px">
+                            <col style="width: 55px">
+                            <col style="width: 55px">
+                        </colgroup>
+                    <thead>
+                    <tr>
+                        <th>카테고리명</th>
+                        <th>출석타입명</th>
+                        <th>출력</th>
+                        <th>색상</th>
+                        <th>수정</th>
+                        <th>삭제</th>
+                    </tr>
+                    </thead>
+
+
+                    <tbody class="table-group-divider" id="attendanceTypeTableBody">
+                    <!-- 출석 타입 목록이 동적으로 생성됩니다 -->
+                    </tbody>
+                    </table>
+                </div>
+
+
+
+
+                <input type="hidden" id="attendanceTypeGroupId" name="group_id" value="">
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- 그룹 추가 모달 -->
 <div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">

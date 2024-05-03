@@ -60,6 +60,11 @@ $route['mypage/add_group'] = 'mypage/add_group';
 $route['mypage/get_groups'] = 'mypage/get_groups';
 $route['mypage/delete_group'] = 'mypage/delete_group';
 $route['mypage/update_del_yn'] = 'mypage/update_del_yn';
+$route['mypage/add_attendance_type'] = 'mypage/add_attendance_type';
+$route['mypage/add_attendance_type_category'] = 'mypage/add_attendance_type_category';
+
+
+
 
 $route['main/profile'] = 'main/profile';
 $route['main/logout'] = 'main/logout';

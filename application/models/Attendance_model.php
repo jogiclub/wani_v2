@@ -42,6 +42,38 @@ class Attendance_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
+    public function update_attendance_type($att_type_idx, $att_type_name, $att_type_nickname, $att_type_color)
+    {
+        $data = array(
+            'att_type_name' => $att_type_name,
+            'att_type_nickname' => $att_type_nickname,
+            'att_type_color' => $att_type_color
+        );
+        $this->db->where('att_type_idx', $att_type_idx);
+        $this->db->update('wb_att_type', $data);
+        return $this->db->affected_rows() > 0;
+    }
+
+    public function get_max_category_idx($group_id) {
+        $this->db->select_max('att_type_category_idx');
+        $this->db->where('group_id', $group_id);
+        $query = $this->db->get('wb_att_type');
+        $result = $query->row_array();
+        return $result['att_type_category_idx'] ?? 0;
+    }
+
+    public function save_attendance_type($group_id, $att_type_category_name, $att_type_name, $att_type_nickname, $att_type_color, $att_type_category_idx) {
+        $data = array(
+            'group_id' => $group_id,
+            'att_type_category_name' => $att_type_category_name,
+            'att_type_name' => $att_type_name,
+            'att_type_nickname' => $att_type_nickname,
+            'att_type_color' => $att_type_color,
+            'att_type_category_idx' => $att_type_category_idx
+        );
+        $this->db->insert('wb_att_type', $data);
+        return $this->db->affected_rows() > 0;
+    }
 
     public function get_member_attendance($member_idx, $start_date, $end_date) {
         $this->db->select('att_type_idx, att_date');
@@ -70,6 +102,10 @@ class Attendance_model extends CI_Model {
         $this->db->where('att_date', $att_date);
         $this->db->delete('wb_member_att');
     }
+
+
+
+
 
 
 
@@ -123,5 +159,36 @@ class Attendance_model extends CI_Model {
         $this->db->where('att_date <=', $end_date);
         $this->db->delete('wb_member_att');
     }
+
+    public function get_attendance_type_categories($group_id) {
+        $this->db->select('att_type_category_idx, att_type_category_name');
+        $this->db->from('wb_att_type');
+        $this->db->where('group_id', $group_id);
+        $this->db->group_by('att_type_category_idx');
+        $query = $this->db->get();
+//        print_r($this->db->last_query());
+//        exit;
+        return $query->result_array();
+    }
+
+    public function add_attendance_type($data) {
+        $this->db->insert('wb_att_type', $data);
+        return $this->db->affected_rows() > 0;
+    }
+
+
+    public function add_attendance_type_category($data) {
+        $this->db->insert('wb_att_type', $data);
+        return $this->db->affected_rows() > 0;
+    }
+
+
+    public function delete_attendance_type($att_type_idx) {
+        $this->db->where('att_type_idx', $att_type_idx);
+        $this->db->delete('wb_att_type');
+        return $this->db->affected_rows() > 0;
+    }
+
+
 
 }

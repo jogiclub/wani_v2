@@ -1,2 +1,16 @@
 본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있습니다.
 회원들을 관리하고 출석을 기록하는 프로그램입니다.
+
+
+
+addAttendanceType 버튼을 클릭하면 selectAttendanceTypeCategory의 값을 포함하여 att_type_idx와 att_type_name을 자동으로 insert되도록 소스를 수정해줘!
+이때 att_type_name은 '새출석타입'으로 해줘!
+예를 들어 selectAttendanceTypeCategory에서 선택한 값이 '1', '주일예배' 라면
+att_type_name = 새출석타입
+att_type_category_name = 주일예배
+att_type_category_idx = 1
+이렇게 값이 insert 되어야 해!
+
+addAttendanceTypeCategory을 클릭하면 inputAttendanceTypeCategory 에 입력된 이름으로 새롭게 att_type_category_idx, att_type_category_name을 카테고리추가 값과 att_type_name을 추가하는 거야! 이때 att_type_name은 '새출석타입'으로 해줘! 그리고 att_type_category_idx는 해당 그룹에서 사용하는 가장 큰 값에 +1을 해줘!
+
+addAttendanceTypeCategory
