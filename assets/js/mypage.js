@@ -448,3 +448,65 @@ $(document).on('click', '.btn-user-setting', function() {
         }
     });
 });
+
+
+// 엑셀 업로드 버튼 클릭 이벤트
+$(document).on('click', '.btn-member-excel-upload', function(e) {
+    e.stopPropagation();
+    var groupId = $(this).closest('tr').data('group-id');
+    $('#excelUploadModal').data('group-id', groupId);
+    $('#excelUploadModal').modal('show');
+});
+
+// 업로드 시작 버튼 클릭 이벤트
+$(document).on('click', '#startUpload', function() {
+    var groupId = $('#excelUploadModal').data('group-id');
+    var file = $('#excelFile')[0].files[0];
+
+    if (file) {
+        var formData = new FormData();
+        formData.append('excel_file', file);
+        formData.append('group_id', groupId);
+
+        $('.progress').show(); // 프로그레스 바 표시
+
+        $.ajax({
+            url: '/mypage/excel_upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json', // 응답 데이터를 JSON으로 파싱
+            xhr: function() {
+                var xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(evt) {
+                    if (evt.lengthComputable) {
+                        var percentComplete = evt.loaded / evt.total * 100;
+                        $('.progress-bar').css('width', percentComplete + '%');
+                        $('.progress-bar').attr('aria-valuenow', percentComplete);
+                    }
+                }, false);
+                return xhr;
+            },
+
+
+            success: function(response) {
+                console.log(response);
+                if (response.status === 'success') {
+
+                    alert('엑셀 업로드에 성공하였습니다.');
+                    $('#excelUploadModal').modal('hide');
+                } else {
+                    alert('엑셀 업로드에 실패했습니다: ' + response.message);
+                }
+                $('.progress').hide(); // 프로그레스 바 숨김
+            },
+            error: function(xhr, status, error) {
+                alert('서버 오류가 발생했습니다: ' + error);
+                $('.progress').hide(); // 프로그레스 바 숨김
+            }
+        });
+    } else {
+        alert('엑셀 파일을 선택해주세요.');
+    }
+});

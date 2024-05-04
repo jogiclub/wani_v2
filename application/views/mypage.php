@@ -82,9 +82,8 @@
                                 <?php echo $group['att_count']; ?> 개
                             </a>
                         </td>
-
+                        <td><a href="#" class="btn btn-light btn-sm btn-member-excel-upload" data-group-id="<?php echo $group['group_id']; ?>">엑셀업로드</a></td>
                         <td><a href="" class="btn btn-light btn-sm">그룹복사</a></td>
-                        <td><a href="" class="btn btn-light btn-sm btn-excel-upload">엑셀업로드</a></td>
                         <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
                     </tr>
                 <?php endforeach; ?>
@@ -250,6 +249,32 @@
         </div>
     </div>
 </div>
+
+
+
+
+<!-- 엑셀 업로드 모달 -->
+<div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="excelUploadModalLabel">엑셀 업로드</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="file" id="excelFile" accept=".xlsx, .xls">
+                <div class="progress mt-3" style="display: none;">
+                    <div class="progress-bar" role="progressbar" style="width: 0;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="startUpload">업로드 시작</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js" integrity="sha512-ykZ1QQr0Jy/4ZkvKuqWn4iF3lqPZyij9iRv6sGqLRdTPkY69YX6+7wvVGmsdBbiIfN/8OdsI7HABjvEok6ZopQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>

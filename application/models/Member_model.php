@@ -12,6 +12,9 @@ class Member_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
+
+
+
     public function get_group_members($group_id, $start_date = null, $end_date = null) {
         $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth');
         $this->db->from('wb_member m');

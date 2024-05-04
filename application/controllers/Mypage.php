@@ -288,4 +288,57 @@ class Mypage extends CI_Controller
         }
     }
 
+
+    public function excel_upload()
+    {
+        if ($this->input->is_ajax_request()) {
+            try {
+                $group_id = $this->input->post('group_id');
+                $file = $_FILES['excel_file']['tmp_name'];
+
+                // 엑셀 파일 읽기
+                $this->load->library('excel');
+                $objPHPExcel = PHPExcel_IOFactory::load($file);
+                $sheet = $objPHPExcel->getActiveSheet();
+                $highestRow = $sheet->getHighestRow();
+
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    $data = array(
+                        'group_id' => $group_id,
+                        'grade' => $sheet->getCell('A' . $row)->getValue(),
+                        'area' => $sheet->getCell('B' . $row)->getValue(),
+                        'member_name' => $sheet->getCell('C' . $row)->getValue(),
+                        'member_nick' => $sheet->getCell('D' . $row)->getValue(),
+                        'member_phone' => $sheet->getCell('E' . $row)->getValue(),
+                        'member_birth' => $sheet->getCell('F' . $row)->getValue(),
+                        'school' => $sheet->getCell('G' . $row)->getValue(),
+                        'address' => $sheet->getCell('H' . $row)->getValue(),
+                        'member_etc' => $sheet->getCell('I' . $row)->getValue(),
+                        'leader_yn' => $sheet->getCell('J' . $row)->getValue(),
+                        'new_yn' => $sheet->getCell('K' . $row)->getValue(),
+                        'regi_date' => date('Y-m-d H:m:s'),
+                    );
+
+                    // 빈 값 제거
+                    $data = array_filter($data, function($value) {
+                        return $value !== null && $value !== '';
+                    });
+
+                    // 데이터베이스에 삽입
+                    $this->load->model('Member_model');
+                    $result = $this->Member_model->add_member($data);
+
+                    if (!$result) {
+                        throw new Exception('Failed to insert member data.');
+                    }
+                }
+
+                $response = array('status' => 'success');
+                echo json_encode($response);
+            } catch (Exception $e) {
+                $response = array('status' => 'error', 'message' => $e->getMessage());
+                echo json_encode($response);
+            }
+        }
+    }
 }

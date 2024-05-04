@@ -1,6 +1,58 @@
 본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있습니다.
 회원들을 관리하고 출석을 기록하는 프로그램입니다.
 
+지금부터 wb_member을 생성하는 엑셀업로드 기능을 구현할꺼야!
+위 첨부파일에서 .btn-excel-upload 버튼을 클릭하면 모달을 띄우고
+엑셀 파일을 선택한 후 '업로드 시작' 버튼을 크릭하면
+progress bar가 진행되고 선택한 그룹에 엑셀업로드를 시작 후 '완료되었습니다.' 얼럿 표시하는 소스를 작성해줘!
+
+
+참고해야하는 db는 아래와 같아
+
+CREATE TABLE `wb_member` (
+	`member_idx` INT(11) NOT NULL AUTO_INCREMENT COMMENT '회원번호',
+	`group_id` INT(11) NULL DEFAULT '0' COMMENT '그룹아이디',
+	`grade` INT(11) NULL DEFAULT NULL,
+	`area` VARCHAR(10) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`member_name` VARCHAR(10) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`member_nick` VARCHAR(100) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`member_phone` VARCHAR(16) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`member_birth` VARCHAR(10) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`school` VARCHAR(50) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`address` VARCHAR(100) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`photo` VARCHAR(200) NULL DEFAULT '' COLLATE 'utf8mb4_unicode_ci',
+	`member_etc` TEXT NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`leader_yn` ENUM('Y','N') NOT NULL DEFAULT 'N' COLLATE 'utf8mb4_unicode_ci',
+	`new_yn` ENUM('Y','N') NOT NULL DEFAULT 'N' COLLATE 'utf8mb4_unicode_ci',
+	`del_yn` ENUM('Y','N') NOT NULL DEFAULT 'N' COLLATE 'utf8mb4_unicode_ci',
+	`del_date` DATETIME NULL DEFAULT NULL,
+	`regi_date` DATETIME NULL DEFAULT NULL,
+	`modi_date` DATETIME NULL DEFAULT NULL,
+	PRIMARY KEY (`member_idx`) USING BTREE,
+	INDEX `group_id` (`group_id`) USING BTREE
+)
+COLLATE='utf8mb4_unicode_ci'
+ENGINE=InnoDB
+AUTO_INCREMENT=388
+;
+
+
+엑셀양식은 아래와 같아!
+학년	목장	이름	닉네임	연락처	생년월일	학교	주소	사진	특이사항	목자	새가족	등록일
+3	강승우	강승우	봄날의 햇살~	010-8589-5920	5. 16				sdf	Y	N	2022-01-01 0:00
+3	강승우	권영교		010-9328-6127	2004-02-29					N	N
+3	강승우	신승준		010-4542-9962	2004-12-09				12	N	N	0000-00-00 00:00:00
+3	강승우	심준경		010-5683-6269	2022-11-28					N	N	0000-00-00 00:00:00
+3	강승우	송민정		010-8566-7398						N	N
+3	김도은	김도은	도은짱	010-8407-4516	2004-05-12				5	Y	N	0000-00-00 00:00:00
+3	김도은	김예람	예람짱	010-2339-9286	2004-09-10				9	N	N	0000-00-00 00:00:00
+3	김도은	이수아	수아짱	010-3178-7181	2004-06-07				6sdf	N	N	0000-00-00 00:00:00
+3	김도은	엄자윤	자윤짱	010-2492-4916	2004-10-24				10	N	N	0000-00-00 00:00:00
+
+
+
+
+
 오늘 생일인 사람이 .current-week 안에 포함되어 있다면
 .member-wrap 안에 <span class="birth"><i class="bi bi-cake-fill"></i></span> 포함되도록 해줘!
 회원 테이블은 아래와 같아! 아래에서 birth를 가져와줘!
