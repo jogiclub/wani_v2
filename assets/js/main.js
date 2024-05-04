@@ -80,9 +80,12 @@ $(document).on('click', '.member-card', function() {
         $('#memberOffcanvas').offcanvas('show');
     } else if (selectedMode === 'mode-3') {
         // 메모모드
+        memoPage = 1;
+        $('.memo-list ul').empty();
         $('#memoMemberIdx').val(memberIdx);
-        $('#addmemoModalLabel').text(memberName + ' 님의 메모 추가');
-        $('#addmemoModal').modal('show');
+        $('#addMemoOffcanvasLabel').text(memberName + ' 님의 메모 추가');
+        $('#addMemoOffcanvas').offcanvas('show');
+        loadMemoList(memberIdx);
     }
 });
 
@@ -321,6 +324,52 @@ $('#saveMemo').click(function() {
             }
         }
     });
+});
+
+
+var memoPage = 1;
+var memoLimit = 5;
+
+// 메모 목록 로드
+function loadMemoList(memberIdx) {
+    $.ajax({
+        url: '/main/get_memo_list',
+        method: 'POST',
+        data: {
+            member_idx: memberIdx,
+            page: memoPage,
+            limit: memoLimit
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                var memoList = response.data;
+                var memoListHtml = '';
+
+                for (var i = 0; i < memoList.length; i++) {
+                    var memo = memoList[i];
+                    memoListHtml += '<li>' + memo.memo_content + '</li>';
+                }
+
+                $('.memo-list ul').append(memoListHtml);
+            }
+        }
+    });
+}
+
+
+// 메모 목록 스크롤 이벤트
+$('.offcanvas-body').on('scroll', function() {
+    var offcanvasBody = $(this);
+    var scrollTop = offcanvasBody.scrollTop();
+    var scrollHeight = offcanvasBody[0].scrollHeight;
+    var offsetHeight = offcanvasBody[0].offsetHeight;
+
+    if (scrollTop + offsetHeight >= scrollHeight) {
+        memoPage++;
+        var memberIdx = $('#memoMemberIdx').val();
+        loadMemoList(memberIdx);
+    }
 });
 
 function loadMemberAttendance(memberIdx, startDate, endDate) {

@@ -273,7 +273,26 @@ class Main extends CI_Controller {
             echo json_encode($response);
         }
     }
+    public function get_memo_list() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('member_idx');
+            $page = $this->input->post('page');
+            $limit = $this->input->post('limit');
 
+            $offset = ($page - 1) * $limit;
+
+            $this->load->model('Memo_model');
+            $memo_list = $this->Memo_model->get_memo_list($member_idx, $limit, $offset);
+
+            if ($memo_list) {
+                $response = array('status' => 'success', 'data' => $memo_list);
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
 
     public function get_attendance_data() {
         if ($this->input->is_ajax_request()) {

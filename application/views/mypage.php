@@ -50,10 +50,12 @@
                 <th scope="col">그룹수정</th>
                 <th scope="col">회원수</th>
                 <th scope="col">QR인쇄</th>
+
                 <th scope="col">사용자수</th>
 
                 <th scope="col">사용자설정</th>
                 <th scope="col">출석타입설정</th>
+                <th scope="col">엑셀업로드</th>
                 <th scope="col">그룹복사</th>
                 <th scope="col">그룹삭제</th>
             </tr>
@@ -82,6 +84,7 @@
                         </td>
 
                         <td><a href="" class="btn btn-light btn-sm">그룹복사</a></td>
+                        <td><a href="" class="btn btn-light btn-sm btn-excel-upload">엑셀업로드</a></td>
                         <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
                     </tr>
                 <?php endforeach; ?>

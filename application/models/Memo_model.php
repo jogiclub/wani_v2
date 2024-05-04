@@ -9,4 +9,17 @@ class Memo_model extends CI_Model {
         $this->db->insert('wb_memo', $data);
         return $this->db->affected_rows() > 0;
     }
+
+    public function get_memo_list($member_idx, $limit, $offset) {
+        $this->db->select('*');
+        $this->db->from('wb_memo');
+        $this->db->where('member_idx', $member_idx);
+        $this->db->order_by('regi_date', 'DESC');
+        $this->db->limit($limit, $offset);
+
+        $query = $this->db->get();
+
+        return $query->result_array();
+    }
+
 }

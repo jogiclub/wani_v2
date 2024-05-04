@@ -305,39 +305,40 @@
 
 
 
-
-<!-- 메모 추가 모달 -->
-<div class="modal fade" id="addmemoModal" tabindex="-1" aria-labelledby="addmemoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addmemoModalLabel">메모 추가</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- 메모 추가 offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="addMemoOffcanvas" aria-labelledby="addMemoOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="addMemoOffcanvasLabel">메모 추가</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="memoForm">
+            <input type="hidden" id="memoMemberIdx" name="member_idx">
+            <div class="mb-1">
+                <label for="memoType" class="form-label">메모 유형</label>
+                <select class="form-control" id="memoType" name="memo_type">
+                    <option value="1">일반 메모</option>
+                    <option value="2">심방 메모</option>
+                </select>
             </div>
-            <div class="modal-body">
-                <form id="memoForm">
-                    <input type="hidden" id="memoMemberIdx" name="member_idx">
-                    <div class="mb-1">
-                        <label for="memoType" class="form-label">메모 유형</label>
-                        <select class="form-control" id="memoType" name="memo_type">
-                            <option value="1">일반 메모</option>
-                            <option value="2">심방 메모</option>
-                        </select>
-                    </div>
-                    <div class="mb-1">
-                        <label for="memoContent" class="form-label">메모 내용</label>
-                        <textarea class="form-control" id="memoContent" name="memo_content" rows="3"></textarea>
-                    </div>
-                </form>
+            <div class="mb-1">
+                <label for="memoContent" class="form-label">메모 내용</label>
+                <textarea class="form-control" id="memoContent" name="memo_content" rows="3"></textarea>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" id="saveMemo">저장</button>
-            </div>
+        </form>
+        <div class="btn-group">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">취소</button>
+        <button type="button" class="btn btn-primary" id="saveMemo">저장</button>
+        </div>
+123
+        <div class="memo-list">
+            <ul>
+                <li></li>
+            </ul>
         </div>
     </div>
-</div>
 
+</div>
 
 <!--내용전달용 토스트-->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
