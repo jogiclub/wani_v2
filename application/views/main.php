@@ -4,23 +4,23 @@
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title></title>
-    <meta name="viewport" content="width=device-width, initial-scale=0.8">
-    <meta name="description" content="심플체크" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="왔니" />
     <meta name="keywords" content="출석 체크, 교적, 메모, 심방" />
     <meta name="author" content="WEBHOWS.COM" />
 
     <!-- Facebook and Twitter integration -->
-    <meta property="og:title" content="심플체크"/>
+    <meta property="og:title" content="왔니"/>
     <meta property="og:image" content=""/>
     <meta property="og:url" content=""/>
-    <meta property="og:site_name" content="심플체크"/>
-    <meta property="og:description" content="심플체크"/>
-    <meta name="twitter:title" content="심플체크" />
+    <meta property="og:site_name" content="왔니"/>
+    <meta property="og:description" content="왔니"/>
+    <meta name="twitter:title" content="왔니" />
     <meta name="twitter:image" content="" />
-    <meta name="twitter:url" content="simplechk" />
-    <meta name="twitter:card" content="심플체크" />
+    <meta name="twitter:url" content="wani.im" />
+    <meta name="twitter:card" content="왔니" />
 
-    <title>심플체크</title>
+    <title>왔니</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/themes/base/jquery-ui.min.css" integrity="sha512-8PjjnSP8Bw/WNPxF6wkklW6qlQJdWJc/3w/ZQPvZ/1bjVDkrrSqLe9mfPYrMxtnzsXFPc434+u4FHLnLjXTSsg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -47,7 +47,7 @@
             </div>
 
 
-            <div class="col-xl-12 text-center mt-3 mb-3 mode-list">
+            <div class="col-xl-12 text-center mt-1 mb-3 mode-list">
                 <div class="btn-group" role="group" aria-label="Vertical radio toggle button group">
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-1" autocomplete="off" checked>
                     <label class="btn btn-outline-secondary" for="mode-1"><i class="bi bi-clipboard-check"></i> 출석모드</label>
@@ -306,31 +306,32 @@
 
 
 <!-- 메모 추가 offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="addMemoOffcanvas" aria-labelledby="addMemoOffcanvasLabel">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="addMemoOffcanvas" aria-labelledby="addMemoOffcanvasLabel" data-bs-scroll="true" data-bs-backdrop="false">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title" id="addMemoOffcanvasLabel">메모 추가</h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
-        <form id="memoForm">
-            <input type="hidden" id="memoMemberIdx" name="member_idx">
-            <div class="mb-1">
-                <label for="memoType" class="form-label">메모 유형</label>
-                <select class="form-control" id="memoType" name="memo_type">
-                    <option value="1">일반 메모</option>
-                    <option value="2">심방 메모</option>
-                </select>
+        <div class="memo-wrap">
+            <form id="memoForm">
+                <input type="hidden" id="memoMemberIdx" name="member_idx">
+                <div class="mb-1">
+                    <label for="memoType" class="form-label">메모 유형</label>
+                    <select class="form-control" id="memoType" name="memo_type">
+                        <option value="1">일반 메모</option>
+                        <option value="2">심방 메모</option>
+                    </select>
+                </div>
+                <div class="mb-1">
+                    <label for="memoContent" class="form-label">메모 내용</label>
+                    <textarea class="form-control" id="memoContent" name="memo_content" rows="3"></textarea>
+                </div>
+            </form>
+            <div class="btn-group">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">취소</button>
+            <button type="button" class="btn btn-primary" id="saveMemo">저장</button>
             </div>
-            <div class="mb-1">
-                <label for="memoContent" class="form-label">메모 내용</label>
-                <textarea class="form-control" id="memoContent" name="memo_content" rows="3"></textarea>
-            </div>
-        </form>
-        <div class="btn-group">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">취소</button>
-        <button type="button" class="btn btn-primary" id="saveMemo">저장</button>
         </div>
-123
         <div class="memo-list">
             <ul>
                 <li></li>

@@ -22,4 +22,11 @@ class Memo_model extends CI_Model {
         return $query->result_array();
     }
 
+
+    public function delete_memo($idx) {
+        $this->db->where('idx', $idx);
+        $this->db->delete('wb_memo');
+        return $this->db->affected_rows() > 0;
+    }
+
 }

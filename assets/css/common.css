@@ -34,7 +34,7 @@ ul, dl{padding: 0; list-style: none}
 
 .grid-item .member-card.off{opacity: 0.5; box-shadow: none;}
 .grid-item .member-card.on{opacity: 1; box-shadow: 0 0 3px 0 #ddd!important;}
-.grid-item .member-card.birth{background:url('/assets/images/bg_birth6.jpg') center top/cover;}
+.grid-item .member-card.birth{background:url('/assets/images/bg_birth7.png?5') center top/100%;}
 .grid-item--width2 { width: 40%; }
 .grid-item--width100{width: 100% !important; height: 0; padding: 0}
 .no-member{width: 100%; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 20px 0; text-align: center}
@@ -42,27 +42,29 @@ ul, dl{padding: 0; list-style: none}
 .toast-header i{color:#CB3227; margin-right: 5px}
 
 @media screen and (max-width: 1400px){
-    .grid-sizer,.grid-item{width: 20%}
+    .grid-sizer,.grid-item{width: 16.66%}
 }
 @media screen and (max-width: 1200px){
-    .grid-sizer,.grid-item{width: 25%}
+    .grid-sizer,.grid-item{width: 20%}
 }
 @media screen and (max-width: 992px){
-    .grid-sizer,.grid-item{width: 33.33%}
+    .grid-sizer,.grid-item{width: 25%}
 }
 @media screen and (max-width: 768px){
+    .grid-sizer,.grid-item{width: 33.33%}
+}
+@media screen and (max-width: 576px){
     .grid-sizer,.grid-item{width: 50%}
 }
-
 
 /*버튼커스터마이징*/
 
 
 /*레이아웃 기본*/
 
-#memberOffcanvas .offcanvas-header{align-items: flex-start;}
-#memberOffcanvas .offcanvas-header .offcanvas-title{letter-spacing: -1px;font-weight: 600;}
-#memberOffcanvas .offcanvas-body label{margin-bottom: 0}
+.offcanvas-header{align-items: flex-start;}
+.offcanvas-header .offcanvas-title{letter-spacing: -1px;font-weight: 600;}
+.offcanvas-body label{margin-bottom: 0}
 .offcanvas-footer button{border-radius: 0; padding: 10px 0}
 .member-photo {width: 150px;height: 150px;border-radius: 50%; background: #ccc; display: inline-block; background-position: center center; background-size: cover}
 .modal-title{font-weight: 600; letter-spacing: -1px}
@@ -117,6 +119,19 @@ footer .btn-new i{font-size:30px}
 .att-btn-list .btn-group{}
 .att-btn-list .btn-group .btn{line-height: 20px;min-height: 60px;display: flex;align-items: center;font-size: 18px;justify-content: center; border: 1px solid #0d9af0; color:#0d9af0}
 .att-btn-list .btn-check:checked+.btn{background: #0d9af0; border: 1px solid #0d9af0; color:#fff;}
+
+
+
+/*메모*/
+.memo-wrap{height: 260px;}
+.memo-list{height: calc(100% - 260px); overflow-y: auto;}
+.memo-list ul li{position: relative}
+.memo-list ul li .btn-memo-del{position: absolute; right: 10px; top: 47px; cursor: pointer}
+.memo-list ul li span{display: inline-block}
+.memo-list ul li .memo-date{width: 50%; font-size: 14px; color:#999}
+.memo-list ul li .memo-id{width: 50%;font-size: 14px; color:#999;  text-align: right;}
+.memo-list ul li .memo-content{width: 100%; margin: 5px 0 20px; background: #efefef; padding: 10px 20px 10px 10px}
+
 
 
 

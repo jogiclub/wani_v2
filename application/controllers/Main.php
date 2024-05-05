@@ -294,6 +294,25 @@ class Main extends CI_Controller {
         }
     }
 
+
+    public function delete_memo() {
+        if ($this->input->is_ajax_request()) {
+            $idx = $this->input->post('idx');
+
+            $this->load->model('Memo_model');
+            $result = $this->Memo_model->delete_memo($idx);
+
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
+
+
     public function get_attendance_data() {
         if ($this->input->is_ajax_request()) {
             $group_id = $this->input->post('group_id');
@@ -330,7 +349,7 @@ class Main extends CI_Controller {
         // 입력된 날짜의 타임스탬프 가져오기
         $timestamp = strtotime($date);
         // 현재 주의 일요일 타임스탬프 구하기
-        $sundayTimestamp = strtotime('last sunday', $timestamp);
+        $sundayTimestamp = strtotime('sunday this week', $timestamp);
         // 다음 주 일요일 타임스탬프 구하기
         $nextSundayTimestamp = strtotime('+1 week', $sundayTimestamp);
         // 주차 계산

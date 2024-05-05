@@ -5,22 +5,22 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title></title>
     <meta name="viewport" content="width=device-width, initial-scale=0.8">
-    <meta name="description" content="심플체크" />
+    <meta name="description" content="왔니" />
     <meta name="keywords" content="출석 체크, 교적, 메모, 심방" />
     <meta name="author" content="WEBHOWS.COM" />
 
     <!-- Facebook and Twitter integration -->
-    <meta property="og:title" content="심플체크"/>
+    <meta property="og:title" content="왔니"/>
     <meta property="og:image" content=""/>
     <meta property="og:url" content=""/>
-    <meta property="og:site_name" content="심플체크"/>
-    <meta property="og:description" content="심플체크"/>
-    <meta name="twitter:title" content="심플체크" />
+    <meta property="og:site_name" content="왔니"/>
+    <meta property="og:description" content="왔니"/>
+    <meta name="twitter:title" content="왔니" />
     <meta name="twitter:image" content="" />
     <meta name="twitter:url" content="simplechk" />
-    <meta name="twitter:card" content="심플체크" />
+    <meta name="twitter:card" content="왔니" />
 
-    <title>심플체크</title>
+    <title>왔니</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/themes/base/jquery-ui.min.css" integrity="sha512-8PjjnSP8Bw/WNPxF6wkklW6qlQJdWJc/3w/ZQPvZ/1bjVDkrrSqLe9mfPYrMxtnzsXFPc434+u4FHLnLjXTSsg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -262,6 +262,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <span><a href="/assets/excel/sample.xlsx" download style="color:blue">여기</a>를 클릭하여 샘플엑셀파일을 다운 받으세요!<br/>
+                작성된 엑셀 파일을 아래에 업로드 하세요!<br/><br/>
+                </span>
+
                 <input type="file" id="excelFile" accept=".xlsx, .xls">
                 <div class="progress mt-3" style="display: none;">
                     <div class="progress-bar" role="progressbar" style="width: 0;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>

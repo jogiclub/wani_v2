@@ -99,30 +99,31 @@ $('#saveMember').click(function() {
 
 // 모드 버튼 클릭 이벤트 처리
 $('.mode-list .btn-check').on('click', function() {
+    $('.offcanvas').offcanvas('hide'); //모든 offcanvas 숨기기
     var selectedMode = $(this).attr('id');
     setCookie('selectedMode', selectedMode, 7); // 쿠키에 선택한 모드 저장 (유효기간 7일)
 });
 
 // mode-1 버튼 클릭 이벤트 처리
 $('#mode-1').on('click', function() {
-    $('.member-card').removeClass('on');
+    // $('.member-card').removeClass('on');
     $('#input-search').prop('disabled', false).val('').attr('placeholder', '이름검색 또는 QR체크!').focus();
 });
 // mode-2 버튼 클릭 이벤트 처리
 $('#mode-2').on('click', function() {
-    $('.member-card').addClass('on');
-    $('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
+    // $('.member-card').addClass('on');
+    $('#input-search').prop('disabled', true).val('관리모드 사용 중...').attr('placeholder', '');
     resetMemberList();
 });
 $('#mode-3').on('click', function() {
 
-    $('.member-card').addClass('on');
-    $('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
+    // $('.member-card').addClass('on');
+    $('#input-search').prop('disabled', true).val('메모모드 사용 중...').attr('placeholder', '');
     resetMemberList();
 });
 $('#mode-4').on('click', function() {
-    $('.member-card').addClass('on');
-    $('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
+    // $('.member-card').addClass('on');
+    $('#input-search').prop('disabled', true).val('생일모드 사용 중...').attr('placeholder', '');
     resetMemberList();
 });
 
@@ -319,16 +320,51 @@ $('#saveMemo').click(function() {
             if (response.status === 'success') {
                 $('#addmemoModal').modal('hide');
                 // 메모 저장 후 필요한 작업 수행
+                memoPage = 1;
+                $('.memo-list ul').empty();
+                var memberIdx = $('#memoMemberIdx').val();
+                loadMemoList(memberIdx);
+
+                // 메모 내용 비우기
+                $('#memoContent').val('');
             } else {
                 alert('메모 저장에 실패했습니다.');
             }
         }
     });
 });
+// 메모 삭제 버튼 클릭 이벤트
+$('.memo-list').on('click', '.btn-memo-del', function() {
+    var confirmDelete = confirm('정말 삭제하시겠습니까?');
+    if (confirmDelete) {
+        var idx = $(this).data('idx');  // memo_idx 대신 idx 사용
+        console.log(idx);
+        deleteMemo(idx);
+    }
+});
+
+function deleteMemo(idx) {
+    $.ajax({
+        url: '/main/delete_memo',
+        method: 'POST',
+        data: { idx: idx },  // memo_idx 대신 idx 사용
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                memoPage = 1;
+                $('.memo-list ul').empty();
+                var memberIdx = $('#memoMemberIdx').val();
+                loadMemoList(memberIdx);
+            } else {
+                alert('메모 삭제에 실패했습니다.');
+            }
+        }
+    });
+}
 
 
 var memoPage = 1;
-var memoLimit = 5;
+var memoLimit = 10;
 
 // 메모 목록 로드
 function loadMemoList(memberIdx) {
@@ -348,7 +384,10 @@ function loadMemoList(memberIdx) {
 
                 for (var i = 0; i < memoList.length; i++) {
                     var memo = memoList[i];
-                    memoListHtml += '<li>' + memo.memo_content + '</li>';
+                    memoListHtml += '<li><span class="memo-date">' + memo.regi_date + '</span>' +
+                        '<span class="memo-id">' + memo.user_id + '</span>' +
+                        '<span class="memo-content">' + memo.memo_content + '</span>' +
+                        '<a class="btn-memo-del" data-idx="' + memo.idx + '"><i class="bi bi-trash3"></i></a></li>';  // memo_idx 대신 idx 사용
                 }
 
                 $('.memo-list ul').append(memoListHtml);
@@ -357,13 +396,12 @@ function loadMemoList(memberIdx) {
     });
 }
 
-
 // 메모 목록 스크롤 이벤트
-$('.offcanvas-body').on('scroll', function() {
-    var offcanvasBody = $(this);
-    var scrollTop = offcanvasBody.scrollTop();
-    var scrollHeight = offcanvasBody[0].scrollHeight;
-    var offsetHeight = offcanvasBody[0].offsetHeight;
+$('.memo-list').on('scroll', function() {
+    var memoList = $(this);
+    var scrollTop = memoList.scrollTop();
+    var scrollHeight = memoList[0].scrollHeight;
+    var offsetHeight = memoList[0].offsetHeight;
 
     if (scrollTop + offsetHeight >= scrollHeight) {
         memoPage++;
@@ -598,9 +636,10 @@ function displayMembers(members) {
                 }).join(' ');
 
                 memberCard.find('.att-stamp-warp').append(attTypesHtml);
-            } else {
-                memberCard.find('.member-card').addClass('off');
             }
+            /*else {
+                memberCard.find('.member-card').addClass('off');
+            }*/
 
             var today = new Date();
             var currentYear = today.getFullYear();
@@ -969,7 +1008,7 @@ function addAttStamp() {
 
             var attStamp = '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '">' + attTypeNickname + '</span>';
             memberCard.find('.att-stamp-warp').append(attStamp);
-            memberCard.removeClass('off')
+            // memberCard.removeClass('off')
 
             // 서버에 출석 정보 저장
             saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx);
