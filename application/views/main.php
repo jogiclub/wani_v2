@@ -49,7 +49,7 @@
 
             <div class="col-xl-12 text-center mt-1 mb-3 mode-list">
                 <div class="btn-group" role="group" aria-label="Vertical radio toggle button group">
-                    <input type="radio" class="btn-check" name="vbtn-radio" id="mode-1" autocomplete="off" checked>
+                    <input type="radio" class="btn-check" name="vbtn-radio" id="mode-1" autocomplete="off" >
                     <label class="btn btn-outline-secondary" for="mode-1"><i class="bi bi-clipboard-check"></i> 출석모드</label>
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-2" autocomplete="off">
                     <label class="btn btn-outline-secondary" for="mode-2"><i class="bi bi-person-badge"></i> 관리모드</label>
@@ -60,18 +60,20 @@
                 </div>
             </div>
 
-            <div class="col-xl-12">
+            <div class="col-lg-5 mb-2">
                 <div class="input-group">
                     <button type="button" class="input-group-text prev-week"><i class="bi bi-chevron-left"></i></button>
                     <button type="button" class="input-group-text dropdown-toggle current-week" data-bs-toggle="dropdown" aria-expanded="false">
-                        <?php echo $current_week_range; ?>
+                        <!-- 현재 주차 범위는 프론트엔드에서 동적으로 설정됩니다. -->
                     </button>
                     <ul class="dropdown-menu dropdown-current-week">
-                        <?php foreach ($all_week_ranges as $week_range): ?>
-                        <li><a class="dropdown-item" href="#"><?php echo $week_range; ?></a></li>
-                        <?php endforeach; ?>
+                        <!-- 주차 범위 드롭다운 메뉴는 프론트엔드에서 동적으로 생성됩니다. -->
                     </ul>
                     <button type="button" class="input-group-text next-week"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="col-lg-7 mb-2">
+                <div class="input-group">
                     <input type="text" class="form-control" placeholder="검색중..." aria-label="검색중..." aria-describedby="basic-addon2" id="input-search" value="검색중..." disabled>
                     <div class="att-dropdown-wrap">
                         <button class="input-group-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
@@ -91,8 +93,6 @@
                         </ul>
                     </div>
                     <button class="btn btn-primary" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
-
-
                 </div>
             </div>
 
@@ -377,33 +377,22 @@
 
     if (postGroupId) {
         // postGroup이 있는 경우 해당 그룹 정보 사용
-        var currentWeekRange = $('.current-week').text();
-        var startDate = getWeekStartDate(currentWeekRange);
-        var endDate = getWeekEndDate(currentWeekRange);
-
-        loadMembers(postGroupId, startDate, endDate);
+        loadMembers(postGroupId);
         setCookie('activeGroup', postGroupId, 7);
     } else if (activeGroupId) {
         // postGroup이 없고 쿠키에 저장된 그룹이 있는 경우 해당 그룹 정보 사용
-        var currentWeekRange = $('.current-week').text();
-        var startDate = getWeekStartDate(currentWeekRange);
-        var endDate = getWeekEndDate(currentWeekRange);
-        loadMembers(activeGroupId, startDate, endDate);
+        loadMembers(activeGroupId);
     } else {
-        // postGroup도 없고 쿠키에 저장된 그룹도 없는 경우 첫 번째 그룹 활성화
-        var firstGroupId = '<?php echo $groups[0]['group_id'] ?? ''; ?>';
-        if (firstGroupId) {
-            setCookie('activeGroup', firstGroupId, 7);
-            var currentWeekRange = $('.current-week').text();
-            var startDate = getWeekStartDate(currentWeekRange);
-            var endDate = getWeekEndDate(currentWeekRange);
-            loadMembers(firstGroupId, startDate, endDate);
-        } else {
-            alert('활성화 된 그룹이 없습니다! 그룹 생성 후 다시 시도해주세요!');
-        }
-
+        alert('잘못된 경로로 접근하셨습니다. 다시 접속 바랍니다.')
     }
 
+    var initialMode = '<?php echo $mode; ?>'; // PHP에서 전달받은 mode 값을 JavaScript 변수에 할당
+
+    $(document).ready(function() {
+        // 초기 모드 설정
+        $('.mode-list .btn-check[value="' + initialMode + '"]').prop('checked', true);
+        applyModeConfig(initialMode);
+    });
 
 </script>
 

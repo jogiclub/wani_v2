@@ -22,19 +22,31 @@ ul, dl{padding: 0; list-style: none}
 .grid-item .member-card{border: 1px solid #999; padding: 12px 12px 11px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer}
 .grid-item .member-card.leader{height: 122px;    flex-direction: column;     justify-content: space-between;}
 .grid-item .member-card.leader .photo{display: inline-block; height: 64px; width: 64px; background: #efefef; border-radius: 32px;    background-position: center center;background-size: cover;}
-.grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;}
+.grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;position: absolute;left: 12px;}
 .grid-item .member-card.leader .badge i{color:#0d9af0;}
 .grid-item .member-card.new .badge i{color: #ff8000;}
 .grid-item .member-card .birth i{color: #CB3227}
 .grid-item .member-card .bedge-leader{}
-.grid-item .member-card .member-wrap{display: flex; align-items: center; width: 100%}
-.grid-item .member-card .member-wrap .member-name{width: 40%;line-height: 20px;}
-.grid-item .member-card .member-wrap .att-stamp-warp{display: flex; width: 60%; justify-content: flex-end;}
+.grid-item .member-card .member-wrap{display: flex; align-items: center; width: 100%; justify-content: space-between;}
+.grid-item .member-card .member-wrap .member-name{line-height: 20px;}
+.grid-item .member-card .member-wrap .att-stamp-warp{display: flex; }
+.grid-item .member-card .member-wrap .att-stamp-warp.hidden{display: none}
 .grid-item .member-card .member-wrap .att-stamp-warp .att-stamp{background: #CB3227; height: 30px; width: 30px; border-radius: 3px; justify-content: center; align-items: center; display: flex; font-size: 14px; color:#fff; margin-left: 2px}
+.grid-item .member-card.leader .member-wrap .member-name{padding-left: 20px}
+.grid-item .member-card.new .member-wrap .member-name{padding-left: 20px}
 
 .grid-item .member-card.off{opacity: 0.5; box-shadow: none;}
 .grid-item .member-card.on{opacity: 1; box-shadow: 0 0 3px 0 #ddd!important;}
 .grid-item .member-card.birth{background:url('/assets/images/bg_birth7.png?5') center top/100%;}
+
+
+.grid-item .member-card .member-wrap .memo-stamp-warp{display: flex; width: 60%; justify-content: flex-end;}
+.grid-item .member-card .member-wrap .memo-stamp-warp.hidden{display: none}
+.grid-item .member-card .member-wrap .memo-stamp-warp .memo-stamp{position: relative}
+.grid-item .member-card .member-wrap .memo-stamp-warp .memo-stamp i{font-size: 30px; color: #999}
+.grid-item .member-card .member-wrap .memo-stamp-warp .memo-stamp .memo-count{background: #CB3227; height: 18px; width: 18px; border-radius: 50%; font-size: 12px; color:#fff; display: flex; justify-content: center;align-items: center; position: absolute; right: -7px;bottom: -7px}
+
+
 .grid-item--width2 { width: 40%; }
 .grid-item--width100{width: 100% !important; height: 0; padding: 0}
 .no-member{width: 100%; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 20px 0; text-align: center}
@@ -70,7 +82,9 @@ ul, dl{padding: 0; list-style: none}
 .modal-title{font-weight: 600; letter-spacing: -1px}
 
 #attendanceModal .modal-footer{padding: 10px 0}
-
+.prev-week{}
+.current-week{width: calc(100% - 94px)}
+.next-week{}
 
 /*헤더*/
 .header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
@@ -89,7 +103,7 @@ ul, dl{padding: 0; list-style: none}
 .group-list-wrap .group-list ul li.active{color:#0000FF}
 .group-list-wrap .group-list ul li.active::before{content: '선택그룹'; display: inline-block; background: #0000FF; color: #fff; font-size: 12px;padding: 1px 3px;border-radius: 3px;}
 
-.total-list-wrap{display: flex; justify-content: end; margin-top: 10px;}
+.total-list-wrap{display: flex; justify-content: end;}
 .total-list {display: flex; justify-content: center; align-items: center;}
 .total-list dt, .total-list dd{display: inline-block; margin: 0}
 .total-list dt{padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500}

@@ -42,34 +42,13 @@ class Main extends CI_Controller {
                 }
             }
 
-            // 활성화된 그룹의 일반 세팅 정보 가져오기
-            if ($currentGroupId) {
-                $active_group = $this->Group_model->get_group_by_id($currentGroupId);
-                $data['leader_name'] = $active_group['leader_name'];
-                $data['new_name'] = $active_group['new_name'];
-            }
-
-            // 현재 주차 범위 계산
-            $currentDate = date('Y-m-d');
-            $data['current_week_range'] = $this->getWeekRange($currentDate, true);
-
-            // 전체 주차 범위 계산
-            $allWeekRanges = array();
-            $startDate = date('Y-m-d', strtotime('first day of January ' . date('Y')));
-            $endDate = date('Y-m-d', strtotime('last day of December ' . date('Y')));
-
-            while ($startDate <= $endDate) {
-                $allWeekRanges[] = $this->getWeekRange($startDate);
-                $startDate = date('Y-m-d', strtotime('+1 week', strtotime($startDate)));
-            }
-
-            $data['all_week_ranges'] = array_reverse($allWeekRanges);
-
             // 활성화된 그룹의 출석타입 정보 가져오기
-
             $this->load->model('Attendance_model');
             $data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentGroupId);
-//            $data['default_attendance_type'] = $data['attendance_types'][0]['att_type_name'] ?? '';
+
+
+            $data['mode'] = $this->input->post('mode') ?? 'mode-1';
+
             $this->load->view('main', $data);
         } else {
             redirect('login/index');
@@ -312,6 +291,19 @@ class Main extends CI_Controller {
         }
     }
 
+
+    public function get_memo_counts() {
+        if ($this->input->is_ajax_request()) {
+            $group_id = $this->input->post('group_id');
+            $start_date = $this->input->post('start_date');
+            $end_date = $this->input->post('end_date');
+
+            $this->load->model('Memo_model');
+            $memo_counts = $this->Memo_model->get_memo_counts($group_id, $start_date, $end_date);
+
+            echo json_encode($memo_counts);
+        }
+    }
 
     public function get_attendance_data() {
         if ($this->input->is_ajax_request()) {

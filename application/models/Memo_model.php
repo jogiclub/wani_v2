@@ -29,4 +29,28 @@ class Memo_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
+
+    public function get_memo_counts($group_id, $start_date, $end_date) {
+        $this->db->select('m.member_idx, COUNT(memo.idx) AS memo_count');
+        $this->db->from('wb_member m');
+        $this->db->join('wb_memo memo', 'm.member_idx = memo.member_idx AND memo.regi_date >= "' . $start_date . '" AND memo.regi_date <= "' . $end_date . '"', 'left');
+        $this->db->where('m.group_id', $group_id);
+        $this->db->group_by('m.member_idx');
+
+        $query = $this->db->get();
+//        print_r($this->db->last_query());
+//        exit;
+        $result = $query->result_array();
+
+
+
+        $memo_counts = array();
+        foreach ($result as $row) {
+            $memo_counts[$row['member_idx']] = $row['memo_count'];
+        }
+
+        return $memo_counts;
+    }
+
+
 }

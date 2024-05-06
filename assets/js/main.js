@@ -4,11 +4,19 @@
 
 
 
-// 현재 선택된 주차 범위 가져오기 함수 추가
-function getCurrentWeekRange() {
-    return $('.current-week').text();
-}
 
+
+// 현재 선택된 주차 범위 가져오기 함수 추가
+/*
+function getCurrentWeekRange() {
+
+    var currentDate = new Date();
+    var startDate = getWeekStartDate(currentDate);
+    var endDate = getWeekEndDate(currentDate);
+    var weekNumber = getWeekNumber(currentDate);
+    return `${startDate}~${endDate} (${weekNumber}주차)`;
+}
+*/
 
 
 
@@ -42,6 +50,91 @@ $('.dropdown-att-type .dropdown-item').click(function(e) {
 
 
 
+// 라디오 버튼 그룹에 변경 이벤트 리스너 추가
+
+
+
+function applyModeConfig(mode) {
+    const config = modeConfig[mode];
+    $('.att-stamp-warp').toggleClass('hidden', config.attStampWarp === 'addClass');
+    $('.memo-stamp-warp').toggleClass('hidden', config.memoStampWarp === 'addClass');
+    $('#input-search').prop('disabled', config.inputSearch.disabled)
+        .val(config.inputSearch.val)
+        .attr('placeholder', config.inputSearch.placeholder);
+    if (config.inputSearch.focus) {
+        $('#input-search').focus();
+    }
+    if (config.resetMemberList) {
+        resetMemberList();
+    }
+    $('.offcanvas').offcanvas('hide'); // 모든 offcanvas 숨기기
+
+    // 모드에 따라 updateFunction 호출
+    var currentWeekRange = $('.current-week').text();
+    var currentDate = getDateFromWeekRange(currentWeekRange);
+    var startDate = getWeekStartDate(currentDate);
+    var endDate = getWeekEndDate(currentDate);
+    var activeGroupId = getCookie('activeGroup');
+
+
+    if (mode === 'mode-1') {
+        updateAttStamps(activeGroupId, startDate, endDate);
+    } else if (mode === 'mode-3') {
+        updateMemoStamps(activeGroupId, startDate, endDate);
+    }
+}
+
+const modeConfig = {
+    'mode-1': {
+        attStampWarp: 'removeClass',
+        memoStampWarp: 'addClass',
+        inputSearch: {
+            disabled: false,
+            val: '',
+            placeholder: '이름검색 또는 QR체크!',
+            focus: true
+        },
+        updateFunction: function(activeGroupId, startDate, endDate) {
+            updateAttStamps(activeGroupId, startDate, endDate);
+        }
+    },
+    'mode-2': {
+        attStampWarp: 'addClass',
+        memoStampWarp: 'addClass',
+        inputSearch: {
+            disabled: true,
+            val: '관리모드 사용 중...',
+            placeholder: '',
+            focus: false
+        },
+        resetMemberList: true
+    },
+    'mode-3': {
+        attStampWarp: 'addClass',
+        memoStampWarp: 'removeClass',
+        inputSearch: {
+            disabled: true,
+            val: '메모모드 사용 중...',
+            placeholder: '',
+            focus: false
+        },
+        resetMemberList: true,
+        updateFunction: function(activeGroupId, startDate, endDate) {
+            updateMemoStamps(activeGroupId, startDate, endDate);
+        }
+    },
+    'mode-4': {
+        attStampWarp: 'addClass',
+        memoStampWarp: 'addClass',
+        inputSearch: {
+            disabled: true,
+            val: '생일모드 사용 중...',
+            placeholder: '',
+            focus: false
+        },
+        resetMemberList: true
+    }
+};
 
 
 
@@ -67,8 +160,9 @@ $(document).on('click', '.member-card', function() {
 
         // 현재 선택된 주차 범위 가져오기
         var currentWeekRange = $('.current-week').text();
-        var startDate = getWeekStartDate(currentWeekRange);
-        var endDate = getWeekEndDate(currentWeekRange);
+        var currentDate = getDateFromWeekRange(currentWeekRange);
+        var startDate = getWeekStartDate(currentDate);
+        var endDate = getWeekEndDate(currentDate);
 
         // 멤버의 출석 데이터 불러오기
         loadMemberAttendance(memberIdx, startDate, endDate);
@@ -97,35 +191,15 @@ $('#saveMember').click(function() {
 });
 
 
-// 모드 버튼 클릭 이벤트 처리
+/// 모드 버튼 클릭 이벤트 처리
 $('.mode-list .btn-check').on('click', function() {
-    $('.offcanvas').offcanvas('hide'); //모든 offcanvas 숨기기
     var selectedMode = $(this).attr('id');
+    applyModeConfig(selectedMode);
     setCookie('selectedMode', selectedMode, 7); // 쿠키에 선택한 모드 저장 (유효기간 7일)
 });
 
-// mode-1 버튼 클릭 이벤트 처리
-$('#mode-1').on('click', function() {
-    // $('.member-card').removeClass('on');
-    $('#input-search').prop('disabled', false).val('').attr('placeholder', '이름검색 또는 QR체크!').focus();
-});
-// mode-2 버튼 클릭 이벤트 처리
-$('#mode-2').on('click', function() {
-    // $('.member-card').addClass('on');
-    $('#input-search').prop('disabled', true).val('관리모드 사용 중...').attr('placeholder', '');
-    resetMemberList();
-});
-$('#mode-3').on('click', function() {
 
-    // $('.member-card').addClass('on');
-    $('#input-search').prop('disabled', true).val('메모모드 사용 중...').attr('placeholder', '');
-    resetMemberList();
-});
-$('#mode-4').on('click', function() {
-    // $('.member-card').addClass('on');
-    $('#input-search').prop('disabled', true).val('생일모드 사용 중...').attr('placeholder', '');
-    resetMemberList();
-});
+
 
 //새로운 멤버를 추가
 $('#saveNewMember').click(function() {
@@ -147,8 +221,9 @@ $('#saveNewMember').click(function() {
 
                 // 현재 선택된 주차 범위 가져오기
                 var currentWeekRange = $('.current-week').text();
-                var startDate = getWeekStartDate(currentWeekRange);
-                var endDate = getWeekEndDate(currentWeekRange);
+                var currentDate = getDateFromWeekRange(currentWeekRange);
+                var startDate = getWeekStartDate(currentDate);
+                var endDate = getWeekEndDate(currentDate);
 
                 // 멤버 목록 업데이트
                 loadMembers(activeGroupId, startDate, endDate);
@@ -338,7 +413,7 @@ $('.memo-list').on('click', '.btn-memo-del', function() {
     var confirmDelete = confirm('정말 삭제하시겠습니까?');
     if (confirmDelete) {
         var idx = $(this).data('idx');  // memo_idx 대신 idx 사용
-        console.log(idx);
+        // console.log(idx);
         deleteMemo(idx);
     }
 });
@@ -409,6 +484,53 @@ $('.memo-list').on('scroll', function() {
         loadMemoList(memberIdx);
     }
 });
+
+
+
+
+
+function updateMemoStamps(groupId, startDate, endDate) {
+    $.ajax({
+        url: '/main/get_memo_counts',
+        method: 'POST',
+        data: {
+            group_id: groupId,
+            start_date: startDate,
+            end_date: endDate
+        },
+        dataType: 'json',
+        success: function(memoCounts) {
+            $('.member-card .memo-stamp-warp').remove();
+
+            $.each(memoCounts, function(memberIdx, count) {
+                var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
+                var memoStampsContainer = memberCard.find('.member-wrap');
+
+                if (count > 0) {
+                    var memoStampsHtml = '<span class="memo-stamp-warp">' +
+                        '<span class="memo-stamp"><i class="bi bi-journal-check"></i><span class="memo-count">' + count + '</span></span>' +
+                        '</span>';
+                    memoStampsContainer.append(memoStampsHtml);
+                }
+            });
+
+
+
+        }
+
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
 
 function loadMemberAttendance(memberIdx, startDate, endDate) {
     $.ajax({
@@ -487,13 +609,19 @@ $('#saveAttendance').click(function() {
 
     // 현재 선택된 주차 범위 가져오기
     var currentWeekRange = $('.current-week').text();
-    var startDate = getWeekStartDate(currentWeekRange);
-    var endDate = getWeekEndDate(currentWeekRange);
+    var currentDate = getDateFromWeekRange(currentWeekRange);
+    var startDate = getWeekStartDate(currentDate);
+    var endDate = getWeekEndDate(currentDate);
+
+
+
 
     // 오늘 날짜가 현재 선택된 주차 범위에 속하는지 확인
     var today = new Date();
     var formattedToday = formatDate(today);
     var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
+
+
 
     $('#attendanceTypes .btn-group').each(function() {
         var selectedType = $(this).find('input[type="radio"]:checked').val();
@@ -626,41 +754,25 @@ function displayMembers(members) {
                     };
                 });
 
-                // att-stamp를 data-att-type-idx 순서로 정렬
-                attStamps.sort(function(a, b) {
-                    return a.attTypeIdx - b.attTypeIdx;
-                });
+                /*
 
-                var attTypesHtml = attStamps.map(function(attStamp) {
-                    return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '" style="background-color: ' + attStamp.attTypeColor + '">' + attStamp.attType + '</span>';
-                }).join(' ');
 
-                memberCard.find('.att-stamp-warp').append(attTypesHtml);
+                    // att-stamp를 data-att-type-idx 순서로 정렬
+                    attStamps.sort(function(a, b) {
+                        return a.attTypeIdx - b.attTypeIdx;
+                    });
+
+                    var attTypesHtml = attStamps.map(function(attStamp) {
+                        return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '" style="background-color: ' + attStamp.attTypeColor + '">' + attStamp.attType + '</span>';
+                    }).join(' ');
+
+                    memberCard.find('.att-stamp-warp').append(attTypesHtml);
+
+                */
+
+
             }
-            /*else {
-                memberCard.find('.member-card').addClass('off');
-            }*/
 
-            var today = new Date();
-            var currentYear = today.getFullYear();
-            var currentMonth = String(today.getMonth() + 1).padStart(2, '0');
-            var currentDate = String(today.getDate()).padStart(2, '0');
-
-            var memberBirthDate = member.member_birth;
-            if (memberBirthDate) {
-                var currentWeekRange = $('.current-week').text();
-                var startDate = getWeekStartDate(currentWeekRange);
-                var endDate = getWeekEndDate(currentWeekRange);
-
-                var birthMonth = memberBirthDate.slice(5, 7);
-                var birthDate = memberBirthDate.slice(8, 10);
-
-                var formattedBirthDate = currentYear + '.' + birthMonth + '.' + birthDate;
-
-                if (formattedBirthDate >= startDate && formattedBirthDate <= endDate) {
-                    memberCard.find('.member-card').addClass('birth');
-                }
-            }
 
 
             memberList.append(memberCard);
@@ -700,6 +812,18 @@ function displayMembers(members) {
         }
     });
 
+
+
+    // total-list 합산 계산
+    var totalMembers = $('.grid-item .member-card').length;
+    var totalNewMembers = $('.member-card.new').length;
+    var totalAttMembers = totalMembers - totalNewMembers;
+
+    $('.total-list dd').eq(0).text(totalMembers);
+    $('.total-list dd').eq(1).text(totalNewMembers);
+    $('.total-list dd').eq(2).text(totalAttMembers);
+
+
     if ($('.grid').data('masonry')) {
         $('.grid').masonry('destroy');
     }
@@ -710,37 +834,102 @@ function displayMembers(members) {
         percentPosition: true
     });
 
-    // total-list 합산 계산
-    var totalMembers = $('.grid-item .member-card').length;
-    var totalNewMembers = $('.member-card.new').length;
-    var totalAttMembers = totalMembers - totalNewMembers;
 
-    $('.total-list dd').eq(0).text(totalMembers);
-    $('.total-list dd').eq(1).text(totalNewMembers);
-    $('.total-list dd').eq(2).text(totalAttMembers);
+
 }
 
 
 
+function applySelectedMode() {
+    // 페이지 로드 시 모드 적용
+    var selectedMode = getCookie('selectedMode');
+    if (selectedMode) {
+        // 선택된 모드에 해당하는 라디오 버튼 선택
+        $('.mode-list .btn-check').prop('checked', false);
+        $('#' + selectedMode).prop('checked', true);
+        applyModeConfig(selectedMode);
+    } else {
+        // 기본 모드로 설정
+        $('.mode-list .btn-check').prop('checked', false);
+        $('#mode-1').prop('checked', true);
+        applyModeConfig('mode-1');
+    }
+}
 
 
 
-
-function getWeekStartDate(weekRange) {
-    var parts = weekRange.split('~');
-    var startDateStr = parts[0].trim().replace('년', '-').replace('월', '-').replace('일', '').replace(/\(\d+주차\)/, '').trim();
-    // console.log(startDateStr);
-    // return false;
-    var startDate = new Date(startDateStr);
+function getWeekStartDate(date) {
+    if (typeof date === 'string') {
+        date = new Date(date);
+    }
+    var day = date.getDay();
+    var diff = date.getDate() - day;
+    var startDate = new Date(date.setDate(diff));
     return formatDate(startDate);
 }
 
-function getWeekEndDate(weekRange) {
-    var parts = weekRange.split('~');
-    var endDateStr = parts[1].trim().replace('년', '-').replace('월', '-').replace('일', '').replace(/\(\d+주차\)/, '').trim();
-    var endDate = new Date(endDateStr);
+function getWeekEndDate(date) {
+    if (typeof date === 'string') {
+        date = new Date(date);
+    }
+    var day = date.getDay();
+    var diff = date.getDate() - day + 6;
+    var endDate = new Date(date.setDate(diff));
     return formatDate(endDate);
 }
+
+function getWeekNumber(date) {
+    var currentDate = new Date(date.getTime());
+    var startDate = new Date(currentDate.getFullYear(), 0, 1); // 현재 연도의 1월 1일
+    var days = Math.floor((currentDate - startDate) / (24 * 60 * 60 * 1000));
+    var weekNumber = Math.ceil(days / 7);
+    return weekNumber;
+}
+
+
+function getDateFromWeekRange(weekRange) {
+    var parts = weekRange.split('~');
+    var startDateStr = parts[0].trim().replace('년', '-').replace('월', '-').replace('일', '').replace(/\(\d+주차\)/, '').trim();
+    return new Date(startDateStr);
+}
+
+
+
+function getWeekRangeFromDate(date) {
+    var currentDate = new Date(date);
+    var sundayTimestamp = getSunday(currentDate).getTime();
+    var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
+    var week = getWeekNumber(currentDate);
+    var startDate = formatDate(new Date(sundayTimestamp));
+    var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
+    return `${startDate}~${endDate} (${week}주차)`;
+}
+
+
+function generateAllWeekRanges() {
+    var allWeekRanges = [];
+    var startDate = new Date(new Date().getFullYear(), 0, 1); // 현재 연도의 1월 1일
+    var endDate = new Date(new Date().getFullYear(), 11, 31); // 현재 연도의 12월 31일
+
+    while (startDate <= endDate) {
+        var weekRange = getWeekRangeFromDate(startDate);
+        allWeekRanges.push(weekRange);
+        startDate.setDate(startDate.getDate() + 7);
+    }
+
+    return allWeekRanges.reverse();
+}
+
+
+
+function getSunday(date) {
+    var day = date.getDay();
+    var diff = date.getDate() - day;
+    return new Date(date.setDate(diff));
+}
+
+
+
 
 function formatDate(date) {
     var year = date.getFullYear();
@@ -750,6 +939,22 @@ function formatDate(date) {
 }
 
 function loadMembers(groupId, startDate, endDate, initialLoad = true) {
+
+    if (!startDate || !endDate) {
+        const today = new Date();
+        const currentDay = today.getDay(); // 오늘 요일 (0: 일요일, 1: 월요일, 6: 토요일)
+
+        const thisWeekSunday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - currentDay + 1);
+        const thisWeekSaturday = new Date(thisWeekSunday.getFullYear(), thisWeekSunday.getMonth(), thisWeekSunday.getDate() + 6);
+
+        startDate = thisWeekSunday.toISOString().replace(/-/g, '.').slice(0, 10); // YYYY.MM.DD 형식
+        endDate = thisWeekSaturday.toISOString().replace(/-/g, '.').slice(0, 10); // YYYY.MM.DD 형식
+        // console.log(startDate);
+        // console.log(endDate);
+
+    }
+
+
     $.ajax({
         url: '/main/get_members',
         method: 'POST',
@@ -760,20 +965,25 @@ function loadMembers(groupId, startDate, endDate, initialLoad = true) {
         },
         dataType: 'json',
         success: function(members) {
-            if (initialLoad) {
-                displayMembers(members);
-            } else {
-                updateAttStamps(groupId, startDate, endDate);
-            }
 
-            // $("[data-group-id='1']").parent().addClass("active");
+            //페이지 최초 로딩 시
 
-            // $('[data-group-id="' + groupId + '"]').parent('li').addClass('active');
-            // console.log('3123');
+            displayMembers(members);
+            applySelectedMode();
+            // updateAttStamps(groupId, startDate, endDate);
+            /*
+            var selectedMode = $('.mode-list .btn-check:checked').attr('id');
+            if (selectedMode === 'mode-3') {
+                updateMemoStamps(activeGroupId, startDate, endDate);
+            } else  if(selectedMode === 'mode-1'){
+                updateAttStamps(activeGroupId, startDate, endDate);
+            }*/
 
         }
 
     });
+
+
 
 
 
@@ -886,22 +1096,33 @@ function updateAttStamps(groupId, startDate, endDate) {
 // 주차 범위 업데이트 함수 수정
 function updateWeekRange(weekRange) {
     $('.current-week').text(weekRange);
-    var startDate = getWeekStartDate(weekRange);
-    var endDate = getWeekEndDate(weekRange);
+    var currentDate = getDateFromWeekRange(weekRange);
+    var startDate = getWeekStartDate(currentDate);
+    var endDate = getWeekEndDate(currentDate);
     var activeGroupId = getCookie('activeGroup');
+
+
+    // 좌우버튼클릭시 실행
     if (activeGroupId) {
-        updateAttStamps(activeGroupId, startDate, endDate);
-        updateBirthIcons(startDate, endDate); // 추가
+
+        updateBirthBg(startDate, endDate); // 추가
+        var selectedMode = $('.mode-list .btn-check:checked').attr('id');
+        if (selectedMode === 'mode-3') {
+            updateMemoStamps(activeGroupId, startDate, endDate);
+        } else  if(selectedMode === 'mode-1'){
+            updateAttStamps(activeGroupId, startDate, endDate);
+        }
     }
+
     updateInputSearchState();
 }
 
 
 // 새로운 함수 추가
-function updateBirthIcons(startDate, endDate) {
+function updateBirthBg(startDate, endDate) {
     $('.member-card').each(function() {
         var memberCard = $(this);
-        var memberIdx = memberCard.attr('member-idx');
+        // var memberIdx = memberCard.attr('member-idx');
         var memberBirthDate = memberCard.data('birth');
 
         if (memberBirthDate) {
@@ -910,8 +1131,7 @@ function updateBirthIcons(startDate, endDate) {
             var birthMonth = String(birthDate.getMonth() + 1).padStart(2, '0');
             var birthDay = String(birthDate.getDate()).padStart(2, '0');
 
-            var formattedBirthDate = currentYear + '.' + birthMonth + '.' + birthDate;
-
+            var formattedBirthDate = currentYear + '.' + birthMonth + '.' + birthDay;
 
             if (formattedBirthDate >= startDate && formattedBirthDate <= endDate) {
                 if (!memberCard.find('.birth').length) {
@@ -955,14 +1175,17 @@ function searchMembers(searchText) {
     });
 
     // Masonry 레이아웃 업데이트
-    $('.grid').masonry('layout');
+    if ($('.grid').data('masonry')) {
+        $('.grid').masonry('layout');
+    }
 }
-
 function resetMemberList() {
     $('.grid-item').show();
 
     // Masonry 레이아웃 업데이트
-    $('.grid').masonry('layout');
+    if ($('.grid').data('masonry')) {
+        $('.grid').masonry('layout');
+    }
 }
 
 $('#input-search').on('keypress', function(e) {
@@ -1184,15 +1407,29 @@ $(document).ready(function() {
     $('#input-search').focus();
 
 
-    // 페이지 로드 시 쿠키에 저장된 모드 확인
-    var selectedMode = getCookie('selectedMode');
-    if (selectedMode) {
-        // 쿠키에 저장된 모드가 있을 경우 해당 모드 활성화
-        $('#' + selectedMode).prop('checked', true);
-    } else {
-        // 쿠키에 저장된 모드가 없을 경우 mode-1 활성화
-        $('#mode-1').prop('checked', true);
-    }
+
+
+
+
+    // 모든 주차 범위 생성
+    var allWeekRanges = generateAllWeekRanges();
+    var weekRangeDropdown = $('.dropdown-current-week');
+    allWeekRanges.forEach(function(weekRange) {
+        var li = $('<li>').append($('<a>').addClass('dropdown-item').attr('href', '#').text(weekRange));
+        weekRangeDropdown.append(li);
+    });
+
+
+    // 현재 주차 범위 설정
+    // var currentWeekRange = getCurrentWeekRange();
+
+
+    var today = new Date();
+    var formattedToday = formatDate(today);
+    var currentWeekRange = getWeekRangeFromDate(formattedToday);
+    updateWeekRange(currentWeekRange);
+
+    $('.current-week').text(currentWeekRange);
 
 
 
@@ -1200,10 +1437,9 @@ $(document).ready(function() {
     $('.prev-week').click(function() {
         var currentWeekRange = $('.current-week').text();
         var currentDate = getDateFromWeekRange(currentWeekRange);
-
         var prevDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
         var prevWeekRange = getWeekRangeFromDate(prevDate);
-
+        // console.log(prevWeekRange);
         updateWeekRange(prevWeekRange);
     });
 
@@ -1213,7 +1449,6 @@ $(document).ready(function() {
         var currentDate = getDateFromWeekRange(currentWeekRange);
         var nextDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
         var nextWeekRange = getWeekRangeFromDate(nextDate);
-
         updateWeekRange(nextWeekRange);
     });
 
@@ -1229,50 +1464,12 @@ $(document).ready(function() {
 
 
 
-
-
-
-    function getDateFromWeekRange(weekRange) {
-        var parts = weekRange.split('~');
-        var startDateStr = parts[0].trim().replace('년', '-').replace('월', '-').replace('일', '').replace(/\(\d+주차\)/, '').trim();
-        return new Date(startDateStr);
-    }
-
-
-
-    function getWeekRangeFromDate(date) {
-        var currentDate = new Date(date);
-        var sundayTimestamp = getSunday(currentDate).getTime();
-        var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
-        var week = getWeekNumber(currentDate);
-        var startDate = formatDate(new Date(sundayTimestamp));
-        var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
-        return `${startDate}~${endDate} (${week}주차)`;
-    }
-
-
-    function getSunday(date) {
-        var day = date.getDay();
-        var diff = date.getDate() - day;
-        return new Date(date.setDate(diff));
-    }
-
-
-    function getWeekNumber(date) {
-        var currentDate = new Date(date.getTime());
-        var startDate = new Date(currentDate.getFullYear(), 0, 1); // 현재 연도의 1월 1일
-        var days = Math.floor((currentDate - startDate) / (24 * 60 * 60 * 1000));
-        var weekNumber = Math.ceil(days / 7);
-        return weekNumber;
-    }
-
-
-
-
-
-
     // 페이지 로드 시 input-search 상태 업데이트
     updateInputSearchState();
+
+
+
+
 
 
 
