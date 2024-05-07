@@ -430,10 +430,16 @@ $(document).on('click', '.btn-user-setting', function() {
             tableBody.empty();
 
             $.each(response, function(index, user) {
-                var row = '<tr>';
+                var row = '<tr data-user-idx="' + user.idx + '">';
                 row += '<td>' + user.user_id + '</td>';
-                row += '<td>' + user.user_name + '</td>';
-                row += '<td>' + user.user_grade + '</td>';
+                row += '<td><input type="text" class="form-control" name="user_name" value="' + user.user_name + '"></td>';
+                row += '<td><select class="form-select" name="user_grade">';
+                for (var i = 1; i <= 10; i++) {
+                    row += '<option value="' + i + '"' + (user.user_grade == i ? ' selected' : '') + '>' + i + '</option>';
+                }
+                row += '</select></td>';
+                row += '<td><button type="button" class="btn btn-sm btn-primary btn-save-user">저장</button></td>';
+                row += '<td><button type="button" class="btn btn-sm btn-danger btn-delete-user">삭제</button></td>';
                 row += '<td>' + user.user_mail + '</td>';
                 row += '<td>' + user.user_hp + '</td>';
                 row += '</tr>';
@@ -509,4 +515,120 @@ $(document).on('click', '#startUpload', function() {
     } else {
         alert('엑셀 파일을 선택해주세요.');
     }
+
+
+
 });
+
+
+
+
+$(document).ready(function () {
+
+
+
+    // 사용자 정보 저장 버튼 클릭 이벤트
+    $(document).on('click', '.btn-save-user', function() {
+        var row = $(this).closest('tr');
+        var userId = row.find('td:eq(0)').text();
+        var userName = row.find('input[name="user_name"]').val();
+        var userGrade = row.find('select[name="user_grade"]').val();
+
+        $.ajax({
+            url: '/mypage/save_user',
+            type: 'POST',
+            data: {
+                user_id: userId,
+                user_name: userName,
+                user_grade: userGrade
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('사용자 정보가 저장되었습니다.');
+                    // 사용자 목록 다시 로드
+                    var groupId = $('#userListModal').data('group-id');
+                    $('.btn-user-setting[data-group-id="' + groupId + '"]').trigger('click');
+                } else {
+                    alert('사용자 정보 저장에 실패했습니다.');
+                }
+            },
+            error: function() {
+                alert('사용자 정보 저장 중 오류가 발생했습니다.');
+            }
+        });
+    });
+
+
+    // 사용자 삭제 버튼 클릭 이벤트
+    $(document).on('click', '.btn-delete-user', function() {
+        var userIdx = $(this).closest('tr').data('user-idx');
+
+        if (confirm('정말로 사용자를 삭제하시겠습니까?')) {
+            $.ajax({
+                url: '/mypage/delete_user',
+                type: 'POST',
+                data: { user_idx: userIdx },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        alert('사용자가 삭제되었습니다.');
+                        // 사용자 목록 다시 로드
+                        var groupId = $('#userListModal').data('group-id');
+                        $('.btn-user-setting[data-group-id="' + groupId + '"]').trigger('click');
+                    } else {
+                        alert('사용자 삭제에 실패했습니다.');
+                    }
+                },
+                error: function() {
+                    alert('사용자 삭제 중 오류가 발생했습니다.');
+                }
+            });
+        }
+    });
+
+    // 초대 메일 발송 버튼 클릭 이벤트
+    $(document).on('click', '#invite-user', function() {
+        var email = $('input[name="invite-email"]').val();
+        var groupId = $('#userListModal').data('group-id');
+
+        if (email.trim() === '') {
+            alert('메일 주소를 입력해주세요.');
+            return;
+        }
+
+        $.ajax({
+            url: '/mypage/invite_user',
+            type: 'POST',
+            data: {
+                email: email,
+                group_id: groupId
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('초대 메일이 발송되었습니다.');
+                    $('input[name="invite-email"]').val('');
+                    // 사용자 목록에 새로운 사용자 추가
+                    var newRow = '<tr>';
+                    newRow += '<td></td>';
+                    newRow += '<td><input type="text" class="form-control" name="user_name" value="새사용자"></td>';
+                    newRow += '<td><select class="form-select" name="user_grade"><option value="0" selected>0</option></select></td>';
+                    newRow += '<td><button type="button" class="btn btn-xs btn-primary btn-save-user">저장</button></td>';
+                    newRow += '<td><button type="button" class="btn btn-xs btn-danger btn-delete-user">삭제</button></td>';
+                    newRow += '<td>' + email + '</td>';
+                    newRow += '<td></td>';
+                    newRow += '</tr>';
+                    $('#userListTableBody').append(newRow);
+                } else {
+                    alert('초대 메일 발송에 실패했습니다.');
+                }
+            },
+            error: function() {
+                alert('초대 메일 발송 중 오류가 발생했습니다.');
+            }
+        });
+    });
+
+
+})

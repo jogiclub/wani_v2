@@ -31,7 +31,7 @@ class Group_model extends CI_Model {
         $this->db->join('wb_group_user', 'wb_group.group_id = wb_group_user.group_id');
         $this->db->join('wb_member', 'wb_group.group_id = wb_member.group_id AND wb_member.del_yn = "N"', 'left');
         $this->db->where('wb_group_user.user_id', $user_id);
-        $this->db->where('wb_group.del_yn', 'N');
+        $this->db->where('wb_member.del_yn', 'N');
         $this->db->group_by('wb_group.group_id');
         $query = $this->db->get();
         return $query->result_array();

@@ -76,7 +76,6 @@ function applyModeConfig(mode) {
     var endDate = getWeekEndDate(currentDate);
     var activeGroupId = getCookie('activeGroup');
 
-
     if (mode === 'mode-1') {
         updateAttStamps(activeGroupId, startDate, endDate);
     } else if (mode === 'mode-3') {
@@ -383,8 +382,10 @@ function saveMemberInfo(formData) {
 
 
 // 메모 저장
+// 메모 저장 버튼 클릭 이벤트 수정
 $('#saveMemo').click(function() {
     var formData = $('#memoForm').serialize();
+    var memberIdx = $('#memoMemberIdx').val();
 
     $.ajax({
         url: '/main/save_memo',
@@ -397,17 +398,41 @@ $('#saveMemo').click(function() {
                 // 메모 저장 후 필요한 작업 수행
                 memoPage = 1;
                 $('.memo-list ul').empty();
-                var memberIdx = $('#memoMemberIdx').val();
                 loadMemoList(memberIdx);
 
                 // 메모 내용 비우기
                 $('#memoContent').val('');
+
+                // 해당 멤버의 memo-count 업데이트
+                updateMemoCountForMember(memberIdx);
             } else {
                 alert('메모 저장에 실패했습니다.');
             }
         }
     });
 });
+
+
+// 특정 멤버의 memo-count 업데이트 함수 추가
+function updateMemoCountForMember(memberIdx) {
+    var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
+    var memoStampsContainer = memberCard.find('.member-wrap');
+    var memoCountElement = memberCard.find('.memo-count');
+
+    if (memoCountElement.length > 0) {
+        var currentCount = parseInt(memoCountElement.text());
+        memoCountElement.text(currentCount + 1);
+    } else {
+        var memoStampsHtml = '<span class="memo-stamp-warp">' +
+            '<span class="memo-stamp"><i class="bi bi-journal-check"></i><span class="memo-count">1</span></span>' +
+            '</span>';
+        memoStampsContainer.append(memoStampsHtml);
+    }
+}
+
+
+
+
 // 메모 삭제 버튼 클릭 이벤트
 $('.memo-list').on('click', '.btn-memo-del', function() {
     var confirmDelete = confirm('정말 삭제하시겠습니까?');
@@ -840,16 +865,14 @@ function displayMembers(members) {
 
 
 
+
 function applySelectedMode() {
-    // 페이지 로드 시 모드 적용
     var selectedMode = getCookie('selectedMode');
     if (selectedMode) {
-        // 선택된 모드에 해당하는 라디오 버튼 선택
         $('.mode-list .btn-check').prop('checked', false);
         $('#' + selectedMode).prop('checked', true);
         applyModeConfig(selectedMode);
     } else {
-        // 기본 모드로 설정
         $('.mode-list .btn-check').prop('checked', false);
         $('#mode-1').prop('checked', true);
         applyModeConfig('mode-1');
@@ -965,20 +988,12 @@ function loadMembers(groupId, startDate, endDate, initialLoad = true) {
         },
         dataType: 'json',
         success: function(members) {
-
-            //페이지 최초 로딩 시
-
             displayMembers(members);
-            applySelectedMode();
-            // updateAttStamps(groupId, startDate, endDate);
-            /*
-            var selectedMode = $('.mode-list .btn-check:checked').attr('id');
-            if (selectedMode === 'mode-3') {
-                updateMemoStamps(activeGroupId, startDate, endDate);
-            } else  if(selectedMode === 'mode-1'){
-                updateAttStamps(activeGroupId, startDate, endDate);
-            }*/
 
+            // 초기 로드 시에만 applySelectedMode 호출
+            if (initialLoad) {
+                applySelectedMode();
+            }
         }
 
     });
@@ -993,97 +1008,92 @@ function loadMembers(groupId, startDate, endDate, initialLoad = true) {
 
 
 function updateAttStamps(groupId, startDate, endDate) {
-    $.ajax({
-        url: '/main/get_attendance_data',
-        method: 'POST',
-        data: {
-            group_id: groupId,
-            start_date: startDate,
-            end_date: endDate
-        },
-        dataType: 'json',
-        success: function(attendanceData) {
-            // 출석 유형별 숫자 초기화
-            var attTypeCount = {};
+    var selectedMode = $('.mode-list .btn-check:checked').attr('id');
+    if (selectedMode === 'mode-1') {
+        $.ajax({
+            url: '/main/get_attendance_data',
+            method: 'POST',
+            data: {
+                group_id: groupId,
+                start_date: startDate,
+                end_date: endDate
+            },
+            dataType: 'json',
+            success: function (attendanceData) {
+                // 출석 유형별 숫자 초기화
+                var attTypeCount = {};
 
-            // 모든 멤버의 att-stamp 제거
-            $('.member-card .member-wrap .att-stamp-warp .att-stamp').remove();
-
-
-
-            $.each(attendanceData, function(memberIdx, attTypeNicknames) {
-                var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
-                var attStampsContainer = memberCard.find('.member-wrap .att-stamp-warp');
-
-                if (attTypeNicknames) {
-                    var attStamps = attTypeNicknames.split(',').map(function(attTypeData) {
-                        var attTypeArr = attTypeData.split('|');
-                        var attTypeNickname = attTypeArr[0].trim();
-                        var attTypeIdx = attTypeArr[1].trim();
-                        var attTypeCategoryIdx = attTypeArr[2].trim();
-                        var attTypeColor = attTypeArr[3].trim();
-
-                        // console.log(attTypeNickname);
+                // 모든 멤버의 att-stamp 제거
+                $('.member-card .member-wrap .att-stamp-warp .att-stamp').remove();
 
 
-                        // 출석 유형별 숫자 카운트
-                        if (attTypeCount[attTypeNickname]) {
-                            attTypeCount[attTypeNickname]++;
-                        } else {
-                            attTypeCount[attTypeNickname] = 1;
-                        }
+                $.each(attendanceData, function (memberIdx, attTypeNicknames) {
+                    var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
+                    var attStampsContainer = memberCard.find('.member-wrap .att-stamp-warp');
 
-                        return {
-                            attTypeNickname: attTypeNickname,
-                            attTypeIdx: attTypeIdx,
-                            attTypeCategoryIdx: attTypeCategoryIdx,
-                            attTypeColor: attTypeColor
-                        };
-                    });
+                    if (attTypeNicknames) {
+                        var attStamps = attTypeNicknames.split(',').map(function (attTypeData) {
+                            var attTypeArr = attTypeData.split('|');
+                            var attTypeNickname = attTypeArr[0].trim();
+                            var attTypeIdx = attTypeArr[1].trim();
+                            var attTypeCategoryIdx = attTypeArr[2].trim();
+                            var attTypeColor = attTypeArr[3].trim();
 
-                    // att-stamp를 data-att-type-idx 순서로 정렬
-                    attStamps.sort(function(a, b) {
-                        return a.attTypeIdx - b.attTypeIdx;
-                    });
+                            // console.log(attTypeNickname);
 
 
+                            // 출석 유형별 숫자 카운트
+                            if (attTypeCount[attTypeNickname]) {
+                                attTypeCount[attTypeNickname]++;
+                            } else {
+                                attTypeCount[attTypeNickname] = 1;
+                            }
+
+                            return {
+                                attTypeNickname: attTypeNickname,
+                                attTypeIdx: attTypeIdx,
+                                attTypeCategoryIdx: attTypeCategoryIdx,
+                                attTypeColor: attTypeColor
+                            };
+                        });
+
+                        // att-stamp를 data-att-type-idx 순서로 정렬
+                        attStamps.sort(function (a, b) {
+                            return a.attTypeIdx - b.attTypeIdx;
+                        });
 
 
-                    var attTypesHtml = attStamps.map(function(attStamp) {
-                        return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '" style="background-color: ' + attStamp.attTypeColor + '">' + attStamp.attTypeNickname + '</span>';
-                    }).join(' ');
+                        var attTypesHtml = attStamps.map(function (attStamp) {
+                            return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '" style="background-color: ' + attStamp.attTypeColor + '">' + attStamp.attTypeNickname + '</span>';
+                        }).join(' ');
 
 
+                        attStampsContainer.append(attTypesHtml);
+                    }
+                });
 
 
+                // 출석 유형별 숫자 출력
+                var totalAttList = $('.total-att-list');
+                totalAttList.empty();
 
+                // 출석 유형을 att_type_category_idx와 att_type_idx 순으로 정렬
+                var sortedAttTypes = Object.keys(attTypeCount).sort(function (a, b) {
+                    var attTypeA = a.split('_');
+                    var attTypeB = b.split('_');
+                    var classCompare = parseInt(attTypeA[1]) - parseInt(attTypeB[1]);
+                    if (classCompare === 0) {
+                        return parseInt(attTypeA[2]) - parseInt(attTypeB[2]);
+                    }
+                    return classCompare;
+                });
 
-                    attStampsContainer.append(attTypesHtml);
-                }
-            });
-
-
-
-            // 출석 유형별 숫자 출력
-            var totalAttList = $('.total-att-list');
-            totalAttList.empty();
-
-            // 출석 유형을 att_type_category_idx와 att_type_idx 순으로 정렬
-            var sortedAttTypes = Object.keys(attTypeCount).sort(function(a, b) {
-                var attTypeA = a.split('_');
-                var attTypeB = b.split('_');
-                var classCompare = parseInt(attTypeA[1]) - parseInt(attTypeB[1]);
-                if (classCompare === 0) {
-                    return parseInt(attTypeA[2]) - parseInt(attTypeB[2]);
-                }
-                return classCompare;
-            });
-
-            sortedAttTypes.forEach(function(attType) {
-                totalAttList.append('<dt>' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
-            });
-        }
-    });
+                sortedAttTypes.forEach(function (attType) {
+                    totalAttList.append('<dt>' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
+                });
+            }
+        });
+    }
 }
 
 
@@ -1101,15 +1111,13 @@ function updateWeekRange(weekRange) {
     var endDate = getWeekEndDate(currentDate);
     var activeGroupId = getCookie('activeGroup');
 
-
     // 좌우버튼클릭시 실행
     if (activeGroupId) {
-
         updateBirthBg(startDate, endDate); // 추가
         var selectedMode = $('.mode-list .btn-check:checked').attr('id');
         if (selectedMode === 'mode-3') {
             updateMemoStamps(activeGroupId, startDate, endDate);
-        } else  if(selectedMode === 'mode-1'){
+        } else if (selectedMode === 'mode-1') {
             updateAttStamps(activeGroupId, startDate, endDate);
         }
     }

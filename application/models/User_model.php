@@ -24,20 +24,71 @@ class User_model extends CI_Model {
     }
 
     public function get_group_user_count($group_id) {
-        $this->db->where('group_id', $group_id);
+        $this->db->where('wb_group_user.group_id', $group_id);
         $this->db->from('wb_group_user');
+        $this->db->join('wb_user', 'wb_user.user_id = wb_group_user.user_id');
+        $this->db->where('wb_user.del_yn', 'N');
         return $this->db->count_all_results();
     }
 
 
     public function get_group_users($group_id) {
-        $this->db->select('wb_user.user_id, wb_user.user_name, wb_user.user_grade, wb_user.user_mail, wb_user.user_hp');
+        $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_user.user_grade, wb_user.user_mail, wb_user.user_hp');
         $this->db->from('wb_user');
         $this->db->join('wb_group_user', 'wb_user.user_id = wb_group_user.user_id');
         $this->db->where('wb_group_user.group_id', $group_id);
+        $this->db->where('wb_user.del_yn', 'N');
         $query = $this->db->get();
         return $query->result_array();
     }
 
+
+
+
+    public function save_user($user_id, $user_name, $user_grade) {
+        $data = array(
+            'user_name' => $user_name,
+            'user_grade' => $user_grade
+        );
+
+        $this->db->where('user_id', $user_id);
+        $result = $this->db->update('wb_user', $data);
+
+        return $result;
+    }
+
+
+    public function delete_user($user_idx) {
+        $data = array(
+            'del_yn' => 'Y',
+            'del_date' => date('Y-m-d H:i:s')
+        );
+
+        $this->db->where('idx', $user_idx);
+        $result = $this->db->update('wb_user', $data);
+
+        return $result;
+    }
+
+
+    public function insert_invite($data) {
+        $this->db->insert('wb_invite', $data);
+    }
+
+    public function get_invite_by_code($invite_code) {
+        $query = $this->db->get_where('wb_invite', array('invite_code' => $invite_code));
+        return $query->row_array();
+    }
+
+
+    public function delete_invite($invite_code) {
+        $this->db->delete('wb_invite', array('invite_code' => $invite_code));
+    }
+
+
+    public function update_user($user_id, $data) {
+        $this->db->where('user_id', $user_id);
+        $this->db->update('wb_user', $data);
+    }
 
 }

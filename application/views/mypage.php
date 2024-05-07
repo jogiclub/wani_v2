@@ -41,7 +41,7 @@
 
 
         <div class="table-responsive-xl">
-        <table class="table align-middle">
+        <table class="table align-middle" style="min-width: 1293px">
 
         <thead>
             <tr>
@@ -224,27 +224,44 @@
 </div>
 <!-- 사용자 목록 모달 -->
 <div class="modal fade" id="userListModal" tabindex="-1" aria-labelledby="userListModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="userListModalLabel">사용자 목록</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <table class="table">
-                    <thead>
-                    <tr>
-                        <th>아이디</th>
-                        <th>이름</th>
-                        <th>권한</th>
-                        <th>이메일</th>
-                        <th>휴대폰번호</th>
-                    </tr>
-                    </thead>
-                    <tbody id="userListTableBody">
-                    <!-- 사용자 목록이 여기에 동적으로 추가됩니다. -->
-                    </tbody>
-                </table>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="메일주소를 입력하세요!" aria-label="invite-user" aria-describedby="invite-user" >
+                    <button class="btn btn-outline-secondary" type="button" id="invite-user">초대메일 전송</button>
+                </div>
+                <div class="table-responsive-xl" style="overflow-y: scroll">
+                    <table class="table align-middle" style="min-width: 900px">
+                        <colgroup>
+                            <col style="width: 120px">
+                            <col style="width: 120px">
+                            <col style="width: 100px">
+                            <col style="width: 70px">
+                            <col style="width: 70px">
+                            <col style="width: 120px">
+                            <col style="">
+                        </colgroup>
+                        <thead>
+                        <tr>
+                            <th>아이디</th>
+                            <th>이름</th>
+                            <th>권한</th>
+                            <th>저장</th>
+                            <th>삭제</th>
+                            <th>이메일</th>
+                            <th>휴대폰번호</th>
+                        </tr>
+                        </thead>
+                        <tbody class="table-group-divider" id="userListTableBody">
+                        <!-- 사용자 목록이 여기에 동적으로 추가됩니다. -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
