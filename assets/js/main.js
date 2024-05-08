@@ -619,6 +619,8 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 
 // 출석 정보 저장
 $('#saveAttendance').click(function() {
+
+
     var memberIdx = $('#selectedMemberIdx').val();
     var attendanceData = [];
     var activeGroupId = getCookie('activeGroup');
@@ -661,8 +663,14 @@ $('#saveAttendance').click(function() {
         success: function(response) {
             if (response.status === 'success') {
                 $('#attendanceModal').modal('hide');
+
+
                 // 출석 정보 업데이트
                 updateAttStamps(activeGroupId, startDate, endDate);
+
+
+
+
             } else {
                 alert('출석 정보 저장에 실패했습니다.');
             }
@@ -1318,6 +1326,16 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx) {
     var activeGroupId = getCookie('activeGroup');
     var today = new Date();
     var attDate = formatDate(today);
+
+    console.log(memberIdx);
+    // 해당 member-card로 스크롤 이동
+    var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
+    if (memberCard.length > 0) {
+        $('html, body').animate({
+            scrollTop: memberCard.offset().top - 100
+        }, 500);
+    }
+
 
     $.ajax({
         url: '/main/save_single_attendance',
