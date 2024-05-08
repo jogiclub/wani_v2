@@ -16,7 +16,7 @@ class Member_model extends CI_Model {
 
 
     public function get_group_members($group_id, $start_date = null, $end_date = null) {
-        $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth');
+        $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.area');
         $this->db->from('wb_member m');
         $this->db->where('m.group_id', $group_id);
         $this->db->where('m.del_yn', 'N');
@@ -27,10 +27,10 @@ class Member_model extends CI_Model {
             $this->db->join('wb_att_type at', 'a.att_type_idx = at.att_type_idx', 'left');
             $this->db->group_by('m.member_idx');
         }
-
-        $this->db->order_by('m.area ASC');
+        $this->db->order_by('m.grade ASC');
+//        $this->db->order_by('m.area ASC');
         $this->db->order_by('m.leader_yn ASC');
-        $this->db->order_by('m.member_idx ASC');
+        $this->db->order_by('m.member_name ASC');
 
         $query = $this->db->get();
 

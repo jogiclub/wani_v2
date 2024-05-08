@@ -1,31 +1,6 @@
 <html lang="ko">
 <head>
-    <meta charset="utf-8">
-
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title></title>
-    <meta name="viewport" content="width=device-width, initial-scale=0.8">
-    <meta name="description" content="왔니" />
-    <meta name="keywords" content="출석 체크, 교적, 메모, 심방" />
-    <meta name="author" content="WEBHOWS.COM" />
-
-    <!-- Facebook and Twitter integration -->
-    <meta property="og:title" content="왔니"/>
-    <meta property="og:image" content=""/>
-    <meta property="og:url" content=""/>
-    <meta property="og:site_name" content="왔니"/>
-    <meta property="og:description" content="왔니"/>
-    <meta name="twitter:title" content="왔니" />
-    <meta name="twitter:image" content="" />
-    <meta name="twitter:url" content="simplechk" />
-    <meta name="twitter:card" content="왔니" />
-
-    <title>왔니</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/themes/base/jquery-ui.min.css" integrity="sha512-8PjjnSP8Bw/WNPxF6wkklW6qlQJdWJc/3w/ZQPvZ/1bjVDkrrSqLe9mfPYrMxtnzsXFPc434+u4FHLnLjXTSsg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="/assets/css/common.css?<?php echo date('Ymdhis');?>">
-
+    <?php $this->load->view('header'); ?>
 </head>
 <body>
 <header>
@@ -41,22 +16,22 @@
 
 
         <div class="table-responsive-xl">
-        <table class="table align-middle" style="min-width: 1293px">
+        <table class="table align-middle" style="min-width: 1000px">
 
         <thead>
             <tr>
-                <th scope="col">그룹명</th>
+                <th scope="col">바로가기</th>
 
                 <th scope="col">그룹수정</th>
                 <th scope="col">회원수</th>
                 <th scope="col">QR인쇄</th>
 
-                <th scope="col">사용자수</th>
+                <th scope="col">사용자</th>
 
-                <th scope="col">사용자설정</th>
+
                 <th scope="col">출석타입설정</th>
                 <th scope="col">엑셀업로드</th>
-                <th scope="col">그룹복사</th>
+
                 <th scope="col">그룹삭제</th>
             </tr>
         </thead>
@@ -68,22 +43,22 @@
                 <?php foreach ($groups as $group): ?>
                     <tr data-group-id="<?php echo $group['group_id']; ?>">
                         <td>
-                            <a class="btn btn-light btn-sm open-group-main d-block"><?php echo $group['group_name']; ?></a>
+                            <a class="btn btn-primary btn-sm open-group-main"><?php echo $group['group_name']; ?> <i class="bi bi-chevron-right"></i></a>
                         </td>
                         <td>
-                            <a class="btn btn-secondary btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a>
+                            <a class="btn btn-light btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a>
                         </td>
                         <td><?php echo $group['member_count']; ?>명</td>
                         <td><a href="" class="btn btn-light btn-sm">QR인쇄</a></td>
                         <td><a class="btn btn-secondary btn-sm btn-user-setting" data-group-id="<?php echo $group['group_id']; ?>"><?php echo $group['user_count']; ?>명</a></td>
-                        <td><a href="" class="btn btn-light btn-sm">사용자설정</a></td>
+
                         <td>
                             <a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">
                                 <?php echo $group['att_count']; ?> 개
                             </a>
                         </td>
                         <td><a href="#" class="btn btn-light btn-sm btn-member-excel-upload" data-group-id="<?php echo $group['group_id']; ?>">엑셀업로드</a></td>
-                        <td><a href="" class="btn btn-light btn-sm">그룹복사</a></td>
+
                         <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
                     </tr>
                 <?php endforeach; ?>
@@ -232,7 +207,7 @@
             </div>
             <div class="modal-body">
                 <div class="input-group mb-3">
-                    <input type="text" class="form-control" placeholder="메일주소를 입력하세요!" aria-label="invite-user" aria-describedby="invite-user" >
+                    <input type="text" class="form-control" placeholder="메일주소를 입력하세요!" aria-label="invite-email" aria-describedby="invite-user">
                     <button class="btn btn-outline-secondary" type="button" id="invite-user">초대메일 전송</button>
                 </div>
                 <div class="table-responsive-xl" style="overflow-y: scroll">
@@ -275,7 +250,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="excelUploadModalLabel">엑셀 업로드</h5>
+                <h5 class="modal-title" id="excelUploadModalLabel">회원 엑셀 업로드</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -298,15 +273,7 @@
 
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js" integrity="sha512-ykZ1QQr0Jy/4ZkvKuqWn4iF3lqPZyij9iRv6sGqLRdTPkY69YX6+7wvVGmsdBbiIfN/8OdsI7HABjvEok6ZopQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/jquery-ui.min.js" integrity="sha512-Ww1y9OuQ2kehgVWSD/3nhgfrb424O3802QYP/A5gPXoM4+rRjiKrjHdGxQKrMGQykmsJ/86oGdHszfcVgUr4hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" integrity="sha512-JRlcvSZAXT8+5SQQAvklXGJuxXTouyq8oIMaYERZQasB8SBDHZaUbeASsJWpk0UUrf89DP3/aefPPrlMR1h1yQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>-->
-<script src="/assets/js/common.js?<?php echo date('Ymdhis');?>"></script>
+<?php $this->load->view('footer'); ?>
+
 <script src="/assets/js/mypage.js?<?php echo date('Ymdhis');?>"></script>
 
-<script>
-
-
-</script>

@@ -1,39 +1,6 @@
 <html lang="ko">
 <head>
-    <meta charset="utf-8">
-
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="왔니" />
-    <meta name="keywords" content="출석 체크, 교적, 메모, 심방" />
-    <meta name="author" content="WEBHOWS.COM" />
-
-    <!-- Facebook and Twitter integration -->
-    <meta property="og:title" content="왔니"/>
-    <meta property="og:image" content=""/>
-    <meta property="og:url" content=""/>
-    <meta property="og:site_name" content="왔니"/>
-    <meta property="og:description" content="왔니"/>
-    <meta name="twitter:title" content="왔니" />
-    <meta name="twitter:image" content="" />
-    <meta name="twitter:url" content="wani.im" />
-    <meta name="twitter:card" content="왔니" />
-
-    <title>왔니</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/themes/base/jquery-ui.min.css" integrity="sha512-8PjjnSP8Bw/WNPxF6wkklW6qlQJdWJc/3w/ZQPvZ/1bjVDkrrSqLe9mfPYrMxtnzsXFPc434+u4FHLnLjXTSsg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/static/Pretendard-Medium.min.css" integrity="sha512-kGIhgYqdeB+e4PO0Ipx+D4jNIKPVkdcLHOfT107f/MwZavLS+zhOPKa2vD7kTQHB16mkcwh4MBXsfPF2ODadyQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">-->
-
-
-    <link rel="stylesheet" href="/assets/css/common.css?<?php echo date('Ymdhis');?>">
-
-
-
-
-
+    <?php $this->load->view('header'); ?>
 </head>
 <body>
 
@@ -74,7 +41,7 @@
             </div>
             <div class="col-lg-7 mb-2">
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="검색중..." aria-label="검색중..." aria-describedby="basic-addon2" id="input-search" value="검색중..." disabled>
+                    <input type="text" class="form-control" placeholder="검색중..." aria-label="검색중..." aria-describedby="basic-addon2" id="input-search" value="검색중..." autocomplete="off"  disabled>
                     <div class="att-dropdown-wrap">
                         <button class="input-group-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
                         <ul class="dropdown-menu dropdown-att-type">
@@ -251,12 +218,29 @@
                     <label for="memberPhone" class="form-label">연락처</label>
                     <input type="text" class="form-control" id="memberPhone" name="member_phone">
                 </div>
+
+
+
+
+
+
                 <div class="col-6 mb-1">
-                    <label for="grade" class="form-label">학년</label>
+                    <label for="grade" class="form-label">구분
+                        <a type="button" class="btn-popover" data-bs-toggle="popover" title="구분" data-bs-content="회원카드를 나누는 기준이 됩니다.">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </a>
+                    </label>
+
+
+
                     <input type="number" class="form-control" id="grade" name="grade">
                 </div>
                 <div class="col-6 mb-1">
-                    <label for="area" class="form-label">목장</label>
+                    <label for="area" class="form-label">소그룹
+                        <a type="button" class="btn-popover" data-bs-toggle="popover" title="소그룹" data-bs-content="회원카드 내 표시되는 용도입니다.">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </a>
+                    </label>
                     <input type="text" class="form-control" id="area" name="area">
                 </div>
 
@@ -284,11 +268,6 @@
                 </div>
 
 
-
-                <div class="mb-1">
-                    <label for="memberEtc" class="form-label">특이사항</label>
-                    <textarea class="form-control" id="memberEtc" name="member_etc" rows="3"></textarea>
-                </div>
 
 
             </div>
@@ -358,13 +337,8 @@
 <audio id="sound-no" src="/assets/sound/sound_no.mp3"></audio>
 <audio id="sound-birth" src="/assets/sound/sound_birth.mp3"></audio>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.11.8/umd/popper.min.js" integrity="sha512-TPh2Oxlg1zp+kz3nFA0C5vVC6leG/6mm1z9+mA81MI5eaUVqasPLO8Cuk4gMF4gUfP5etR73rgU/8PNMsSesoQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.min.js" integrity="sha512-ykZ1QQr0Jy/4ZkvKuqWn4iF3lqPZyij9iRv6sGqLRdTPkY69YX6+7wvVGmsdBbiIfN/8OdsI7HABjvEok6ZopQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/jquery-ui.min.js" integrity="sha512-Ww1y9OuQ2kehgVWSD/3nhgfrb424O3802QYP/A5gPXoM4+rRjiKrjHdGxQKrMGQykmsJ/86oGdHszfcVgUr4hA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" integrity="sha512-JRlcvSZAXT8+5SQQAvklXGJuxXTouyq8oIMaYERZQasB8SBDHZaUbeASsJWpk0UUrf89DP3/aefPPrlMR1h1yQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>-->
-<script src="/assets/js/common.js?<?php echo date('Ymdhis');?>"></script>
+<?php $this->load->view('footer'); ?>
+
 <script src="/assets/js/main.js?<?php echo date('Ymdhis');?>"></script>
 <script>
 
@@ -392,7 +366,22 @@
         // 초기 모드 설정
         $('.mode-list .btn-check[value="' + initialMode + '"]').prop('checked', true);
         applyModeConfig(initialMode);
+
+
+
+
+
+        $('[data-bs-toggle="popover"]').each(function() {
+            $(this).popover({
+                container: 'body' // 또는 Modal의 ID 또는 클래스 선택자를 지정할 수 있습니다.
+            });
+        });
+
+
+
     });
+
+
 
 </script>
 

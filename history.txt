@@ -1,10 +1,63 @@
 본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있습니다.
 회원들을 관리하고 출석을 기록하는 프로그램입니다.
 
+현재 #btn-submit 버튼을 클릭하면
+save_single_attendance(), get_member_info()
+함수가 실행되는데
+
+#saveAttendance 클릭하면
+save_attendance(), get_members(), get_attendance_data()
+함수가 실행되고 있어!
+get_members() 함수는 실행되지 않아도 될 것 같은데 소스를 수정해줘!
+
+
+
+본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있습니다.
+회원들을 관리하고 출석을 기록하는 프로그램입니다.
+위 첨부파일에 네이버 로그인, 카카오 로그인이 잘 동작하도록 소스를 작성해줘!
+아래는 api관련 정보들이 누락된 것이 있다면 알려줘!
+
+<네이버>
+
+Client ID - Cw90dWKPQbexg4b4I8Kv
+Client Secret -> R1fnbUjh7X
+Callback URL -> /login/naver_login
+
+<카카오>
+Redirect URI -> /login/kako_login
+2db1bc3626f8d274bd197a333db8a53f
+Client Secret -> ArAxCbw7MlG7IQQvUzcsiZxzYUa3RnKf
+
+
+//
+
+
+1) .btn-user-setting 버튼 클릭 시 #userListModal 모달에 group_id를 추가해주고
+#invite-user 버튼 클릭 시 해당 group_id를 함께 전달해줘!
+
+2) 초대메일 전송 버튼 클릭 시 이미 wb_group_user 테이블에 user_id, group_id가 있다면 '이미 등록된 메일입니다.' 얼럿 표시되도록 해줘!
+
+3) 삭제 버튼 클릭 시에는 wb_user 테이블에는 del_yn 값이 Y이고 wb_group_user 테이블에서는 동일 user_id, group_id가 있는 데이터를 delete 해줘!
+
+4) invite_user 함수가 실행되는 경우 이미 등록된 user_id인 경우
+새롭게 wb_user에 data를 추가하지 말고
+기존 user_id를 wb_group_user를 추가해줘!
+
+
+
+
+
+
+
 지금부터 wb_member을 생성하는 엑셀업로드 기능을 구현할꺼야!
 위 첨부파일에서 .btn-excel-upload 버튼을 클릭하면 모달을 띄우고
 엑셀 파일을 선택한 후 '업로드 시작' 버튼을 크릭하면
 progress bar가 진행되고 선택한 그룹에 엑셀업로드를 시작 후 '완료되었습니다.' 얼럿 표시하는 소스를 작성해줘!
+
+
+
+
+
 
 
 참고해야하는 db는 아래와 같아

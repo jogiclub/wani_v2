@@ -418,6 +418,7 @@ $(document).on('click', '#addAttendanceTypeCategory', function() {
 // 사용자 목록 버튼 클릭 이벤트
 $(document).on('click', '.btn-user-setting', function() {
     var groupId = $(this).data('group-id');
+    $('#userListModal').data('group-id', groupId);
 
     // 사용자 목록 가져오기
     $.ajax({
@@ -562,13 +563,17 @@ $(document).ready(function () {
 
     // 사용자 삭제 버튼 클릭 이벤트
     $(document).on('click', '.btn-delete-user', function() {
-        var userIdx = $(this).closest('tr').data('user-idx');
+        var userId = $(this).closest('tr').find('td:eq(0)').text();
+        var groupId = $('#userListModal').data('group-id');
 
         if (confirm('정말로 사용자를 삭제하시겠습니까?')) {
             $.ajax({
                 url: '/mypage/delete_user',
                 type: 'POST',
-                data: { user_idx: userIdx },
+                data: {
+                    user_id: userId,
+                    group_id: groupId
+                },
                 dataType: 'json',
                 success: function(response) {
                     if (response.status === 'success') {
@@ -589,7 +594,7 @@ $(document).ready(function () {
 
     // 초대 메일 발송 버튼 클릭 이벤트
     $(document).on('click', '#invite-user', function() {
-        var email = $('input[name="invite-email"]').val();
+        var email = $('.form-control[aria-label="invite-email"]').val();
         var groupId = $('#userListModal').data('group-id');
 
         if (email.trim() === '') {
@@ -620,6 +625,8 @@ $(document).ready(function () {
                     newRow += '<td></td>';
                     newRow += '</tr>';
                     $('#userListTableBody').append(newRow);
+                } else if (response.status === 'exists') {
+                    alert('이미 등록된 메일입니다.');
                 } else {
                     alert('초대 메일 발송에 실패했습니다.');
                 }

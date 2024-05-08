@@ -577,53 +577,44 @@ function loadMemberAttendance(memberIdx, startDate, endDate) {
 
 // 출석 유형 로드 및 표시
 function loadAttendanceTypes(memberIdx, attendanceData) {
-    var groupId = getCookie('activeGroup');
+    var html = '';
 
-    $.ajax({
-        url: '/main/get_attendance_types',
-        method: 'POST',
-        data: { group_id: groupId },
-        dataType: 'json',
-        success: function(response) {
-            var attendanceTypes = response.attendance_types;
-            var html = '';
+    var currentClass = null;
+    for (var i = 0; i < attendanceTypes.length; i++) {
+        var type = attendanceTypes[i];
 
-            var currentClass = null;
-            for (var i = 0; i < attendanceTypes.length; i++) {
-                var type = attendanceTypes[i];
-
-                if (type.att_type_category_idx !== currentClass) {
-                    if (currentClass !== null) {
-                        html += '</div></div>';
-                    }
-                    html += '<label class="mb-1">' + type.att_type_category_name + '</label>';
-                    html += '<div class="att-btn-list"><div class="btn-group" role="group" aria-label="Attendance Type">';
-                    currentClass = type.att_type_category_idx;
-                }
-
-                // 현재 선택된 주차 범위 내의 모든 날짜에 대해 출석 정보 확인
-                var isChecked = false;
-                for (var date in attendanceData) {
-                    if (attendanceData.hasOwnProperty(date) && attendanceData[date].includes(type.att_type_idx.toString())) {
-                        isChecked = true;
-                        break;
-                    }
-                }
-
-                html += '<input type="radio" class="btn-check" name="att_type_' + type.att_type_category_idx + '" id="att_type_' + type.att_type_idx + '" value="' + type.att_type_idx + '" ' + (isChecked ? 'checked' : '') + ' autocomplete="off">';
-                html += '<label class="btn btn-outline-primary" for="att_type_' + type.att_type_idx + '">' + type.att_type_name + '</label>';
-            }
-
+        if (type.att_type_category_idx !== currentClass) {
             if (currentClass !== null) {
                 html += '</div></div>';
             }
-
-            $('#attendanceTypes').html(html);
-            // 버튼 클릭 이벤트 추가
-
-            $('#attendanceModal').modal('show');
+            html += '<label class="mb-1">' + type.att_type_category_name + '</label>';
+            html += '<div class="att-btn-list"><div class="btn-group" role="group" aria-label="Attendance Type">';
+            currentClass = type.att_type_category_idx;
         }
-    });
+
+        // 현재 선택된 주차 범위 내의 모든 날짜에 대해 출석 정보 확인
+        var isChecked = false;
+        for (var date in attendanceData) {
+            if (attendanceData.hasOwnProperty(date) && attendanceData[date].includes(type.att_type_idx.toString())) {
+                isChecked = true;
+                break;
+            }
+        }
+
+        html += '<input type="radio" class="btn-check" name="att_type_' + type.att_type_category_idx + '" id="att_type_' + type.att_type_idx + '" value="' + type.att_type_idx + '" ' + (isChecked ? 'checked' : '') + ' autocomplete="off">';
+        html += '<label class="btn btn-outline-primary" for="att_type_' + type.att_type_idx + '">' + type.att_type_name + '</label>';
+    }
+
+    if (currentClass !== null) {
+        html += '</div></div>';
+    }
+
+    $('#attendanceTypes').html(html);
+    // 버튼 클릭 이벤트 추가
+
+    $('#attendanceModal').modal('show');
+
+
 }
 
 // 출석 정보 저장
@@ -671,7 +662,7 @@ $('#saveAttendance').click(function() {
             if (response.status === 'success') {
                 $('#attendanceModal').modal('hide');
                 // 출석 정보 업데이트
-                loadMembers(activeGroupId, startDate, endDate);
+                updateAttStamps(activeGroupId, startDate, endDate);
             } else {
                 alert('출석 정보 저장에 실패했습니다.');
             }
@@ -744,6 +735,21 @@ function displayMembers(members) {
                 }
 
             }
+
+
+            if (member.area) {
+                memberCard.find('.member-card').prepend('<span class="area"> '+ member.area +' </span> ');
+            }
+
+            if (member.grade) {
+                memberCard.find('.member-card').addClass('grade-'+member.grade)
+            }
+
+
+
+
+
+
 
             if (member.new_yn === 'Y') {
                 memberCard.find('.member-card').addClass('new');
@@ -825,8 +831,17 @@ function displayMembers(members) {
     }
 
     // Masonry 레이아웃 업데이트
-    var isFirstNew = true;
+    // var isFirstNew = true;
+    var prevArea = null;
     $('.grid-item').each(function() {
+
+        var memberCard = $(this).find('.member-card');
+        var currentArea = memberCard.attr('class').match(/grade-\d+/);
+        if (currentArea && currentArea[0] !== prevArea) {
+            $(this).before('<div class="grid-item grid-item--width100"></div>');
+            prevArea = currentArea[0];
+        }
+        /*
         if ($(this).find('.leader').length > 0) {
             $(this).before('<div class="grid-item grid-item--width100"></div>');
         }
@@ -834,7 +849,7 @@ function displayMembers(members) {
         if ($(this).find('.new').length > 0 && isFirstNew) {
             $(this).before('<div class="grid-item grid-item--width100"></div>');
             isFirstNew = false;
-        }
+        }*/
     });
 
 
@@ -1394,10 +1409,15 @@ function deleteCookie(name) {
 // 오늘 날짜가 current-week의 기간 안에 있는지 확인하고 input-search 활성화/비활성화
 function updateInputSearchState() {
     var currentWeekRange = $('.current-week').text();
-    var startDate = getWeekStartDate(currentWeekRange);
-    var endDate = getWeekEndDate(currentWeekRange);
+    var currentDate = getDateFromWeekRange(currentWeekRange);
+    var startDate = getWeekStartDate(currentDate);
+    var endDate = getWeekEndDate(currentDate);
     var today = new Date();
     var formattedToday = formatDate(today); // 수정
+
+    // console.log(formattedToday);
+    // console.log(startDate);
+    // console.log(endDate);
 
     if (formattedToday >= startDate && formattedToday <= endDate) {
         $('#input-search').prop('disabled', false).val('').attr('placeholder', '이름검색 또는 QR체크!').focus();
@@ -1407,7 +1427,7 @@ function updateInputSearchState() {
     }
 }
 
-
+var attendanceTypes = [];
 
 $(document).ready(function() {
 
@@ -1415,8 +1435,17 @@ $(document).ready(function() {
     $('#input-search').focus();
 
 
-
-
+    // 페이지 로딩 시 출석 유형 데이터 가져오기
+    var activeGroupId = getCookie('activeGroup');
+    $.ajax({
+        url: '/main/get_attendance_types',
+        method: 'POST',
+        data: { group_id: activeGroupId },
+        dataType: 'json',
+        success: function(response) {
+            attendanceTypes = response.attendance_types;
+        }
+    });
 
 
     // 모든 주차 범위 생성

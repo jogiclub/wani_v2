@@ -12,6 +12,7 @@ class User_model extends CI_Model {
 
     public function insert_user($data) {
         $this->db->insert('wb_user', $data);
+        return $this->db->insert_id();
     }
 
     public function get_user_groups($user_id) {
@@ -58,37 +59,54 @@ class User_model extends CI_Model {
     }
 
 
-    public function delete_user($user_idx) {
+    public function delete_user($user_id, $group_id) {
         $data = array(
             'del_yn' => 'Y',
             'del_date' => date('Y-m-d H:i:s')
         );
 
-        $this->db->where('idx', $user_idx);
-        $result = $this->db->update('wb_user', $data);
+        $this->db->where('user_id', $user_id);
+        $this->db->update('wb_user', $data);
 
-        return $result;
+        $this->db->where('user_id', $user_id);
+        $this->db->where('group_id', $group_id);
+        $this->db->delete('wb_group_user');
+
+        return $this->db->affected_rows() > 0;
     }
 
 
-    public function insert_invite($data) {
-        $this->db->insert('wb_invite', $data);
-    }
 
-    public function get_invite_by_code($invite_code) {
-        $query = $this->db->get_where('wb_invite', array('invite_code' => $invite_code));
+
+
+    public function get_user_by_id($user_id) {
+        $this->db->where('user_id', $user_id);
+        $query = $this->db->get('wb_user');
         return $query->row_array();
-    }
-
-
-    public function delete_invite($invite_code) {
-        $this->db->delete('wb_invite', array('invite_code' => $invite_code));
     }
 
 
     public function update_user($user_id, $data) {
         $this->db->where('user_id', $user_id);
         $this->db->update('wb_user', $data);
+    }
+
+
+    public function insert_group_user($data) {
+        $this->db->insert('wb_group_user', $data);
+    }
+
+    public function get_group_user($user_id, $group_id) {
+        $this->db->where('user_id', $user_id);
+        $this->db->where('group_id', $group_id);
+        $query = $this->db->get('wb_group_user');
+        return $query->row_array();
+    }
+
+    public function get_user_by_email($email) {
+        $this->db->where('user_mail', $email);
+        $query = $this->db->get('wb_user');
+        return $query->row_array();
     }
 
 }

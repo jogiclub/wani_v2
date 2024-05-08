@@ -12,6 +12,8 @@ class Mypage extends CI_Controller
 
 
     public function index() {
+//        print_r($this->session->userdata);
+//        exit;
         if ($this->session->userdata('email')) {
             $data['user'] = $this->session->userdata();
 
@@ -30,7 +32,7 @@ class Mypage extends CI_Controller
 
             $this->load->view('mypage', $data);
         } else {
-            redirect('main/login');
+            redirect('login');
         }
     }
 
@@ -365,10 +367,11 @@ class Mypage extends CI_Controller
 
     public function delete_user() {
         if ($this->input->is_ajax_request()) {
-            $user_idx = $this->input->post('user_idx');
+            $user_id = $this->input->post('user_id');
+            $group_id = $this->input->post('group_id');
 
             $this->load->model('User_model');
-            $result = $this->User_model->delete_user($user_idx);
+            $result = $this->User_model->delete_user($user_id, $group_id);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -385,25 +388,28 @@ class Mypage extends CI_Controller
         if ($this->input->is_ajax_request()) {
             $email = $this->input->post('email');
             $group_id = $this->input->post('group_id');
-            $invite_code = $this->generate_invite_code();
 
-            $subject = '초대 메일입니다.';
-            $message = $this->session->userdata('user_name') . "님께서 초대하셨습니다.\n";
-            $message .= "아래의 링크를 클릭하면 페이지로 이동합니다.\n";
-            $message .= "https://wani.im/login/invite/" . $invite_code;
+            $this->load->model('User_model');
+            $existing_user = $this->User_model->get_user_by_email($email);
 
-            $this->load->library('email');
-            $this->email->from('admin@example.com', 'Your Name');
-            $this->email->to($email);
-            $this->email->subject($subject);
-            $this->email->message($message);
+            if ($existing_user) {
+                $user_id = $existing_user['user_id'];
+                $existing_group_user = $this->User_model->get_group_user($user_id, $group_id);
 
-            if ($this->email->send()) {
-                $this->load->model('User_model');
+                if ($existing_group_user) {
+                    $response = array('status' => 'exists');
+                } else {
+                    $group_user_data = array(
+                        'user_id' => $user_id,
+                        'group_id' => $group_id
+                    );
+                    $this->User_model->insert_group_user($group_user_data);
+                    $response = array('status' => 'success');
+                }
+            } else {
                 $user_data = array(
                     'user_id' => $email,
                     'user_name' => '새사용자',
-                    'group_id' => $group_id,
                     'user_grade' => 0,
                     'user_mail' => $email,
                     'user_hp' => '',
@@ -412,28 +418,62 @@ class Mypage extends CI_Controller
                     'del_yn' => 'N',
                     'del_date' => '0000-00-00 00:00:00'
                 );
-                $this->User_model->insert_user($user_data);
+                $user_id = $this->User_model->insert_user($user_data);
 
-                $this->load->model('Invite_model');
-                $invite_data = array(
-                    'group_id' => $group_id,
-                    'email' => $email,
-                    'invite_code' => $invite_code
-                );
-                $this->Invite_model->insert_invite($invite_data);
+                if ($user_id) {
+                    $group_user_data = array(
+                        'user_id' => $email,
+                        'group_id' => $group_id
+                    );
+                    $this->User_model->insert_group_user($group_user_data);
+                    $response = array('status' => 'success');
+                } else {
+                    $response = array('status' => 'error');
+                }
+            }
 
-                $response = array('status' => 'success');
-            } else {
-                $response = array('status' => 'error');
+            if ($response['status'] === 'success') {
+                $invite_code = $this->generate_invite_code();
+                $subject = 'wani의 초대 메일입니다.';
+                $message = $this->session->userdata('user_name') . "님께서 초대하셨습니다.\n";
+                $message .= "아래의 링크를 클릭하면 페이지로 이동합니다.\n";
+                $message .= "https://wani.im/login/invite/" . $invite_code;
+
+                $this->load->library('email');
+                $this->email->from('no-replay@wani.im', '왔니');
+                $this->email->to($email);
+                $this->email->subject($subject);
+                $this->email->message($message);
+
+                if ($this->email->send()) {
+                    $invite_data = array(
+                        'invite_mail' => $email,
+                        'invite_code' => $invite_code,
+                        'invite_date' => date('Y-m-d H:i:s'),
+                        'del_yn' => 'N'
+                    );
+                    $this->load->model('Invite_model');
+                    $this->Invite_model->insert_invite($invite_data);
+                } else {
+                    $response = array('status' => 'error');
+                }
             }
 
             echo json_encode($response);
         }
     }
 
+
+
     private function generate_invite_code() {
         return bin2hex(random_bytes(16));
     }
+
+
+
+
+
+
 
 
 }
