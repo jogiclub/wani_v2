@@ -130,23 +130,25 @@ $(document).on('click', '.btn-del-group', function(e) {
     }
 });
 
-$(document).on('click', '.add-group', function() {
-    $.ajax({
-        url: '/mypage/add_group',
-        type: 'POST',
-        data: { group_name: '새그룹' },
-    dataType: 'json',
-        success: function(response) {
-        if (response.status === 'success') {
-            location.reload();
-        } else {
-            alert('그룹 추가에 실패했습니다.');
-        }
-    },
-    error: function() {
-        alert('서버 오류가 발생했습니다.');
+$(document).on('click', '.add-group', function () {
+    if (confirm('그룹을 추가하시겠습니까?')) {
+        $.ajax({
+            url: '/mypage/add_group',
+            type: 'POST',
+            data: {group_name: '새그룹'},
+            dataType: 'json',
+            success: function (response) {
+                if (response.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('그룹 추가에 실패했습니다.');
+                }
+            },
+            error: function () {
+                alert('서버 오류가 발생했습니다.');
+            }
+        });
     }
-});
 });
 
 

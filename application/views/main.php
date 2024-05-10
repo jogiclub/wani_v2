@@ -4,13 +4,21 @@
 </head>
 <body>
 
-<div class="header pt-3 pb-3">
+<header class="pt-3 pb-2 ">
     <div class="container-xl">
         <div class="row">
             <div class="col-12 text-center position-relative">
-                <h2 class="mb-1 group-name"></h2>
-                <button class="btn-gnb" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"><i class="bi bi-list"></i></button>
+                <h2 class="mb-1 group-name"><b></b></h2>
                 <button class="btn-home" type="button" onclick="go_url('/mypage')"><i class="bi bi-arrow-left-short"></i></button>
+                <a class="btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="top: -4px">
+                    <img src="<?php if($user['user_profile_image']){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="50" height="50">
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><?php if($user['user_name']){echo $user['user_name'];} ?></a></li>
+                    <li><a class="dropdown-item" href="#"><?php if($user['user_mail']){echo $user['user_mail'];} ?></a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
+                </ul>
             </div>
 
 
@@ -22,8 +30,8 @@
                     <label class="btn btn-outline-secondary" for="mode-2"><i class="bi bi-person-badge"></i> 관리모드</label>
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-3" autocomplete="off">
                     <label class="btn btn-outline-secondary" for="mode-3"><i class="bi bi-journals"></i> 메모모드</label>
-                    <input type="radio" class="btn-check" name="vbtn-radio" id="mode-4" autocomplete="off">
-                    <label class="btn btn-outline-secondary" for="mode-4"><i class="bi bi-cake2"></i> 생일모드</label>
+<!--                    <input type="radio" class="btn-check" name="vbtn-radio" id="mode-4" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="mode-4"><i class="bi bi-cake2"></i> 생일모드</label>-->
                 </div>
             </div>
 
@@ -70,25 +78,38 @@
             <div class="col-xl-12 text-center total-list-wrap">
 
                 <dl class="mt-2 mb-2 total-list">
+                    <dt>총재적</dt><dd>00</dd>
                     <dt>재적</dt><dd>00</dd>
+                    <dt>목자</dt><dd>00</dd>
                     <dt>새가족</dt><dd>00</dd>
-                    <dt>출석</dt><dd>00</dd>
+
                 </dl>
+
                 <dl class="mt-2 mb-2 total-att-list">
                     <dt>출</dt><dd>00</dd>
                     <dt>온</dt><dd>00</dd>
                     <dt>장</dt><dd>00</dd>
                 </dl>
 
+                <dl class="mt-2 mb-2 total-memo-list">
+                    <dt>메모</dt><dd>00</dd>
+                </dl>
+
             </div>
 
         </div>
     </div>
-</div>
+</header>
 <main>
     <div class="container-xl">
         <div class="row">
         <div class="member-list">
+            <div class="d-flex justify-content-end hide5weekAgo-warp">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="hide5weekAgo">
+                    <label class="form-check-label" for="hide5weekAgo">5주 이전 출석자 숨기기</label>
+                </div>
+            </div>
             <div class="grid">
                 <div class="grid-sizer"></div>
                 <div class="grid-item">
@@ -98,34 +119,11 @@
         </div>
         </div>
     </div>
-
 </main>
 <footer>
     <button class="input-group-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
 </footer>
 
-
-
-
-<!-- 사이드 메뉴 -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
-    <div class="offcanvas-header">
-
-
-        <img src="<?php echo $user['picture']; ?>" class="rounded-circle mb-3" width="50" height="50">
-        <h5 class="card-title"><?php echo $user['name']; ?></h5>
-        <p class="card-text"><?php echo $user['email']; ?></p>
-        <a href="<?php echo base_url('main/logout'); ?>" class="btn btn-danger">로그아웃</a>
-
-
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-
-
-    </div>
-    <div class="offcanvas-body">
-        ...
-    </div>
-</div>
 
 
 
@@ -225,15 +223,18 @@
 
 
                 <div class="col-6 mb-1">
-                    <label for="grade" class="form-label">구분
-                        <a type="button" class="btn-popover" data-bs-toggle="popover" title="구분" data-bs-content="회원카드를 나누는 기준이 됩니다.">
+                    <label for="grade" class="form-label">소그룹ID
+                        <a type="button" class="btn-popover" data-bs-toggle="popover" title="소그룹ID" data-bs-content="회원카드를 나누는 기준이 됩니다.">
                             <i class="bi bi-info-circle-fill"></i>
                         </a>
                     </label>
-
-
-
                     <input type="number" class="form-control" id="grade" name="grade">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="allGradeCheck">
+                        <label class="form-check-label" for="allGroupCheck">
+                            동일 소그룹ID 함께 수정
+                        </label>
+                    </div>
                 </div>
                 <div class="col-6 mb-1">
                     <label for="area" class="form-label">소그룹
@@ -242,6 +243,12 @@
                         </a>
                     </label>
                     <input type="text" class="form-control" id="area" name="area">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="allAreaCheck">
+                        <label class="form-check-label" for="allGroupCheck">
+                            동일 소그룹 함께 수정
+                        </label>
+                    </div>
                 </div>
 
 
@@ -276,8 +283,10 @@
 
 
     <div class="offcanvas-footer">
-        <div class="d-grid gap-2">
-            <button type="button" class="btn btn-primary" id="saveMember">저장</button>
+        <div class="input-group">
+            <button type="button" class="btn btn-danger" id="delMember" style="width: 33.33%">삭제</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 33.33%">취소</button>
+            <button type="button" class="btn btn-primary" id="saveMember" style="width: 33.33%">저장</button>
         </div>
     </div>
 </div>
@@ -306,9 +315,13 @@
                     <textarea class="form-control" id="memoContent" name="memo_content" rows="3"></textarea>
                 </div>
             </form>
-            <div class="btn-group">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">취소</button>
-            <button type="button" class="btn btn-primary" id="saveMemo">저장</button>
+
+            <div class="input-group">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 50%">취소</button>
+            <button type="button" class="btn btn-primary" id="saveMemo" style="width: 50%">저장</button>
+
+
+
             </div>
         </div>
         <div class="memo-list">
@@ -345,7 +358,9 @@
     // 페이지 최초 로드 시 그룹 정보 확인
     var postGroupId = '<?php echo isset($postGroup['group_id']) ? $postGroup['group_id'] : ''; ?>';
     var postGroupName = '<?php echo isset($postGroup['group_name']) ? $postGroup['group_name'] : ''; ?>';
-    $('.group-name').text(postGroupName);
+    var logoImg = '<img src="/assets/images/logo_speech.png">';
+    $('.group-name b').text(postGroupName);
+    $('.group-name b').prepend(logoImg);
     // $('.group-name').prepend('<img src="/assets/images/logo.png" style="height: 34px; margin-right: 10px">');
     var activeGroupId = getCookie('activeGroup');
 

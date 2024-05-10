@@ -81,6 +81,21 @@ function applyModeConfig(mode) {
     } else if (mode === 'mode-3') {
         updateMemoStamps(activeGroupId, startDate, endDate);
     }
+
+    // .total-att-list 표시/숨김 처리
+    if (mode === 'mode-1') {
+        $('.total-att-list').show();
+    } else {
+        $('.total-att-list').hide();
+    }
+
+    // .total-memo-list 표시/숨김 처리
+    if (mode === 'mode-3') {
+        $('.total-memo-list').show();
+    } else {
+        $('.total-memo-list').hide();
+    }
+
 }
 
 const modeConfig = {
@@ -186,8 +201,84 @@ $(document).on('click', '.member-card', function() {
 
 $('#saveMember').click(function() {
     var formData = new FormData($('#memberForm')[0]);
-    saveMemberInfo(formData);
+    var allGradeCheck = $('#allGradeCheck').prop('checked');
+    var allAreaCheck = $('#allAreaCheck').prop('checked');
+
+    if (allGradeCheck || allAreaCheck) {
+        updateMultipleMembers(formData, allGradeCheck, allAreaCheck);
+    } else {
+        saveMemberInfo(formData);
+    }
 });
+
+
+function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
+    var memberIdx = $('#memberIdx').val();
+    formData.append('memberIdx', memberIdx);
+    formData.append('allGradeCheck', allGradeCheck);
+    formData.append('allAreaCheck', allAreaCheck);
+
+    $.ajax({
+        url: '/main/update_multiple_members',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#memberOffcanvas').offcanvas('hide');
+                // 멤버 정보 업데이트 후 필요한 작업 수행
+                var currentWeekRange = $('.current-week').text();
+                var currentDate = getDateFromWeekRange(currentWeekRange);
+                var startDate = getWeekStartDate(currentDate);
+                var endDate = getWeekEndDate(currentDate);
+                var activeGroupId = getCookie('activeGroup');
+                loadMembers(activeGroupId, startDate, endDate);
+                $('#allGradeCheck').prop('checked', false);
+                $('#allAreaCheck').prop('checked', false);
+            } else {
+                alert('멤버 정보 업데이트에 실패했습니다.');
+            }
+        }
+    });
+}
+
+
+
+
+// 멤버 삭제 버튼 클릭 이벤트
+$('#delMember').click(function() {
+    var memberIdx = $('#memberIdx').val();
+    var memberName = $('#memberName').val();
+
+    if (confirm('정말 ' + memberName + '님을 삭제하시겠습니까?')) {
+        deleteMember(memberIdx);
+    }
+});
+
+function deleteMember(memberIdx) {
+    $.ajax({
+        url: '/main/delete_member',
+        method: 'POST',
+        data: { member_idx: memberIdx },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#memberOffcanvas').offcanvas('hide');
+                // 멤버 삭제 후 필요한 작업 수행
+                var currentWeekRange = $('.current-week').text();
+                var currentDate = getDateFromWeekRange(currentWeekRange);
+                var startDate = getWeekStartDate(currentDate);
+                var endDate = getWeekEndDate(currentDate);
+                var activeGroupId = getCookie('activeGroup');
+                loadMembers(activeGroupId, startDate, endDate);
+            } else {
+                alert('멤버 삭제에 실패했습니다.');
+            }
+        }
+    });
+}
 
 
 /// 모드 버튼 클릭 이벤트 처리
@@ -428,6 +519,9 @@ function updateMemoCountForMember(memberIdx) {
             '</span>';
         memoStampsContainer.append(memoStampsHtml);
     }
+
+    // .total-memo-list 숫자 업데이트
+    updateTotalMemoList();
 }
 
 
@@ -539,8 +633,8 @@ function updateMemoStamps(groupId, startDate, endDate) {
                 }
             });
 
-
-
+            //메모 카운트 업데이트
+            updateTotalMemoList();
         }
 
     });
@@ -753,16 +847,11 @@ function displayMembers(members) {
                 memberCard.find('.member-card').addClass('grade-'+member.grade)
             }
 
-
-
-
-
-
-
             if (member.new_yn === 'Y') {
                 memberCard.find('.member-card').addClass('new');
                 memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-bookmark-heart-fill"></i></span>');
             }
+
 
 
 
@@ -866,10 +955,12 @@ function displayMembers(members) {
     var totalMembers = $('.grid-item .member-card').length;
     var totalNewMembers = $('.member-card.new').length;
     var totalAttMembers = totalMembers - totalNewMembers;
+    var totalLeaderMembers = $('.member-card.leader').length;
 
     $('.total-list dd').eq(0).text(totalMembers);
-    $('.total-list dd').eq(1).text(totalNewMembers);
-    $('.total-list dd').eq(2).text(totalAttMembers);
+    $('.total-list dd').eq(3).text(totalNewMembers);
+    $('.total-list dd').eq(1).text(totalAttMembers);
+    $('.total-list dd').eq(2).text(totalLeaderMembers);
 
 
     if ($('.grid').data('masonry')) {
@@ -1017,16 +1108,60 @@ function loadMembers(groupId, startDate, endDate, initialLoad = true) {
             if (initialLoad) {
                 applySelectedMode();
             }
+
+            // 최근 5주 이전까지 출석이 없는 사람 숨기기
+            var hideFiveWeeksAgo = getCookie('hideFiveWeeksAgo') === 'true';
+            if (hideFiveWeeksAgo) {
+                $.ajax({
+                    url: '/main/get_active_members',
+                    method: 'POST',
+                    data: {
+                        group_id: groupId
+                    },
+                    dataType: 'json',
+                    success: function(activeMembers) {
+                        var activeMemberIndexes = activeMembers.map(function(member) {
+                            return member.member_idx;
+                        });
+                        hideInactiveMembersForFiveWeeks(activeMemberIndexes);
+                    }
+                });
+            } else {
+                // hideFiveWeeksAgo가 false인 경우 모든 멤버 보이기
+                $('.grid-item').show();
+                // Masonry 레이아웃 업데이트
+                if ($('.grid').data('masonry')) {
+                    $('.grid').masonry('layout');
+                }
+            }
         }
-
     });
-
-
-
-
 
 }
 
+
+function hideInactiveMembersForFiveWeeks(activeMembers) {
+    // 모든 .grid-item 요소 숨기기
+    $('.grid-item:not(.grid-item--width100)').hide();
+
+    // activeMembers에 포함된 멤버들의 .grid-item 요소만 보이기
+    activeMembers.forEach(function(memberIdx) {
+        $('.member-card[member-idx="' + memberIdx + '"]').closest('.grid-item').show();
+    });
+
+    // Masonry 레이아웃 업데이트
+    if ($('.grid').data('masonry')) {
+        $('.grid').masonry('layout');
+    }
+}
+
+function updateTotalMemoList() {
+    var totalMemos = 0;
+    $('.memo-count').each(function() {
+        totalMemos += parseInt($(this).text());
+    });
+    $('.total-memo-list dd').text(totalMemos);
+}
 
 
 
@@ -1235,6 +1370,8 @@ $('#btn-submit').on('click', function() {
 
 
 
+
+
 function addAttStamp() {
     var memberIdx = $('#input-search').val().trim();
     if (/^\d+$/.test(memberIdx)) {
@@ -1248,7 +1385,7 @@ function addAttStamp() {
             var existingAttStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]');
             if (existingAttStamp.length > 0) {
                 playNoSound();
-                alert('이미 출석체크를 하였습니다.');
+                heyToast('이미 출석체크 하였습니다.', '중복출석체크');
                 $('#input-search').val('').focus();
                 return;
             }
@@ -1280,7 +1417,7 @@ function addAttStamp() {
 
         } else {
             playNoSound()
-            alert('해당하는 정보가 없습니다.');
+            heyToast('등록된 회원이 아닙니다.', '등록회원 없음');
 
         }
     }
@@ -1312,7 +1449,9 @@ function showToast(memberIdx) {
         data: { member_idx: memberIdx },
         dataType: 'json',
         success: function(response) {
+            var memberName = response.member_name;
             var memberNick = response.member_nick;
+            $('.toast-header strong').text(memberName + '님 출석완료!');
             $('.toast-body').text(memberNick);
             $('#liveToast').toast('show');
         }
@@ -1327,7 +1466,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx) {
     var today = new Date();
     var attDate = formatDate(today);
 
-    console.log(memberIdx);
+    // console.log(memberIdx);
     // 해당 member-card로 스크롤 이동
     var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
     if (memberCard.length > 0) {
@@ -1453,6 +1592,8 @@ $(document).ready(function() {
     $('#input-search').focus();
 
 
+
+
     // 페이지 로딩 시 출석 유형 데이터 가져오기
     var activeGroupId = getCookie('activeGroup');
     $.ajax({
@@ -1516,7 +1657,44 @@ $(document).ready(function() {
 
 
 
+    // 최근 5주 이전까지 출석이 없는 사람 숨기기 스위치 변경 이벤트
+    $('#hide5weekAgo').change(function() {
+        var isChecked = $(this).is(':checked');
+        setCookie('hideFiveWeeksAgo', isChecked, 7);
 
+        var currentWeekRange = $('.current-week').text();
+        var currentDate = getDateFromWeekRange(currentWeekRange);
+        var startDate = getWeekStartDate(currentDate);
+        var endDate = getWeekEndDate(currentDate);
+        var activeGroupId = getCookie('activeGroup');
+
+        if (isChecked) {
+            $.ajax({
+                url: '/main/get_active_members',
+                method: 'POST',
+                data: {
+                    group_id: activeGroupId
+                },
+                dataType: 'json',
+                success: function(activeMembers) {
+
+                    // console.log(activeMembers);
+
+
+                    var activeMemberIndexes = activeMembers.map(function(member) {
+                        return member.member_idx;
+                    });
+                    hideInactiveMembersForFiveWeeks(activeMemberIndexes);
+                }
+            });
+        } else {
+            $('.grid-item').show();
+            // Masonry 레이아웃 업데이트
+            if ($('.grid').data('masonry')) {
+                $('.grid').masonry('layout');
+            }
+        }
+    });
 
 
     // 페이지 로드 시 input-search 상태 업데이트

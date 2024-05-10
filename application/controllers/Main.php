@@ -12,13 +12,27 @@ class Main extends CI_Controller {
 
 
     public function index() {
-        if ($this->session->userdata('email')) {
+
+        if ($this->session->userdata('user_id')) {
             $data['user'] = $this->session->userdata();
-            $user_id = $this->session->userdata('email');
+            $user_id = $this->session->userdata('user_id');
+            $this->load->model('User_model');
+            $data['user'] = $this->User_model->get_user_by_id($user_id);
+
+            // 사용자가 개설한 그룹이 있는지 확인
+            $userGroups = $this->Group_model->get_user_groups($user_id);
+            if (empty($userGroups)) {
+                // 개설한 그룹이 없으면 mypage로 리다이렉트
+                redirect('mypage');
+            }
+
 
             $this->load->model('Group_model');
             $postGroupId = $this->input->post('group_id');
             $activeGroupId = $this->input->cookie('activeGroup');
+
+
+
 
             if ($postGroupId) {
                 $postGroup = $this->Group_model->get_group_by_id($postGroupId);
@@ -131,6 +145,19 @@ class Main extends CI_Controller {
         }
     }
 
+
+    public function get_active_members() {
+        if ($this->input->is_ajax_request()) {
+            $group_id = $this->input->post('group_id');
+            $five_weeks_ago = date('Y-m-d', strtotime('-5 weeks'));
+
+            $this->load->model('Member_model');
+            $active_members = $this->Member_model->get_active_members($group_id, $five_weeks_ago);
+
+            echo json_encode($active_members);
+        }
+    }
+
     public function save_member_info() {
         if ($this->input->is_ajax_request()) {
             $member_idx = $this->input->post('member_idx');
@@ -236,7 +263,7 @@ class Main extends CI_Controller {
                 'memo_type' => $memo_type,
                 'memo_content' => $memo_content,
                 'regi_date' => date('Y-m-d H:i:s'),
-                'user_id' => $this->session->userdata('email'),
+                'user_id' => $this->session->userdata('user_email'),
                 'member_idx' => $member_idx
             );
 
@@ -334,6 +361,60 @@ class Main extends CI_Controller {
         }
     }
 
+    public function delete_member() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('member_idx');
+
+            $data = array(
+                'del_yn' => 'Y',
+                'del_date' => date('Y-m-d H:i:s')
+            );
+
+            $this->load->model('Member_model');
+            $result = $this->Member_model->update_member($member_idx, $data);
+
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
+
+    public function update_multiple_members() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('memberIdx');
+            $grade = $this->input->post('grade');
+            $area = $this->input->post('area');
+            $all_grade_check = $this->input->post('allGradeCheck') === 'true';
+            $all_area_check = $this->input->post('allAreaCheck') === 'true';
+
+            $data = array(
+                'modi_date' => date('Y-m-d H:i:s')
+            );
+
+            if ($all_grade_check) {
+                $data['grade'] = $grade;
+            }
+
+            if ($all_area_check) {
+                $data['area'] = $area;
+            }
+
+            $this->load->model('Member_model');
+            $result = $this->Member_model->update_multiple_members($member_idx, $data, $all_grade_check, $all_area_check);
+
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
 
 
 

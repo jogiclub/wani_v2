@@ -54,6 +54,51 @@ class Member_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
+    public function update_multiple_members($member_idx, $data, $all_grade_check, $all_area_check) {
+        $this->db->where('member_idx', $member_idx);
+        $this->db->where('del_yn', 'N');
+
+        $member = $this->db->get('wb_member')->row_array();
+        $prev_grade = $member['grade'];
+        $prev_area = $member['area'];
+
+        if ($all_grade_check && isset($data['grade'])) {
+            $this->db->where('grade', $prev_grade);
+            $this->db->where('del_yn', 'N');
+            $this->db->update('wb_member', array('grade' => $data['grade'], 'modi_date' => $data['modi_date']));
+        }
+
+        if ($all_area_check && isset($data['area'])) {
+            $this->db->where('area', $prev_area);
+            $this->db->where('del_yn', 'N');
+            $this->db->update('wb_member', array('area' => $data['area'], 'modi_date' => $data['modi_date']));
+        }
+
+        $result = $this->db->update('wb_member', $data, array('member_idx' => $member_idx));
+
+
+
+
+        return $result;
+    }
+
+
+    public function get_active_members($group_id, $five_weeks_ago) {
+        $this->db->select('member_idx');
+        $this->db->from('wb_member_att');
+        $this->db->where('group_id', $group_id);
+        $this->db->where('att_date >=', $five_weeks_ago);
+        $this->db->distinct();
+
+        $query = $this->db->get();
+
+//        print_r($this->db->last_query());
+//        exit;
+
+        return $query->result_array();
+    }
+
+
 }
 
 

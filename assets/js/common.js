@@ -9,3 +9,8 @@ function open_url(url) {
 }
 
 
+function heyToast(message, header) {
+    $('.toast-header strong').text(header);
+    $('.toast-body').text(message);
+    $('#liveToast').toast('show');
+}

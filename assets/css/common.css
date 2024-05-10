@@ -9,6 +9,13 @@ ul, dl{padding: 0; list-style: none}
 /*bootstrarp 커스터마이징*/
 .btn{padding: 5px 10px 4px}
 .btn-primary{background: #0d9af0;border: 1px solid #0d9af0;}
+.btn-danger{background: #cb3128}
+.btn-success{}
+.btn-warning{background: #e09529; color:#fff}
+.form-switch{display: flex; align-items: center}
+.form-switch label{margin-left: 5px}
+
+
 
 .text-bg-primary{background: #0d9af0;}
 .offcanvas{border-left:1px solid #0d9af0!important;}
@@ -23,7 +30,7 @@ ul, dl{padding: 0; list-style: none}
 
 /*마손리*/
 .grid-sizer,.grid-item {width: 16.66%; padding: 3px;}
-.grid-item .member-card{border: 1px solid #999; padding: 17px 12px 6px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer}
+.grid-item .member-card{border: 1px solid #999; padding: 17px 12px 6px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer; background: #fff}
 .grid-item .member-card.leader{height: 122px;    flex-direction: column;     justify-content: space-between;}
 .grid-item .member-card.leader .photo{display: inline-block; height: 64px; width: 64px; background: #efefef; border-radius: 32px;    background-position: center center;background-size: cover;}
 .grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;position: absolute;left: 12px;}
@@ -57,6 +64,8 @@ ul, dl{padding: 0; list-style: none}
 .no-member{width: 100%; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 20px 0; text-align: center}
 
 .toast-header i{color:#CB3227; margin-right: 5px}
+.toast-header{font-size: 20px}
+.toast-body{font-size: 20px}
 
 @media screen and (max-width: 1400px){
     .grid-sizer,.grid-item{width: 16.66%}
@@ -88,17 +97,26 @@ ul, dl{padding: 0; list-style: none}
 
 #attendanceModal .modal-footer{padding: 10px 0}
 .prev-week{}
+.current-week{display: flex; justify-content: center;}
 .current-week{width: calc(100% - 94px)}
 .next-week{}
 
+.hide5weekAgo-warp label{font-size: 14px}
+
 /*헤더*/
-.header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
+header .logo img{width: 130px}
+header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
+header h2 b{position: relative}
+header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
+
 
 .att-dropdown-wrap{position: absolute; right: 80px; z-index: 1; top: 3px;}
 .att-dropdown-wrap button{border: 0;background: none; font-size: 16px}
 
 /*일반*/
-.btn-gnb{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; right: 10px; top: 0;}
+main{background: #fafafa; padding: 30px 0 200px;}
+
+.btn-profile{position: absolute; right: 10px;}
 .btn-home{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; left: 10px; top: 0;}
 
 .group-list-wrap{display: inline-block;width: 100%;text-align: right;position: absolute;bottom: 0;padding: 15px;border-top: 1px solid #ccc;background: #efefef;}
@@ -108,7 +126,7 @@ ul, dl{padding: 0; list-style: none}
 .group-list-wrap .group-list ul li.active{color:#0000FF}
 .group-list-wrap .group-list ul li.active::before{content: '선택그룹'; display: inline-block; background: #0000FF; color: #fff; font-size: 12px;padding: 1px 3px;border-radius: 3px;}
 
-.total-list-wrap{display: flex; justify-content: end;}
+.total-list-wrap{display: flex; justify-content: space-between;}
 .total-list {display: flex; justify-content: center; align-items: center;}
 .total-list dt, .total-list dd{display: inline-block; margin: 0}
 .total-list dt{padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500}
@@ -121,6 +139,10 @@ ul, dl{padding: 0; list-style: none}
 .total-att-list dt:nth-child(2){background:#9cc4ff}
 .total-att-list dt:nth-child(3){background:#8bc34a}
 
+.total-memo-list{display: flex; justify-content: center; align-items: center;}
+.total-memo-list dt{display: inline-block; margin: 0;padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500; background: #CB3227}
+.total-memo-list dd{display: inline-block; margin: 0}
+
 .mode-list label{border: 0; border-radius: 0; background: #fff!important; color:#999; padding: 10px}
 .mode-list .btn-check:checked+.btn{border-bottom: 2px solid #0d9af0; color:#0d9af0!important;}
 
@@ -128,7 +150,7 @@ ul, dl{padding: 0; list-style: none}
 
 
 /*푸터*/
-footer{position:relative; height:200px}
+footer{position:relative;}
 footer .btn-new{position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
 footer .btn-new i{font-size:30px}
 
@@ -143,7 +165,8 @@ footer .btn-new i{font-size:30px}
 
 /*관리*/
 #memberOffcanvas{}
-#memberOffcanvas label{font-size: 14px; color:#999}
+#memberOffcanvas label{font-size: 14px; color:#999; }
+#addMemoOffcanvas label{font-size: 14px; color:#999}
 
 
 /*메모*/
@@ -173,4 +196,4 @@ table tr th, table tr td{text-align: center; font-weight: 500}
 footer .add-group {position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
 footer .add-group i{font-size:30px}
 
-.bi-info-circle-fill{color:#CB3227}
+.bi-info-circle-fill{color:#ff8000}

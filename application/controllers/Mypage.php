@@ -12,19 +12,20 @@ class Mypage extends CI_Controller
 
 
     public function index() {
-//        print_r($this->session->userdata);
-//        exit;
-        if ($this->session->userdata('email')) {
-            $data['user'] = $this->session->userdata();
 
-            $user_id = $this->session->userdata('email');
+        if ($this->session->userdata('user_id')) {
+            $data['user'] = $this->session->userdata();
+            $user_id = $this->session->userdata('user_id');
+            $this->load->model('User_model');
+            $data['user'] = $this->User_model->get_user_by_id($user_id);
+
             $this->load->model('Group_model');
             $groups = $this->Group_model->get_user_groups($user_id);
 
             // 각 그룹별 att_type_idx 개수 가져오기
-            $this->load->model('Attendance_model');
+//            $this->load->model('Attendance_model');
             foreach ($groups as &$group) {
-                $group['att_count'] = $this->Attendance_model->get_attendance_type_count($group['group_id']);
+//                $group['att_count'] = $this->Attendance_model->get_attendance_type_count($group['group_id']);
                 $group['user_count'] = $this->User_model->get_group_user_count($group['group_id']);
             }
 
@@ -44,7 +45,10 @@ class Mypage extends CI_Controller
     public function add_group() {
         if ($this->input->is_ajax_request()) {
             $group_name = $this->input->post('group_name');
-            $user_id = $this->session->userdata('email');
+            $user_id = $this->session->userdata('user_id');
+
+//            print_r($this->session->userdata('user_id'));
+//            exit;
 
             $this->load->model('Group_model');
             $group_id = $this->Group_model->create_group($group_name);

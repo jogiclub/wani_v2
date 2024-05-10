@@ -189,10 +189,11 @@ class Attendance_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
-
+/*
     public function get_attendance_type_count($group_id) {
         $this->db->where('group_id', $group_id);
         $this->db->from('wb_att_type');
         return $this->db->count_all_results();
     }
+*/
 }

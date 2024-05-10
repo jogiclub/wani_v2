@@ -3,35 +3,38 @@
     <?php $this->load->view('header'); ?>
 </head>
 <body>
-<header>
-
+<header class="pt-3 pb-3 border-bottom d-flex justify-content-center">
+    <div class="container-xl">
+        <div class="row">
+            <div class="col-12 text-center position-relative">
+                <div class="logo"><img src="/assets/images/logo.png?2"></div>
+                <a class="btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="top: -4px">
+                    <img src="<?php if($user['user_profile_image']){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="40" height="40">
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#"><?php if($user['user_name']){echo $user['user_name'];} ?></a></li>
+                    <li><a class="dropdown-item" href="#"><?php if($user['user_mail']){echo $user['user_mail'];} ?></a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </header>
 <main>
-    <div class="container-xl">
-
-
-
-
-
-
-
+    <div class="container-xl pt-5 pb-5">
         <div class="table-responsive-xl">
         <table class="table align-middle" style="min-width: 1000px">
 
         <thead>
             <tr>
                 <th scope="col">바로가기</th>
-
                 <th scope="col">그룹수정</th>
                 <th scope="col">회원수</th>
                 <th scope="col">QR인쇄</th>
-
                 <th scope="col">사용자</th>
-
-
                 <th scope="col">출석타입설정</th>
                 <th scope="col">엑셀업로드</th>
-
                 <th scope="col">그룹삭제</th>
             </tr>
         </thead>
@@ -54,7 +57,7 @@
 
                         <td>
                             <a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">
-                                <?php echo $group['att_count']; ?> 개
+                                출석타입설정
                             </a>
                         </td>
                         <td><a href="#" class="btn btn-light btn-sm btn-member-excel-upload" data-group-id="<?php echo $group['group_id']; ?>">엑셀업로드</a></td>
@@ -67,11 +70,9 @@
         </tbody>
         </table>
         </div>
+        <div class="">
 
-
-
-
-
+        </div>
     </div>
 </main>
 <footer>

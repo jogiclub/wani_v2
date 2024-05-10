@@ -15,6 +15,29 @@ class Login extends CI_Controller
         $this->load->view('login');
     }
 
+    public function terms(){
+        $this->load->view('terms');
+    }
+
+    public function privacy(){
+        $this->load->view('privacy');
+    }
+
+
+    public function join()
+    {
+
+//        print_r($this->session->userdata);
+//        exit;
+
+        $data = array(
+            'user_id' => $this->session->userdata('user_id'),
+            'user_name' => $this->session->userdata('user_name'),
+            'user_email' => $this->session->userdata('user_email')
+        );
+        $this->load->view('join', $data);
+    }
+
     public function google_login()
     {
         require_once APPPATH . '../vendor/autoload.php';
@@ -23,15 +46,34 @@ class Login extends CI_Controller
         $config = [
             'client_id' => '665369034498-bf7jrt09lasbit0f5cb4ppne8rs67nt8.apps.googleusercontent.com',
             'client_secret' => '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',
-            'redirect_uris' => ['https://wani.im/login/google_login'],
+            'redirect_uris' => ['https://wani.im/login/google_callback'],
             'access_type' => 'offline',
             'approval_prompt' => 'force',
         ];
         $client->setAuthConfig($config);
         $client->addScope('email');
         $client->addScope('profile');
-        $redirect_uri = 'https://wani.im/login/google_login';
+        $redirect_uri = 'https://wani.im/login/google_callback';
         $client->setRedirectUri($redirect_uri);
+        $auth_url = $client->createAuthUrl();
+        redirect($auth_url);
+    }
+
+
+
+    public function google_callback()
+    {
+        require_once APPPATH . '../vendor/autoload.php';
+
+        $client = new Google_Client();
+        $config = [
+            'client_id' => '665369034498-bf7jrt09lasbit0f5cb4ppne8rs67nt8.apps.googleusercontent.com',
+            'client_secret' => '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',
+            'redirect_uris' => ['https://wani.im/login/google_callback'],
+            'access_type' => 'offline',
+            'approval_prompt' => 'force',
+        ];
+        $client->setAuthConfig($config);
 
         if (isset($_GET['code'])) {
             $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
@@ -51,56 +93,53 @@ class Login extends CI_Controller
                 $user_info = $oauth->userinfo->get();
 
                 $user_data = array(
-                    'name' => $user_info->name,
-                    'email' => $user_info->email,
+                    'user_id' => $user_info->email,
+                    'user_name' => $user_info->name,
+                    'user_email' => $user_info->email,
                     'picture' => $user_info->picture,
                 );
 
+//                print_r($user_data);
+//                exit;
+
                 $this->session->set_userdata($user_data);
 
-                // 사용자 정보를 wb_user 테이블에 저장
+                // 사용자 정보를 wb_user 테이블에서 확인
                 $this->load->model('User_model');
                 $user_id = $user_info->email;
-                $user_name = $user_info->name;
                 $user_exists = $this->User_model->check_user($user_id);
 
-                if (!$user_exists) {
-                    $data = array(
-                        'user_id' => $user_id,
-                        'user_name' => $user_name,
-                        'group_id' => '',
-                        'user_grade' => 1,
-                        'user_mail' => $user_info->email,
-                        'regi_date' => date('Y-m-d H:i:s'),
-                        'modi_date' => date('Y-m-d H:i:s')
-                    );
-                    $this->User_model->insert_user($data);
-                }
+//                print_r($user_exists);
+//                exit;
 
-                redirect('mypage');
+                if ($user_exists) {
+                    // 회원가입이 되어 있는 경우 로그인 처리
+                    redirect('mypage');
+                } else {
+                    // 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
+                    redirect('login/join');
+                }
             } else {
                 redirect('login');
             }
         } else {
-            $auth_url = $client->createAuthUrl();
-            redirect($auth_url);
+            redirect('login');
         }
     }
 
 
-    public function naver_login(){
+    public function naver_login()
+    {
         define('NAVER_CLIENT_ID', 'Cw90dWKPQbexg4b4I8Kv');
         define('NAVER_CALLBACK_URL', base_url('/login/naver_callback'));
         $state = uniqid();
 
-        $apiURL = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=".NAVER_CLIENT_ID."&redirect_uri=".urlencode(NAVER_CALLBACK_URL)."&state=".$state;
-
-
-
-        redirect($apiURL);
+        $oauth_url = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=" . NAVER_CLIENT_ID . "&redirect_uri=" . urlencode(NAVER_CALLBACK_URL) . "&state=" . $state;
+        redirect($oauth_url);
     }
 
-    public function naver_callback(){
+    public function naver_callback()
+    {
         define('NAVER_CLIENT_ID', 'Cw90dWKPQbexg4b4I8Kv');
         define('NAVER_CLIENT_SECRET', 'R1fnbUjh7X');
         define('NAVER_CALLBACK_URL', base_url('/login/naver_callback'));
@@ -110,7 +149,8 @@ class Login extends CI_Controller
         $code = $_GET["code"];
         $state = $_GET["state"];
         $redirectURI = urlencode(NAVER_CALLBACK_URL);
-        $url = "https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=".$client_id."&client_secret=".$client_secret."&redirect_uri=".$redirectURI."&code=".$code."&state=".$state;
+        $url = "https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=" . $client_id . "&client_secret=" . $client_secret . "&redirect_uri=" . $redirectURI . "&code=" . $code . "&state=" . $state;
+
         $is_post = false;
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -123,13 +163,13 @@ class Login extends CI_Controller
         if ($status_code == 200) {
             $responseArr = json_decode($response, true);
 
-            $this->session->set_userdata('naver_access_token', $responseArr['access_token']);
-            $this->session->set_userdata('naver_refresh_token', $responseArr['refresh_token']);
+            $access_token = $responseArr['access_token'];
+            $refresh_token = $responseArr['refresh_token'];
 
-            // 토큰값으로 네이버 회원정보 가져오기
+            // 액세스 토큰을 이용하여 사용자 정보 가져오기
             $me_headers = array(
                 'Content-Type: application/json',
-                sprintf('Authorization: Bearer %s', $responseArr['access_token'])
+                sprintf('Authorization: Bearer %s', $access_token)
             );
             $me_is_post = false;
             $me_ch = curl_init();
@@ -143,118 +183,128 @@ class Login extends CI_Controller
 
             $me_responseArr = json_decode($me_response, true);
 
-            if ($me_responseArr['response']['id']) {
-                // 회원아이디(naver_ 접두사에 네이버 아이디를 붙여줌)
-                $mb_uid = 'naver_'.$me_responseArr['response']['id'];
 
-                // 회원정보가 있는지 확인
-                $this->load->model('User_model');
-                $user_exists = $this->User_model->check_user($mb_uid);
+            if ($me_responseArr['resultcode'] == '00') {
+                $user_id = 'naver_' . $me_responseArr['response']['id'];
+                $user_name = $me_responseArr['response']['name'];
+                $user_email = $me_responseArr['response']['email'];
 
-                if ($user_exists) {
-                    // 멤버 DB에 토큰값 업데이트
-                    $user_data = array(
-                        'access_token' => $responseArr['access_token'],
-                        'refresh_token' => $responseArr['refresh_token']
-                    );
-                    $this->User_model->update_user($mb_uid, $user_data);
-
-                    // 로그인 처리
-                    $user_info = $this->User_model->get_user_by_id($mb_uid);
-                    $this->session->set_userdata($user_info);
-                    print_r('로그인');
-
-
-                    redirect('/mypage/index');
-                } else {
-                    // 회원정보가 없다면 회원가입
-
-
-
-                    $user_id = $mb_uid;
-                    $user_name = $me_responseArr['response']['name'];
-                    $user_mail = $me_responseArr['response']['email'];
-                    $mb_profile_image = $me_responseArr['response']['profile_image']; // 프로필 이미지
-
-                    $data = array(
-                        'user_id' => $user_id,
-                        'user_name' => $user_name,
-                        'user_mail' => $user_mail,
-                        'user_profile_image' => $mb_profile_image
-                    );
-
-                    $this->User_model->insert_user($data);
-
-                    // 로그인 처리
-                    $this->session->set_userdata($data);
-                    redirect('mypage');
-                }
-            } else {
-                // 회원정보를 가져오지 못했습니다.
-                print_r('회원정보를 가져오지 못했습니다.');
-                exit;
-                redirect('login');
-            }
-        } else {
-            print_r('토큰값을 가져오지 못했습니다.');
-            exit;
-            // 토큰값을 가져오지 못했습니다.
-            redirect('login');
-        }
-    }
-
-    public function kakao_login()
-    {
-        require_once APPPATH . '../vendor/autoload.php';
-
-        $client_id = '클라이언트 ID';
-        $redirect_uri = base_url('/login/kakao_login');
-        $client_secret = 'ArAxCbw7MlG7IQQvUzcsiZxzYUa3RnKf';
-
-        $kakao = new Kakao($client_id, $redirect_uri, $client_secret);
-
-        if (isset($_GET['code'])) {
-            $token = $kakao->getAccessToken($_GET['code']);
-
-            if (isset($token['access_token'])) {
-                $user_info = $kakao->getUserProfile($token['access_token']);
-
+                // 사용자 정보를 세션에 저장
                 $user_data = array(
-                    'name' => $user_info['properties']['nickname'],
-                    'email' => $user_info['kakao_account']['email'],
-                    'picture' => $user_info['properties']['profile_image'],
+                    'user_id' => $user_id,
+                    'user_name' => $user_name,
+                    'user_email' => $user_email
                 );
 
                 $this->session->set_userdata($user_data);
 
-                // 사용자 정보를 wb_user 테이블에 저장
+
+                // 회원가입 여부 확인
                 $this->load->model('User_model');
-                $user_id = $user_info['kakao_account']['email'];
-                $user_name = $user_info['properties']['nickname'];
                 $user_exists = $this->User_model->check_user($user_id);
 
-                if (!$user_exists) {
-                    $data = array(
-                        'user_id' => $user_id,
-                        'user_name' => $user_name,
-                        'group_id' => '',
-                        'user_grade' => 1,
-                        'user_mail' => $user_info['kakao_account']['email'],
-                        'regi_date' => date('Y-m-d H:i:s'),
-                        'modi_date' => date('Y-m-d H:i:s')
-                    );
-                    $this->User_model->insert_user($data);
+                if ($user_exists) {
+                    // 회원가입이 되어 있는 경우 로그인 처리
+                    redirect('mypage');
+                } else {
+                    // 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
+                    redirect('login/join');
                 }
-
-                redirect('mypage');
             } else {
+                // 사용자 정보를 가져오지 못한 경우 에러 처리
                 redirect('login');
             }
         } else {
-            $auth_url = $kakao->getAuthorizationUrl();
-            redirect($auth_url);
+            // 액세스 토큰을 가져오지 못한 경우 에러 처리
+            redirect('login');
         }
     }
+
+
+
+    public function kakao_login()
+    {
+        $client_id = 'bf21c48aa301d2094730e9b67cd433ea';
+        $redirect_uri = base_url('/login/kakao_callback');
+        $kakao_oauth_url = "https://kauth.kakao.com/oauth/authorize?client_id={$client_id}&redirect_uri={$redirect_uri}&response_type=code";
+        redirect($kakao_oauth_url);
+    }
+
+    public function kakao_callback()
+    {
+        $client_id = 'bf21c48aa301d2094730e9b67cd433ea';
+        $client_secret = 'FwEMvQDxbSFRViAofZDCJhNeags0pFCQ';
+        $redirect_uri = base_url('/login/kakao_callback');
+
+        $code = $this->input->get('code');
+
+        $token_url = "https://kauth.kakao.com/oauth/token";
+        $token_data = array(
+            'grant_type' => 'authorization_code',
+            'client_id' => $client_id,
+            'client_secret' => $client_secret,
+            'redirect_uri' => $redirect_uri,
+            'code' => $code
+        );
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $token_url);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($token_data));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        $response_data = json_decode($response, true);
+        $access_token = $response_data['access_token'];
+
+        $user_url = "https://kapi.kakao.com/v2/user/me";
+        $user_headers = array(
+            "Authorization: Bearer {$access_token}",
+            "Content-Type: application/x-www-form-urlencoded;charset=utf-8"
+        );
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $user_url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $user_headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        $user_data = json_decode($response, true);
+
+        $user_id = 'kakao_' . $user_data['id'];
+        $user_name = $user_data['properties']['nickname'];
+        $user_email = $user_data['kakao_account']['email'];
+
+        // 사용자 정보를 세션에 저장
+        $user_data = array(
+            'user_id' => $user_id,
+            'user_name' => $user_name,
+            'user_email' => $user_email
+        );
+
+        $this->session->set_userdata($user_data);
+
+
+        // 사용자 정보를 wb_user 테이블에서 확인
+        $this->load->model('User_model');
+        $user_exists = $this->User_model->check_user($user_id);
+
+
+        if ($user_exists) {
+            // 회원가입이 되어 있는 경우 로그인 처리
+            redirect('mypage');
+        } else {
+            // 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
+            redirect('login/join');
+        }
+
+    }
+
+
+
+
 
     public function invite($invite_code) {
         $this->load->model('Invite_model');
@@ -282,6 +332,56 @@ class Login extends CI_Controller
             // 초대 코드가 유효하지 않은 경우 에러 페이지로 리다이렉트
             redirect('login');
         }
+    }
+
+
+    public function process()
+    {
+        $this->load->model('User_model');
+
+        $user_id = $this->session->userdata('user_id');
+        $user_email = $this->session->userdata('user_email');
+        $user_name = $this->session->userdata('user_name');
+        $user_exists = $this->User_model->check_user($user_id);
+
+        if($user_email) {
+            $user_email = $this->session->userdata('user_email');
+        } else {
+            $user_email = $this->input->post('user_email');
+        }
+
+
+        if($this->session->userdata('user_name')) {
+            $user_name = $this->session->userdata('user_name');
+        } else {
+            $user_name = $this->input->post('user_name');
+        }
+
+
+//        print_r($user_id);
+//        print_r($user_email);
+//        print_r($user_name);
+//        exit;
+
+
+        if (!$user_exists) {
+            $data = array(
+                'user_id' => $user_id,
+                'user_name' => $user_name,
+                'user_grade' => 1,
+                'user_mail' => $user_email,
+                'regi_date' => date('Y-m-d H:i:s'),
+                'modi_date' => date('Y-m-d H:i:s')
+            );
+            $this->User_model->insert_user($data);
+
+
+//            print_r($data);
+//            exit;
+
+        }
+
+        redirect('login');
     }
 
 }
