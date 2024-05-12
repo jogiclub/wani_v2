@@ -33,7 +33,8 @@ class Member_model extends CI_Model {
         $this->db->order_by('m.member_name ASC');
 
         $query = $this->db->get();
-
+//        print_r($this->db->last_query());
+//        exit;
         return $query->result_array();
     }
 

@@ -46,9 +46,10 @@ class User_model extends CI_Model {
 
 
 
-    public function save_user($user_id, $user_name, $user_grade) {
+    public function save_user($user_id, $user_name, $user_hp, $user_grade) {
         $data = array(
             'user_name' => $user_name,
+            'user_hp' => $user_hp,
             'user_grade' => $user_grade
         );
 

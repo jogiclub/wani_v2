@@ -436,6 +436,8 @@ $(document).on('click', '.btn-user-setting', function() {
                 var row = '<tr data-user-idx="' + user.idx + '">';
                 row += '<td>' + user.user_id + '</td>';
                 row += '<td><input type="text" class="form-control" name="user_name" value="' + user.user_name + '"></td>';
+                row += '<td>' + user.user_mail + '</td>';
+                row += '<td><input type="text" class="form-control" name="user_hp" value="' + user.user_hp + '"></td>';
                 row += '<td><select class="form-select" name="user_grade">';
                 for (var i = 1; i <= 10; i++) {
                     row += '<option value="' + i + '"' + (user.user_grade == i ? ' selected' : '') + '>' + i + '</option>';
@@ -443,8 +445,7 @@ $(document).on('click', '.btn-user-setting', function() {
                 row += '</select></td>';
                 row += '<td><button type="button" class="btn btn-sm btn-primary btn-save-user">저장</button></td>';
                 row += '<td><button type="button" class="btn btn-sm btn-danger btn-delete-user">삭제</button></td>';
-                row += '<td>' + user.user_mail + '</td>';
-                row += '<td>' + user.user_hp + '</td>';
+
                 row += '</tr>';
 
                 tableBody.append(row);
@@ -526,6 +527,20 @@ $(document).on('click', '#startUpload', function() {
 
 
 
+$(document).on('click', '.btn-print-qr', function() {
+    var groupId = $(this).data('group-id');
+    $('#printLabel01').data('group-id', groupId);
+    $('#qrPrintModal').modal('show');
+});
+
+$(document).on('click', '#printLabel01', function() {
+    var groupId = $(this).data('group-id');
+    var url = '/mypage/print_qr?group_id=' + groupId;
+    window.open(url, '_blank', 'width=800,height=600');
+});
+
+
+
 $(document).ready(function () {
 
 
@@ -535,6 +550,7 @@ $(document).ready(function () {
         var row = $(this).closest('tr');
         var userId = row.find('td:eq(0)').text();
         var userName = row.find('input[name="user_name"]').val();
+        var userHp = row.find('input[name="user_hp"]').val();
         var userGrade = row.find('select[name="user_grade"]').val();
 
         $.ajax({
@@ -543,6 +559,7 @@ $(document).ready(function () {
             data: {
                 user_id: userId,
                 user_name: userName,
+                user_hp: userHp,
                 user_grade: userGrade
             },
             dataType: 'json',
@@ -638,6 +655,9 @@ $(document).ready(function () {
             }
         });
     });
+
+
+
 
 
 })

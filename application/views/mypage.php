@@ -22,6 +22,12 @@
     </div>
 </header>
 <main>
+
+
+
+
+
+
     <div class="container-xl pt-5 pb-5">
         <div class="table-responsive-xl">
         <table class="table align-middle" style="min-width: 1000px">
@@ -52,7 +58,8 @@
                             <a class="btn btn-light btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a>
                         </td>
                         <td><?php echo $group['member_count']; ?>명</td>
-                        <td><a href="" class="btn btn-light btn-sm">QR인쇄</a></td>
+                        <td><a class="btn btn-light btn-sm btn-print-qr" data-group-id="<?php echo $group['group_id']; ?>">QR인쇄</a></td>
+
                         <td><a class="btn btn-secondary btn-sm btn-user-setting" data-group-id="<?php echo $group['group_id']; ?>"><?php echo $group['user_count']; ?>명</a></td>
 
                         <td>
@@ -216,21 +223,21 @@
                         <colgroup>
                             <col style="width: 120px">
                             <col style="width: 120px">
+                            <col style="width: 120px">
+                            <col style="">
                             <col style="width: 100px">
                             <col style="width: 70px">
                             <col style="width: 70px">
-                            <col style="width: 120px">
-                            <col style="">
                         </colgroup>
                         <thead>
                         <tr>
                             <th>아이디</th>
                             <th>이름</th>
+                            <th>이메일</th>
+                            <th>휴대폰번호</th>
                             <th>권한</th>
                             <th>저장</th>
                             <th>삭제</th>
-                            <th>이메일</th>
-                            <th>휴대폰번호</th>
                         </tr>
                         </thead>
                         <tbody class="table-group-divider" id="userListTableBody">
@@ -272,9 +279,29 @@
     </div>
 </div>
 
+<div class="modal fade" id="qrPrintModal" tabindex="-1" aria-labelledby="qrPrintModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qrPrintModalLabel">QR 코드 인쇄</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <button type="button" class="btn btn-primary mb-3" id="printLabel01">규격코드: 978</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
 
 <?php $this->load->view('footer'); ?>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.js" integrity="sha512-is1ls2rgwpFZyixqKFEExPHVUUL+pPkBEPw47s/6NDQ4n1m6T/ySeDW3p54jp45z2EJ0RSOgilqee1WhtelXfA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="/assets/js/mypage.js?<?php echo date('Ymdhis');?>"></script>
+
+
+
 

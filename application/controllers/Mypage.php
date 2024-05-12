@@ -353,10 +353,12 @@ class Mypage extends CI_Controller
         if ($this->input->is_ajax_request()) {
             $user_id = $this->input->post('user_id');
             $user_name = $this->input->post('user_name');
+            $user_hp = $this->input->post('user_hp');
             $user_grade = $this->input->post('user_grade');
 
+
             $this->load->model('User_model');
-            $result = $this->User_model->save_user($user_id, $user_name, $user_grade);
+            $result = $this->User_model->save_user($user_id, $user_name, $user_hp, $user_grade);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -476,7 +478,22 @@ class Mypage extends CI_Controller
 
 
 
+    public function get_group_members() {
+        if ($this->input->is_ajax_request()) {
+            $group_id = $this->input->post('group_id');
 
+            $this->load->model('Member_model');
+            $members = $this->Member_model->get_group_members($group_id);
+
+            echo json_encode($members);
+        }
+    }
+
+    public function print_qr() {
+        $group_id = $this->input->get('group_id');
+        $data['group_id'] = $group_id;
+        $this->load->view('print_qr_view', $data);
+    }
 
 
 
