@@ -33,18 +33,18 @@ ul, dl{padding: 0; list-style: none}
 .grid-item .member-card{border: 1px solid #999; padding: 17px 12px 6px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer; background: #fff}
 .grid-item .member-card.leader{height: 122px;    flex-direction: column;     justify-content: space-between;}
 .grid-item .member-card.leader .photo{display: inline-block; height: 64px; width: 64px; background: #efefef; border-radius: 32px;    background-position: center center;background-size: cover;}
-.grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;position: absolute;left: 12px;}
+.grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;position: absolute; left: 10px; bottom: 8px;}
 .grid-item .member-card.leader .badge i{color:#0d9af0;}
 .grid-item .member-card.new .badge i{color: #ff8000;}
 .grid-item .member-card .birth i{color: #CB3227}
 .grid-item .member-card .bedge-leader{}
 .grid-item .member-card .area{position: absolute; left: 16px; top: 13px; font-size: 10px; color:#999;}
-.grid-item .member-card .member-wrap{display: flex; align-items: center; width: 100%; justify-content: space-between;}
-.grid-item .member-card .member-wrap .member-name{line-height: 20px;}
-.grid-item .member-card .member-wrap .att-stamp-warp{display: flex; }
+.grid-item .member-card .member-wrap{width: 100%;}
+.grid-item .member-card .member-wrap .member-name{line-height: 20px; position: absolute;bottom: 12px;left: 14px;}
+.grid-item .member-card .member-wrap .att-stamp-warp{display: flex; position: absolute;right: 10px;bottom: 12px; }
 .grid-item .member-card .member-wrap .att-stamp-warp.hidden{display: none}
-.grid-item .member-card .member-wrap .att-stamp-warp .att-stamp{background: #CB3227; height: 30px; width: 30px; border-radius: 3px; justify-content: center; align-items: center; display: flex; font-size: 14px; color:#fff; margin-left: 2px}
-.grid-item .member-card.leader .member-wrap .member-name{padding-left: 20px}
+.grid-item .member-card .member-wrap .att-stamp-warp .att-stamp{background: #CB3227; height: 25px; width: 25px; border-radius: 3px; justify-content: center; align-items: center; display: flex; font-size: 14px; color:#fff; margin-left: 2px}
+.grid-item .member-card.leader .member-wrap .member-name{padding-left: 20px;}
 .grid-item .member-card.new .member-wrap .member-name{padding-left: 20px}
 
 .grid-item .member-card.off{opacity: 0.5; box-shadow: none;}

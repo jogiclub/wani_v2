@@ -34,7 +34,7 @@ class User_model extends CI_Model {
 
 
     public function get_group_users($group_id) {
-        $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_user.user_grade, wb_user.user_mail, wb_user.user_hp');
+        $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_group_user.level, wb_user.user_mail, wb_user.user_hp');
         $this->db->from('wb_user');
         $this->db->join('wb_group_user', 'wb_user.user_id = wb_group_user.user_id');
         $this->db->where('wb_group_user.group_id', $group_id);
@@ -46,15 +46,22 @@ class User_model extends CI_Model {
 
 
 
-    public function save_user($user_id, $user_name, $user_hp, $user_grade) {
+    public function save_user($user_id, $user_name, $user_hp, $level, $group_id) {
         $data = array(
             'user_name' => $user_name,
-            'user_hp' => $user_hp,
-            'user_grade' => $user_grade
+            'user_hp' => $user_hp
         );
 
         $this->db->where('user_id', $user_id);
-        $result = $this->db->update('wb_user', $data);
+        $this->db->update('wb_user', $data);
+
+        $group_user_data = array(
+            'level' => $level
+        );
+
+        $this->db->where('user_id', $user_id);
+        $this->db->where('group_id', $group_id);
+        $result = $this->db->update('wb_group_user', $group_user_data);
 
         return $result;
     }
@@ -95,6 +102,7 @@ class User_model extends CI_Model {
 
     public function insert_group_user($data) {
         $this->db->insert('wb_group_user', $data);
+        return $this->db->insert_id();
     }
 
     public function get_group_user($user_id, $group_id) {

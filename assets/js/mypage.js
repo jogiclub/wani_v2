@@ -438,14 +438,13 @@ $(document).on('click', '.btn-user-setting', function() {
                 row += '<td><input type="text" class="form-control" name="user_name" value="' + user.user_name + '"></td>';
                 row += '<td>' + user.user_mail + '</td>';
                 row += '<td><input type="text" class="form-control" name="user_hp" value="' + user.user_hp + '"></td>';
-                row += '<td><select class="form-select" name="user_grade">';
+                row += '<td><select class="form-select" name="level">';
                 for (var i = 1; i <= 10; i++) {
-                    row += '<option value="' + i + '"' + (user.user_grade == i ? ' selected' : '') + '>' + i + '</option>';
+                    row += '<option value="' + i + '"' + (user.level == i ? ' selected' : '') + '>' + i + '</option>';
                 }
                 row += '</select></td>';
                 row += '<td><button type="button" class="btn btn-sm btn-primary btn-save-user">저장</button></td>';
                 row += '<td><button type="button" class="btn btn-sm btn-danger btn-delete-user">삭제</button></td>';
-
                 row += '</tr>';
 
                 tableBody.append(row);
@@ -551,7 +550,8 @@ $(document).ready(function () {
         var userId = row.find('td:eq(0)').text();
         var userName = row.find('input[name="user_name"]').val();
         var userHp = row.find('input[name="user_hp"]').val();
-        var userGrade = row.find('select[name="user_grade"]').val();
+        var level = row.find('select[name="level"]').val();
+        var groupId = $('#userListModal').data('group-id');
 
         $.ajax({
             url: '/mypage/save_user',
@@ -560,14 +560,14 @@ $(document).ready(function () {
                 user_id: userId,
                 user_name: userName,
                 user_hp: userHp,
-                user_grade: userGrade
+                level: level,
+                group_id: groupId
             },
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
                     alert('사용자 정보가 저장되었습니다.');
                     // 사용자 목록 다시 로드
-                    var groupId = $('#userListModal').data('group-id');
                     $('.btn-user-setting[data-group-id="' + groupId + '"]').trigger('click');
                 } else {
                     alert('사용자 정보 저장에 실패했습니다.');

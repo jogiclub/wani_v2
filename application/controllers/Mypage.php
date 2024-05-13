@@ -354,11 +354,11 @@ class Mypage extends CI_Controller
             $user_id = $this->input->post('user_id');
             $user_name = $this->input->post('user_name');
             $user_hp = $this->input->post('user_hp');
-            $user_grade = $this->input->post('user_grade');
-
+            $level = $this->input->post('level');
+            $group_id = $this->input->post('group_id');
 
             $this->load->model('User_model');
-            $result = $this->User_model->save_user($user_id, $user_name, $user_hp, $user_grade);
+            $result = $this->User_model->save_user($user_id, $user_name, $user_hp, $level, $group_id);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -407,7 +407,8 @@ class Mypage extends CI_Controller
                 } else {
                     $group_user_data = array(
                         'user_id' => $user_id,
-                        'group_id' => $group_id
+                        'group_id' => $group_id,
+                        'level' => 1
                     );
                     $this->User_model->insert_group_user($group_user_data);
                     $response = array('status' => 'success');
@@ -429,7 +430,8 @@ class Mypage extends CI_Controller
                 if ($user_id) {
                     $group_user_data = array(
                         'user_id' => $email,
-                        'group_id' => $group_id
+                        'group_id' => $group_id,
+                        'level' => 1
                     );
                     $this->User_model->insert_group_user($group_user_data);
                     $response = array('status' => 'success');

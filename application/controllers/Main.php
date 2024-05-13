@@ -12,10 +12,13 @@ class Main extends CI_Controller {
 
 
     public function index() {
-
+        // 사용자가 로그인되어 있는지 확인
         if ($this->session->userdata('user_id')) {
+            // 로그인된 사용자의 정보 가져오기
             $data['user'] = $this->session->userdata();
             $user_id = $this->session->userdata('user_id');
+
+            // User_model을 로드하고 사용자 정보 가져오기
             $this->load->model('User_model');
             $data['user'] = $this->User_model->get_user_by_id($user_id);
 
@@ -26,31 +29,39 @@ class Main extends CI_Controller {
                 redirect('mypage');
             }
 
-
+            // Group_model 로드
             $this->load->model('Group_model');
+
+            // POST로 전달된 group_id 가져오기
             $postGroupId = $this->input->post('group_id');
+
+            // 쿠키에 저장된 activeGroup 가져오기
             $activeGroupId = $this->input->cookie('activeGroup');
 
-
-
-
             if ($postGroupId) {
+                // POST로 전달된 group_id가 있는 경우
                 $postGroup = $this->Group_model->get_group_by_id($postGroupId);
                 $data['group_name'] = $postGroup['group_name'];
-                $data['postGroup'] = $postGroup; // postGroup 데이터를 뷰 파일에 전달
-                $this->input->set_cookie('activeGroup', $postGroupId, 86400); // 쿠키 설정 (만료 시간: 1일)
+                $data['postGroup'] = $postGroup;
+
+                // 쿠키에 activeGroup 설정 (만료 시간: 1일)
+                $this->input->set_cookie('activeGroup', $postGroupId, 86400);
                 $currentGroupId = $postGroupId;
             } else if ($activeGroupId) {
+                // 쿠키에 저장된 activeGroup이 있는 경우
                 $activeGroup = $this->Group_model->get_group_by_id($activeGroupId);
                 $data['group_name'] = $activeGroup['group_name'];
                 $currentGroupId = $activeGroupId;
             } else {
+                // POST로 전달된 group_id와 쿠키에 저장된 activeGroup이 없는 경우
                 $min_group_id = $this->Group_model->get_min_group_id($user_id);
                 if ($min_group_id) {
                     $activeGroup = $this->Group_model->get_group_by_id($min_group_id);
                     $data['group_name'] = $activeGroup['group_name'];
                     $currentGroupId = $min_group_id;
-                    $this->input->set_cookie('activeGroup', $min_group_id, 86400); // 쿠키 설정 (만료 시간: 1일)
+
+                    // 쿠키에 activeGroup 설정 (만료 시간: 1일)
+                    $this->input->set_cookie('activeGroup', $min_group_id, 86400);
                 } else {
                     $data['group_name'] = ''; // 그룹이 없는 경우 기본값 설정
                 }
@@ -60,14 +71,23 @@ class Main extends CI_Controller {
             $this->load->model('Attendance_model');
             $data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentGroupId);
 
-
+            // 선택된 모드 설정 (기본값: mode-1)
             $data['mode'] = $this->input->post('mode') ?? 'mode-1';
 
+            // 사용자의 그룹 레벨 가져오기
+            $user_group = $this->User_model->get_group_user($user_id, $currentGroupId);
+            $user_level = $user_group ? $user_group['level'] : 0;
+            $data['user_level'] = $user_level;
+
+            // main 뷰 로드
             $this->load->view('main', $data);
         } else {
+            // 로그인되어 있지 않은 경우 로그인 페이지로 리다이렉트
             redirect('login/index');
         }
     }
+
+
 
 
 
@@ -349,14 +369,17 @@ class Main extends CI_Controller {
     public function get_members() {
         if ($this->input->is_ajax_request()) {
             $group_id = $this->input->post('group_id');
+            $level = $this->input->post('level');
+
+//            print_r($level);
+//            exit;
+//            $level = 2;
             $start_date = $this->input->post('start_date');
             $end_date = $this->input->post('end_date');
 
             $this->load->model('Member_model');
 
-            $members = $this->Member_model->get_group_members($group_id, $start_date, $end_date);
-//            print_r($members);
-//            exit;
+            $members = $this->Member_model->get_group_members($group_id, $level, $start_date, $end_date);
             echo json_encode($members);
         }
     }

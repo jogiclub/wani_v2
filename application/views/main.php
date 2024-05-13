@@ -11,11 +11,11 @@
                 <h2 class="mb-1 group-name"><b></b></h2>
                 <button class="btn-home" type="button" onclick="go_url('/mypage')"><i class="bi bi-arrow-left-short"></i></button>
                 <a class="btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="top: -4px">
-                    <img src="<?php if($user['user_profile_image']){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="50" height="50">
+                    <img src="<?php if(isset($user['user_profile_image'])){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="50" height="50">
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#"><?php if($user['user_name']){echo $user['user_name'];} ?></a></li>
-                    <li><a class="dropdown-item" href="#"><?php if($user['user_mail']){echo $user['user_mail'];} ?></a></li>
+                    <li><a class="dropdown-item" href="#"><?php if(isset($user['user_name'])){echo $user['user_name'];} ?></a></li>
+                    <li><a class="dropdown-item" href="#"><?php if(isset($user['user_mail'])){echo $user['user_mail'];} ?></a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
                 </ul>
@@ -110,6 +110,7 @@
                     <label class="form-check-label" for="hide5weekAgo">5주 이전 출석자 숨기기</label>
                 </div>
             </div>
+
             <div class="grid">
                 <div class="grid-sizer"></div>
                 <div class="grid-item">
@@ -363,17 +364,36 @@
     $('.group-name b').prepend(logoImg);
     // $('.group-name').prepend('<img src="/assets/images/logo.png" style="height: 34px; margin-right: 10px">');
     var activeGroupId = getCookie('activeGroup');
+    var userLevel = '<?php echo $user_level; ?>';
+
+    // console.log(userLevel);
+
+
 
     if (postGroupId) {
         // postGroup이 있는 경우 해당 그룹 정보 사용
-        loadMembers(postGroupId);
+        loadMembers(postGroupId, userLevel);
         setCookie('activeGroup', postGroupId, 7);
     } else if (activeGroupId) {
         // postGroup이 없고 쿠키에 저장된 그룹이 있는 경우 해당 그룹 정보 사용
-        loadMembers(activeGroupId);
+        loadMembers(activeGroupId, userLevel);
     } else {
         alert('잘못된 경로로 접근하셨습니다. 다시 접속 바랍니다.')
     }
+
+
+
+
+    $.ajax({
+        url: '/main/get_attendance_types',
+        method: 'POST',
+        data: { group_id: activeGroupId, level: userLevel },
+        dataType: 'json',
+        success: function(response) {
+            attendanceTypes = response.attendance_types;
+        }
+    });
+
 
     var initialMode = '<?php echo $mode; ?>'; // PHP에서 전달받은 mode 값을 JavaScript 변수에 할당
 

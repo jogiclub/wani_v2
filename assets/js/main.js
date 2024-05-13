@@ -1075,28 +1075,14 @@ function formatDate(date) {
     return `${year}.${month}.${day}`;
 }
 
-function loadMembers(groupId, startDate, endDate, initialLoad = true) {
-
-    if (!startDate || !endDate) {
-        const today = new Date();
-        const currentDay = today.getDay(); // 오늘 요일 (0: 일요일, 1: 월요일, 6: 토요일)
-
-        const thisWeekSunday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - currentDay + 1);
-        const thisWeekSaturday = new Date(thisWeekSunday.getFullYear(), thisWeekSunday.getMonth(), thisWeekSunday.getDate() + 6);
-
-        startDate = thisWeekSunday.toISOString().replace(/-/g, '.').slice(0, 10); // YYYY.MM.DD 형식
-        endDate = thisWeekSaturday.toISOString().replace(/-/g, '.').slice(0, 10); // YYYY.MM.DD 형식
-        // console.log(startDate);
-        // console.log(endDate);
-
-    }
-
+function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
 
     $.ajax({
         url: '/main/get_members',
         method: 'POST',
         data: {
             group_id: groupId,
+            level: level,
             start_date: startDate,
             end_date: endDate
         },
@@ -1136,9 +1122,7 @@ function loadMembers(groupId, startDate, endDate, initialLoad = true) {
             }
         }
     });
-
 }
-
 
 function hideInactiveMembersForFiveWeeks(activeMembers) {
     // 모든 .grid-item 요소 숨기기
@@ -1276,7 +1260,7 @@ function updateWeekRange(weekRange) {
         if (selectedMode === 'mode-3') {
             updateMemoStamps(activeGroupId, startDate, endDate);
         } else if (selectedMode === 'mode-1') {
-            updateAttStamps(activeGroupId, startDate, endDate);
+            updateAttStamps(activeGroupId, userLevel, startDate, endDate);
         }
     }
 
@@ -1594,17 +1578,7 @@ $(document).ready(function() {
 
 
 
-    // 페이지 로딩 시 출석 유형 데이터 가져오기
-    var activeGroupId = getCookie('activeGroup');
-    $.ajax({
-        url: '/main/get_attendance_types',
-        method: 'POST',
-        data: { group_id: activeGroupId },
-        dataType: 'json',
-        success: function(response) {
-            attendanceTypes = response.attendance_types;
-        }
-    });
+
 
 
     // 모든 주차 범위 생성

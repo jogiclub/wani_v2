@@ -98,27 +98,24 @@ class Login extends CI_Controller
                     'user_email' => $user_info->email,
                     'picture' => $user_info->picture,
                 );
-
-//                print_r($user_data);
-//                exit;
-
                 $this->session->set_userdata($user_data);
-
                 // 사용자 정보를 wb_user 테이블에서 확인
                 $this->load->model('User_model');
                 $user_id = $user_info->email;
                 $user_exists = $this->User_model->check_user($user_id);
-
-//                print_r($user_exists);
-//                exit;
-
                 if ($user_exists) {
                     // 회원가입이 되어 있는 경우 로그인 처리
+                    $user = $this->User_model->get_user_by_id($user_id);
+                    $user_data['user_grade'] = $user['user_grade'];
+                    $user_data['user_hp'] = $user['user_hp'];
+                    $this->session->set_userdata($user_data);
                     redirect('mypage');
                 } else {
                     // 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
                     redirect('login/join');
                 }
+
+
             } else {
                 redirect('login');
             }
@@ -205,6 +202,10 @@ class Login extends CI_Controller
 
                 if ($user_exists) {
                     // 회원가입이 되어 있는 경우 로그인 처리
+                    $user = $this->User_model->get_user_by_id($user_id);
+                    $user_data['user_grade'] = $user['user_grade'];
+                    $user_data['user_hp'] = $user['user_hp'];
+                    $this->session->set_userdata($user_data);
                     redirect('mypage');
                 } else {
                     // 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
@@ -285,15 +286,16 @@ class Login extends CI_Controller
         );
 
         $this->session->set_userdata($user_data);
-
-
         // 사용자 정보를 wb_user 테이블에서 확인
         $this->load->model('User_model');
         $user_exists = $this->User_model->check_user($user_id);
 
-
         if ($user_exists) {
             // 회원가입이 되어 있는 경우 로그인 처리
+            $user = $this->User_model->get_user_by_id($user_id);
+            $user_data['user_grade'] = $user['user_grade'];
+            $user_data['user_hp'] = $user['user_hp'];
+            $this->session->set_userdata($user_data);
             redirect('mypage');
         } else {
             // 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
