@@ -41,6 +41,21 @@ class Member_model extends CI_Model {
         return $query->result_array();
     }
 
+    public function get_same_members($member_idx, $group_id, $grade, $start_date, $end_date) {
+        $date_between = " ma.att_date BETWEEN '" . $start_date . "' AND '" . $end_date . "'";
+        $this->db->select(' m.*, GROUP_CONCAT(CONCAT(ma.att_type_idx, ",", ma.att_date) SEPARATOR "|") AS attendance', false);
+        $this->db->from('wb_member m');
+        $this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND'.$date_between, 'left');
+        $this->db->where('m.group_id', $group_id);
+        $this->db->where('m.grade', $grade);
+
+        $this->db->where('m.del_yn', 'N');
+        $this->db->group_by('m.member_idx');
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+
+
 
 
     public function get_member_by_idx($member_idx) {

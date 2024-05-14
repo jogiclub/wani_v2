@@ -25,13 +25,13 @@
             <div class="col-xl-12 text-center mt-1 mb-3 mode-list">
                 <div class="btn-group" role="group" aria-label="Vertical radio toggle button group">
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-1" autocomplete="off" >
-                    <label class="btn btn-outline-secondary" for="mode-1"><i class="bi bi-clipboard-check"></i> 출석모드</label>
+                    <label class="btn btn-outline-secondary" for="mode-1"><i class="bi bi-qr-code"></i> QR모드</label>
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-2" autocomplete="off">
                     <label class="btn btn-outline-secondary" for="mode-2"><i class="bi bi-person-badge"></i> 관리모드</label>
                     <input type="radio" class="btn-check" name="vbtn-radio" id="mode-3" autocomplete="off">
                     <label class="btn btn-outline-secondary" for="mode-3"><i class="bi bi-journals"></i> 메모모드</label>
-<!--                    <input type="radio" class="btn-check" name="vbtn-radio" id="mode-4" autocomplete="off">
-                    <label class="btn btn-outline-secondary" for="mode-4"><i class="bi bi-cake2"></i> 생일모드</label>-->
+                    <input type="radio" class="btn-check" name="vbtn-radio" id="mode-4" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="mode-4"><i class="bi bi-clipboard-check"></i> 출석모드</label>
                 </div>
             </div>
 
@@ -333,6 +333,28 @@
     </div>
 
 </div>
+
+
+<!-- 출석체크 offcanvas -->
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel">
+    <div class="offcanvas-header text-start">
+        <h5 class="offcanvas-title" id="attendanceOffcanvasLabel"></h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <!-- 출석체크 내용 -->
+    </div>
+    <div class="offcanvas-footer">
+        <div class="input-group">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 50%">취소</button>
+            <button type="button" class="btn btn-primary" id="saveAttendanceBtn" style="width: 50%">저장</button>
+        </div>
+    </div>
+
+
+
+</div>
+
 
 <!--내용전달용 토스트-->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">

@@ -42,6 +42,27 @@ class Attendance_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
+    public function save_attendance_data($attendance_data, $group_id, $start_date, $end_date) {
+        foreach ($attendance_data as $data) {
+            $member_idx = $data['member_idx'];
+            $att_type_idx = $data['att_type_idx'];
+
+            // 기존 출석 정보 삭제
+            $this->delete_attendance_by_date_range($member_idx, $start_date, $end_date);
+
+            // 새로운 출석 정보 저장
+            $att_data = array(
+                'att_date' => $start_date,
+                'att_type_idx' => $att_type_idx,
+                'member_idx' => $member_idx,
+                'group_id' => $group_id
+            );
+            $this->db->insert('wb_member_att', $att_data);
+        }
+
+        return $this->db->affected_rows() > 0;
+    }
+
     public function update_attendance_type($att_type_idx, $att_type_name, $att_type_nickname, $att_type_color)
     {
         $data = array(
@@ -102,6 +123,9 @@ class Attendance_model extends CI_Model {
         $this->db->where('att_date', $att_date);
         $this->db->delete('wb_member_att');
     }
+
+
+
 
 
 

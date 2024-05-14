@@ -146,8 +146,17 @@ main{background: #fafafa; padding: 30px 0 200px;}
 .mode-list label{border: 0; border-radius: 0; background: #fff!important; color:#999; padding: 10px}
 .mode-list .btn-check:checked+.btn{border-bottom: 2px solid #0d9af0; color:#0d9af0!important;}
 
+@media screen and (max-width: 576px){
+    .mode-list .btn-group{width: 100%}
+    .mode-list label i{display: block; width: 100%; font-size: 30px;}
+}
 
 
+#attendanceOffcanvas .offcanvas-body{padding: 0}
+#attendanceOffcanvas table{min-width: 650px}
+#attendanceOffcanvas table thead{vertical-align: middle; position: sticky; top: 0; z-index: 10;}
+#attendanceOffcanvas table tr th:first-child, #attendanceOffcanvas table tr td:first-child { position: sticky; left: 0; }
+#attendanceOffcanvas table tr td select{font-size: 16px}
 
 /*푸터*/
 footer{position:relative;}

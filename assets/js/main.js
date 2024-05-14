@@ -96,6 +96,25 @@ function applyModeConfig(mode) {
         $('.total-memo-list').hide();
     }
 
+    if (config.hideNonLeaderMembers) {
+        $('.grid-item:not(:has(.leader))').hide();
+    } else {
+        $('.grid-item').show();
+    }
+
+    // masonry 레이아웃 업데이트
+    if ($('.grid').data('masonry')) {
+        $('.grid').masonry('layout');
+    }
+
+    // 페이지 로딩 시 mode-4인 경우 처리
+    if (mode === 'mode-4') {
+        $('.grid-item:not(:has(.leader))').hide();
+        if ($('.grid').data('masonry')) {
+            $('.grid').masonry('layout');
+        }
+    }
+
 }
 
 const modeConfig = {
@@ -142,11 +161,12 @@ const modeConfig = {
         memoStampWarp: 'addClass',
         inputSearch: {
             disabled: true,
-            val: '생일모드 사용 중...',
+            val: '출석모드 사용 중...',
             placeholder: '',
             focus: false
         },
-        resetMemberList: true
+        resetMemberList: true,
+        hideNonLeaderMembers: true // 수정된 속성
     }
 };
 
@@ -163,7 +183,7 @@ $(document).on('click', '.member-card', function() {
     var selectedMode = $('.mode-list .btn-check:checked').attr('id');
 
     if (selectedMode === 'mode-1') {
-        // 출석모드
+        // QR모드
         var memberIdx = $(this).attr('member-idx');
         var memberName = $(this).find('.member-name').text().trim();
 
@@ -194,10 +214,177 @@ $(document).on('click', '.member-card', function() {
         $('#addMemoOffcanvasLabel').text(memberName + ' 님의 메모 추가');
         $('#addMemoOffcanvas').offcanvas('show');
         loadMemoList(memberIdx);
+    } else if (selectedMode === 'mode-4') {
+        var memberIdx = $(this).attr('member-idx');
+        var memberName = $(this).find('.member-name').text().trim();
+        var groupId = getCookie('activeGroup');
+        var gradeMatch = $(this).attr('class').match(/grade-(\d+)/);
+        var grade = gradeMatch ? gradeMatch[1] : null;
+
+        // console.log(memberIdx);
+        // console.log(memberName);
+        // console.log(groupId);
+        // console.log(gradeMatch);
+        // console.log(grade);
+
+
+        if (grade) {
+            loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, grade);
+        } else {
+            alert('멤버의 grade 정보를 찾을 수 없습니다.');
+        }
     }
 });
 
 
+
+
+
+
+function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, grade) {
+    var currentWeekRange = $('.current-week').text();
+    var currentDate = getDateFromWeekRange(currentWeekRange);
+    var startDate = getWeekStartDate(currentDate);
+    var endDate = getWeekEndDate(currentDate);
+
+    $.ajax({
+        url: '/main/get_same_members',
+        method: 'POST',
+        data: {
+            member_idx: memberIdx,
+            group_id: groupId,
+            grade: grade,
+            start_date: startDate,
+            end_date: endDate
+        },
+        dataType: 'json',
+        success: function(response) {
+            console.log(response); // 디버깅용 코드
+
+            if (response.status === 'success') {
+                var members = response.members;
+                var attTypes = response.att_types;
+
+                var offcanvasTitle = $('#attendanceOffcanvasLabel');
+                var offcanvasBody = $('#attendanceOffcanvas .offcanvas-body');
+                offcanvasTitle.text(memberName + '님 소그룹의 출석체크');
+                offcanvasBody.empty();
+
+                var tableHtml = '<table class="table align-middle" style="min-width: 650px"><thead><tr><th>이름</th>';
+
+                // 그룹에 세팅된 att_type_category 헤더 추가
+                if (attTypes && attTypes.length > 0) {
+                    var attTypeCategories = {};
+                    attTypes.forEach(function(attType) {
+                        if (!attTypeCategories[attType.att_type_category_idx]) {
+                            attTypeCategories[attType.att_type_category_idx] = attType.att_type_category_name;
+                        }
+                    });
+
+                    for (var categoryIdx in attTypeCategories) {
+                        tableHtml += '<th>' + attTypeCategories[categoryIdx] + '</th>';
+                    }
+                }
+
+                tableHtml += '</tr></thead><tbody class="table-group-divider">';
+
+                if (members && members.length > 0) {
+                    members.forEach(function(member) {
+                        tableHtml += '<tr><td style="width: 100px">' + member.member_name + '</td>';
+
+                        // 각 멤버의 att_type selectbox 추가
+                        if (attTypes && attTypes.length > 0) {
+                            var attTypeCategoryIdxs = Object.keys(attTypeCategories);
+                            attTypeCategoryIdxs.forEach(function(categoryIdx) {
+                                var attTypesByCategoryIdx = attTypes.filter(function(attType) {
+                                    return attType.att_type_category_idx == categoryIdx;
+                                });
+
+                                tableHtml += '<td  style="width: 100px"><select class="form-select att-type-select" data-member-idx="' + member.member_idx + '" data-att-type-category-idx="' + categoryIdx + '">';
+                                tableHtml += '<option value="">-</option>';
+
+                                attTypesByCategoryIdx.forEach(function(attType) {
+                                    var selectedValue = '';
+                                    if (member.attendance) {
+                                        var attendanceArr = member.attendance.split('|');
+                                        attendanceArr.forEach(function(attendance) {
+                                            var attData = attendance.split(',');
+                                            var attTypeIdx = attData[0].trim();
+                                            if (attTypeIdx == attType.att_type_idx) {
+                                                selectedValue = attTypeIdx;
+                                            }
+                                        });
+                                    }
+                                    var isSelected = selectedValue == attType.att_type_idx ? ' selected' : '';
+                                    tableHtml += '<option value="' + attType.att_type_idx + '"' + isSelected + '>' + attType.att_type_nickname + '</option>';
+                                });
+
+                                tableHtml += '</select></td>';
+                            });
+                        }
+
+                        tableHtml += '</tr>';
+                    });
+                }
+
+                tableHtml += '</tbody></table>';
+                offcanvasBody.append(tableHtml);
+
+                // selectbox 변경 이벤트 핸들러 등록
+                /*
+                $('.att-type-select').on('change', function() {
+                    var memberIdx = $(this).data('member-idx');
+                    var attTypeCategoryIdx = $(this).data('att-type-category-idx');
+                    var selectedAttTypeIdx = $(this).val();
+
+                    // 서버로 출석 정보 저장 요청
+                    saveAttendance(memberIdx, selectedAttTypeIdx, attTypeCategoryIdx);
+                });*/
+
+                $('#attendanceOffcanvas').offcanvas('show');
+            } else {
+                alert('멤버 정보를 가져오는데 실패했습니다.');
+            }
+        }
+    });
+}
+
+
+
+
+
+
+function loadSameMembersInOffcanvas(memberIdx, groupId, grade) {
+    $.ajax({
+        url: '/main/get_same_members',
+        method: 'POST',
+        data: {
+            member_idx: memberIdx,
+            group_id: groupId,
+            grade: grade
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                var members = response.members;
+                var offcanvasBody = $('#memberOffcanvas .offcanvas-body');
+                offcanvasBody.empty();
+
+                members.forEach(function(member) {
+                    var memberHtml = '<div>' +
+                        '<h6>' + member.member_name + '</h6>' +
+                        // 필요한 멤버 정보 추가
+                        '</div>';
+                    offcanvasBody.append(memberHtml);
+                });
+
+                $('#memberOffcanvas').offcanvas('show');
+            } else {
+                alert('멤버 정보를 가져오는데 실패했습니다.');
+            }
+        }
+    });
+}
 
 $('#saveMember').click(function() {
     var formData = new FormData($('#memberForm')[0]);
@@ -986,6 +1173,14 @@ function applySelectedMode() {
         $('.mode-list .btn-check').prop('checked', false);
         $('#' + selectedMode).prop('checked', true);
         applyModeConfig(selectedMode);
+
+        if (selectedMode === 'mode-4') {
+            $('.grid-item:not(:has(.leader))').hide();
+            if ($('.grid').data('masonry')) {
+                $('.grid').masonry('layout');
+            }
+        }
+
     } else {
         $('.mode-list .btn-check').prop('checked', false);
         $('#mode-1').prop('checked', true);
@@ -1090,10 +1285,7 @@ function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
         success: function(members) {
             displayMembers(members);
 
-            // 초기 로드 시에만 applySelectedMode 호출
-            if (initialLoad) {
-                applySelectedMode();
-            }
+
 
             // 최근 5주 이전까지 출석이 없는 사람 숨기기
             var hideFiveWeeksAgo = getCookie('hideFiveWeeksAgo') === 'true';
@@ -1120,6 +1312,14 @@ function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
                     $('.grid').masonry('layout');
                 }
             }
+
+
+            // 초기 로드 시에만 applySelectedMode 호출
+            if (initialLoad) {
+                // console.log(initialLoad);
+                applySelectedMode();
+            }
+
         }
     });
 }
@@ -1444,13 +1644,11 @@ function showToast(memberIdx) {
 
 
 
-
-function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx) {
+function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue) {
     var activeGroupId = getCookie('activeGroup');
     var today = new Date();
     var attDate = formatDate(today);
 
-    // console.log(memberIdx);
     // 해당 member-card로 스크롤 이동
     var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
     if (memberCard.length > 0) {
@@ -1458,7 +1656,6 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx) {
             scrollTop: memberCard.offset().top - 100
         }, 500);
     }
-
 
     $.ajax({
         url: '/main/save_single_attendance',
@@ -1468,7 +1665,8 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx) {
             att_type_idx: attTypeIdx,
             att_type_category_idx: attTypeCategoryIdx,
             group_id: activeGroupId,
-            att_date: attDate
+            att_date: attDate,
+            selected_value: selectedValue
         },
         dataType: 'json',
         success: function(response) {
@@ -1567,6 +1765,57 @@ function updateInputSearchState() {
         resetMemberList();
     }
 }
+
+
+
+$('#saveAttendanceBtn').on('click', function() {
+    var attendanceData = [];
+
+    $('.att-type-select').each(function() {
+        var memberIdx = $(this).data('member-idx');
+        var attTypeIdx = $(this).val();
+
+        if (attTypeIdx) {
+            attendanceData.push({
+                member_idx: memberIdx,
+                att_type_idx: attTypeIdx
+            });
+        }
+    });
+
+    saveAttendanceData(attendanceData);
+});
+
+function saveAttendanceData(attendanceData) {
+    var currentWeekRange = $('.current-week').text();
+    var currentDate = getDateFromWeekRange(currentWeekRange);
+    var startDate = getWeekStartDate(currentDate);
+    var endDate = getWeekEndDate(currentDate);
+    var activeGroupId = getCookie('activeGroup');
+
+    $.ajax({
+        url: '/main/save_attendance_data',
+        method: 'POST',
+        data: {
+            attendance_data: JSON.stringify(attendanceData),
+            group_id: activeGroupId,
+            start_date: startDate,
+            end_date: endDate
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#attendanceOffcanvas').offcanvas('hide');
+                updateAttStamps(activeGroupId, startDate, endDate);
+            } else {
+                alert('출석 정보 저장에 실패했습니다.');
+            }
+        }
+    });
+}
+
+
+
 
 var attendanceTypes = [];
 

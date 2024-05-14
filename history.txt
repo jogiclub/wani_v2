@@ -1,5 +1,8 @@
-본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있습니다.
-회원들을 관리하고 출석을 기록하는 프로그램입니다.
+본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있어!
+회원들을 관리하고 출석을 기록하는 프로그램이야!
+
+
+
 
 현재 #btn-submit 버튼을 클릭하면
 save_single_attendance(), get_member_info()

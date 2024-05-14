@@ -471,7 +471,23 @@ class Mypage extends CI_Controller
         }
     }
 
+    public function login_as_user() {
+        if ($this->input->is_ajax_request()) {
+            $user_id = $this->input->post('user_id');
 
+            $this->load->model('User_model');
+            $user = $this->User_model->get_user_by_id($user_id);
+
+            if ($user) {
+                $this->session->set_userdata($user);
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
 
     private function generate_invite_code() {
         return bin2hex(random_bytes(16));

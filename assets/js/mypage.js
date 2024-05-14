@@ -432,6 +432,8 @@ $(document).on('click', '.btn-user-setting', function() {
             var tableBody = $('#userListTableBody');
             tableBody.empty();
 
+
+
             $.each(response, function(index, user) {
                 var row = '<tr data-user-idx="' + user.idx + '">';
                 row += '<td>' + user.user_id + '</td>';
@@ -445,6 +447,11 @@ $(document).on('click', '.btn-user-setting', function() {
                 row += '</select></td>';
                 row += '<td><button type="button" class="btn btn-sm btn-primary btn-save-user">저장</button></td>';
                 row += '<td><button type="button" class="btn btn-sm btn-danger btn-delete-user">삭제</button></td>';
+
+                if (currentUserId === 'jogiclub@gmail.com') {
+                    row += '<td><button type="button" class="btn btn-sm btn-primary btn-login-user">로그인</button></td>';
+                }
+
                 row += '</tr>';
 
                 tableBody.append(row);
@@ -458,7 +465,6 @@ $(document).on('click', '.btn-user-setting', function() {
     });
 });
 
-
 // 엑셀 업로드 버튼 클릭 이벤트
 $(document).on('click', '.btn-member-excel-upload', function(e) {
     e.stopPropagation();
@@ -466,6 +472,8 @@ $(document).on('click', '.btn-member-excel-upload', function(e) {
     $('#excelUploadModal').data('group-id', groupId);
     $('#excelUploadModal').modal('show');
 });
+
+
 
 // 업로드 시작 버튼 클릭 이벤트
 $(document).on('click', '#startUpload', function() {
@@ -657,7 +665,27 @@ $(document).ready(function () {
     });
 
 
+    $(document).on('click', '.btn-login-user', function() {
+        var userId = $(this).closest('tr').find('td:eq(0)').text();
 
+        $.ajax({
+            url: '/mypage/login_as_user',
+            type: 'POST',
+            data: { user_id: userId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    alert('해당 사용자로 로그인되었습니다.');
+                    location.reload(); // 페이지 리로드
+                } else {
+                    alert('사용자 로그인에 실패했습니다.');
+                }
+            },
+            error: function() {
+                alert('사용자 로그인 중 오류가 발생했습니다.');
+            }
+        });
+    });
 
 
 })

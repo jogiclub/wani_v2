@@ -591,11 +591,51 @@ class Main extends CI_Controller {
 
 
 
+    public function get_same_members() {
+        if ($this->input->is_ajax_request()) {
+            $member_idx = $this->input->post('member_idx');
+            $group_id = $this->input->post('group_id');
+            $grade = $this->input->post('grade');
+            $start_date = $this->input->post('start_date');
+            $end_date = $this->input->post('end_date');
+
+            $this->load->model('Member_model');
+            $same_members = $this->Member_model->get_same_members($member_idx, $group_id, $grade, $start_date, $end_date);
+
+            // 출석 유형 정보 가져오기
+            $this->load->model('Attendance_model');
+            $att_types = $this->Attendance_model->get_attendance_types($group_id);
+
+            if ($same_members) {
+                $response = array('status' => 'success', 'members' => $same_members, 'att_types' => $att_types);
+            } else {
+                $response = array('status' => 'error');
+            }
+
+            echo json_encode($response);
+        }
+    }
 
 
+    public function save_attendance_data() {
+        if ($this->input->is_ajax_request()) {
+            $attendance_data = json_decode($this->input->post('attendance_data'), true);
+            $group_id = $this->input->post('group_id');
+            $start_date = $this->input->post('start_date');
+            $end_date = $this->input->post('end_date');
 
+            $this->load->model('Attendance_model');
+            $result = $this->Attendance_model->save_attendance_data($attendance_data, $group_id, $start_date, $end_date);
 
+            if ($result) {
+                $response = array('status' => 'success');
+            } else {
+                $response = array('status' => 'error');
+            }
 
+            echo json_encode($response);
+        }
+    }
 
 
 
