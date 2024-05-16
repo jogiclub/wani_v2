@@ -10,6 +10,7 @@
             <div class="col-12 text-center position-relative">
                 <h2 class="mb-1 group-name"><b></b></h2>
                 <button class="btn-home" type="button" onclick="go_url('/mypage')"><i class="bi bi-arrow-left-short"></i></button>
+                <!--
                 <a class="btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="top: -4px">
                     <img src="<?php if(isset($user['user_profile_image'])){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="50" height="50">
                 </a>
@@ -18,7 +19,7 @@
                     <li><a class="dropdown-item" href="#"><?php if(isset($user['user_mail'])){echo $user['user_mail'];} ?></a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
-                </ul>
+                </ul>-->
             </div>
 
 
@@ -75,14 +76,13 @@
 
 
 
-            <div class="col-xl-12 text-center total-list-wrap">
+            <div class="text-center total-list-wrap">
 
                 <dl class="mt-2 mb-2 total-list">
                     <dt>총재적</dt><dd>00</dd>
                     <dt>재적</dt><dd>00</dd>
                     <dt>목자</dt><dd>00</dd>
                     <dt>새가족</dt><dd>00</dd>
-
                 </dl>
 
                 <dl class="mt-2 mb-2 total-att-list">
@@ -90,6 +90,7 @@
                     <dt>온</dt><dd>00</dd>
                     <dt>장</dt><dd>00</dd>
                 </dl>
+
 
                 <dl class="mt-2 mb-2 total-memo-list">
                     <dt>메모</dt><dd>00</dd>
@@ -420,8 +421,8 @@
 
     $(document).ready(function() {
         // 초기 모드 설정
-        $('.mode-list .btn-check[value="' + initialMode + '"]').prop('checked', true);
-        applyModeConfig(initialMode);
+        // $('.mode-list .btn-check[value="' + initialMode + '"]').prop('checked', true);
+        // applyModeConfig(initialMode);
 
 
 

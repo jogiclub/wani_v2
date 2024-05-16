@@ -58,6 +58,7 @@ function applyModeConfig(mode) {
     const config = modeConfig[mode];
     $('.att-stamp-warp').toggleClass('hidden', config.attStampWarp === 'addClass');
     $('.memo-stamp-warp').toggleClass('hidden', config.memoStampWarp === 'addClass');
+    $('.complete-stamp-warp').toggleClass('hidden', config.memoStampWarp === 'addClass');
     $('#input-search').prop('disabled', config.inputSearch.disabled)
         .val(config.inputSearch.val)
         .attr('placeholder', config.inputSearch.placeholder);
@@ -1044,9 +1045,6 @@ function displayMembers(members) {
                 memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-bookmark-heart-fill"></i></span>');
             }
 
-
-
-
             if (member.att_type_data) {
                 var attTypeData = member.att_type_data.split('|');
                 // console.log(attTypeData);
@@ -1073,28 +1071,7 @@ function displayMembers(members) {
                         attTypeColor: attTypeColor
                     };
                 });
-
-                /*
-
-
-                    // att-stamp를 data-att-type-idx 순서로 정렬
-                    attStamps.sort(function(a, b) {
-                        return a.attTypeIdx - b.attTypeIdx;
-                    });
-
-                    var attTypesHtml = attStamps.map(function(attStamp) {
-                        return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '" style="background-color: ' + attStamp.attTypeColor + '">' + attStamp.attType + '</span>';
-                    }).join(' ');
-
-                    memberCard.find('.att-stamp-warp').append(attTypesHtml);
-
-                */
-
-
             }
-
-
-
             memberList.append(memberCard);
         });
 
@@ -1102,19 +1079,23 @@ function displayMembers(members) {
         var totalAttList = $('.total-att-list');
         totalAttList.empty();
 
-        // 출석 유형을 att_type_category_idx와 att_type_idx 순으로 정렬
+        // 출석 유형을 att_type_order 순으로 정렬
         var sortedAttTypes = Object.keys(attTypeCount).sort(function(a, b) {
-            var attTypeA = a.split('_');
-            var attTypeB = b.split('_');
-            var classCompare = parseInt(attTypeA[1]) - parseInt(attTypeB[1]);
-            if (classCompare === 0) {
-                return parseInt(attTypeA[2]) - parseInt(attTypeB[2]);
-            }
-            return classCompare;
+            var attTypeA = attendanceTypes.find(function(type) {
+                return type.att_type_nickname === a;
+            });
+            var attTypeB = attendanceTypes.find(function(type) {
+                return type.att_type_nickname === b;
+            });
+            return attTypeA.att_type_order - attTypeB.att_type_order;
         });
 
         sortedAttTypes.forEach(function(attType) {
-            totalAttList.append('<dt>' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
+            var attTypeInfo = attendanceTypes.find(function(type) {
+                return type.att_type_nickname === attType;
+            });
+            var attTypeColor = attTypeInfo ? attTypeInfo.att_type_color : 'CB3227';
+            totalAttList.append('<dt style="background-color: #' + attTypeColor + '">' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
         });
 
     }
@@ -1178,21 +1159,12 @@ function applySelectedMode() {
         $('.mode-list .btn-check').prop('checked', false);
         $('#' + selectedMode).prop('checked', true);
         applyModeConfig(selectedMode);
-
-        if (selectedMode === 'mode-4') {
-            $('.grid-item:not(:has(.leader))').hide();
-            if ($('.grid').data('masonry')) {
-                $('.grid').masonry('layout');
-            }
-        }
-
     } else {
         $('.mode-list .btn-check').prop('checked', false);
         $('#mode-1').prop('checked', true);
         applyModeConfig('mode-1');
     }
 }
-
 
 
 function getWeekStartDate(date) {
@@ -1275,22 +1247,18 @@ function formatDate(date) {
     return `${year}.${month}.${day}`;
 }
 
-function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
-
+function loadMembers(groupId, startDate, endDate, initialLoad = true) {
     $.ajax({
         url: '/main/get_members',
         method: 'POST',
         data: {
             group_id: groupId,
-            level: level,
             start_date: startDate,
             end_date: endDate
         },
         dataType: 'json',
         success: function(members) {
             displayMembers(members);
-
-
 
             // 최근 5주 이전까지 출석이 없는 사람 숨기기
             var hideFiveWeeksAgo = getCookie('hideFiveWeeksAgo') === 'true';
@@ -1318,16 +1286,16 @@ function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
                 }
             }
 
-
             // 초기 로드 시에만 applySelectedMode 호출
             if (initialLoad) {
-                // console.log(initialLoad);
                 applySelectedMode();
             }
-
         }
     });
 }
+
+
+
 
 function hideInactiveMembersForFiveWeeks(activeMembers) {
     // 모든 .grid-item 요소 숨기기
@@ -1354,99 +1322,90 @@ function updateTotalMemoList() {
 
 
 
+
+
+// 전역변수 정의
+var attend_type_color_map = {};
+var attend_type_order_map = {};
+
 function updateAttStamps(groupId, startDate, endDate) {
-    var selectedMode = $('.mode-list .btn-check:checked').attr('id');
-    if (selectedMode === 'mode-1') {
-        $.ajax({
-            url: '/main/get_attendance_data',
-            method: 'POST',
-            data: {
-                group_id: groupId,
-                start_date: startDate,
-                end_date: endDate
-            },
-            dataType: 'json',
-            success: function (attendanceData) {
-                // 출석 유형별 숫자 초기화
-                var attTypeCount = {};
+    $.ajax({
+        url: '/main/get_attendance_data',
+        method: 'POST',
+        data: {
+            group_id: groupId,
+            start_date: startDate,
+            end_date: endDate
+        },
+        dataType: 'json',
+        success: function(attendanceData) {
+            $('.member-card .att-stamp-warp .att-stamp').remove();
 
-                // 모든 멤버의 att-stamp 제거
-                $('.member-card .member-wrap .att-stamp-warp .att-stamp').remove();
+            // 출석 유형별 숫자 초기화
+            var attTypeCount = {};
 
+            $.each(attendanceData, function(memberIdx, attTypeNicknames) {
+                var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
+                var attStampsContainer = memberCard.find('.att-stamp-warp');
 
-                $.each(attendanceData, function (memberIdx, attTypeNicknames) {
-                    var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
-                    var attStampsContainer = memberCard.find('.member-wrap .att-stamp-warp');
+                if (attTypeNicknames) {
+                    var attStamps = attTypeNicknames.split(',').map(function(attTypeData) {
+                        var attTypeArr = attTypeData.split('|');
+                        var attTypeNickname = attTypeArr[0].trim();
+                        var attTypeIdx = attTypeArr[1].trim();
+                        var attTypeCategoryIdx = attTypeArr[2].trim();
+                        var attTypeColor = attTypeArr[3].trim();
 
-                    if (attTypeNicknames) {
-                        var attStamps = attTypeNicknames.split(',').map(function (attTypeData) {
-                            var attTypeArr = attTypeData.split('|');
-                            var attTypeNickname = attTypeArr[0].trim();
-                            var attTypeIdx = attTypeArr[1].trim();
-                            var attTypeCategoryIdx = attTypeArr[2].trim();
-                            var attTypeColor = attTypeArr[3].trim();
+                        // 전역변수에 색상 및 순서 정보 저장
+                        attend_type_color_map[attTypeNickname] = attTypeColor;
+                        attend_type_order_map[attTypeIdx] = Object.keys(attend_type_order_map).length;
 
-                            // console.log(attTypeNickname);
+                        // 출석 유형별 숫자 카운트
+                        if (attTypeCount[attTypeNickname]) {
+                            attTypeCount[attTypeNickname]++;
+                        } else {
+                            attTypeCount[attTypeNickname] = 1;
+                        }
 
+                        return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '">' + attTypeNickname + '</span>';
+                    }).join(' ');
 
-                            // 출석 유형별 숫자 카운트
-                            if (attTypeCount[attTypeNickname]) {
-                                attTypeCount[attTypeNickname]++;
-                            } else {
-                                attTypeCount[attTypeNickname] = 1;
-                            }
+                    attStampsContainer.append(attStamps);
+                }
+            });
 
-                            return {
-                                attTypeNickname: attTypeNickname,
-                                attTypeIdx: attTypeIdx,
-                                attTypeCategoryIdx: attTypeCategoryIdx,
-                                attTypeColor: attTypeColor
-                            };
-                        });
+            // 전역변수를 사용하여 배경색 설정
+            $('.att-stamp').each(function() {
+                var attTypeNickname = $(this).text();
+                var backgroundColor = attend_type_color_map[attTypeNickname];
+                $(this).css('background-color', backgroundColor);
+            });
 
-                        // att-stamp를 data-att-type-idx 순서로 정렬
-                        attStamps.sort(function (a, b) {
-                            return a.attTypeIdx - b.attTypeIdx;
-                        });
+            // .total-att-list 업데이트
+            var totalAttList = $('.total-att-list');
+            totalAttList.empty();
 
-
-                        var attTypesHtml = attStamps.map(function (attStamp) {
-                            return '<span class="att-stamp" data-att-type-idx="' + attStamp.attTypeIdx + '" data-att-type-category-idx="' + attStamp.attTypeCategoryIdx + '" style="background-color: ' + attStamp.attTypeColor + '">' + attStamp.attTypeNickname + '</span>';
-                        }).join(' ');
-
-
-                        attStampsContainer.append(attTypesHtml);
-                    }
+            // 출석 유형을 att_type_order 순으로 정렬
+            var sortedAttTypes = Object.keys(attTypeCount).sort(function(a, b) {
+                var attTypeA = attendanceTypes.find(function(type) {
+                    return type.att_type_nickname === a;
                 });
-
-
-                // 출석 유형별 숫자 출력
-                var totalAttList = $('.total-att-list');
-                totalAttList.empty();
-
-                // 출석 유형을 att_type_category_idx와 att_type_idx 순으로 정렬
-                var sortedAttTypes = Object.keys(attTypeCount).sort(function (a, b) {
-                    var attTypeA = a.split('_');
-                    var attTypeB = b.split('_');
-                    var classCompare = parseInt(attTypeA[1]) - parseInt(attTypeB[1]);
-                    if (classCompare === 0) {
-                        return parseInt(attTypeA[2]) - parseInt(attTypeB[2]);
-                    }
-                    return classCompare;
+                var attTypeB = attendanceTypes.find(function(type) {
+                    return type.att_type_nickname === b;
                 });
+                return attTypeA.att_type_order - attTypeB.att_type_order;
+            });
 
-                sortedAttTypes.forEach(function (attType) {
-                    totalAttList.append('<dt>' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
+            sortedAttTypes.forEach(function(attType) {
+                var attTypeInfo = attendanceTypes.find(function(type) {
+                    return type.att_type_nickname === attType;
                 });
-            }
-        });
-    }
+                var attTypeColor = attTypeInfo ? attTypeInfo.att_type_color : 'CB3227';
+                totalAttList.append('<dt style="background-color: #' + attTypeColor + '">' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
+            });
+        }
+    });
 }
-
-
-
-
-
 
 
 

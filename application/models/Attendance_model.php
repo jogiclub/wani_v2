@@ -6,10 +6,10 @@ class Attendance_model extends CI_Model {
     }
 
     public function get_attendance_types($group_id) {
-        $this->db->select('att_type_idx, att_type_category_name, att_type_category_idx, att_type_nickname, att_type_name, att_type_color');
+        $this->db->select('att_type_idx, att_type_category_name, att_type_category_idx, att_type_nickname, att_type_name, att_type_color, att_type_order');
         $this->db->from('wb_att_type');
         $this->db->where('group_id', $group_id);
-        $this->db->order_by('att_type_category_idx', 'ASC');
+        $this->db->order_by('att_type_order', 'ASC');
         $this->db->order_by('att_type_idx', 'ASC');
 
 
@@ -152,7 +152,7 @@ class Attendance_model extends CI_Model {
 
 
     public function get_group_attendance_data($group_id, $start_date, $end_date) {
-        $this->db->select("a.member_idx, GROUP_CONCAT(CONCAT(at.att_type_nickname, '|', at.att_type_idx, '|', at.att_type_category_idx, '|', at.att_type_color) ORDER BY at.att_type_category_idx, at.att_type_idx SEPARATOR ',') AS att_type_nicknames");
+        $this->db->select("a.member_idx, GROUP_CONCAT(CONCAT(at.att_type_nickname, '|', at.att_type_idx, '|', at.att_type_category_idx, '|', at.att_type_color) ORDER BY at.att_type_order, at.att_type_idx SEPARATOR ',') AS att_type_nicknames");
         $this->db->from('wb_member_att a');
         $this->db->join('wb_att_type at', 'a.att_type_idx = at.att_type_idx', 'left');
         $this->db->where('a.group_id', $group_id);
@@ -160,12 +160,8 @@ class Attendance_model extends CI_Model {
         $this->db->where('a.att_date <=', $end_date);
         $this->db->group_by('a.member_idx');
         $this->db->having('COUNT(a.att_type_idx) > 0');
-
         $query = $this->db->get();
         $result = $query->result_array();
-
-
-
         $attendance_data = array();
         foreach ($result as $row) {
             $attendance_data[$row['member_idx']] = $row['att_type_nicknames'];

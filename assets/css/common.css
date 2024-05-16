@@ -52,7 +52,7 @@ ul, dl{padding: 0; list-style: none}
 .grid-item .member-card.birth{background:url('/assets/images/bg_birth7.png?5') center top/100%;}
 
 
-.grid-item .member-card .member-wrap .memo-stamp-warp{display: flex; width: 60%; justify-content: flex-end;}
+.grid-item .member-card .member-wrap .memo-stamp-warp{display: flex; position: absolute;right: 20px;bottom: 17px;}
 .grid-item .member-card .member-wrap .memo-stamp-warp.hidden{display: none}
 .grid-item .member-card .member-wrap .memo-stamp-warp .memo-stamp{position: relative}
 .grid-item .member-card .member-wrap .memo-stamp-warp .memo-stamp i{font-size: 30px; color: #999}
@@ -126,18 +126,16 @@ main{background: #fafafa; padding: 30px 0 200px;}
 .group-list-wrap .group-list ul li.active{color:#0000FF}
 .group-list-wrap .group-list ul li.active::before{content: '선택그룹'; display: inline-block; background: #0000FF; color: #fff; font-size: 12px;padding: 1px 3px;border-radius: 3px;}
 
-.total-list-wrap{display: flex; justify-content: space-between;}
+.total-list-wrap{display: flex; justify-content: space-between; }
 .total-list {display: flex; justify-content: center; align-items: center;}
 .total-list dt, .total-list dd{display: inline-block; margin: 0}
 .total-list dt{padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500}
 
 .total-att-list {display: flex; justify-content: center; align-items: center;}
 .total-att-list dt, .total-att-list dd{display: inline-block; margin: 0}
-.total-att-list dt{padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500}
+.total-att-list dt{padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500; white-space: nowrap;}
 
-.total-att-list dt:nth-child(1){background:#ffc107}
-.total-att-list dt:nth-child(2){background:#9cc4ff}
-.total-att-list dt:nth-child(3){background:#8bc34a}
+
 
 .total-memo-list{display: flex; justify-content: center; align-items: center;}
 .total-memo-list dt{display: inline-block; margin: 0;padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500; background: #CB3227}
@@ -149,6 +147,10 @@ main{background: #fafafa; padding: 30px 0 200px;}
 @media screen and (max-width: 576px){
     .mode-list .btn-group{width: 100%}
     .mode-list label i{display: block; width: 100%; font-size: 30px;}
+    .total-list-wrap{flex-direction: column; overflow: scroll;}
+    .total-list{display: block; white-space: nowrap;}
+    .total-att-list{display: block; white-space: nowrap;}
+
 }
 
 
