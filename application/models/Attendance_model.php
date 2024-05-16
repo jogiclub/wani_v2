@@ -47,9 +47,6 @@ class Attendance_model extends CI_Model {
             $member_idx = $data['member_idx'];
             $att_type_idx = $data['att_type_idx'];
 
-            // 기존 출석 정보 삭제
-            $this->delete_attendance_by_date_range($member_idx, $start_date, $end_date);
-
             // 새로운 출석 정보 저장
             $att_data = array(
                 'att_date' => $start_date,
@@ -116,7 +113,26 @@ class Attendance_model extends CI_Model {
     }
 
 
+// Attendance_model.php
+    public function get_group_member_attendance($group_id, $grade, $start_date, $end_date) {
+        $this->db->select('ma.member_idx, GROUP_CONCAT(ma.att_type_idx ORDER BY ma.att_type_idx SEPARATOR ",") AS att_type_idxs', false);
+        $this->db->from('wb_member_att ma');
+        $this->db->join('wb_member m', 'ma.member_idx = m.member_idx', 'inner');
+        $this->db->where('m.group_id', $group_id);
+        $this->db->where('m.grade', $grade);
+        $this->db->where('ma.att_date >=', $start_date);
+        $this->db->where('ma.att_date <=', $end_date);
+        $this->db->group_by('ma.member_idx');
+        $query = $this->db->get();
+        $result = $query->result_array();
 
+        $attendance_data = array();
+        foreach ($result as $row) {
+            $attendance_data[$row['member_idx']] = explode(',', $row['att_type_idxs']);
+        }
+
+        return $attendance_data;
+    }
 
     public function delete_attendance_by_date($member_idx, $att_date) {
         $this->db->where('member_idx', $member_idx);

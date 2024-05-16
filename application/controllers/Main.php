@@ -624,19 +624,65 @@ class Main extends CI_Controller {
             $start_date = $this->input->post('start_date');
             $end_date = $this->input->post('end_date');
 
-            $this->load->model('Attendance_model');
-            $result = $this->Attendance_model->save_attendance_data($attendance_data, $group_id, $start_date, $end_date);
+            // 멤버별 출석 정보 그룹화
+            $member_attendance_data = array();
+            foreach ($attendance_data as $data) {
+                $member_idx = $data['member_idx'];
+                $att_type_idx = $data['att_type_idx'];
 
-            if ($result) {
-                $response = array('status' => 'success');
-            } else {
-                $response = array('status' => 'error');
+                if (!isset($member_attendance_data[$member_idx])) {
+                    $member_attendance_data[$member_idx] = array();
+                }
+                $member_attendance_data[$member_idx][] = $att_type_idx;
             }
 
+            $this->load->model('Attendance_model');
+
+            // 각 멤버의 출석 정보 저장
+            foreach ($member_attendance_data as $member_idx => $att_type_idxs) {
+                // 기존 출석 정보 삭제
+                $this->Attendance_model->delete_attendance_by_date_range($member_idx, $start_date, $end_date);
+
+                // 새로운 출석 정보가 있는 경우에만 저장
+                if (!empty($att_type_idxs)) {
+                    $att_data = array();
+                    foreach ($att_type_idxs as $att_type_idx) {
+                        $att_data[] = array(
+                            'att_date' => $start_date,
+                            'att_type_idx' => $att_type_idx,
+                            'member_idx' => $member_idx,
+                            'group_id' => $group_id
+                        );
+                    }
+                    $this->Attendance_model->save_attendance_data($att_data, $group_id, $start_date, $end_date);
+                }
+            }
+
+            $response = array('status' => 'success');
             echo json_encode($response);
         }
     }
 
+// Main.php
+    public function get_last_week_attendance() {
+        if ($this->input->is_ajax_request()) {
+            $group_id = $this->input->post('group_id');
+            $grade = $this->input->post('grade');
+            $start_date = $this->input->post('start_date');
+            $end_date = $this->input->post('end_date');
 
+            $this->load->model('Attendance_model');
+            $attendance_data = $this->Attendance_model->get_group_member_attendance($group_id, $grade, $start_date, $end_date);
+            $att_types = $this->Attendance_model->get_attendance_types($group_id);
+
+            $response = array(
+                'status' => 'success',
+                'attendance_data' => $attendance_data,
+                'att_types' => $att_types
+            );
+
+            echo json_encode($response);
+        }
+    }
 
 }

@@ -347,6 +347,11 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, gr
             }
         }
     });
+
+
+    $('#loadLastWeekBtn').data('member-idx', memberIdx).data('grade', grade);
+
+
 }
 
 
@@ -1775,12 +1780,10 @@ $('#saveAttendanceBtn').on('click', function() {
         var memberIdx = $(this).data('member-idx');
         var attTypeIdx = $(this).val();
 
-        if (attTypeIdx) {
-            attendanceData.push({
-                member_idx: memberIdx,
-                att_type_idx: attTypeIdx
-            });
-        }
+        attendanceData.push({
+            member_idx: memberIdx,
+            att_type_idx: attTypeIdx ? attTypeIdx : ''
+        });
     });
 
     saveAttendanceData(attendanceData);
@@ -1810,6 +1813,10 @@ function saveAttendanceData(attendanceData) {
             } else {
                 alert('출석 정보 저장에 실패했습니다.');
             }
+        },
+        error: function(xhr, status, error) {
+            console.log(xhr.responseText);
+            alert('출석 정보 저장 중 오류가 발생했습니다.');
         }
     });
 }
@@ -1924,6 +1931,66 @@ $(document).ready(function() {
     updateInputSearchState();
 
 
+    $('#loadLastWeekBtn').on('click', function() {
+        var memberIdx = $(this).data('member-idx');
+        var groupId = getCookie('activeGroup');
+        var grade = $(this).data('grade');
+        loadLastWeekData(memberIdx, groupId, grade);
+    });
+
+
+
+    function loadLastWeekData(memberIdx, groupId, grade) {
+        var currentWeekRange = $('.current-week').text();
+        var currentDate = getDateFromWeekRange(currentWeekRange);
+        var lastWeekStartDate = getWeekStartDate(new Date(currentDate.setDate(currentDate.getDate() - 7)));
+        var lastWeekEndDate = getWeekEndDate(new Date(currentDate.setDate(currentDate.getDate())));
+
+        $.ajax({
+            url: '/main/get_last_week_attendance',
+            method: 'POST',
+            data: {
+                member_idx: memberIdx,
+                group_id: groupId,
+                grade: grade,
+                start_date: lastWeekStartDate,
+                end_date: lastWeekEndDate
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.status === 'success') {
+                    var attendanceData = response.attendance_data;
+                    var attTypes = response.att_types;
+                    updateAttendanceSelectbox(attendanceData, attTypes);
+                } else {
+                    alert('지난주 데이터를 가져오는데 실패했습니다.');
+                }
+            }
+        });
+    }
+
+    function updateAttendanceSelectbox(attendanceData, attTypes) {
+        $('.att-type-select').each(function() {
+            var memberIdx = $(this).data('member-idx');
+            var attTypeCategoryIdx = parseInt($(this).data('att-type-category-idx')); // 정수로 변환
+            var attTypeIdxs = attendanceData[memberIdx] || [];
+
+            // 현재 selectbox의 att_type_category_idx에 해당하는 att_type_idx 찾기
+            var selectedAttTypeIdx = '';
+            for (var i = 0; i < attTypeIdxs.length; i++) {
+                var attTypeIdx = parseInt(attTypeIdxs[i].trim()); // 정수로 변환
+                var attType = attTypes.find(function(type) {
+                    return parseInt(type.att_type_idx) === attTypeIdx; // 정수로 변환하여 비교
+                });
+                if (attType && parseInt(attType.att_type_category_idx) === attTypeCategoryIdx) { // 정수로 변환하여 비교
+                    selectedAttTypeIdx = attTypeIdx.toString(); // 문자열로 변환하여 설정
+                    break;
+                }
+            }
+
+            $(this).val(selectedAttTypeIdx);
+        });
+    }
 
 
 

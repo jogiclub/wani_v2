@@ -14,12 +14,12 @@ ul, dl{padding: 0; list-style: none}
 .btn-warning{background: #e09529; color:#fff}
 .form-switch{display: flex; align-items: center}
 .form-switch label{margin-left: 5px}
-
+.offcanvas.offcanvas-end{width: 700px}
 
 
 .text-bg-primary{background: #0d9af0;}
 .offcanvas{border-left:1px solid #0d9af0!important;}
-.offcanvas-header{flex-direction: column!important;}
+.offcanvas-header{flex-direction: column!important; background: #f9f9f9}
 .offcanvas-header .btn-close{position: absolute; right: 20px; top: 20px}
 .width-100{width:100%}
 .btn-xs{font-size: 13px}

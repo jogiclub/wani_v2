@@ -248,6 +248,11 @@
                     </table>
                 </div>
             </div>
+            <div class="modal-footer d-block">
+                <ul class="help-list">
+                    <li>* 권한이 2이며, 휴대폰번호가 입력되어 있다면 로그인한 목자의 정보만 확인이 가능합니다.</li>
+                </ul>
+            </div>
         </div>
     </div>
 </div>

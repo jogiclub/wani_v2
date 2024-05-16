@@ -346,13 +346,12 @@
     </div>
     <div class="offcanvas-footer">
         <div class="input-group">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 50%">취소</button>
-            <button type="button" class="btn btn-primary" id="saveAttendanceBtn" style="width: 50%">저장</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 33.33%">취소</button>
+
+            <button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난주정보</button>
+            <button type="button" class="btn btn-primary" id="saveAttendanceBtn" style="width: 33.33%">저장</button>
         </div>
     </div>
-
-
-
 </div>
 
 
