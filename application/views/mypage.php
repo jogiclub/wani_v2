@@ -37,6 +37,7 @@
                 <th scope="col">바로가기</th>
                 <th scope="col">그룹수정</th>
                 <th scope="col">회원수</th>
+                <th scope="col">통계</th>
                 <th scope="col">QR인쇄</th>
                 <th scope="col">사용자</th>
                 <th scope="col">출석타입설정</th>
@@ -58,6 +59,7 @@
                             <a class="btn btn-light btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a>
                         </td>
                         <td><?php echo $group['member_count']; ?>명</td>
+                        <td><a class="btn btn-light btn-sm btn-summery" data-group-id="<?php echo $group['group_id']; ?>">통계</a></td>
                         <td><a class="btn btn-light btn-sm btn-print-qr" data-group-id="<?php echo $group['group_id']; ?>">QR인쇄</a></td>
 
                         <td><a class="btn btn-secondary btn-sm btn-user-setting" data-group-id="<?php echo $group['group_id']; ?>"><?php echo $group['user_count']; ?>명</a></td>
@@ -287,20 +289,33 @@
 </div>
 
 <div class="modal fade" id="qrPrintModal" tabindex="-1" aria-labelledby="qrPrintModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="qrPrintModalLabel">QR 코드 인쇄</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <button type="button" class="btn btn-primary mb-3" id="printLabel01">규격코드: 978</button>
+                <button type="button" class="btn btn-primary mb-1 width-100" id="printLabel01">A4(7x8)/규격코드:978</button>
             </div>
         </div>
     </div>
 </div>
 
-
+<div class="modal fade" id="summeryModal" tabindex="-1" aria-labelledby="summeryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="summeryModalLabel">통계</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <button type="button" class="btn btn-primary mb-1 width-100" id="summery01">주별 출석 통계</button>
+                <button type="button" class="btn btn-primary mb-1 width-100" id="summery02">회원별 출석 통계</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 <?php $this->load->view('footer'); ?>

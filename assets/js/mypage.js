@@ -547,6 +547,26 @@ $(document).on('click', '#printLabel01', function() {
 });
 
 
+$(document).on('click', '.btn-summery', function() {
+    var groupId = $(this).data('group-id');
+    $('#summery01').data('group-id', groupId);
+    $('#summery02').data('group-id', groupId);
+    $('#summeryModal').modal('show');
+});
+
+$(document).on('click', '#summery01', function() {
+    var groupId = $(this).data('group-id');
+    var url = '/mypage/summery_week?group_id=' + groupId;
+    window.open(url, '_blank', 'width=800,height=600');
+});
+$(document).on('click', '#summery02', function() {
+    var groupId = $(this).data('group-id');
+    var url = '/mypage/summery_member?group_id=' + groupId;
+    window.open(url, '_blank', 'width=800,height=600');
+});
+
+
+
 
 $(document).ready(function () {
 

@@ -144,7 +144,7 @@ main{background: #fafafa; padding: 30px 0 200px;}
 .mode-list label{border: 0; border-radius: 0; background: #fff!important; color:#999; padding: 10px}
 .mode-list .btn-check:checked+.btn{border-bottom: 2px solid #0d9af0; color:#0d9af0!important;}
 
-@media screen and (max-width: 576px){
+@media screen and (max-width: 992px){
     .mode-list .btn-group{width: 100%}
     .mode-list label i{display: block; width: 100%; font-size: 30px;}
     .total-list-wrap{flex-direction: column; overflow: scroll;}
@@ -208,3 +208,16 @@ footer .add-group {position: fixed;bottom: 30px;right: 30px;display: inline-bloc
 footer .add-group i{font-size:30px}
 
 .bi-info-circle-fill{color:#ff8000}
+
+
+/*통계*/
+.table-summery-member table tr td, .table-summery-member table tr th{vertical-align: middle; width: 70px;     white-space: nowrap;}
+.table-summery-member table tr td:nth-child(1){width: 80px}
+.table-summery-member table tr td:nth-child(2){width: 120px}
+.table-summery-member table thead{vertical-align: middle; position: sticky; top: 0; z-index: 10;}
+
+
+.table-summery-week table tr td, .table-summery-week table tr th{vertical-align: middle; width: 100px; white-space: nowrap;}
+.table-summery-week table tr td:nth-child(1){width: 200px}
+.table-summery-week table thead{vertical-align: middle; position: sticky; top: 0; z-index: 10;}
+

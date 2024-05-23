@@ -14,7 +14,7 @@ class Member_model extends CI_Model {
 
 
 
-    public function get_group_members($group_id, $level, $start_date = null, $end_date = null) {
+    public function get_group_members($group_id, $level = null, $start_date = null, $end_date = null) {
         $user_id = $this->session->userdata('user_id');
 
         $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.area');

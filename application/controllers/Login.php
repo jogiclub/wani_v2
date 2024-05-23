@@ -370,7 +370,6 @@ class Login extends CI_Controller
             $data = array(
                 'user_id' => $user_id,
                 'user_name' => $user_name,
-                'user_grade' => 1,
                 'user_mail' => $user_email,
                 'regi_date' => date('Y-m-d H:i:s'),
                 'modi_date' => date('Y-m-d H:i:s')

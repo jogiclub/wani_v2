@@ -232,4 +232,45 @@ class Attendance_model extends CI_Model {
         return $this->db->count_all_results();
     }
 */
+
+    public function get_week_attendance_sum($group_id, $start_date, $end_date) {
+        $this->db->select('att_type_idx, COUNT(*) as sum');
+        $this->db->from('wb_member_att');
+        $this->db->where('group_id', $group_id);
+        $this->db->where('att_date >=', $start_date);
+        $this->db->where('att_date <=', $end_date);
+        $this->db->group_by('att_type_idx');
+        $query = $this->db->get();
+
+        $result = array();
+        foreach ($query->result_array() as $row) {
+            $att_type_idx = $row['att_type_idx'];
+            $result[$att_type_idx] = $row['sum'];
+        }
+
+        return $result;
+    }
+
+    public function get_member_attendance_summery($group_id, $att_type_idx) {
+        $this->db->select('member_idx, WEEK(att_date, 0) as week_number, COUNT(*) as count');
+        $this->db->from('wb_member_att');
+        $this->db->where('group_id', $group_id);
+        $this->db->where('att_type_idx', $att_type_idx);
+        $this->db->group_by('member_idx, WEEK(att_date, 0)');
+        $query = $this->db->get();
+
+        $result = array();
+        foreach ($query->result_array() as $row) {
+            $member_idx = $row['member_idx'];
+            $week_number = $row['week_number'];
+            $count = $row['count'];
+            $result[$member_idx][$week_number] = $count;
+        }
+
+//        print_r($this->db->last_query());
+//        exit;
+
+        return $result;
+    }
+
 }

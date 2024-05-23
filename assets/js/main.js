@@ -427,7 +427,7 @@ function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
                 var startDate = getWeekStartDate(currentDate);
                 var endDate = getWeekEndDate(currentDate);
                 var activeGroupId = getCookie('activeGroup');
-                loadMembers(activeGroupId, startDate, endDate);
+                loadMembers(activeGroupId, level, startDate, endDate);
                 $('#allGradeCheck').prop('checked', false);
                 $('#allAreaCheck').prop('checked', false);
             } else {
@@ -465,7 +465,7 @@ function deleteMember(memberIdx) {
                 var startDate = getWeekStartDate(currentDate);
                 var endDate = getWeekEndDate(currentDate);
                 var activeGroupId = getCookie('activeGroup');
-                loadMembers(activeGroupId, startDate, endDate);
+                loadMembers(activeGroupId, level, startDate, endDate);
             } else {
                 alert('멤버 삭제에 실패했습니다.');
             }
@@ -509,7 +509,7 @@ $('#saveNewMember').click(function() {
                 var endDate = getWeekEndDate(currentDate);
 
                 // 멤버 목록 업데이트
-                loadMembers(activeGroupId, startDate, endDate);
+                loadMembers(activeGroupId, level, startDate, endDate);
             } else {
                 alert('멤버 추가에 실패했습니다.');
             }
@@ -1247,12 +1247,13 @@ function formatDate(date) {
     return `${year}.${month}.${day}`;
 }
 
-function loadMembers(groupId, startDate, endDate, initialLoad = true) {
+function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
     $.ajax({
         url: '/main/get_members',
         method: 'POST',
         data: {
             group_id: groupId,
+            level: level,
             start_date: startDate,
             end_date: endDate
         },
@@ -1424,7 +1425,7 @@ function updateWeekRange(weekRange) {
         if (selectedMode === 'mode-3') {
             updateMemoStamps(activeGroupId, startDate, endDate);
         } else if (selectedMode === 'mode-1') {
-            updateAttStamps(activeGroupId, userLevel, startDate, endDate);
+            updateAttStamps(activeGroupId, startDate, endDate);
         }
     }
 

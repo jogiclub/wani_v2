@@ -232,6 +232,8 @@ class Mypage extends CI_Controller
             $result = $this->Attendance_model->add_attendance_type($data);
 
             if ($result) {
+                // add_attendance_type() 함수 실행 후 reordering() 함수 호출
+                $this->reordering($group_id);
                 $response = array('status' => 'success');
             } else {
                 $response = array('status' => 'error');
@@ -257,6 +259,36 @@ class Mypage extends CI_Controller
 
             echo json_encode($response);
         }
+    }
+
+
+    public function reordering($group_id) {
+
+
+
+            // wb_att_type 테이블에서 해당 group_id의 데이터를 att_type_category_idx와 att_type_idx 순서로 정렬
+            $this->db->select('att_type_idx');
+            $this->db->from('wb_att_type');
+            $this->db->where('group_id', $group_id);
+            $this->db->order_by('att_type_category_idx', 'ASC');
+            $this->db->order_by('att_type_idx', 'ASC');
+            $query = $this->db->get();
+            $result = $query->result_array();
+
+            // att_type_order 값을 1부터 순차적으로 증가시키며 업데이트
+            $order = 1;
+            foreach ($result as $row) {
+                $att_type_idx = $row['att_type_idx'];
+                $data = array(
+                    'att_type_order' => $order
+                );
+                $this->db->where('att_type_idx', $att_type_idx);
+                $this->db->update('wb_att_type', $data);
+                $order++;
+            }
+
+
+
     }
 
 
@@ -512,6 +544,96 @@ class Mypage extends CI_Controller
         $data['group_id'] = $group_id;
         $this->load->view('print_qr_view', $data);
     }
+
+    public function summery_week() {
+        $group_id = $this->input->get('group_id');
+
+        // 시작일과 종료일 계산
+        $start_date = date('Y-m-d', strtotime('first sunday of january this year'));
+        $end_date = date('Y-m-d', strtotime('next saturday'));
+        $current_week = date('W', strtotime($end_date));
+
+        // 주차 정보 생성 (최근 주차부터 역순으로)
+        $weeks = array();
+        for ($week = $current_week; $week >= 1; $week--) {
+            $week_start = date('Y-m-d', strtotime(date('Y') . 'W' . str_pad($week, 2, '0', STR_PAD_LEFT) . ' -1 days'));
+            $week_end = date('Y-m-d', strtotime(date('Y') . 'W' . str_pad($week, 2, '0', STR_PAD_LEFT) . ' +5 days'));
+            $weeks[] = array(
+                'start_date' => $week_start,
+                'end_date' => $week_end,
+                'week_number' => $week
+            );
+        }
+
+        // 해당 그룹의 출석 타입 목록 가져오기 (att_type_order 순서대로)
+        $this->load->model('Attendance_model');
+        $attendance_types = $this->Attendance_model->get_attendance_types($group_id);
+
+        // 해당 그룹의 주차별 출석 타입 합산 데이터 가져오기
+        $attendance_data = array();
+        foreach ($weeks as $week) {
+            $week_start = $week['start_date'];
+            $week_end = $week['end_date'];
+            $attendance_data[$week['week_number']] = $this->Attendance_model->get_week_attendance_sum($group_id, $week_start, $week_end);
+        }
+
+        $data['group_id'] = $group_id;
+        $data['weeks'] = $weeks;
+        $data['attendance_types'] = $attendance_types;
+        $data['attendance_data'] = $attendance_data;
+
+        $this->load->view('summery_week', $data);
+    }
+
+
+
+    public function summery_member() {
+        $group_id = $this->input->get('group_id');
+        $post_group_id = $this->input->post('group_id');
+        $att_type_idx = $this->input->post('att_type_idx');
+
+
+        // 시작일과 종료일 계산
+        $start_date = date('Y-m-d', strtotime('first sunday of january this year'));
+        $end_date = date('Y-m-d', strtotime('next saturday'));
+        $current_week = date('W', strtotime($end_date));
+
+        // 주차 정보 생성
+        $weeks = array();
+        for ($week = 1; $week <= $current_week; $week++) {
+            $week_start = date('Y-m-d', strtotime(date('Y') . 'W' . str_pad($week, 2, '0', STR_PAD_LEFT) . ' +6 days'));
+            $week_end = date('Y-m-d', strtotime(date('Y') . 'W' . str_pad($week, 2, '0', STR_PAD_LEFT) . ' +12 days'));
+            $weeks[] = array(
+                'start_date' => $week_start,
+                'end_date' => $week_end,
+                'week_number' => $week
+            );
+        }
+
+        // 해당 그룹의 회원 목록 가져오기
+        $this->load->model('Member_model');
+        $members = $this->Member_model->get_group_members($group_id);
+
+        // 해당 그룹의 출석 타입 목록 가져오기
+        $this->load->model('Attendance_model');
+        $attendance_types = $this->Attendance_model->get_attendance_types($group_id);
+        $data['group_id'] = $group_id;
+        $data['weeks'] = $weeks;
+        $data['members'] = $members;
+        $data['attendance_types'] = $attendance_types;
+
+        if ($this->input->is_ajax_request()) {
+            // 선택된 출석 타입에 대한 회원별 출석 데이터 가져오기
+            $attendance_data = array();
+            if ($att_type_idx) {
+                $attendance_data = $this->Attendance_model->get_member_attendance_summery($post_group_id, $att_type_idx);
+            }
+            echo json_encode($attendance_data);
+        } else {
+            $this->load->view('summery_member', $data);
+        }
+    }
+
 
 
 

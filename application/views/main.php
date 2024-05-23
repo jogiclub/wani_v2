@@ -78,14 +78,14 @@
 
             <div class="text-center total-list-wrap">
 
-                <dl class="mt-2 mb-2 total-list">
+                <dl class="total-list">
                     <dt>총재적</dt><dd>00</dd>
                     <dt>재적</dt><dd>00</dd>
                     <dt>목자</dt><dd>00</dd>
                     <dt>새가족</dt><dd>00</dd>
                 </dl>
 
-                <dl class="mt-2 mb-2 total-att-list">
+                <dl class="total-att-list">
                     <dt>출</dt><dd>00</dd>
                     <dt>온</dt><dd>00</dd>
                     <dt>장</dt><dd>00</dd>
