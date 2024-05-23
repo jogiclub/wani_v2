@@ -1,6 +1,9 @@
 본 작업은 codeigniter3와 bootstrap5.3, jquery를 이용하여 만들고 있어!
 회원들을 관리하고 출석을 기록하는 프로그램이야!
-
+그리고 아래의 라이브러리를 사용했어!
+masonry.pkgd.min.js
+jquery.qrcode.min.js
+popper.min.js
 
 
 

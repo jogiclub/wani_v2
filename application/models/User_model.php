@@ -24,6 +24,7 @@ class User_model extends CI_Model {
         return $query->result_array();
     }
 
+
     public function get_group_user_count($group_id) {
         $this->db->where('wb_group_user.group_id', $group_id);
         $this->db->from('wb_group_user');
@@ -33,8 +34,18 @@ class User_model extends CI_Model {
     }
 
 
+    public function get_group_user_level($user_id, $group_id) {
+        $this->db->select('level');
+        $this->db->where('user_id', $user_id);
+        $this->db->where('group_id', $group_id);
+        $query = $this->db->get('wb_group_user');
+        $result = $query->row_array();
+        return $result ? $result['level'] : 0;
+    }
+
+
     public function get_group_users($group_id) {
-        $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_group_user.level, wb_user.user_mail, wb_user.user_hp');
+        $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_group_user.level, wb_user.user_mail, wb_user.user_hp, wb_user.master_yn');
         $this->db->from('wb_user');
         $this->db->join('wb_group_user', 'wb_user.user_id = wb_group_user.user_id');
         $this->db->where('wb_group_user.group_id', $group_id);

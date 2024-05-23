@@ -110,7 +110,7 @@ $(document).on('click', '.btn-del-group', function(e) {
     e.preventDefault();
     var groupId = $(this).data('group-id');
 
-    if (confirm('정말로 그룹을 삭제하시겠습니까?')) {
+    if (confirm('삭제 후 복구가 불가합니다.\n정말로 그룹을 삭제하시겠습니까?')) {
         $.ajax({
             url: '/mypage/update_del_yn',
             type: 'POST',
@@ -448,8 +448,9 @@ $(document).on('click', '.btn-user-setting', function() {
                 row += '<td><button type="button" class="btn btn-sm btn-primary btn-save-user">저장</button></td>';
                 row += '<td><button type="button" class="btn btn-sm btn-danger btn-delete-user">삭제</button></td>';
 
-                if (currentUserId === 'jogiclub@gmail.com') {
+                if (userInfo.currentUserMasterYn === 'Y') {
                     row += '<td><button type="button" class="btn btn-sm btn-primary btn-login-user">로그인</button></td>';
+                    $('.master-hidden').removeClass('master-hidden');
                 }
 
                 row += '</tr>';

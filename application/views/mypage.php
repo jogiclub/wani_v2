@@ -29,58 +29,68 @@
 
 
     <div class="container-xl pt-5 pb-5">
-        <div class="table-responsive-xl">
+        <div class="table-responsive-xl mypage-group-list">
         <table class="table align-middle" style="min-width: 1000px">
 
         <thead>
             <tr>
                 <th scope="col">바로가기</th>
-                <th scope="col">그룹수정</th>
                 <th scope="col">회원수</th>
+                <th scope="col">사용자</th>
+                <th scope="col">그룹수정</th>
                 <th scope="col">통계</th>
                 <th scope="col">QR인쇄</th>
-                <th scope="col">사용자</th>
                 <th scope="col">출석타입설정</th>
-                <th scope="col">엑셀업로드</th>
+                <th scope="col">회원엑셀업로드</th>
                 <th scope="col">그룹삭제</th>
             </tr>
         </thead>
             <tbody class="table-group-divider">
-
             <?php if (empty($groups)): ?>
                 <td colspan="20" style="padding: 20px 0">개설된 그룹이 없습니다.<br/>오른쪽 하단의 그룹 추가 버튼을 선택하여 첫번째 그룹을 만들어보세요!</td>
             <?php else: ?>
                 <?php foreach ($groups as $group): ?>
+
                     <tr data-group-id="<?php echo $group['group_id']; ?>">
                         <td>
                             <a class="btn btn-primary btn-sm open-group-main"><?php echo $group['group_name']; ?> <i class="bi bi-chevron-right"></i></a>
                         </td>
-                        <td>
-                            <a class="btn btn-light btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a>
-                        </td>
+
                         <td><?php echo $group['member_count']; ?>명</td>
+                        <?php if ($group['user_level'] == 10): ?>
+                            <td><a class="btn btn-light btn-sm btn-user-setting" data-group-id="<?php echo $group['group_id']; ?>"><?php echo $group['user_count']; ?>명</a></td>
+                        <?php else: ?>
+                            <td><?php echo $group['user_count']; ?>명</td>
+                        <?php endif; ?>
+
+                        <?php if ($group['user_level'] == 10): ?>
+                        <td><a class="btn btn-light btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a></td>
                         <td><a class="btn btn-light btn-sm btn-summery" data-group-id="<?php echo $group['group_id']; ?>">통계</a></td>
                         <td><a class="btn btn-light btn-sm btn-print-qr" data-group-id="<?php echo $group['group_id']; ?>">QR인쇄</a></td>
-
-                        <td><a class="btn btn-secondary btn-sm btn-user-setting" data-group-id="<?php echo $group['group_id']; ?>"><?php echo $group['user_count']; ?>명</a></td>
-
-                        <td>
-                            <a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">
-                                출석타입설정
-                            </a>
+                        <td><a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">출석타입설정</a>
                         </td>
-                        <td><a href="#" class="btn btn-light btn-sm btn-member-excel-upload" data-group-id="<?php echo $group['group_id']; ?>">엑셀업로드</a></td>
-
+                        <td><a href="#" class="btn btn-light btn-sm btn-member-excel-upload" data-group-id="<?php echo $group['group_id']; ?>">회원엑셀업로드</a></td>
                         <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
+                        <?php else: ?>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
-
-        </tbody>
+            </tbody>
         </table>
         </div>
-        <div class="">
-
+        <div class="comment">
+            <ul>
+                <li>바로가기 버튼을 클릭하시면 해당 그룹으로 이동합니다.</li>
+                <li>오른쪽 하단의 그룹추가 버튼을 클릭하시면 내가 관리할 수 있는 그룹이 생성됩니다.</li>
+                <li>'엑셀업로드' 기능으로 회원을 일괄 등록할 수 있습니다.</li>
+            </ul>
         </div>
     </div>
 </main>
@@ -230,7 +240,7 @@
                             <col style="width: 100px">
                             <col style="width: 70px">
                             <col style="width: 70px">
-                            <col style="width: 100px">
+
                         </colgroup>
                         <thead>
                         <tr>
@@ -241,7 +251,7 @@
                             <th>권한</th>
                             <th>저장</th>
                             <th>삭제</th>
-                            <th>로그인</th>
+                            <th class="master-hidden">로그인</th>
                         </tr>
                         </thead>
                         <tbody class="table-group-divider" id="userListTableBody">
@@ -252,7 +262,7 @@
             </div>
             <div class="modal-footer d-block">
                 <ul class="help-list">
-                    <li>* 권한이 2이며, 휴대폰번호가 입력되어 있다면 로그인한 목자의 정보만 확인이 가능합니다.</li>
+                    <li>권한이 2이며, 휴대폰번호가 입력되어 있다면 로그인한 리더 본인의 정보만 확인이 가능합니다.</li>
                 </ul>
             </div>
         </div>
@@ -323,7 +333,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.js" integrity="sha512-is1ls2rgwpFZyixqKFEExPHVUUL+pPkBEPw47s/6NDQ4n1m6T/ySeDW3p54jp45z2EJ0RSOgilqee1WhtelXfA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-    var currentUserId = '<?php echo $this->session->userdata('user_id'); ?>';
+    var userInfo = {
+        currentUserId: '<?php echo $this->session->userdata('user_id'); ?>',
+        currentUserMasterYn: '<?php echo $this->session->userdata('master_yn'); ?>'
+    };
 </script>
 <script src="/assets/js/mypage.js?<?php echo date('Ymdhis');?>"></script>
 

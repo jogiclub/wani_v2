@@ -13,20 +13,30 @@ class Mypage extends CI_Controller
 
     public function index() {
 
+
+
         if ($this->session->userdata('user_id')) {
             $data['user'] = $this->session->userdata();
             $user_id = $this->session->userdata('user_id');
+            $master_yn = $this->session->userdata('master_yn');
             $this->load->model('User_model');
             $data['user'] = $this->User_model->get_user_by_id($user_id);
 
             $this->load->model('Group_model');
-            $groups = $this->Group_model->get_user_groups($user_id);
 
-            // 각 그룹별 att_type_idx 개수 가져오기
-//            $this->load->model('Attendance_model');
+            if($master_yn === "N"){
+                $groups = $this->Group_model->get_user_groups($user_id);
+            } else {
+                $groups = $this->Group_model->get_user_groups_master($user_id);
+            }
+
+
             foreach ($groups as &$group) {
-//                $group['att_count'] = $this->Attendance_model->get_attendance_type_count($group['group_id']);
                 $group['user_count'] = $this->User_model->get_group_user_count($group['group_id']);
+
+                // 그룹에 대한 사용자의 level 값과 master_yn 값을 가져옴
+                $group['user_level'] = $this->User_model->get_group_user_level($user_id, $group['group_id']);
+                $group['user_master_yn'] = $this->session->userdata('master_yn');
             }
 
             $data['groups'] = $groups;

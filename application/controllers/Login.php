@@ -108,6 +108,7 @@ class Login extends CI_Controller
                     $user = $this->User_model->get_user_by_id($user_id);
                     $user_data['user_grade'] = $user['user_grade'];
                     $user_data['user_hp'] = $user['user_hp'];
+                    $user_data['master_yn'] = $user['master_yn']; // master_yn 값 세션에 추가
                     $this->session->set_userdata($user_data);
                     redirect('mypage');
                 } else {
@@ -205,6 +206,7 @@ class Login extends CI_Controller
                     $user = $this->User_model->get_user_by_id($user_id);
                     $user_data['user_grade'] = $user['user_grade'];
                     $user_data['user_hp'] = $user['user_hp'];
+                    $user_data['master_yn'] = $user['master_yn']; // master_yn 값 세션에 추가
                     $this->session->set_userdata($user_data);
                     redirect('mypage');
                 } else {
@@ -295,6 +297,7 @@ class Login extends CI_Controller
             $user = $this->User_model->get_user_by_id($user_id);
             $user_data['user_grade'] = $user['user_grade'];
             $user_data['user_hp'] = $user['user_hp'];
+            $user_data['master_yn'] = $user['master_yn']; // master_yn 값 세션에 추가
             $this->session->set_userdata($user_data);
             redirect('mypage');
         } else {

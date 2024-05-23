@@ -4,7 +4,7 @@
 /*기본*/
 html, body{font-family: 'Pretendard'; font-size: 18px;}
 a{text-decoration: none; color: #0b0b0b}
-ul, dl{padding: 0; list-style: none}
+ul, dl{}
 
 /*bootstrarp 커스터마이징*/
 .btn{padding: 5px 10px 4px}
@@ -84,7 +84,7 @@ ul, dl{padding: 0; list-style: none}
 }
 
 /*버튼커스터마이징*/
-
+.btn{white-space: pre}
 
 /*레이아웃 기본*/
 
@@ -103,6 +103,9 @@ ul, dl{padding: 0; list-style: none}
 
 .hide5weekAgo-warp label{font-size: 14px}
 
+
+.master-hidden{display: none}
+
 /*헤더*/
 header .logo img{width: 130px}
 header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
@@ -115,6 +118,9 @@ header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
 
 /*일반*/
 main{background: #fafafa; padding: 30px 0 200px;}
+
+.mypage-group-list table th{background: none}
+.mypage-group-list table td .btn-user-setting{width: 100%}
 
 .btn-profile{position: absolute; right: 10px;}
 .btn-home{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; left: 10px; top: 0;}
