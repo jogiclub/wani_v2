@@ -24,7 +24,12 @@ class Group_model extends CI_Model {
         $this->db->insert('wb_group_user', $data);
     }
 
-
+    public function get_group_user($user_id, $group_id) {
+        $this->db->where('user_id', $user_id);
+        $this->db->where('group_id', $group_id);
+        $query = $this->db->get('wb_group_user');
+        return $query->row_array();
+    }
 
     public function get_user_groups($user_id) {
         $this->db->select('wb_group.group_id, wb_group.group_name, wb_group.leader_name, wb_group.new_name, COUNT(wb_member.member_idx) as member_count');
@@ -48,7 +53,13 @@ class Group_model extends CI_Model {
         return $query->result_array();
     }
 
-
+    public function get_group_by_invite_code($invite_code) {
+        $this->db->select('group_id');
+        $this->db->from('wb_group');
+        $this->db->where('invite_code', $invite_code);
+        $query = $this->db->get();
+        return $query->row_array();
+    }
 
     public function get_group_by_id($group_id) {
         $this->db->select('group_id, group_name, leader_name, new_name');

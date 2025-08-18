@@ -136,10 +136,10 @@ const modeConfig = {
         attStampWarp: 'addClass',
         memoStampWarp: 'addClass',
         inputSearch: {
-            disabled: true,
-            val: '관리모드 사용 중...',
-            placeholder: '',
-            focus: false
+            disabled: false,
+            val: '',
+            placeholder: '이름검색 또는 QR체크!',
+            focus: true
         },
         resetMemberList: true
     },
@@ -147,10 +147,10 @@ const modeConfig = {
         attStampWarp: 'addClass',
         memoStampWarp: 'removeClass',
         inputSearch: {
-            disabled: true,
-            val: '메모모드 사용 중...',
-            placeholder: '',
-            focus: false
+            disabled: false,
+            val: '',
+            placeholder: '이름검색 또는 QR체크!',
+            focus: true
         },
         resetMemberList: true,
         updateFunction: function(activeGroupId, startDate, endDate) {
@@ -219,20 +219,13 @@ $(document).on('click', '.member-card', function() {
         var memberIdx = $(this).attr('member-idx');
         var memberName = $(this).find('.member-name').text().trim();
         var groupId = getCookie('activeGroup');
-        var gradeMatch = $(this).attr('class').match(/grade-(\d+)/);
-        var grade = gradeMatch ? gradeMatch[1] : null;
+        var areaIdxMatch = $(this).attr('class').match(/area-idx-(\d+)/);
+        var areaIdx = areaIdxMatch ? areaIdxMatch[1] : null;
 
-        // console.log(memberIdx);
-        // console.log(memberName);
-        // console.log(groupId);
-        // console.log(gradeMatch);
-        // console.log(grade);
-
-
-        if (grade) {
-            loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, grade);
+        if (areaIdx) {
+            loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, areaIdx);
         } else {
-            alert('멤버의 grade 정보를 찾을 수 없습니다.');
+            alert('멤버의 area_idx 정보를 찾을 수 없습니다.');
         }
     }
 });
@@ -242,7 +235,7 @@ $(document).on('click', '.member-card', function() {
 
 
 
-function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, grade) {
+function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, areaIdx) {
     var currentWeekRange = $('.current-week').text();
     var currentDate = getDateFromWeekRange(currentWeekRange);
     var startDate = getWeekStartDate(currentDate);
@@ -254,7 +247,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, gr
         data: {
             member_idx: memberIdx,
             group_id: groupId,
-            grade: grade,
+            area_idx: areaIdx,
             start_date: startDate,
             end_date: endDate
         },
@@ -268,7 +261,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, gr
 
                 var offcanvasTitle = $('#attendanceOffcanvasLabel');
                 var offcanvasBody = $('#attendanceOffcanvas .offcanvas-body');
-                offcanvasTitle.text(memberName + '님 소그룹의 출석체크');
+                offcanvasTitle.text(memberName + ' 목장의 출석체크');
                 offcanvasBody.empty();
 
                 var tableHtml = '<table class="table align-middle" style="min-width: 650px"><thead><tr><th>이름</th>';
@@ -350,7 +343,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, gr
     });
 
 
-    $('#loadLastWeekBtn').data('member-idx', memberIdx).data('grade', grade);
+    $('#loadLastWeekBtn').data('member-idx', memberIdx).data('area-idx', areaIdx);
 
 
 }
@@ -394,17 +387,17 @@ function loadSameMembersInOffcanvas(memberIdx, groupId, grade) {
 
 $('#saveMember').click(function() {
     var formData = new FormData($('#memberForm')[0]);
-    var allGradeCheck = $('#allGradeCheck').prop('checked');
-    var allAreaCheck = $('#allAreaCheck').prop('checked');
-
-    if (allGradeCheck || allAreaCheck) {
+    /*var allGradeCheck = $('#allGradeCheck').prop('checked');
+    var allAreaCheck = $('#allAreaCheck').prop('checked');*/
+    saveMemberInfo(formData);
+    /*if (allGradeCheck || allAreaCheck) {
         updateMultipleMembers(formData, allGradeCheck, allAreaCheck);
     } else {
-        saveMemberInfo(formData);
-    }
+
+    }*/
 });
 
-
+/*
 function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
     var memberIdx = $('#memberIdx').val();
     formData.append('memberIdx', memberIdx);
@@ -436,7 +429,7 @@ function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
         }
     });
 }
-
+*/
 
 
 
@@ -487,6 +480,7 @@ $('.mode-list .btn-check').on('click', function() {
 //새로운 멤버를 추가
 $('#saveNewMember').click(function() {
     var member_name = $('#member_name').val();
+    var area_idx = $('#newMemberAreaIdx').val();
     var activeGroupId = getCookie('activeGroup');
 
     $.ajax({
@@ -494,13 +488,15 @@ $('#saveNewMember').click(function() {
         method: 'POST',
         data: {
             group_id: activeGroupId,
-            member_name: member_name
+            member_name: member_name,
+            area_idx: area_idx
         },
         dataType: 'json',
         success: function(response) {
             if (response.status == 'success') {
                 $('#newMemberModal').modal('hide');
                 $('#member_name').val('');
+                $('#newMemberAreaIdx').val($('#newMemberAreaIdx option:first').val());
 
                 // 현재 선택된 주차 범위 가져오기
                 var currentWeekRange = $('.current-week').text();
@@ -538,6 +534,9 @@ function loadMemberInfo(memberIdx) {
             $('#leaderYn').prop('checked', response.leader_yn === 'Y');
             $('#newYn').prop('checked', response.new_yn === 'Y');
 
+            // area_idx 값 설정
+            $('#areaIdx').val(response.area_idx);
+
             // 이미지 초기화
             $('#photo').val('');
             $('#image-preview').empty();
@@ -555,77 +554,73 @@ function loadMemberInfo(memberIdx) {
 
 function saveMemberInfo(formData) {
     var file = $('#photo')[0].files[0];
+    var areaIdx = $('#areaIdx').val();
+    formData.append('area_idx', areaIdx);
 
-    if (file) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-            var img = new Image();
-            img.onload = function () {
-                var canvas = document.createElement('canvas');
-                var ctx = canvas.getContext('2d');
-                var maxWidth = 200; // 원하는 최대 너비로 설정
-                var maxHeight = 200; // 원하는 최대 높이로 설정
-                var width = img.width;
-                var height = img.height;
+    var processImage = function(callback) {
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var img = new Image();
+                img.onload = function () {
+                    var canvas = document.createElement('canvas');
+                    var ctx = canvas.getContext('2d');
+                    var maxWidth = 200;
+                    var maxHeight = 200;
+                    var width = img.width;
+                    var height = img.height;
 
-                if (width > maxWidth) {
-                    height *= maxWidth / width;
-                    width = maxWidth;
-                }
-                if (height > maxHeight) {
-                    width *= maxHeight / height;
-                    height = maxHeight;
-                }
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                    if (height > maxHeight) {
+                        width *= maxHeight / height;
+                        height = maxHeight;
+                    }
 
-                canvas.width = width;
-                canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
 
-                canvas.toBlob(function (blob) {
-                    formData.delete('photo');
-                    formData.append('photo', blob, file.name);
-
-                    $.ajax({
-                        url: '/main/save_member_info',
-                        method: 'POST',
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        dataType: 'json',
-                        success: function (response) {
-                            if (response.status === 'success') {
-                                $('#memberOffcanvas').offcanvas('hide');
-                                // 멤버 정보 업데이트 후 필요한 작업 수행
-                                var memberIdx = $('#memberIdx').val();
-                                var memberName = $('#memberName').val();
-                                var photoUrl = response.photo_url;
-
-                                // member-card 업데이트
-                                var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
-                                memberCard.find('.member-name').text(memberName);
-                                if (photoUrl) {
-                                    memberCard.find('.photo').css('background-image', 'url(' + photoUrl + ')');
-                                } else {
-                                    memberCard.find('.photo').css('background-image', '');
-                                }
-
-                                // memberOffcanvas 내부의 .member-photo 업데이트
-                                if (photoUrl) {
-                                    $('.member-photo').css('background-image', 'url(' + photoUrl + ')');
-                                } else {
-                                    $('.member-photo').css('background-image', '');
-                                }
-                            } else {
-                                alert('멤버 정보 저장에 실패했습니다.');
-                            }
-                        }
-                    });
-                }, file.type);
+                    canvas.toBlob(function (blob) {
+                        formData.delete('photo');
+                        formData.append('photo', blob, file.name);
+                        callback();
+                    }, file.type);
+                };
+                img.src = e.target.result;
             };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    } else {
+            reader.readAsDataURL(file);
+        } else {
+            callback();
+        }
+    };
+
+    var updateMemberCard = function(response) {
+        var memberIdx = $('#memberIdx').val();
+        var memberName = $('#memberName').val();
+        var photoUrl = response.photo_url;
+        var areaName = $('#areaIdx option:selected').text();
+        var areaIdx = $('#areaIdx').val();
+
+        var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
+        memberCard.find('.member-name').text(memberName);
+        memberCard.find('.photo').css('background-image', photoUrl ? 'url(' + photoUrl + ')' : '');
+        $('.member-photo').css('background-image', photoUrl ? 'url(' + photoUrl + ')' : '');
+
+        memberCard.find('.area').text(areaName);
+        memberCard.removeClass(function(index, className) {
+            return (className.match(/(^|\s)area-idx-\S+/g) || []).join(' ');
+        }).addClass('area-idx-' + areaIdx);
+
+        // displayMembers(response.members);
+        //
+        //
+        // $('.grid').masonry('layout');
+    };
+
+    processImage(function() {
         $.ajax({
             url: '/main/save_member_info',
             method: 'POST',
@@ -636,32 +631,13 @@ function saveMemberInfo(formData) {
             success: function (response) {
                 if (response.status === 'success') {
                     $('#memberOffcanvas').offcanvas('hide');
-                    // 멤버 정보 업데이트 후 필요한 작업 수행
-                    var memberIdx = $('#memberIdx').val();
-                    var memberName = $('#memberName').val();
-                    var photoUrl = response.photo_url;
-
-                    // member-card 업데이트
-                    var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
-                    memberCard.find('.member-name').text(memberName);
-                    if (photoUrl) {
-                        memberCard.find('.photo').css('background-image', 'url(' + photoUrl + ')');
-                    } else {
-                        memberCard.find('.photo').css('background-image', '');
-                    }
-
-                    // memberOffcanvas 내부의 .member-photo 업데이트
-                    if (photoUrl) {
-                        $('.member-photo').css('background-image', 'url(' + photoUrl + ')');
-                    } else {
-                        $('.member-photo').css('background-image', '');
-                    }
+                    updateMemberCard(response);
                 } else {
                     alert('멤버 정보 저장에 실패했습니다.');
                 }
             }
         });
-    }
+    });
 }
 
 
@@ -688,7 +664,7 @@ $('#saveMemo').click(function() {
                 $('#memoContent').val('');
 
                 // 해당 멤버의 memo-count 업데이트
-                updateMemoCountForMember(memberIdx);
+                updateMemoCountForMember(memberIdx, 1);
             } else {
                 alert('메모 저장에 실패했습니다.');
             }
@@ -698,14 +674,14 @@ $('#saveMemo').click(function() {
 
 
 // 특정 멤버의 memo-count 업데이트 함수 추가
-function updateMemoCountForMember(memberIdx) {
+function updateMemoCountForMember(memberIdx, count) {
     var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
     var memoStampsContainer = memberCard.find('.member-wrap');
     var memoCountElement = memberCard.find('.memo-count');
 
     if (memoCountElement.length > 0) {
         var currentCount = parseInt(memoCountElement.text());
-        memoCountElement.text(currentCount + 1);
+        memoCountElement.text(currentCount + count);
     } else {
         var memoStampsHtml = '<span class="memo-stamp-warp">' +
             '<span class="memo-stamp"><i class="bi bi-journal-check"></i><span class="memo-count">1</span></span>' +
@@ -742,6 +718,10 @@ function deleteMemo(idx) {
                 $('.memo-list ul').empty();
                 var memberIdx = $('#memoMemberIdx').val();
                 loadMemoList(memberIdx);
+
+                // 해당 멤버의 memo-count 업데이트
+                updateMemoCountForMember(memberIdx, -1);
+
             } else {
                 alert('메모 삭제에 실패했습니다.');
             }
@@ -772,9 +752,10 @@ function loadMemoList(memberIdx) {
                 for (var i = 0; i < memoList.length; i++) {
                     var memo = memoList[i];
                     memoListHtml += '<li><span class="memo-date">' + memo.regi_date + '</span>' +
-                        '<span class="memo-id">' + memo.user_id + '</span>' +
+                        '<span class="memo-id">' + memo.user_name + '</span>' +
                         '<span class="memo-content">' + memo.memo_content + '</span>' +
                         '<a class="btn-memo-del" data-idx="' + memo.idx + '"><i class="bi bi-trash3"></i></a></li>';  // memo_idx 대신 idx 사용
+                    console.log(memo);
                 }
 
                 $('.memo-list ul').append(memoListHtml);
@@ -955,7 +936,12 @@ $('#saveAttendance').click(function() {
                 // 출석 정보 업데이트
                 updateAttStamps(activeGroupId, startDate, endDate);
 
-
+                // 모달이 완전히 닫힌 후 input-search에 포커스
+                $('#attendanceModal').on('hidden.bs.modal', function () {
+                    $('#input-search').focus();
+                    // 이벤트 리스너를 한 번만 실행하고 제거
+                    $(this).off('hidden.bs.modal');
+                });
 
 
             } else {
@@ -963,6 +949,10 @@ $('#saveAttendance').click(function() {
             }
         }
     });
+
+
+
+
 });
 
 
@@ -1013,6 +1003,7 @@ function displayMembers(members) {
 
         // 출석 유형별 숫자 초기화
         var attTypeCount = {};
+        var prevAreaOrder = null;
 
         $.each(members, function(index, member) {
 
@@ -1032,18 +1023,27 @@ function displayMembers(members) {
             }
 
 
-            if (member.area) {
-                memberCard.find('.member-card').prepend('<span class="area"> '+ member.area +' </span> ');
+            if (member.area_name) {
+                memberCard.find('.member-card').prepend('<span class="area"> '+ member.area_name +' </span> ');
             }
 
-            if (member.grade) {
-                memberCard.find('.member-card').addClass('grade-'+member.grade)
+            if (member.area_idx) {
+                memberCard.find('.member-card').addClass('area-idx-'+member.area_idx)
             }
 
             if (member.new_yn === 'Y') {
                 memberCard.find('.member-card').addClass('new');
                 memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-bookmark-heart-fill"></i></span>');
             }
+
+            var currentAreaOrder = member.area_order;
+            if (currentAreaOrder !== prevAreaOrder) {
+                memberList.append('<div class="grid-item grid-item--width100"></div>');
+                prevAreaOrder = currentAreaOrder;
+            }
+
+
+
 
             if (member.att_type_data) {
                 var attTypeData = member.att_type_data.split('|');
@@ -1102,6 +1102,8 @@ function displayMembers(members) {
 
     // Masonry 레이아웃 업데이트
     // var isFirstNew = true;
+
+    /*
     var prevArea = null;
     $('.grid-item').each(function() {
 
@@ -1111,16 +1113,8 @@ function displayMembers(members) {
             $(this).before('<div class="grid-item grid-item--width100"></div>');
             prevArea = currentArea[0];
         }
-        /*
-        if ($(this).find('.leader').length > 0) {
-            $(this).before('<div class="grid-item grid-item--width100"></div>');
-        }
 
-        if ($(this).find('.new').length > 0 && isFirstNew) {
-            $(this).before('<div class="grid-item grid-item--width100"></div>');
-            isFirstNew = false;
-        }*/
-    });
+    });*/
 
 
 
@@ -1261,6 +1255,9 @@ function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
         success: function(members) {
             displayMembers(members);
 
+
+
+
             // 최근 5주 이전까지 출석이 없는 사람 숨기기
             var hideFiveWeeksAgo = getCookie('hideFiveWeeksAgo') === 'true';
             if (hideFiveWeeksAgo) {
@@ -1287,10 +1284,22 @@ function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
                 }
             }
 
+
+			// 현재 선택된 주차 범위 가져오기
+			var currentWeekRange = $('.current-week').text();
+			var currentDate = getDateFromWeekRange(currentWeekRange);
+			var startDate = getWeekStartDate(currentDate);
+			var endDate = getWeekEndDate(currentDate);
+			updateBirthBg(startDate, endDate); // 추가
+
+
             // 초기 로드 시에만 applySelectedMode 호출
             if (initialLoad) {
                 applySelectedMode();
             }
+
+
+
         }
     });
 }
@@ -1614,9 +1623,15 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
     var today = new Date();
     var attDate = formatDate(today);
 
-    // 해당 member-card로 스크롤 이동
+    // 해당 member-card로 스크롤 이동 및 'now' 클래스 추가
     var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
     if (memberCard.length > 0) {
+        // 기존의 'now' 클래스를 모든 member-card에서 제거
+        $('.member-card').removeClass('now');
+        // 현재 member-card에 'now' 클래스 추가
+        memberCard.addClass('now');
+
+        // 해당 멤버 카드로 스크롤 이동
         $('html, body').animate({
             scrollTop: memberCard.offset().top - 100
         }, 500);
@@ -1636,7 +1651,18 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
-                console.log('출석 정보 저장 완료');
+                // console.log('출석 정보 저장 완료');
+
+				// 출석 정보 업데이트
+				var currentWeekRange = $('.current-week').text();
+				var currentDate = getDateFromWeekRange(currentWeekRange);
+				var startDate = getWeekStartDate(currentDate);
+				var endDate = getWeekEndDate(currentDate);
+
+				updateAttStamps(activeGroupId, startDate, endDate);
+
+				console.log(startDate+endDate);
+
             } else {
                 console.log('출석 정보 저장 실패');
             }
@@ -1770,6 +1796,8 @@ function saveAttendanceData(attendanceData) {
             if (response.status === 'success') {
                 $('#attendanceOffcanvas').offcanvas('hide');
                 updateAttStamps(activeGroupId, startDate, endDate);
+                var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 멤버 이름 추출
+                alert(memberName + ' 목장의 출석체크를 완료하였습니다.');
             } else {
                 alert('출석 정보 저장에 실패했습니다.');
             }
@@ -1894,13 +1922,14 @@ $(document).ready(function() {
     $('#loadLastWeekBtn').on('click', function() {
         var memberIdx = $(this).data('member-idx');
         var groupId = getCookie('activeGroup');
-        var grade = $(this).data('grade');
-        loadLastWeekData(memberIdx, groupId, grade);
+        var areaIdx = $(this).data('area-idx');
+        var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 멤버 이름 추출
+        loadLastWeekData(memberIdx, groupId, areaIdx, memberName);
     });
 
 
 
-    function loadLastWeekData(memberIdx, groupId, grade) {
+    function loadLastWeekData(memberIdx, groupId, areaIdx, memberName) {
         var currentWeekRange = $('.current-week').text();
         var currentDate = getDateFromWeekRange(currentWeekRange);
         var lastWeekStartDate = getWeekStartDate(new Date(currentDate.setDate(currentDate.getDate() - 7)));
@@ -1912,7 +1941,7 @@ $(document).ready(function() {
             data: {
                 member_idx: memberIdx,
                 group_id: groupId,
-                grade: grade,
+                area_idx: areaIdx,
                 start_date: lastWeekStartDate,
                 end_date: lastWeekEndDate
             },
@@ -1922,6 +1951,7 @@ $(document).ready(function() {
                     var attendanceData = response.attendance_data;
                     var attTypes = response.att_types;
                     updateAttendanceSelectbox(attendanceData, attTypes);
+                    alert(memberName + ' 목장의 지난 주 정보를 불러왔습니다.');
                 } else {
                     alert('지난주 데이터를 가져오는데 실패했습니다.');
                 }
@@ -1952,8 +1982,182 @@ $(document).ready(function() {
         });
     }
 
+// 소그룹 추가 처리
+
+		$('#saveNewArea').click(function() {
+			const areaName = $('#area_name').val().trim();
+			if (!areaName) {
+				alert('소그룹명을 입력해주세요.');
+				return;
+			}
+
+			// 현재 활성화된 그룹 ID 가져오기
+			const activeGroupId = getCookie('activeGroup');
+
+			$.ajax({
+				url: '/main/add_area',
+				method: 'POST',
+				data: {
+					area_name: areaName,
+					group_id: activeGroupId
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.status === 'success') {
+						// 모달 닫기
+						$('#newAreaModal').modal('hide');
+						// 입력 필드 초기화
+						$('#area_name').val('');
+						// 필요한 경우 소그룹 목록 새로고침
+						location.reload();
+					} else {
+						alert('소그룹 추가에 실패했습니다.');
+					}
+				},
+				error: function() {
+					alert('소그룹 추가 중 오류가 발생했습니다.');
+				}
+			});
+		});
+
+		// 모달이 닫힐 때 입력 필드 초기화
+		$('#newAreaModal').on('hidden.bs.modal', function () {
+			$('#area_name').val('');
+		});
 
 
+	// 모달이 열릴 때 소그룹 목록 로드
+	$('#newAreaModal').on('show.bs.modal', function () {
+		loadAreaList();
+	});
 
+	// 소그룹 목록 로드 함수
+	function loadAreaList() {
+		const activeGroupId = getCookie('activeGroup');
+		$.ajax({
+			url: '/main/get_areas',
+			method: 'POST',
+			data: { group_id: activeGroupId },
+			dataType: 'json',
+			success: function(response) {
+				let html = '';
+				response.areas.forEach(function(area) {
+					html += `
+					<div class="input-group mb-2">
+						<input type="text" class="form-control area-name" 
+							   data-area-idx="${area.area_idx}" 
+							   value="${area.area_name}">
+						<button class="btn btn-danger btn-delete-area" 
+								type="button" 
+								data-area-idx="${area.area_idx}"
+								data-area-name="${area.area_name}">
+							<i class="bi bi-trash"></i>
+						</button>
+					</div>`;
+				});
+				$('#areaList').html(html);
+			}
+		});
+	}
+
+	// 토스트 메시지 표시 함수
+	function showToastMsg(message) {
+		$('#areaToast .toast-body').text(message);
+		const toast = new bootstrap.Toast($('#areaToast'));
+		toast.show();
+	}
+
+	// 새 소그룹 추가
+	$('#addNewArea').click(function() {
+		const areaName = $('#area_name').val().trim();
+		if (!areaName) {
+			alert('소그룹명을 입력해주세요.');
+			return;
+		}
+
+		const activeGroupId = getCookie('activeGroup');
+
+		$.ajax({
+			url: '/main/add_area',
+			method: 'POST',
+			data: {
+				area_name: areaName,
+				group_id: activeGroupId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.status === 'success') {
+					$('#area_name').val('');
+					showToastMsg('소그룹이 추가되었습니다.');
+					loadAreaList(); // 목록 새로고침
+				} else {
+					alert('소그룹 추가에 실패했습니다.');
+				}
+			},
+			error: function() {
+				alert('소그룹 추가 중 오류가 발생했습니다.');
+			}
+		});
+	});
+
+	// 소그룹 변경사항 저장
+	$('#saveAreaChanges').click(function() {
+		const areas = [];
+		$('.area-name').each(function() {
+			areas.push({
+				area_idx: $(this).data('area-idx'),
+				area_name: $(this).val().trim()
+			});
+		});
+
+		const activeGroupId = getCookie('activeGroup');
+
+		$.ajax({
+			url: '/main/update_areas',
+			method: 'POST',
+			data: {
+				areas: JSON.stringify(areas),
+				group_id: activeGroupId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.status === 'success') {
+					showToastMsg('소그룹 정보가 수정되었습니다.');
+					loadAreaList(); // 목록 새로고침
+				} else {
+					alert('소그룹 수정에 실패했습니다.');
+				}
+			},
+			error: function() {
+				alert('소그룹 수정 중 오류가 발생했습니다.');
+			}
+		});
+	});
+
+	// 삭제 버튼 클릭 이벤트
+	$(document).on('click', '.btn-delete-area', function() {
+		const areaIdx = $(this).data('area-idx');
+		const areaName = $(this).data('area-name');
+
+		if (confirm('정말 ' + areaName + ' 소그룹을 삭제하시겠습니까?')) {
+			$.ajax({
+				url: '/main/delete_area',
+				method: 'POST',
+				data: { area_idx: areaIdx },
+				dataType: 'json',
+				success: function(response) {
+					if (response.status === 'success') {
+						showToastMsg(areaName + ' 소그룹을 삭제했습니다.');
+						loadAreaList(); // 목록 새로고침
+					} else {
+						showToastMsg(response.message);
+					}
+				},
+				error: function() {
+					showToastMsg('소그룹 삭제 중 오류가 발생했습니다.');
+				}
+			});
+		}
+	});
 
 });

@@ -67,6 +67,12 @@ class Main extends CI_Controller {
                 }
             }
 
+
+            // 해당 그룹의 area_name 목록 가져오기
+            $this->load->model('Member_area_model');
+            $data['member_areas'] = $this->Member_area_model->get_member_areas($currentGroupId);
+
+
             // 활성화된 그룹의 출석타입 정보 가져오기
             $this->load->model('Attendance_model');
             $data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentGroupId);
@@ -119,6 +125,8 @@ class Main extends CI_Controller {
             }
 
             echo json_encode($response);
+
+
         }
     }
 
@@ -128,11 +136,13 @@ class Main extends CI_Controller {
         if ($this->input->is_ajax_request()) {
             $group_id = $this->input->post('group_id');
             $member_name = $this->input->post('member_name');
+            $area_idx = $this->input->post('area_idx');
+
 
             $data = array(
                 'group_id' => $group_id,
                 'grade' => 0,
-                'area' => '새가족',
+                'area_idx' => $area_idx,
                 'member_name' => $member_name,
                 'member_nick' => $member_name,
                 'new_yn' => 'Y',
@@ -182,7 +192,6 @@ class Main extends CI_Controller {
         if ($this->input->is_ajax_request()) {
             $member_idx = $this->input->post('member_idx');
             $grade = $this->input->post('grade');
-            $area = $this->input->post('area');
             $member_name = $this->input->post('member_name');
             $member_nick = $this->input->post('member_nick');
             $member_phone = $this->input->post('member_phone');
@@ -191,11 +200,13 @@ class Main extends CI_Controller {
             $address = $this->input->post('address');
             $member_etc = $this->input->post('member_etc');
             $leader_yn = $this->input->post('leader_yn') ? 'Y' : 'N';
+            $area_idx = $this->input->post('area_idx');
+
             $new_yn = $this->input->post('new_yn') ? 'Y' : 'N';
+
 
             $data = array(
                 'grade' => $grade,
-                'area' => $area,
                 'member_name' => $member_name,
                 'member_nick' => $member_nick,
                 'member_phone' => $member_phone,
@@ -204,60 +215,74 @@ class Main extends CI_Controller {
                 'address' => $address,
                 'member_etc' => $member_etc,
                 'leader_yn' => $leader_yn,
+                'area_idx' => $area_idx,
+
                 'new_yn' => $new_yn
             );
 
-            // 사진 업로드 처리
-            if (!empty($_FILES['photo']['name'])) {
-                $group_id = $this->input->post('group_id');
-                $upload_path = './uploads/member_photos/' . $group_id . '/';
-                $config['upload_path'] = $upload_path;
-                $config['allowed_types'] = 'gif|jpg|png';
-                $config['max_size'] = 5120; // 최대 업로드 크기를 5MB로 변경
-                $config['file_name'] = 'member_' . $member_idx;
-                $config['overwrite'] = true; // 같은 이름의 이미지 덮어쓰기 옵션 추가
+			// 사진 업로드 처리
+			if (!empty($_FILES['photo']['name'])) {
+				$group_id = $this->input->post('group_id');
+				$upload_path = './uploads/member_photos/' . $group_id . '/';
 
-                // 업로드 경로 확인 및 없으면 생성
-                if (!is_dir($config['upload_path'])) {
-                    mkdir($config['upload_path'], 0777, true);
-                }
+				// 1. 기존 파일 확인 및 삭제
+				$existing_photo = $this->Member_model->get_member_by_idx($member_idx);
+				if (!empty($existing_photo['photo'])) {
+					$existing_file = $upload_path . $existing_photo['photo'];
+					if (file_exists($existing_file)) {
+						unlink($existing_file);
+					}
+				}
 
-                $this->load->library('upload', $config);
+				// 2. 업로드 설정
+				$config['upload_path'] = $upload_path;
+				$config['allowed_types'] = 'gif|jpg|png';
+				$config['max_size'] = 5120;
+				$config['file_name'] = 'member_' . $member_idx . '_' . time(); // 타임스탬프 추가
+				$config['overwrite'] = true;
 
-                if ($this->upload->do_upload('photo')) {
-                    $upload_data = $this->upload->data();
+				// 3. 업로드 경로 확인 및 생성
+				if (!is_dir($config['upload_path'])) {
+					if (!mkdir($config['upload_path'], 0777, true)) {
+						$response = array('status' => 'error', 'message' => 'Failed to create upload directory');
+						echo json_encode($response);
+						return;
+					}
+					chmod($config['upload_path'], 0777);
+				}
 
-                    // 이미지 크기 조정
-                    $this->load->library('image_lib');
-                    $image_config['image_library'] = 'gd2';
-                    $image_config['source_image'] = $upload_data['full_path'];
-                    $image_config['maintain_ratio'] = TRUE;
-                    $image_config['width'] = 200;
+				$this->load->library('upload', $config);
 
-                    $this->image_lib->clear();
-                    $this->image_lib->initialize($image_config);
+				if ($this->upload->do_upload('photo')) {
+					$upload_data = $this->upload->data();
 
-                    if (!$this->image_lib->resize()) {
-                        // 이미지 리사이즈 실패 시 오류 메시지 전달
-                        $response = array('status' => 'error', 'message' => $this->image_lib->display_errors());
-                        echo json_encode($response);
-                        return;
-                    }
+					// 4. 이미지 리사이즈
+					$this->load->library('image_lib');
+					$image_config['image_library'] = 'gd2';
+					$image_config['source_image'] = $upload_data['full_path'];
+					$image_config['maintain_ratio'] = TRUE;
+					$image_config['width'] = 200;
 
-                    $data['photo'] = $upload_data['file_name'];
+					$this->image_lib->clear();
+					$this->image_lib->initialize($image_config);
 
-                    // photo_url을 response에 포함
-                    $photo_url = base_url('uploads/member_photos/' . $group_id . '/' . $upload_data['file_name']);
-                    $response = array('status' => 'success', 'photo_url' => $photo_url);
+					if (!$this->image_lib->resize()) {
+						$response = array('status' => 'error', 'message' => $this->image_lib->display_errors());
+						echo json_encode($response);
+						return;
+					}
 
-                } else {
-                    $upload_error = $this->upload->display_errors();
-                    log_message('error', 'Image upload failed: ' . $upload_error);
-                    $response = array('status' => 'error', 'message' => $upload_error);
-                    echo json_encode($response);
-                    return;
-                }
-            }
+					$data['photo'] = $upload_data['file_name'];
+					$photo_url = base_url('uploads/member_photos/' . $group_id . '/' . $upload_data['file_name']);
+					$response = array('status' => 'success', 'photo_url' => $photo_url);
+				} else {
+					$upload_error = $this->upload->display_errors();
+					log_message('error', 'Image upload failed: ' . $upload_error);
+					$response = array('status' => 'error', 'message' => $upload_error);
+					echo json_encode($response);
+					return;
+				}
+			}
 
             $this->load->model('Member_model');
             $result = $this->Member_model->update_member($member_idx, $data);
@@ -405,7 +430,7 @@ class Main extends CI_Controller {
             echo json_encode($response);
         }
     }
-
+/*
     public function update_multiple_members() {
         if ($this->input->is_ajax_request()) {
             $member_idx = $this->input->post('memberIdx');
@@ -439,7 +464,7 @@ class Main extends CI_Controller {
         }
     }
 
-
+*/
 
     function getWeekRange($date, $includeWeek = false) {
         // 입력된 날짜의 타임스탬프 가져오기
@@ -595,12 +620,12 @@ class Main extends CI_Controller {
         if ($this->input->is_ajax_request()) {
             $member_idx = $this->input->post('member_idx');
             $group_id = $this->input->post('group_id');
-            $grade = $this->input->post('grade');
+            $area_idx = $this->input->post('area_idx');
             $start_date = $this->input->post('start_date');
             $end_date = $this->input->post('end_date');
 
             $this->load->model('Member_model');
-            $same_members = $this->Member_model->get_same_members($member_idx, $group_id, $grade, $start_date, $end_date);
+            $same_members = $this->Member_model->get_same_members($member_idx, $group_id, $area_idx, $start_date, $end_date);
 
             // 출석 유형 정보 가져오기
             $this->load->model('Attendance_model');
@@ -667,12 +692,12 @@ class Main extends CI_Controller {
     public function get_last_week_attendance() {
         if ($this->input->is_ajax_request()) {
             $group_id = $this->input->post('group_id');
-            $grade = $this->input->post('grade');
+            $area_idx = $this->input->post('area_idx');
             $start_date = $this->input->post('start_date');
             $end_date = $this->input->post('end_date');
 
             $this->load->model('Attendance_model');
-            $attendance_data = $this->Attendance_model->get_group_member_attendance($group_id, $grade, $start_date, $end_date);
+            $attendance_data = $this->Attendance_model->get_group_member_attendance($group_id, $area_idx, $start_date, $end_date);
             $att_types = $this->Attendance_model->get_attendance_types($group_id);
 
             $response = array(
@@ -684,5 +709,95 @@ class Main extends CI_Controller {
             echo json_encode($response);
         }
     }
+
+
+	public function add_area() {
+		if ($this->input->is_ajax_request()) {
+			$area_name = $this->input->post('area_name');
+			$group_id = $this->input->post('group_id');
+
+			// Member_area_model 로드
+			$this->load->model('Member_area_model');
+
+			// 현재 최대 order 값 가져오기
+			$max_order = $this->Member_area_model->get_max_order($group_id);
+			$new_order = $max_order + 1;
+
+			$data = array(
+				'area_name' => $area_name,
+				'area_order' => $new_order,
+				'group_id' => $group_id
+			);
+
+			$result = $this->Member_area_model->add_area($data);
+
+			if ($result) {
+				$response = array('status' => 'success');
+			} else {
+				$response = array('status' => 'error');
+			}
+
+			echo json_encode($response);
+		}
+	}
+
+	public function get_areas() {
+		if ($this->input->is_ajax_request()) {
+			$group_id = $this->input->post('group_id');
+
+			$this->load->model('Member_area_model');
+			$areas = $this->Member_area_model->get_member_areas($group_id);
+
+			echo json_encode(['areas' => $areas]);
+		}
+	}
+
+	public function update_areas() {
+		if ($this->input->is_ajax_request()) {
+			$areas = json_decode($this->input->post('areas'), true);
+			$group_id = $this->input->post('group_id');
+
+			$this->load->model('Member_area_model');
+			$success = $this->Member_area_model->update_areas($areas);
+
+			echo json_encode(['status' => $success ? 'success' : 'error']);
+		}
+	}
+
+	public function delete_area() {
+		if ($this->input->is_ajax_request()) {
+			$area_idx = $this->input->post('area_idx');
+
+			// Member_area_model 로드
+			$this->load->model('Member_area_model');
+
+			// 해당 area_idx를 사용하는 멤버가 있는지 확인
+			$members_count = $this->Member_area_model->check_area_members($area_idx);
+
+			if ($members_count > 0) {
+				echo json_encode([
+					'status' => 'error',
+					'message' => '소속된 멤버가 있어 삭제가 불가합니다. 소속된 멤버를 삭제하거나 이동 후 진행하시기 바랍니다.'
+				]);
+				return;
+			}
+
+			// 멤버가 없는 경우 삭제 진행
+			$result = $this->Member_area_model->delete_area($area_idx);
+
+			if ($result) {
+				echo json_encode([
+					'status' => 'success',
+					'message' => '소그룹이 삭제되었습니다.'
+				]);
+			} else {
+				echo json_encode([
+					'status' => 'error',
+					'message' => '소그룹 삭제에 실패했습니다.'
+				]);
+			}
+		}
+	}
+
 
 }

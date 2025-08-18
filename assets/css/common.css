@@ -30,15 +30,16 @@ ul, dl{}
 
 /*마손리*/
 .grid-sizer,.grid-item {width: 16.66%; padding: 3px;}
-.grid-item .member-card{border: 1px solid #999; padding: 17px 12px 6px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer; background: #fff}
+.grid-item .member-card{border: 1px solid #999; padding: 25px 12px 6px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer; background: #fff}
 .grid-item .member-card.leader{height: 122px;    flex-direction: column;     justify-content: space-between;}
 .grid-item .member-card.leader .photo{display: inline-block; height: 64px; width: 64px; background: #efefef; border-radius: 32px;    background-position: center center;background-size: cover;}
 .grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;position: absolute; left: 10px; bottom: 8px;}
 .grid-item .member-card.leader .badge i{color:#0d9af0;}
 .grid-item .member-card.new .badge i{color: #ff8000;}
+.grid-item .member-card.now{border: 2px solid #cb3128;}
 .grid-item .member-card .birth i{color: #CB3227}
 .grid-item .member-card .bedge-leader{}
-.grid-item .member-card .area{position: absolute; left: 16px; top: 13px; font-size: 10px; color:#999;}
+.grid-item .member-card .area{position: absolute; left: 16px; top: 13px; font-size: 12px; color:#999;}
 .grid-item .member-card .member-wrap{width: 100%;}
 .grid-item .member-card .member-wrap .member-name{line-height: 20px; position: absolute;bottom: 12px;left: 14px;}
 .grid-item .member-card .member-wrap .att-stamp-warp{display: flex; position: absolute;right: 10px;bottom: 12px; }
@@ -83,8 +84,8 @@ ul, dl{}
     .grid-sizer,.grid-item{width: 50%}
 }
 
-/*버튼커스터마이징*/
-.btn{white-space: pre}
+/*버튼커스터마이징
+.btn{white-space: pre}*/
 
 /*레이아웃 기본*/
 
@@ -109,7 +110,7 @@ ul, dl{}
 /*헤더*/
 header .logo img{width: 130px}
 header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
-header h2 b{position: relative}
+header h2 b{position: relative;font-size: 38px;}
 header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
 
 
@@ -150,7 +151,7 @@ main{background: #fafafa; padding: 30px 0 200px;}
 .mode-list label{border: 0; border-radius: 0; background: #fff!important; color:#999; padding: 10px}
 .mode-list .btn-check:checked+.btn{border-bottom: 2px solid #0d9af0; color:#0d9af0!important;}
 
-@media screen and (max-width: 992px){
+@media screen and (max-width: 1200px){
     .mode-list .btn-group{width: 100%}
     .mode-list label i{display: block; width: 100%; font-size: 30px;}
     .total-list-wrap{flex-direction: column; overflow: scroll;}
@@ -170,7 +171,8 @@ main{background: #fafafa; padding: 30px 0 200px;}
 footer{position:relative;}
 footer .btn-new{position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
 footer .btn-new i{font-size:30px}
-
+footer .btn-area{position: fixed;bottom: 120px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0077ff;box-shadow: 0 0 5px 0 #aaa;}
+footer .btn-area i{font-size:30px}
 
 /*모달(출석체크)*/
 .att-btn-list{display: flex; flex-direction: column; margin-bottom:20px}
@@ -189,6 +191,7 @@ footer .btn-new i{font-size:30px}
 /*메모*/
 .memo-wrap{height: 260px;}
 .memo-list{height: calc(100% - 260px); overflow-y: auto;}
+.memo-list ul{padding: 0; list-style: none}
 .memo-list ul li{position: relative}
 .memo-list ul li .btn-memo-del{position: absolute; right: 10px; top: 47px; cursor: pointer}
 .memo-list ul li span{display: inline-block}
@@ -197,7 +200,8 @@ footer .btn-new i{font-size:30px}
 .memo-list ul li .memo-content{width: 100%; margin: 5px 0 20px; background: #efefef; padding: 10px 20px 10px 10px}
 
 
-
+.area-list{height: 300px;overflow-y: scroll; padding: 10px; background: #efefef;}
+.area-list .btn-delete-area{display: flex;align-items: center;justify-content: center;}
 
 
 /*마이페이지*/
@@ -210,8 +214,8 @@ table tr th, table tr td{text-align: center; font-weight: 500}
 
 .open-group-main{display: flex; width: 100%;align-items: center;justify-content: space-between;}
 
-footer .add-group {position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
-footer .add-group i{font-size:30px}
+footer .btn-add-group {position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
+footer .btn-add-group i{font-size:30px}
 
 .bi-info-circle-fill{color:#ff8000}
 

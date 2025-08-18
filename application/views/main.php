@@ -123,12 +123,55 @@
     </div>
 </main>
 <footer>
+	<button class="input-group-text btn-area" id="basic-addon3" data-bs-toggle="modal" data-bs-target="#newAreaModal"><i class="bi bi-folder"></i></button>
     <button class="input-group-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
 </footer>
 
 
 
 
+
+<!-- 소그룹 관리 모달 -->
+<div class="modal fade" id="newAreaModal" tabindex="-1" aria-labelledby="newAreaModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="newAreaModalLabel">소그룹 관리</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-4">
+					<h6>소그룹 추가</h6>
+					<div class="input-group">
+						<input type="text" class="form-control" id="area_name" name="area_name" placeholder="소그룹명" required>
+						<button type="button" class="btn btn-primary" id="addNewArea">추가</button>
+					</div>
+				</div>
+				<div>
+					<h6>소그룹 목록</h6>
+					<div id="areaList" class="mb-3 area-list">
+						<!-- 소그룹 목록이 동적으로 추가됨 -->
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="saveAreaChanges">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 토스트 메시지 -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+	<div id="areaToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+		<div class="toast-header">
+			<strong class="me-auto">알림</strong>
+			<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+		</div>
+		<div class="toast-body"></div>
+	</div>
+</div>
 
 
 
@@ -171,6 +214,14 @@
                 <div class="mb-3">
                     <label for="member_name" class="form-label">이름</label>
                     <input type="text" class="form-control" id="member_name" name="member_name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="newMemberAreaIdx" class="form-label">소그룹</label>
+                    <select class="form-select" id="newMemberAreaIdx" name="area_idx" required>
+                        <?php foreach ($member_areas as $area): ?>
+                            <option value="<?php echo $area['area_idx']; ?>"><?php echo $area['area_name']; ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             </div>
             <div class="modal-footer">
@@ -223,27 +274,19 @@
 
 
 
-
-                <div class="col-6 mb-1">
-                    <label for="grade" class="form-label">소그룹ID
-                        <a type="button" class="btn-popover" data-bs-toggle="popover" title="소그룹ID" data-bs-content="회원카드를 나누는 기준이 됩니다.">
-                            <i class="bi bi-info-circle-fill"></i>
-                        </a>
-                    </label>
-                    <input type="number" class="form-control" id="grade" name="grade">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="" id="allGradeCheck">
-                        <label class="form-check-label" for="allGroupCheck">
-                            동일 소그룹ID 함께 수정
-                        </label>
-                    </div>
+                <!--
+                                <div class="col-6 mb-1">
+                                    <label for="grade" class="form-label">소그룹ID</label>
+                                    <input type="number" class="form-control" id="grade" name="grade">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="allGradeCheck">
+                                        <label class="form-check-label" for="allGroupCheck">
+                                            동일 소그룹ID 함께 수정
+                                        </label>
+                                    </div>
                 </div>
                 <div class="col-6 mb-1">
-                    <label for="area" class="form-label">소그룹
-                        <a type="button" class="btn-popover" data-bs-toggle="popover" title="소그룹" data-bs-content="회원카드 내 표시되는 용도입니다.">
-                            <i class="bi bi-info-circle-fill"></i>
-                        </a>
-                    </label>
+                    <label for="area" class="form-label">소그룹</label>
                     <input type="text" class="form-control" id="area" name="area">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="" id="allAreaCheck">
@@ -251,10 +294,18 @@
                             동일 소그룹 함께 수정
                         </label>
                     </div>
+                </div>-->
+                <input type="hidden" class="form-control" id="areaName">
+                <div class="col-6 mb-1">
+                    <label for="area-idx" class="form-label">소그룹</label>
+                    <select class="form-select" aria-label="소그룹선택" id="areaIdx" name="area_idx">
+                        <?php foreach ($member_areas as $area): ?>
+                            <option value="<?php echo $area['area_idx']; ?>"><?php echo $area['area_name']; ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
-
-                <div class="col-12 mb-1">
+                <div class="col-6 mb-1">
                     <label for="memberNick" class="form-label">별명</label>
                     <input type="text" class="form-control" id="memberNick" name="member_nick">
                 </div>
@@ -349,7 +400,7 @@
         <div class="input-group">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 33.33%">취소</button>
 
-            <button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난주정보</button>
+            <button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난 주 정보 불러오기</button>
             <button type="button" class="btn btn-primary" id="saveAttendanceBtn" style="width: 33.33%">저장</button>
         </div>
     </div>

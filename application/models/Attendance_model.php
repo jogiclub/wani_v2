@@ -114,12 +114,12 @@ class Attendance_model extends CI_Model {
 
 
 // Attendance_model.php
-    public function get_group_member_attendance($group_id, $grade, $start_date, $end_date) {
+    public function get_group_member_attendance($group_id, $area_idx, $start_date, $end_date) {
         $this->db->select('ma.member_idx, GROUP_CONCAT(ma.att_type_idx ORDER BY ma.att_type_idx SEPARATOR ",") AS att_type_idxs', false);
         $this->db->from('wb_member_att ma');
         $this->db->join('wb_member m', 'ma.member_idx = m.member_idx', 'inner');
         $this->db->where('m.group_id', $group_id);
-        $this->db->where('m.grade', $grade);
+        $this->db->where('m.area_idx', $area_idx);
         $this->db->where('ma.att_date >=', $start_date);
         $this->db->where('ma.att_date <=', $end_date);
         $this->db->group_by('ma.member_idx');
