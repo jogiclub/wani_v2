@@ -1,6 +1,8 @@
 <html lang="ko">
 <head>
-    <?php $this->load->view('header'); ?>
+    <?php
+//	$this->load->view('header');
+	?>
 </head>
 <body>
 
@@ -28,7 +30,7 @@
 <footer>
 
 </footer>
-<?php $this->load->view('footer'); ?>
+<?php //$this->load->view('footer'); ?>
 <script type="text/javascript" src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js"charset="utf-8"></script>
 <script src="/assets/js/login.js?<?php echo date('Ymdhis');?>"></script>
 <script>

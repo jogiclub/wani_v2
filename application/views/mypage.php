@@ -1,28 +1,7 @@
-<html lang="ko">
+
 <head>
     <?php $this->load->view('header'); ?>
 </head>
-<body>
-<header class="pt-3 pb-3 border-bottom d-flex justify-content-center">
-    <div class="container-xl">
-        <div class="row">
-            <div class="col-12 text-center position-relative">
-                <div class="logo"><img src="/assets/images/logo.png?2"></div>
-                <a class="btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="top: -4px">
-                    <img src="<?php if($user['user_profile_image']){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="40" height="40">
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#"><?php if($user['user_name']){echo $user['user_name'];} ?></a></li>
-                    <li><a class="dropdown-item" href="#"><?php if($user['user_mail']){echo $user['user_mail'];} ?></a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</header>
-<main>
-
 
 
 
@@ -93,7 +72,7 @@
             </ul>
         </div>
     </div>
-</main>
+
 <footer>
     <button class="btn btn-primary btn-sm btn-add-group"><i class="bi bi-folder-plus"></i></button>
 </footer>

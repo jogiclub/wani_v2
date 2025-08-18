@@ -53,9 +53,11 @@ $route['default_controller'] = 'main';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
+// Login 컨트롤러 관련 라우팅
 $route['login/index'] = 'login/index';
 $route['login/google_login'] = 'login/google_login';
 
+// Mypage 컨트롤러 관련 라우팅
 $route['mypage/add_group'] = 'mypage/add_group';
 $route['mypage/get_groups'] = 'mypage/get_groups';
 $route['mypage/delete_group'] = 'mypage/delete_group';
@@ -63,9 +65,16 @@ $route['mypage/update_del_yn'] = 'mypage/update_del_yn';
 $route['mypage/add_attendance_type'] = 'mypage/add_attendance_type';
 $route['mypage/add_attendance_type_category'] = 'mypage/add_attendance_type_category';
 
+// Member 컨트롤러 관련 라우팅 (새로 추가)
+$route['member'] = 'member/index';
+$route['member/index'] = 'member/index';
+$route['member/get_group_tree'] = 'member/get_group_tree';
+$route['member/get_members'] = 'member/get_members';
+$route['member/add_member'] = 'member/add_member';
+$route['member/update_member'] = 'member/update_member';
+$route['member/delete_member'] = 'member/delete_member';
 
-
-
+// Main 컨트롤러 관련 라우팅
 $route['main/profile'] = 'main/profile';
 $route['main/logout'] = 'main/logout';
 $route['main/get_members'] = 'main/get_members';
@@ -75,7 +84,7 @@ $route['main/get_member_attendance'] = 'main/get_member_attendance';
 $route['main/get_attendance_data'] = 'main/get_attendance_data';
 $route['main/add_member '] = 'main/add_member ';
 
-
+// Week 컨트롤러 관련 라우팅
 $route['week/profile'] = 'week/profile';
 $route['week/logout'] = 'week/logout';
 $route['week/get_members'] = 'week/get_members';

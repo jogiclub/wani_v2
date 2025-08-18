@@ -108,7 +108,8 @@ ul, dl{}
 .master-hidden{display: none}
 
 /*헤더*/
-header .logo img{width: 130px}
+header{height: 60px}
+header .logo img{width: 100px}
 header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
 header h2 b{position: relative;font-size: 38px;}
 header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
@@ -230,4 +231,11 @@ footer .btn-add-group i{font-size:30px}
 .table-summery-week table tr td, .table-summery-week table tr th{vertical-align: middle; width: 100px; white-space: nowrap;}
 .table-summery-week table tr td:nth-child(1){width: 200px}
 .table-summery-week table thead{vertical-align: middle; position: sticky; top: 0; z-index: 10;}
+
+
+
+/*메뉴*/
+.gnb-menu{}
+.gnb-menu h6.sidebar-heading{font-size: 12px; color:#eee}
+.gnb-menu ul.nav li a{color:#000; padding-top: 5px; padding-bottom: 5px}
 
