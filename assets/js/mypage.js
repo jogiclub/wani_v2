@@ -79,8 +79,7 @@ $(document).on('click', '#updateGroup', function() {
 });
 
 
-
-$(document).on('click', '#saveGroup', function() {
+$(document).on('click', '#saveGroup', function () {
     var groupName = $('#group_name').val();
 
     if (groupName.trim() === '') {
@@ -91,20 +90,59 @@ $(document).on('click', '#saveGroup', function() {
     $.ajax({
         url: '/mypage/add_group',
         type: 'POST',
-        data: { group_name: groupName },
-    dataType: 'json',
-        success: function(response) {
-        if (response.status === 'success') {
-            location.reload();
-        } else {
-            alert('그룹 추가에 실패했습니다.');
+        data: {group_name: groupName},
+        dataType: 'json',
+        success: function (response) {
+            if (response.status === 'success') {
+                location.reload();
+            } else {
+                alert('그룹 추가에 실패했습니다.');
+            }
+        },
+        error: function () {
+            alert('서버 오류가 발생했습니다.');
         }
-    },
-    error: function() {
-        alert('서버 오류가 발생했습니다.');
+    });
+});
+
+
+
+$(document).on('click', '#saveInvate', function () {
+    var inviteCode = $('#invite_code').val();
+    var userId = userInfo.currentUserId;
+
+    if (inviteCode.trim() === '') {
+        alert('그룹리더에게 받은 초대코드를 입력해주세요.');
+        return;
     }
+
+    $.ajax({
+        url: '/mypage/join_group_by_invite_code',
+        type: 'POST',
+        data: {
+            invite_code: inviteCode,
+            user_id: userId
+        },
+        dataType: 'json',
+        success: function (response) {
+            if (response.status === 'success') {
+                alert('초대코드로 그룹에 가입되었습니다.');
+                location.reload();
+            } else if (response.status === 'already_joined') {
+                alert('이미 해당 그룹에 가입되어 있습니다.');
+            } else if (response.status === 'invalid_code') {
+                alert('유효하지 않은 초대코드입니다.');
+            } else {
+                alert('그룹 가입에 실패했습니다.');
+            }
+        },
+        error: function () {
+            alert('서버 오류가 발생했습니다.');
+        }
+    });
+
 });
-});
+
 
 $(document).on('click', '.btn-del-group', function(e) {
     e.preventDefault();
@@ -151,7 +189,9 @@ $(document).on('click', '.add-group', function () {
     }
 });
 
-
+$(document).on('click', '.btn-add-group', function () {
+    $('#addGroupModal').modal('show');
+});
 
 
 // 출석 타입 설정 버튼 클릭 이벤트

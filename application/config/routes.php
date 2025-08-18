@@ -71,7 +71,28 @@ $route['main/logout'] = 'main/logout';
 $route['main/get_members'] = 'main/get_members';
 $route['main/save_attendance'] = 'main/save_attendance';
 $route['main/get_attendance_types'] = 'main/get_attendance_types';
-$route['main/get_member_attendance '] = 'main/get_member_attendance ';
+$route['main/get_member_attendance'] = 'main/get_member_attendance';
+$route['main/get_attendance_data'] = 'main/get_attendance_data';
 $route['main/add_member '] = 'main/add_member ';
 
 
+$route['week/profile'] = 'week/profile';
+$route['week/logout'] = 'week/logout';
+$route['week/get_members'] = 'week/get_members';
+$route['week/save_attendance'] = 'week/save_attendance';
+$route['week/get_attendance_types'] = 'week/get_attendance_types';
+$route['week/get_member_attendance'] = 'week/get_member_attendance';
+$route['week/get_attendance_data'] = 'week/get_attendance_data';
+$route['week/add_member'] = 'week/add_member';
+$route['week/save_member_info'] = 'week/save_member_info';
+$route['week/save_memo'] = 'week/save_memo';
+
+// Week 컨트롤러 관련 라우팅
+$route['week'] = 'week';
+$route['week'] = 'week/index';
+$route['week/(:any)'] = 'week/index/$1';
+$route['week/(:any)/(:num)'] = 'week/index/$1/$2';
+$route['week/(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
+
+// 직접 group_code/year/week 형식으로 접근하는 경우도 처리
+$route['(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';

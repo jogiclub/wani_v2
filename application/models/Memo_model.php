@@ -11,10 +11,11 @@ class Memo_model extends CI_Model {
     }
 
     public function get_memo_list($member_idx, $limit, $offset) {
-        $this->db->select('*');
-        $this->db->from('wb_memo');
-        $this->db->where('member_idx', $member_idx);
-        $this->db->order_by('regi_date', 'DESC');
+        $this->db->select('m.*, u.user_name');
+        $this->db->from('wb_memo m');
+        $this->db->join('wb_user u', 'm.user_id = u.user_id', 'left');
+        $this->db->where('m.member_idx', $member_idx);
+        $this->db->order_by('m.regi_date', 'DESC');
         $this->db->limit($limit, $offset);
 
         $query = $this->db->get();

@@ -17,23 +17,25 @@ class Member_model extends CI_Model {
     public function get_group_members($group_id, $level = null, $start_date = null, $end_date = null) {
         $user_id = $this->session->userdata('user_id');
 
-        $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.area');
+        $this->db->select('m.member_idx, m.group_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth, m.grade, a.area_idx, a.area_name, a.area_order');
         $this->db->from('wb_member m');
+        $this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+
+        if ($start_date && $end_date) {
+            $this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ", ", at.att_type_idx, ", ", at.att_type_category_idx, ", ", at.att_type_color) SEPARATOR "|") AS att_type_data', false);
+            $this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date >= "' . $start_date . '" AND ma.att_date <= "' . $end_date . '"', 'left');
+            $this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
+        }
+
         $this->db->where('m.group_id', $group_id);
         $this->db->where('m.del_yn', 'N');
 
         if ($level == 2) {
-            $this->db->join('wb_member mm', 'mm.member_phone = (SELECT user_hp FROM wb_user WHERE user_id = "' . $user_id . '") AND mm.area = m.area', 'inner');
+            $this->db->join('wb_member mm', 'mm.member_phone = (SELECT user_hp FROM wb_user WHERE user_id = "' . $user_id . '") AND mm.area_idx = m.area_idx', 'inner');
         }
 
-        if ($start_date && $end_date) {
-            $this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ",", at.att_type_idx, ",", at.att_type_category_idx, ",", at.att_type_color) SEPARATOR "|") AS att_type_data', false);
-            $this->db->join('wb_member_att a', 'm.member_idx = a.member_idx AND a.att_date >= "' . $start_date . '" AND a.att_date <= "' . $end_date . '"', 'left');
-            $this->db->join('wb_att_type at', 'a.att_type_idx = at.att_type_idx', 'left');
-            $this->db->group_by('m.member_idx');
-        }
-
-        $this->db->order_by('m.grade ASC');
+        $this->db->group_by('m.member_idx');
+        $this->db->order_by('a.area_order', 'ASC');
         $this->db->order_by('m.leader_yn ASC');
         $this->db->order_by('m.member_name ASC');
 
@@ -41,13 +43,15 @@ class Member_model extends CI_Model {
         return $query->result_array();
     }
 
-    public function get_same_members($member_idx, $group_id, $grade, $start_date, $end_date) {
+
+    
+    public function get_same_members($member_idx, $group_id, $area_idx, $start_date, $end_date) {
         $date_between = " ma.att_date BETWEEN '" . $start_date . "' AND '" . $end_date . "'";
         $this->db->select(' m.*, GROUP_CONCAT(CONCAT(ma.att_type_idx, ",", ma.att_date) SEPARATOR "|") AS attendance', false);
         $this->db->from('wb_member m');
         $this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND'.$date_between, 'left');
         $this->db->where('m.group_id', $group_id);
-        $this->db->where('m.grade', $grade);
+        $this->db->where('m.area_idx', $area_idx);
 
         $this->db->where('m.del_yn', 'N');
         $this->db->group_by('m.member_idx');
@@ -59,9 +63,11 @@ class Member_model extends CI_Model {
 
 
     public function get_member_by_idx($member_idx) {
-        $this->db->select('*');
-        $this->db->from('wb_member');
-        $this->db->where('member_idx', $member_idx);
+        $this->db->select('m.*, a.area_name');
+        $this->db->from('wb_member m');
+        $this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+        $this->db->where('m.member_idx', $member_idx);
+
 
         $query = $this->db->get();
 
@@ -74,7 +80,7 @@ class Member_model extends CI_Model {
 
         return $this->db->affected_rows() > 0;
     }
-
+/*
     public function update_multiple_members($member_idx, $data, $all_grade_check, $all_area_check) {
         $this->db->where('member_idx', $member_idx);
         $this->db->where('del_yn', 'N');
@@ -102,7 +108,7 @@ class Member_model extends CI_Model {
 
         return $result;
     }
-
+*/
 
     public function get_active_members($group_id, $five_weeks_ago) {
         $this->db->select('member_idx');

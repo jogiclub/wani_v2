@@ -95,7 +95,7 @@
     </div>
 </main>
 <footer>
-    <button class="btn btn-primary btn-sm add-group"><i class="bi bi-folder-plus"></i></button>
+    <button class="btn btn-primary btn-sm btn-add-group"><i class="bi bi-folder-plus"></i></button>
 </footer>
 
 
@@ -197,7 +197,7 @@
 </div>
 
 <!-- 그룹 추가 모달 -->
-<div class="modal fade" id="groupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -207,13 +207,21 @@
             <div class="modal-body">
                 <div class="mb-3">
                     <label for="group_name" class="form-label">그룹명</label>
-                    <input type="text" class="form-control" id="group_name" name="group_name" required>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="group_name" name="group_name"  required>
+                        <button type="button" class="btn btn-primary" id="saveGroup">저장</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="invite_code" class="form-label">초대코드</label>
+                    <span>(리더에게 받은 초대코드를 입력하세요!)</span>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="invite_code" name="invite_code" placeholder="5자리 초대코드 입력" required>
+                        <button type="button" class="btn btn-primary" id="saveInvate">저장</button>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" id="saveGroup">저장</button>
-            </div>
+
         </div>
     </div>
 </div>

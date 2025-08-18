@@ -5,63 +5,19 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        @media print {
-            #printBtn {
-                display: none;
-            }
-        }
 
-        body {
-            margin: 0;
-            padding: 0;
-        }
+		body {margin: 0;padding: 0;}
+		#qrCodeContainer {display: grid;grid-template-columns: repeat(7, 1fr);grid-gap: 10px;padding: 11mm 10mm; justify-items: center;}
+		.qr-code-item {width: 25mm;height: 30mm;display: flex;flex-direction: column;align-items: center;justify-content: center;page-break-inside: avoid;}
+		.qr-code-element img {width: 17mm;height: auto;}
+		.qr-code-label b{font-size: 10pt;text-align: center;margin-top: 5px;  font-weight: 400; color:#999}
+		.qr-code-label {font-size: 11pt;text-align: center;margin-top: 5px; font-weight: 600}
 
-        #qrCodeContainer {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-gap: 10px;
-            padding: 10px;
-        }
-
-        .qr-code-item {
-            width: 25mm;
-            height: 30mm;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ccc;
-            page-break-inside: avoid;
-        }
-
-        .qr-code-element img {
-            width: 100%;
-            height: auto;
-        }
-
-        .qr-code-label {
-            font-size: 8pt;
-            text-align: center;
-            margin-top: 5px;
-        }
-
-        @media print {
-            #printBtn {
-                display: none;
-            }
-
-            #qrCodeContainer {
-                grid-template-columns: repeat(5, 1fr);
-                grid-gap: 0;
-                padding: 0;
-            }
-
-            .qr-code-item {
-                width: 25mm;
-                height: 30mm;
-                border: none;
-            }
-        }
+		@media print {
+			#printBtn {display: none;}
+			#qrCodeContainer {grid-template-columns: repeat(7, 1fr);grid-gap: 0;padding: 0;}
+			.qr-code-item {width: 25mm;height: 30mm;border: none;}
+		}
     </style>
 </head>
 <body>
@@ -92,8 +48,8 @@
                         height: 200
                     });
 
-                    qrCodeLabel.text(member.area + ' ' + member.member_name);
-
+                    // qrCodeLabel.text(member.area + ' ' + member.member_name);
+					qrCodeLabel.html('<b>' + member.area_name + '</b><br>' + member.member_name);
                     qrCodeItem.append(qrCodeElement);
                     qrCodeItem.append(qrCodeLabel);
                     qrCodeContainer.append(qrCodeItem);

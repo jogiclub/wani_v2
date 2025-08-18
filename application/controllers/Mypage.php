@@ -49,16 +49,37 @@ class Mypage extends CI_Controller
 
 
 
+    public function join_group_by_invite_code() {
+        if ($this->input->is_ajax_request()) {
+            $invite_code = $this->input->post('invite_code');
+            $user_id = $this->input->post('user_id');
 
+            $this->load->model('Group_model');
+            $group = $this->Group_model->get_group_by_invite_code($invite_code);
+
+            if ($group) {
+                $group_id = $group['group_id'];
+                $existing_group_user = $this->Group_model->get_group_user($user_id, $group_id);
+
+                if ($existing_group_user) {
+                    $response = array('status' => 'already_joined');
+                } else {
+                    $this->Group_model->add_user_to_group($user_id, $group_id);
+                    $response = array('status' => 'success');
+                }
+            } else {
+                $response = array('status' => 'invalid_code');
+            }
+
+            echo json_encode($response);
+        }
+    }
 
 
     public function add_group() {
         if ($this->input->is_ajax_request()) {
             $group_name = $this->input->post('group_name');
             $user_id = $this->session->userdata('user_id');
-
-//            print_r($this->session->userdata('user_id'));
-//            exit;
 
             $this->load->model('Group_model');
             $group_id = $this->Group_model->create_group($group_name);
@@ -73,6 +94,9 @@ class Mypage extends CI_Controller
             echo json_encode($response);
         }
     }
+
+
+
 
 
     public function update_del_yn() {
