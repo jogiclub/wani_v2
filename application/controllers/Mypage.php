@@ -28,14 +28,24 @@ class Mypage extends CI_Controller
 			}
 
 			foreach ($orgs as &$org) {
-				$org['user_count'] = $this->User_model->get_org_user_count($org['org_id']);
+				// 디버깅용 로그 추가
+				error_log("org_id: " . $org['org_id']);
 
-				// 그룹에 대한 사용자의 level 값과 master_yn 값을 가져옴
-				$org['user_level'] = $this->User_model->get_org_user_level($user_id, $org['org_id']);
+				$user_count = $this->User_model->get_org_user_count($org['org_id']);
+				error_log("user_count: " . $user_count);
+
+				$org['user_count'] = $user_count;
+
+				$user_level = $this->User_model->get_org_user_level($user_id, $org['org_id']);
+				error_log("user_level: " . $user_level);
+
+				$org['user_level'] = $user_level;
 				$org['user_master_yn'] = $this->session->userdata('master_yn');
 			}
 
 			$data['orgs'] = $orgs;
+			error_log("Final orgs: " . json_encode($orgs));
+
 
 			$this->load->view('mypage', $data);
 		} else {
