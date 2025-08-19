@@ -16,17 +16,17 @@ class User_model extends CI_Model {
     }
 
     public function get_user_groups($user_id) {
-        $this->db->select('wb_group.idx as group_id, wb_group.group_name');
+        $this->db->select('wb_group.idx as org_id, wb_group.group_name');
         $this->db->from('wb_group');
-        $this->db->join('wb_group_user', 'wb_group.idx = wb_group_user.group_id');
+        $this->db->join('wb_group_user', 'wb_group.idx = wb_group_user.org_id');
         $this->db->where('wb_group_user.user_id', $user_id);
         $query = $this->db->get();
         return $query->result_array();
     }
 
 
-    public function get_group_user_count($group_id) {
-        $this->db->where('wb_group_user.group_id', $group_id);
+    public function get_group_user_count($org_id) {
+        $this->db->where('wb_group_user.org_id', $org_id);
         $this->db->from('wb_group_user');
         $this->db->join('wb_user', 'wb_user.user_id = wb_group_user.user_id');
         $this->db->where('wb_user.del_yn', 'N');
@@ -34,21 +34,21 @@ class User_model extends CI_Model {
     }
 
 
-    public function get_group_user_level($user_id, $group_id) {
+    public function get_group_user_level($user_id, $org_id) {
         $this->db->select('level');
         $this->db->where('user_id', $user_id);
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $query = $this->db->get('wb_group_user');
         $result = $query->row_array();
         return $result ? $result['level'] : 0;
     }
 
 
-    public function get_group_users($group_id) {
+    public function get_group_users($org_id) {
         $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_group_user.level, wb_user.user_mail, wb_user.user_hp, wb_user.master_yn');
         $this->db->from('wb_user');
         $this->db->join('wb_group_user', 'wb_user.user_id = wb_group_user.user_id');
-        $this->db->where('wb_group_user.group_id', $group_id);
+        $this->db->where('wb_group_user.org_id', $org_id);
         $this->db->where('wb_user.del_yn', 'N');
         $query = $this->db->get();
         return $query->result_array();
@@ -57,7 +57,7 @@ class User_model extends CI_Model {
 
 
 
-    public function save_user($user_id, $user_name, $user_hp, $level, $group_id) {
+    public function save_user($user_id, $user_name, $user_hp, $level, $org_id) {
         $data = array(
             'user_name' => $user_name,
             'user_hp' => $user_hp
@@ -71,14 +71,14 @@ class User_model extends CI_Model {
         );
 
         $this->db->where('user_id', $user_id);
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $result = $this->db->update('wb_group_user', $group_user_data);
 
         return $result;
     }
 
 
-    public function delete_user($user_id, $group_id) {
+    public function delete_user($user_id, $org_id) {
         $data = array(
             'del_yn' => 'Y',
             'del_date' => date('Y-m-d H:i:s')
@@ -88,7 +88,7 @@ class User_model extends CI_Model {
         $this->db->update('wb_user', $data);
 
         $this->db->where('user_id', $user_id);
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $this->db->delete('wb_group_user');
 
         return $this->db->affected_rows() > 0;
@@ -116,9 +116,9 @@ class User_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-    public function get_group_user($user_id, $group_id) {
+    public function get_group_user($user_id, $org_id) {
         $this->db->where('user_id', $user_id);
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $query = $this->db->get('wb_group_user');
         return $query->row_array();
     }

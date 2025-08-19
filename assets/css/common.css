@@ -240,9 +240,13 @@ footer .btn-add-group i{font-size:30px}
 
 /*메뉴*/
 .gnb-menu{}
-.gnb-menu .sidebar{position: fixed; height: 100%}
+.gnb-menu .sidebar{position: fixed; height: 100%; border-top:0!important; border-bottom:0!important;}
 .gnb-menu .sidebar h6.sidebar-heading{font-size: 12px; color:#999!important;}
 .gnb-menu .sidebar ul.nav li a{color:#000; padding-top: 5px; padding-bottom: 5px}
+
+.breadcrumb .breadcrumb-item{font-size: 12px!important; padding-left: 5px}
+.breadcrumb .breadcrumb-item:first-child::before{display: none!important;}
+.breadcrumb .breadcrumb-item::before{content: '\F285'; font-family:'bootstrap-icons'; font-size: 12px; padding-right: 5px;}
 
 .profile-area{}
 .profile-area .profile-img{}
