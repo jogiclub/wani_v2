@@ -12,34 +12,31 @@
 </head>
 <body>
 
-<!-- 파일 위치: E:\SynologyDrive\Example\wani\application\views\member.php -->
-<!-- 역할: 회원 관리 페이지 - 왼쪽 그룹 트리, 오른쪽 회원 목록 -->
 
-<header class="pt-3 pb-2">
-	<div class="container-xl">
-		<div class="row">
-			<div class="col-12 text-center position-relative">
-				<h2 class="mb-1"><b>회원 관리</b></h2>
-				<button class="btn-home" type="button" onclick="go_url('/mypage')">
-					<i class="bi bi-arrow-left-short"></i>
-				</button>
+<div class="container pt-2 pb-2">
+	<nav class="mb-3" aria-label="breadcrumb">
+		<ol class="breadcrumb mb-0">
+			<li class="breadcrumb-item"><a href="#!">홈</a></li>
+			<li class="breadcrumb-item"><a href="#!">MEMBER</a></li>
+			<li class="breadcrumb-item active">회원관리</li>
+		</ol>
+	</nav>
+	<div class="row align-items-center justify-content-between g-3 mb-4">
+		<h3 class="col-6 my-1">회원관리</h3>
+		<div class="col-6 my-1">
+			<div class="text-end" role="group" aria-label="Basic example">
+				<button type="button" class="btn btn-sm btn-primary"><i class="bi bi-save"></i> 저장</button>
 			</div>
 		</div>
 	</div>
-</header>
 
-<main class="container-xl">
 	<div class="row">
 		<!-- 왼쪽: 그룹 트리 -->
 		<div class="col-md-4 col-lg-3">
 			<div class="card">
-				<div class="card-header">
-					<h5 class="card-title mb-0">
-						<i class="bi bi-diagram-3"></i> 그룹 구조
-					</h5>
-				</div>
+
 				<div class="card-body p-0">
-					<div id="groupTree" class="tree-container"></div>
+					<div id="orgTree" class="tree-container"></div>
 				</div>
 			</div>
 		</div>
@@ -48,9 +45,8 @@
 		<div class="col-md-8 col-lg-9">
 			<div class="card">
 				<div class="card-header d-flex justify-content-between align-items-center">
-					<h5 class="card-title mb-0">
-						<i class="bi bi-people"></i>
-						<span id="selectedGroupName">회원 목록</span>
+					<h5 class="mb-0">
+
 					</h5>
 					<div class="btn-group" role="group">
 						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember">
@@ -71,7 +67,7 @@
 			</div>
 		</div>
 	</div>
-</main>
+</div>
 
 <!-- 회원 정보 수정 모달 -->
 <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
@@ -154,7 +150,7 @@
 <script>
 	// PHP 데이터를 JavaScript로 전달
 	window.memberPageData = {
-		groups: <?php echo json_encode($groups); ?>,
+		orgs: <?php echo json_encode($orgs); ?>,
 		baseUrl: '<?php echo base_url(); ?>'
 	};
 </script>

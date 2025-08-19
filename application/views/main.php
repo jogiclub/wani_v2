@@ -25,21 +25,21 @@
 
             <div class="col-lg-5 mb-2">
                 <div class="input-group">
-                    <button type="button" class="input-group-text prev-week"><i class="bi bi-chevron-left"></i></button>
-                    <button type="button" class="input-group-text dropdown-toggle current-week" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button type="button" class="input-org-text prev-week"><i class="bi bi-chevron-left"></i></button>
+                    <button type="button" class="input-org-text dropdown-toggle current-week" data-bs-toggle="dropdown" aria-expanded="false">
                         <!-- 현재 주차 범위는 프론트엔드에서 동적으로 설정됩니다. -->
                     </button>
                     <ul class="dropdown-menu dropdown-current-week">
                         <!-- 주차 범위 드롭다운 메뉴는 프론트엔드에서 동적으로 생성됩니다. -->
                     </ul>
-                    <button type="button" class="input-group-text next-week"><i class="bi bi-chevron-right"></i></button>
+                    <button type="button" class="input-org-text next-week"><i class="bi bi-chevron-right"></i></button>
                 </div>
             </div>
             <div class="col-lg-7 mb-2">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="검색중..." aria-label="검색중..." aria-describedby="basic-addon2" id="input-search" value="검색중..." autocomplete="off"  disabled>
                     <div class="att-dropdown-wrap">
-                        <button class="input-group-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
+                        <button class="input-org-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
                         <ul class="dropdown-menu dropdown-att-type">
                             <?php $prev_category_idx = null; ?>
                             <?php foreach ($attendance_types as $type): ?>
@@ -110,8 +110,8 @@
     </div>
 </main>
 <footer>
-	<button class="input-group-text btn-area" id="basic-addon3" data-bs-toggle="modal" data-bs-target="#newAreaModal"><i class="bi bi-folder"></i></button>
-    <button class="input-group-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
+	<button class="input-org-text btn-area" id="basic-addon3" data-bs-toggle="modal" data-bs-target="#newAreaModal"><i class="bi bi-folder"></i></button>
+    <button class="input-org-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
 </footer>
 
 
@@ -228,7 +228,7 @@
     <div class="offcanvas-body">
         <form id="memberForm" enctype="multipart/form-data">
             <input type="hidden" id="memberIdx" name="member_idx">
-            <input type="hidden" id="groupId" name="group_id">
+            <input type="hidden" id="orgId" name="org_id">
             <div class="row">
                 <div class="d-flex justify-content-end text-end mb-4">
                     <div class="form-check form-switch">
@@ -267,7 +267,7 @@
                                     <input type="number" class="form-control" id="grade" name="grade">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" value="" id="allGradeCheck">
-                                        <label class="form-check-label" for="allGroupCheck">
+                                        <label class="form-check-label" for="allOrgCheck">
                                             동일 소그룹ID 함께 수정
                                         </label>
                                     </div>
@@ -277,7 +277,7 @@
                     <input type="text" class="form-control" id="area" name="area">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="" id="allAreaCheck">
-                        <label class="form-check-label" for="allGroupCheck">
+                        <label class="form-check-label" for="allOrgCheck">
                             동일 소그룹 함께 수정
                         </label>
                     </div>
@@ -417,26 +417,26 @@
 <script>
 
     // 페이지 최초 로드 시 그룹 정보 확인
-    var postGroupId = '<?php echo isset($postGroup['group_id']) ? $postGroup['group_id'] : ''; ?>';
-    var postGroupName = '<?php echo isset($postGroup['group_name']) ? $postGroup['group_name'] : ''; ?>';
+    var postOrgId = '<?php echo isset($postOrg['org_id']) ? $postOrg['org_id'] : ''; ?>';
+    var postOrgName = '<?php echo isset($postOrg['org_name']) ? $postOrg['org_name'] : ''; ?>';
     var logoImg = '<img src="/assets/images/logo_speech.png">';
-    $('.group-name b').text(postGroupName);
-    $('.group-name b').prepend(logoImg);
-    // $('.group-name').prepend('<img src="/assets/images/logo.png" style="height: 34px; margin-right: 10px">');
-    var activeGroupId = getCookie('activeGroup');
+    $('.org-name b').text(postOrgName);
+    $('.org-name b').prepend(logoImg);
+    // $('.org-name').prepend('<img src="/assets/images/logo.png" style="height: 34px; margin-right: 10px">');
+    var activeOrgId = getCookie('activeOrg');
     var userLevel = '<?php echo $user_level; ?>';
 
     // console.log(userLevel);
 
 
 
-    if (postGroupId) {
-        // postGroup이 있는 경우 해당 그룹 정보 사용
-        loadMembers(postGroupId, userLevel);
-        setCookie('activeGroup', postGroupId, 7);
-    } else if (activeGroupId) {
-        // postGroup이 없고 쿠키에 저장된 그룹이 있는 경우 해당 그룹 정보 사용
-        loadMembers(activeGroupId, userLevel);
+    if (postOrgId) {
+        // postOrg이 있는 경우 해당 그룹 정보 사용
+        loadMembers(postOrgId, userLevel);
+        setCookie('activeOrg', postOrgId, 7);
+    } else if (activeOrgId) {
+        // postOrg이 없고 쿠키에 저장된 그룹이 있는 경우 해당 그룹 정보 사용
+        loadMembers(activeOrgId, userLevel);
     } else {
         alert('잘못된 경로로 접근하셨습니다. 다시 접속 바랍니다.')
     }
@@ -447,7 +447,7 @@
     $.ajax({
         url: '/main/get_attendance_types',
         method: 'POST',
-        data: { group_id: activeGroupId, level: userLevel },
+        data: { org_id: activeOrgId, level: userLevel },
         dataType: 'json',
         success: function(response) {
             attendanceTypes = response.attendance_types;

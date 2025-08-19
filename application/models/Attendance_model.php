@@ -5,10 +5,10 @@ class Attendance_model extends CI_Model {
         $this->load->database();
     }
 
-    public function get_attendance_types($group_id) {
+    public function get_attendance_types($org_id) {
         $this->db->select('att_type_idx, att_type_category_name, att_type_category_idx, att_type_nickname, att_type_name, att_type_color, att_type_order');
         $this->db->from('wb_att_type');
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $this->db->order_by('att_type_order', 'ASC');
         $this->db->order_by('att_type_idx', 'ASC');
 
@@ -26,14 +26,14 @@ class Attendance_model extends CI_Model {
 
     public function save_attendance($member_idx, $attendance_data) {
         $att_date = date('Y-m-d');
-        $group_id = $this->session->userdata('group_id');
+        $org_id = $this->session->userdata('org_id');
 
         foreach ($attendance_data as $att_type_idx) {
             $data = array(
                 'att_date' => $att_date,
                 'att_type_idx' => $att_type_idx,
                 'member_idx' => $member_idx,
-                'group_id' => $group_id
+                'org_id' => $org_id
             );
 
             $this->db->insert('wb_member_att', $data);
@@ -42,7 +42,7 @@ class Attendance_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
-    public function save_attendance_data($attendance_data, $group_id, $start_date, $end_date) {
+    public function save_attendance_data($attendance_data, $org_id, $start_date, $end_date) {
         foreach ($attendance_data as $data) {
             $member_idx = $data['member_idx'];
             $att_type_idx = $data['att_type_idx'];
@@ -52,7 +52,7 @@ class Attendance_model extends CI_Model {
                 'att_date' => $start_date,
                 'att_type_idx' => $att_type_idx,
                 'member_idx' => $member_idx,
-                'group_id' => $group_id
+                'org_id' => $org_id
             );
             $this->db->insert('wb_member_att', $att_data);
         }
@@ -72,17 +72,17 @@ class Attendance_model extends CI_Model {
         return $this->db->affected_rows() > 0;
     }
 
-    public function get_max_category_idx($group_id) {
+    public function get_max_category_idx($org_id) {
         $this->db->select_max('att_type_category_idx');
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $query = $this->db->get('wb_att_type');
         $result = $query->row_array();
         return $result['att_type_category_idx'] ?? 0;
     }
 
-    public function save_attendance_type($group_id, $att_type_category_name, $att_type_name, $att_type_nickname, $att_type_color, $att_type_category_idx) {
+    public function save_attendance_type($org_id, $att_type_category_name, $att_type_name, $att_type_nickname, $att_type_color, $att_type_category_idx) {
         $data = array(
-            'group_id' => $group_id,
+            'org_id' => $org_id,
             'att_type_category_name' => $att_type_category_name,
             'att_type_name' => $att_type_name,
             'att_type_nickname' => $att_type_nickname,
@@ -114,11 +114,11 @@ class Attendance_model extends CI_Model {
 
 
 // Attendance_model.php
-    public function get_group_member_attendance($group_id, $area_idx, $start_date, $end_date) {
+    public function get_org_member_attendance($org_id, $area_idx, $start_date, $end_date) {
         $this->db->select('ma.member_idx, GROUP_CONCAT(ma.att_type_idx ORDER BY ma.att_type_idx SEPARATOR ",") AS att_type_idxs', false);
         $this->db->from('wb_member_att ma');
         $this->db->join('wb_member m', 'ma.member_idx = m.member_idx', 'inner');
-        $this->db->where('m.group_id', $group_id);
+        $this->db->where('m.org_id', $org_id);
         $this->db->where('m.area_idx', $area_idx);
         $this->db->where('ma.att_date >=', $start_date);
         $this->db->where('ma.att_date <=', $end_date);
@@ -151,11 +151,11 @@ class Attendance_model extends CI_Model {
 
 
 
-    public function get_group_attendance_data($group_id, $start_date, $end_date) {
+    public function get_org_attendance_data($org_id, $start_date, $end_date) {
         $this->db->select("a.member_idx, GROUP_CONCAT(CONCAT(at.att_type_nickname, '|', at.att_type_idx, '|', at.att_type_category_idx, '|', at.att_type_color) ORDER BY at.att_type_order, at.att_type_idx SEPARATOR ',') AS att_type_nicknames");
         $this->db->from('wb_member_att a');
         $this->db->join('wb_att_type at', 'a.att_type_idx = at.att_type_idx', 'left');
-        $this->db->where('a.group_id', $group_id);
+        $this->db->where('a.org_id', $org_id);
         $this->db->where('a.att_date >=', $start_date);
         $this->db->where('a.att_date <=', $end_date);
         $this->db->group_by('a.member_idx');
@@ -196,10 +196,10 @@ class Attendance_model extends CI_Model {
         $this->db->delete('wb_member_att');
     }
 
-    public function get_attendance_type_categories($group_id) {
+    public function get_attendance_type_categories($org_id) {
         $this->db->select('att_type_category_idx, att_type_category_name');
         $this->db->from('wb_att_type');
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $this->db->group_by('att_type_category_idx');
         $query = $this->db->get();
 //        print_r($this->db->last_query());
@@ -226,17 +226,17 @@ class Attendance_model extends CI_Model {
     }
 
 /*
-    public function get_attendance_type_count($group_id) {
-        $this->db->where('group_id', $group_id);
+    public function get_attendance_type_count($org_id) {
+        $this->db->where('org_id', $org_id);
         $this->db->from('wb_att_type');
         return $this->db->count_all_results();
     }
 */
 
-    public function get_week_attendance_sum($group_id, $start_date, $end_date) {
+    public function get_week_attendance_sum($org_id, $start_date, $end_date) {
         $this->db->select('att_type_idx, COUNT(*) as sum');
         $this->db->from('wb_member_att');
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $this->db->where('att_date >=', $start_date);
         $this->db->where('att_date <=', $end_date);
         $this->db->group_by('att_type_idx');
@@ -251,10 +251,10 @@ class Attendance_model extends CI_Model {
         return $result;
     }
 
-    public function get_member_attendance_summery($group_id, $att_type_idx) {
+    public function get_member_attendance_summery($org_id, $att_type_idx) {
         $this->db->select('member_idx, WEEK(att_date, 0) as week_number, COUNT(*) as count');
         $this->db->from('wb_member_att');
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $this->db->where('att_type_idx', $att_type_idx);
         $this->db->group_by('member_idx, WEEK(att_date, 0)');
         $query = $this->db->get();

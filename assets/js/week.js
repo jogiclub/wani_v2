@@ -75,12 +75,12 @@ function applyModeConfig(mode) {
     var currentDate = getDateFromWeekRange(currentWeekRange);
     var startDate = getWeekStartDate(currentDate);
     var endDate = getWeekEndDate(currentDate);
-    var activeGroupId = getCookie('activeGroup');
+    var activeOrgId = getCookie('activeOrg');
 
     if (mode === 'mode-1') {
-        updateAttStamps(activeGroupId, startDate, endDate);
+        updateAttStamps(activeOrgId, startDate, endDate);
     } else if (mode === 'mode-3') {
-        updateMemoStamps(activeGroupId, startDate, endDate);
+        updateMemoStamps(activeOrgId, startDate, endDate);
     }
 
     // .total-att-list 표시/숨김 처리
@@ -128,8 +128,8 @@ const modeConfig = {
             placeholder: '이름검색 또는 QR체크!',
             focus: true
         },
-        updateFunction: function(activeGroupId, startDate, endDate) {
-            updateAttStamps(activeGroupId, startDate, endDate);
+        updateFunction: function(activeOrgId, startDate, endDate) {
+            updateAttStamps(activeOrgId, startDate, endDate);
         }
     },
     'mode-2': {
@@ -153,8 +153,8 @@ const modeConfig = {
             focus: true
         },
         resetMemberList: true,
-        updateFunction: function(activeGroupId, startDate, endDate) {
-            updateMemoStamps(activeGroupId, startDate, endDate);
+        updateFunction: function(activeOrgId, startDate, endDate) {
+            updateMemoStamps(activeOrgId, startDate, endDate);
         }
     },
     'mode-4': {
@@ -218,12 +218,12 @@ $(document).on('click', '.member-card', function() {
     } else if (selectedMode === 'mode-4') {
         var memberIdx = $(this).attr('member-idx');
         var memberName = $(this).find('.member-name').text().trim();
-        var groupId = getCookie('activeGroup');
+        var orgId = getCookie('activeOrg');
         var areaIdxMatch = $(this).attr('class').match(/area-idx-(\d+)/);
         var areaIdx = areaIdxMatch ? areaIdxMatch[1] : null;
 
         if (areaIdx) {
-            loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, areaIdx);
+            loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx);
         } else {
             alert('멤버의 area_idx 정보를 찾을 수 없습니다.');
         }
@@ -235,7 +235,7 @@ $(document).on('click', '.member-card', function() {
 
 
 
-function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, areaIdx) {
+function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx) {
     var currentWeekRange = $('.current-week').text();
     var currentDate = getDateFromWeekRange(currentWeekRange);
     var startDate = getWeekStartDate(currentDate);
@@ -246,7 +246,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, ar
         method: 'POST',
         data: {
             member_idx: memberIdx,
-            group_id: groupId,
+            org_id: orgId,
             area_idx: areaIdx,
             start_date: startDate,
             end_date: endDate
@@ -353,13 +353,13 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, groupId, ar
 
 
 
-function loadSameMembersInOffcanvas(memberIdx, groupId, grade) {
+function loadSameMembersInOffcanvas(memberIdx, orgId, grade) {
     $.ajax({
         url: '/week/get_same_members',
         method: 'POST',
         data: {
             member_idx: memberIdx,
-            group_id: groupId,
+            org_id: orgId,
             grade: grade
         },
         dataType: 'json',
@@ -419,8 +419,8 @@ function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
                 var currentDate = getDateFromWeekRange(currentWeekRange);
                 var startDate = getWeekStartDate(currentDate);
                 var endDate = getWeekEndDate(currentDate);
-                var activeGroupId = getCookie('activeGroup');
-                loadMembers(activeGroupId, level, startDate, endDate);
+                var activeOrgId = getCookie('activeOrg');
+                loadMembers(activeOrgId, level, startDate, endDate);
                 $('#allGradeCheck').prop('checked', false);
                 $('#allAreaCheck').prop('checked', false);
             } else {
@@ -457,8 +457,8 @@ function deleteMember(memberIdx) {
                 var currentDate = getDateFromWeekRange(currentWeekRange);
                 var startDate = getWeekStartDate(currentDate);
                 var endDate = getWeekEndDate(currentDate);
-                var activeGroupId = getCookie('activeGroup');
-                loadMembers(activeGroupId, level, startDate, endDate);
+                var activeOrgId = getCookie('activeOrg');
+                loadMembers(activeOrgId, level, startDate, endDate);
             } else {
                 alert('멤버 삭제에 실패했습니다.');
             }
@@ -481,13 +481,13 @@ $('.mode-list .btn-check').on('click', function() {
 $('#saveNewMember').click(function() {
     var member_name = $('#member_name').val();
     var area_idx = $('#newMemberAreaIdx').val();
-    var activeGroupId = getCookie('activeGroup');
+    var activeOrgId = getCookie('activeOrg');
 
     $.ajax({
         url: '/week/add_member',
         method: 'POST',
         data: {
-            group_id: activeGroupId,
+            org_id: activeOrgId,
             member_name: member_name,
             area_idx: area_idx
         },
@@ -505,7 +505,7 @@ $('#saveNewMember').click(function() {
                 var endDate = getWeekEndDate(currentDate);
 
                 // 멤버 목록 업데이트
-                loadMembers(activeGroupId, level, startDate, endDate);
+                loadMembers(activeOrgId, level, startDate, endDate);
             } else {
                 alert('멤버 추가에 실패했습니다.');
             }
@@ -521,7 +521,7 @@ function loadMemberInfo(memberIdx) {
         data: { member_idx: memberIdx },
         dataType: 'json',
         success: function(response) {
-            $('#groupId').val(response.group_id);
+            $('#orgId').val(response.org_id);
             $('#grade').val(response.grade);
             $('#area').val(response.area);
             $('#memberName').val(response.member_name);
@@ -543,7 +543,7 @@ function loadMemberInfo(memberIdx) {
 
             // 기존 이미지 표시
             if (response.photo) {
-                var photoUrl = '/uploads/member_photos/' + response.group_id + '/' + response.photo;
+                var photoUrl = '/uploads/member_photos/' + response.org_id + '/' + response.photo;
                 $('.member-photo').css('background', 'url(' + photoUrl + ') center center/cover');
             } else {
                 $('.member-photo').css('background', '');
@@ -782,12 +782,12 @@ $('.memo-list').on('scroll', function() {
 
 
 
-function updateMemoStamps(groupId, startDate, endDate) {
+function updateMemoStamps(orgId, startDate, endDate) {
     $.ajax({
         url: '/week/get_memo_counts',
         method: 'POST',
         data: {
-            group_id: groupId,
+            org_id: orgId,
             start_date: startDate,
             end_date: endDate
         },
@@ -891,7 +891,7 @@ $('#saveAttendance').click(function() {
 
     var memberIdx = $('#selectedMemberIdx').val();
     var attendanceData = [];
-    var activeGroupId = getCookie('activeGroup');
+    var activeOrgId = getCookie('activeOrg');
 
     // 현재 선택된 주차 범위 가져오기
     var currentWeekRange = $('.current-week').text();
@@ -922,7 +922,7 @@ $('#saveAttendance').click(function() {
         data: {
             member_idx: memberIdx,
             attendance_data: JSON.stringify(attendanceData),
-            group_id: activeGroupId,
+            org_id: activeOrgId,
             att_date: attDate,
             start_date: startDate,
             end_date: endDate
@@ -934,7 +934,7 @@ $('#saveAttendance').click(function() {
 
 
                 // 출석 정보 업데이트
-                updateAttStamps(activeGroupId, startDate, endDate);
+                updateAttStamps(activeOrgId, startDate, endDate);
 
                 // 모달이 완전히 닫힌 후 input-search에 포커스
                 $('#attendanceModal').on('hidden.bs.modal', function () {
@@ -1014,7 +1014,7 @@ function displayMembers(members) {
                 memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-bookmark-star-fill"></i></span>');
 
                 if (member.photo) {
-                    var photoUrl = '/uploads/member_photos/' + member.group_id + '/' + member.photo;
+                    var photoUrl = '/uploads/member_photos/' + member.org_id + '/' + member.photo;
                     memberCard.find('.member-card').prepend('<span class="photo" style="background: url(' + photoUrl + ') center center/cover"></span>');
                 } else {
                     memberCard.find('.member-card').prepend('<span class="photo"></span>');
@@ -1241,12 +1241,12 @@ function formatDate(date) {
     return `${year}.${month}.${day}`;
 }
 
-function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
+function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
     $.ajax({
         url: '/week/get_members',
         method: 'POST',
         data: {
-            group_id: groupId,
+            org_id: orgId,
             level: level,
             start_date: startDate,
             end_date: endDate
@@ -1265,7 +1265,7 @@ function loadMembers(groupId, level, startDate, endDate, initialLoad = true) {
                     url: '/week/get_active_members',
                     method: 'POST',
                     data: {
-                        group_id: groupId
+                        org_id: orgId
                     },
                     dataType: 'json',
                     success: function(activeMembers) {
@@ -1338,12 +1338,12 @@ function updateTotalMemoList() {
 var attend_type_color_map = {};
 var attend_type_order_map = {};
 
-function updateAttStamps(groupId, startDate, endDate) {
+function updateAttStamps(orgId, startDate, endDate) {
     $.ajax({
         url: '/week/get_attendance_data',
         method: 'POST',
         data: {
-            group_id: groupId,
+            org_id: orgId,
             start_date: startDate,
             end_date: endDate
         },
@@ -1425,16 +1425,16 @@ function updateWeekRange(weekRange) {
     var currentDate = getDateFromWeekRange(weekRange);
     var startDate = getWeekStartDate(currentDate);
     var endDate = getWeekEndDate(currentDate);
-    var activeGroupId = getCookie('activeGroup');
+    var activeOrgId = getCookie('activeOrg');
 
     // 좌우버튼클릭시 실행
-    if (activeGroupId) {
+    if (activeOrgId) {
         updateBirthBg(startDate, endDate); // 추가
         var selectedMode = $('.mode-list .btn-check:checked').attr('id');
         if (selectedMode === 'mode-3') {
-            updateMemoStamps(activeGroupId, startDate, endDate);
+            updateMemoStamps(activeOrgId, startDate, endDate);
         } else if (selectedMode === 'mode-1') {
-            updateAttStamps(activeGroupId, startDate, endDate);
+            updateAttStamps(activeOrgId, startDate, endDate);
         }
     }
 
@@ -1619,7 +1619,7 @@ function showToast(memberIdx) {
 
 
 function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue) {
-    var activeGroupId = getCookie('activeGroup');
+    var activeOrgId = getCookie('activeOrg');
     var today = new Date();
     var attDate = formatDate(today);
 
@@ -1644,7 +1644,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
             member_idx: memberIdx,
             att_type_idx: attTypeIdx,
             att_type_category_idx: attTypeCategoryIdx,
-            group_id: activeGroupId,
+            org_id: activeOrgId,
             att_date: attDate,
             selected_value: selectedValue
         },
@@ -1659,7 +1659,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
                 var startDate = getWeekStartDate(currentDate);
                 var endDate = getWeekEndDate(currentDate);
 
-                updateAttStamps(activeGroupId, startDate, endDate);
+                updateAttStamps(activeOrgId, startDate, endDate);
 
                 console.log(startDate+endDate);
 
@@ -1678,19 +1678,19 @@ $('.dropdown-att-type').on('click', '.dropdown-item', function(e) {
     var attTypeIdx = $(this).data('att-type-idx');
     $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
 
-    // var activeGroupId = getCookie('activeGroup');
-    // setCookie('att-type-idx_' + activeGroupId, attTypeIdx, 7);
+    // var activeOrgId = getCookie('activeOrg');
+    // setCookie('att-type-idx_' + activeOrgId, attTypeIdx, 7);
 });
 
 
-function updateAttendanceTypes(groupId) {
+function updateAttendanceTypes(orgId) {
     // 그룹별 att-type-idx 쿠키 삭제
-    // deleteCookie('att-type-idx_' + groupId);
+    // deleteCookie('att-type-idx_' + orgId);
 
     $.ajax({
         url: '/week/get_attendance_types',
         method: 'POST',
-        data: { group_id: groupId },
+        data: { org_id: orgId },
         dataType: 'json',
         success: function(response) {
             var attendanceTypes = response.attendance_types;
@@ -1716,7 +1716,7 @@ function updateAttendanceTypes(groupId) {
             $('#dropdown-toggle-att-type').data('att-type-idx', attTypeIdx);
 
             // 선택된 출석 유형 쿠키에 저장
-            // setCookie('att-type-idx_' + groupId, attTypeIdx, 7);
+            // setCookie('att-type-idx_' + orgId, attTypeIdx, 7);
         }
     });
 }
@@ -1780,14 +1780,14 @@ function saveAttendanceData(attendanceData) {
     var currentDate = getDateFromWeekRange(currentWeekRange);
     var startDate = getWeekStartDate(currentDate);
     var endDate = getWeekEndDate(currentDate);
-    var activeGroupId = getCookie('activeGroup');
+    var activeOrgId = getCookie('activeOrg');
 
     $.ajax({
         url: '/week/save_attendance_data',
         method: 'POST',
         data: {
             attendance_data: JSON.stringify(attendanceData),
-            group_id: activeGroupId,
+            org_id: activeOrgId,
             start_date: startDate,
             end_date: endDate
         },
@@ -1795,7 +1795,7 @@ function saveAttendanceData(attendanceData) {
         success: function(response) {
             if (response.status === 'success') {
                 $('#attendanceOffcanvas').offcanvas('hide');
-                updateAttStamps(activeGroupId, startDate, endDate);
+                updateAttStamps(activeOrgId, startDate, endDate);
                 var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 멤버 이름 추출
                 alert(memberName + ' 목장의 출석체크를 완료하였습니다.');
             } else {
@@ -1885,14 +1885,14 @@ $(document).ready(function() {
         var currentDate = getDateFromWeekRange(currentWeekRange);
         var startDate = getWeekStartDate(currentDate);
         var endDate = getWeekEndDate(currentDate);
-        var activeGroupId = getCookie('activeGroup');
+        var activeOrgId = getCookie('activeOrg');
 
         if (isChecked) {
             $.ajax({
                 url: '/week/get_active_members',
                 method: 'POST',
                 data: {
-                    group_id: activeGroupId
+                    org_id: activeOrgId
                 },
                 dataType: 'json',
                 success: function(activeMembers) {
@@ -1922,15 +1922,15 @@ $(document).ready(function() {
 
     $('#loadLastWeekBtn').on('click', function() {
         var memberIdx = $(this).data('member-idx');
-        var groupId = getCookie('activeGroup');
+        var orgId = getCookie('activeOrg');
         var areaIdx = $(this).data('area-idx');
         var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 멤버 이름 추출
-        loadLastWeekData(memberIdx, groupId, areaIdx, memberName);
+        loadLastWeekData(memberIdx, orgId, areaIdx, memberName);
     });
 
 
 
-    function loadLastWeekData(memberIdx, groupId, areaIdx, memberName) {
+    function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
         var currentWeekRange = $('.current-week').text();
         var currentDate = getDateFromWeekRange(currentWeekRange);
         var lastWeekStartDate = getWeekStartDate(new Date(currentDate.setDate(currentDate.getDate() - 7)));
@@ -1941,7 +1941,7 @@ $(document).ready(function() {
             method: 'POST',
             data: {
                 member_idx: memberIdx,
-                group_id: groupId,
+                org_id: orgId,
                 area_idx: areaIdx,
                 start_date: lastWeekStartDate,
                 end_date: lastWeekEndDate
@@ -1993,14 +1993,14 @@ $(document).ready(function() {
         }
 
         // 현재 활성화된 그룹 ID 가져오기
-        const activeGroupId = getCookie('activeGroup');
+        const activeOrgId = getCookie('activeOrg');
 
         $.ajax({
             url: '/week/add_area',
             method: 'POST',
             data: {
                 area_name: areaName,
-                group_id: activeGroupId
+                org_id: activeOrgId
             },
             dataType: 'json',
             success: function(response) {
@@ -2034,11 +2034,11 @@ $(document).ready(function() {
 
     // 소그룹 목록 로드 함수
     function loadAreaList() {
-        const activeGroupId = getCookie('activeGroup');
+        const activeOrgId = getCookie('activeOrg');
         $.ajax({
             url: '/week/get_areas',
             method: 'POST',
-            data: { group_id: activeGroupId },
+            data: { org_id: activeOrgId },
             dataType: 'json',
             success: function(response) {
                 let html = '';
@@ -2076,14 +2076,14 @@ $(document).ready(function() {
             return;
         }
 
-        const activeGroupId = getCookie('activeGroup');
+        const activeOrgId = getCookie('activeOrg');
 
         $.ajax({
             url: '/week/add_area',
             method: 'POST',
             data: {
                 area_name: areaName,
-                group_id: activeGroupId
+                org_id: activeOrgId
             },
             dataType: 'json',
             success: function(response) {
@@ -2111,14 +2111,14 @@ $(document).ready(function() {
             });
         });
 
-        const activeGroupId = getCookie('activeGroup');
+        const activeOrgId = getCookie('activeOrg');
 
         $.ajax({
             url: '/week/update_areas',
             method: 'POST',
             data: {
                 areas: JSON.stringify(areas),
-                group_id: activeGroupId
+                org_id: activeOrgId
             },
             dataType: 'json',
             success: function(response) {

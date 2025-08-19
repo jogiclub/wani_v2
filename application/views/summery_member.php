@@ -61,7 +61,7 @@
         <?php endforeach; ?>
     </tr>
     </thead>
-    <tbody class="table-group-divider">
+    <tbody class="table-org-divider">
     <?php foreach ($members as $member): ?>
         <tr>
             <td><?php echo $member['member_name']; ?></td>
@@ -88,19 +88,19 @@
 
 <script>
     $(document).ready(function() {
-        var groupId = '<?php echo $group_id; ?>';
+        var orgId = '<?php echo $org_id; ?>';
 
         $('#searchBtn').click(function() {
             var selectedAttTypeIdx = $('#att_type_select').val();
-            searchAttendance(groupId, selectedAttTypeIdx);
+            searchAttendance(orgId, selectedAttTypeIdx);
         });
 
         $('#att_type_select').change(function() {
             var selectedAttTypeIdx = $(this).val();
-            searchAttendance(groupId, selectedAttTypeIdx);
+            searchAttendance(orgId, selectedAttTypeIdx);
         });
 
-        function searchAttendance(groupId, attTypeIdx) {
+        function searchAttendance(orgId, attTypeIdx) {
             // 테이블 초기화
             $('table tbody td:not(:first-child):not(:nth-child(2)):not(:nth-child(3))').text('0');
             $('table thead #week_sum').text('0');
@@ -110,7 +110,7 @@
                 url: '/mypage/summery_member',
                 type: 'POST',
                 data: {
-                    group_id: groupId,
+                    org_id: orgId,
                     att_type_idx: attTypeIdx
                 },
                 dataType: 'json',

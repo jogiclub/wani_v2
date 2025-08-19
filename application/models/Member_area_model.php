@@ -5,10 +5,10 @@ class Member_area_model extends CI_Model {
         $this->load->database();
     }
 
-    public function get_member_areas($group_id) {
+    public function get_member_areas($org_id) {
         $this->db->select('area_idx, area_name');
         $this->db->from('wb_member_area');
-        $this->db->where('group_id', $group_id);
+        $this->db->where('org_id', $org_id);
         $this->db->order_by('area_order', 'ASC');
 
         $query = $this->db->get();
@@ -16,9 +16,9 @@ class Member_area_model extends CI_Model {
     }
 
 
-	public function get_max_order($group_id) {
+	public function get_max_order($org_id) {
 		$this->db->select_max('area_order');
-		$this->db->where('group_id', $group_id);
+		$this->db->where('org_id', $org_id);
 		$query = $this->db->get('wb_member_area');
 		$result = $query->row_array();
 		return $result['area_order'] ?? 0;

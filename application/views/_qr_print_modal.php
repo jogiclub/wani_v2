@@ -20,12 +20,12 @@
     $(document).ready(function() {
         $('#qrPrintModal').on('show.bs.modal', function(event) {
             var button = $(event.relatedTarget);
-            var groupId = button.data('group-id');
+            var orgId = button.data('org-id');
 
             $.ajax({
-                url: '/mypage/get_group_members',
+                url: '/mypage/get_org_members',
                 type: 'POST',
-                data: { group_id: groupId },
+                data: { org_id: orgId },
                 dataType: 'json',
                 success: function(response) {
                     var qrCodeContainer = $('#qrCodeContainerModal');

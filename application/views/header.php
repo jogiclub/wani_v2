@@ -96,7 +96,7 @@
 					MEMBER
 					</h6>
 					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-people"></i> 회원관리</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('member'); ?>"><i class="bi bi-people"></i> 회원관리</a></li>
 						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-clipboard-check"></i> 출석관리</a></li>
 						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-person-check"></i> 판</a></li>
 					</ul>

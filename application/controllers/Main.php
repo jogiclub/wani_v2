@@ -25,65 +25,65 @@ class Main extends CI_Controller
 			$data['user'] = $this->User_model->get_user_by_id($user_id);
 
 			// 사용자가 개설한 그룹이 있는지 확인
-			$userGroups = $this->Group_model->get_user_groups($user_id);
-			if (empty($userGroups)) {
+			$userOrgs = $this->Org_model->get_user_orgs($user_id);
+			if (empty($userOrgs)) {
 				// 개설한 그룹이 없으면 mypage로 리다이렉트
 				redirect('mypage');
 			}
 
-			// Group_model 로드
-			$this->load->model('Group_model');
+			// Org_model 로드
+			$this->load->model('Org_model');
 
-			// POST로 전달된 group_id 가져오기
-			$postGroupId = $this->input->post('group_id');
+			// POST로 전달된 org_id 가져오기
+			$postOrgId = $this->input->post('org_id');
 
-			// 쿠키에 저장된 activeGroup 가져오기
-			$activeGroupId = $this->input->cookie('activeGroup');
+			// 쿠키에 저장된 activeOrg 가져오기
+			$activeOrgId = $this->input->cookie('activeOrg');
 
-			if ($postGroupId) {
-				// POST로 전달된 group_id가 있는 경우
-				$postGroup = $this->Group_model->get_group_by_id($postGroupId);
-				$data['group_name'] = $postGroup['group_name'];
-				$data['postGroup'] = $postGroup;
+			if ($postOrgId) {
+				// POST로 전달된 org_id가 있는 경우
+				$postOrg = $this->Org_model->get_org_by_id($postOrgId);
+				$data['org_name'] = $postOrg['org_name'];
+				$data['postOrg'] = $postOrg;
 
-				// 쿠키에 activeGroup 설정 (만료 시간: 1일)
-				$this->input->set_cookie('activeGroup', $postGroupId, 86400);
-				$currentGroupId = $postGroupId;
-			} else if ($activeGroupId) {
-				// 쿠키에 저장된 activeGroup이 있는 경우
-				$activeGroup = $this->Group_model->get_group_by_id($activeGroupId);
-				$data['group_name'] = $activeGroup['group_name'];
-				$currentGroupId = $activeGroupId;
+				// 쿠키에 activeOrg 설정 (만료 시간: 1일)
+				$this->input->set_cookie('activeOrg', $postOrgId, 86400);
+				$currentOrgId = $postOrgId;
+			} else if ($activeOrgId) {
+				// 쿠키에 저장된 activeOrg이 있는 경우
+				$activeOrg = $this->Org_model->get_org_by_id($activeOrgId);
+				$data['org_name'] = $activeOrg['org_name'];
+				$currentOrgId = $activeOrgId;
 			} else {
-				// POST로 전달된 group_id와 쿠키에 저장된 activeGroup이 없는 경우
-				$min_group_id = $this->Group_model->get_min_group_id($user_id);
-				if ($min_group_id) {
-					$activeGroup = $this->Group_model->get_group_by_id($min_group_id);
-					$data['group_name'] = $activeGroup['group_name'];
-					$currentGroupId = $min_group_id;
+				// POST로 전달된 org_id와 쿠키에 저장된 activeOrg이 없는 경우
+				$min_org_id = $this->Org_model->get_min_org_id($user_id);
+				if ($min_org_id) {
+					$activeOrg = $this->Org_model->get_org_by_id($min_org_id);
+					$data['org_name'] = $activeOrg['org_name'];
+					$currentOrgId = $min_org_id;
 
-					// 쿠키에 activeGroup 설정 (만료 시간: 1일)
-					$this->input->set_cookie('activeGroup', $min_group_id, 86400);
+					// 쿠키에 activeOrg 설정 (만료 시간: 1일)
+					$this->input->set_cookie('activeOrg', $min_org_id, 86400);
 				} else {
-					$data['group_name'] = ''; // 그룹이 없는 경우 기본값 설정
+					$data['org_name'] = ''; // 그룹이 없는 경우 기본값 설정
 				}
 			}
 
 
 			// 해당 그룹의 area_name 목록 가져오기
 			$this->load->model('Member_area_model');
-			$data['member_areas'] = $this->Member_area_model->get_member_areas($currentGroupId);
+			$data['member_areas'] = $this->Member_area_model->get_member_areas($currentOrgId);
 
 
 			// 활성화된 그룹의 출석타입 정보 가져오기
 			$this->load->model('Attendance_model');
-			$data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentGroupId);
+			$data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentOrgId);
 
 			// 선택된 모드 설정 (기본값: mode-1)
 			$data['mode'] = $this->input->post('mode') ?? 'mode-1';
 
 			// 사용자의 그룹 레벨 가져오기
-			$user_group = $this->User_model->get_group_user($user_id, $currentGroupId);
+			$user_group = $this->User_model->get_org_user($user_id, $currentOrgId);
 			$user_level = $user_group ? $user_group['level'] : 0;
 			$data['user_level'] = $user_level;
 
@@ -102,7 +102,7 @@ class Main extends CI_Controller
 			$member_idx = $this->input->post('member_idx');
 			$att_type_idx = $this->input->post('att_type_idx');
 			$att_type_category_idx = $this->input->post('att_type_category_idx');
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$att_date = $this->input->post('att_date');
 
 			// 기존 출석 정보 삭제
@@ -114,7 +114,7 @@ class Main extends CI_Controller
 				'att_date' => $att_date,
 				'att_type_idx' => $att_type_idx,
 				'member_idx' => $member_idx,
-				'group_id' => $group_id
+				'org_id' => $org_id
 			);
 			$result = $this->Attendance_model->save_single_attendance($data);
 
@@ -134,13 +134,13 @@ class Main extends CI_Controller
 	public function add_member()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$member_name = $this->input->post('member_name');
 			$area_idx = $this->input->post('area_idx');
 
 
 			$data = array(
-				'group_id' => $group_id,
+				'org_id' => $org_id,
 				'grade' => 0,
 				'area_idx' => $area_idx,
 				'member_name' => $member_name,
@@ -180,11 +180,11 @@ class Main extends CI_Controller
 	public function get_active_members()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$five_weeks_ago = date('Y-m-d', strtotime('-5 weeks'));
 
 			$this->load->model('Member_model');
-			$active_members = $this->Member_model->get_active_members($group_id, $five_weeks_ago);
+			$active_members = $this->Member_model->get_active_members($org_id, $five_weeks_ago);
 
 			echo json_encode($active_members);
 		}
@@ -225,8 +225,8 @@ class Main extends CI_Controller
 
 			// 사진 업로드 처리
 			if (!empty($_FILES['photo']['name'])) {
-				$group_id = $this->input->post('group_id');
-				$upload_path = './uploads/member_photos/' . $group_id . '/';
+				$org_id = $this->input->post('org_id');
+				$upload_path = './uploads/member_photos/' . $org_id . '/';
 
 				// 1. 기존 파일 확인 및 삭제
 				$existing_photo = $this->Member_model->get_member_by_idx($member_idx);
@@ -276,7 +276,7 @@ class Main extends CI_Controller
 					}
 
 					$data['photo'] = $upload_data['file_name'];
-					$photo_url = base_url('uploads/member_photos/' . $group_id . '/' . $upload_data['file_name']);
+					$photo_url = base_url('uploads/member_photos/' . $org_id . '/' . $upload_data['file_name']);
 					$response = array('status' => 'success', 'photo_url' => $photo_url);
 				} else {
 					$upload_error = $this->upload->display_errors();
@@ -375,12 +375,12 @@ class Main extends CI_Controller
 	public function get_memo_counts()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
 			$this->load->model('Memo_model');
-			$memo_counts = $this->Memo_model->get_memo_counts($group_id, $start_date, $end_date);
+			$memo_counts = $this->Memo_model->get_memo_counts($org_id, $start_date, $end_date);
 
 			echo json_encode($memo_counts);
 		}
@@ -389,12 +389,12 @@ class Main extends CI_Controller
 	public function get_attendance_data()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
 			$this->load->model('Attendance_model');
-			$attendance_data = $this->Attendance_model->get_group_attendance_data($group_id, $start_date, $end_date);
+			$attendance_data = $this->Attendance_model->get_org_attendance_data($org_id, $start_date, $end_date);
 
 			echo json_encode($attendance_data);
 		}
@@ -404,7 +404,7 @@ class Main extends CI_Controller
 	public function get_members()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$level = $this->input->post('level');
 
 //            print_r($level);
@@ -415,7 +415,7 @@ class Main extends CI_Controller
 
 			$this->load->model('Member_model');
 
-			$members = $this->Member_model->get_group_members($group_id, $level, $start_date, $end_date);
+			$members = $this->Member_model->get_org_members($org_id, $level, $start_date, $end_date);
 			echo json_encode($members);
 		}
 	}
@@ -504,9 +504,9 @@ class Main extends CI_Controller
 	public function get_attendance_types()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$this->load->model('Attendance_model');
-			$attendance_types = $this->Attendance_model->get_attendance_types($group_id);
+			$attendance_types = $this->Attendance_model->get_attendance_types($org_id);
 //            print_r($attendance_types);
 //            exit;
 			$response = array(
@@ -523,7 +523,7 @@ class Main extends CI_Controller
 		if ($this->input->is_ajax_request()) {
 			$member_idx = $this->input->post('member_idx');
 			$attendance_data = json_decode($this->input->post('attendance_data'), true);
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$att_date = $this->input->post('att_date');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
@@ -539,7 +539,7 @@ class Main extends CI_Controller
 						'att_date' => $att_date,
 						'att_type_idx' => $att_type_idx,
 						'member_idx' => $member_idx,
-						'group_id' => $group_id
+						'org_id' => $org_id
 					);
 
 					$this->db->insert('wb_member_att', $data);
@@ -574,23 +574,23 @@ class Main extends CI_Controller
 	}
 
 
-	public function get_groups()
+	public function get_orgs()
 	{
 		if ($this->input->is_ajax_request()) {
 			$user_id = $this->session->userdata('email');
 
-			$this->load->model('Group_model');
-			$groups = $this->Group_model->get_user_groups($user_id);
+			$this->load->model('Org_model');
+			$orgs = $this->Org_model->get_user_orgs($user_id);
 
-			$group_data = array();
-			foreach ($groups as $group) {
-				$group_data[] = array(
-					'group_id' => $group['group_id'],
-					'group_name' => $group['group_name']
+			$org_data = array();
+			foreach ($orgs as $org) {
+				$org_data[] = array(
+					'org_id' => $org['org_id'],
+					'org_name' => $org['org_name']
 				);
 			}
 
-			echo json_encode($group_data);
+			echo json_encode($org_data);
 		}
 	}
 
@@ -619,7 +619,7 @@ class Main extends CI_Controller
 
 		// 쿠키 삭제 (CodeIgniter3 방식)
 		$this->input->set_cookie('ci_session', '', time() - 3600);
-		$this->input->set_cookie('activeGroup', '', time() - 3600);
+		$this->input->set_cookie('activeOrg', '', time() - 3600);
 
 		redirect('login');
 	}
@@ -629,17 +629,17 @@ class Main extends CI_Controller
 	{
 		if ($this->input->is_ajax_request()) {
 			$member_idx = $this->input->post('member_idx');
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$area_idx = $this->input->post('area_idx');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
 			$this->load->model('Member_model');
-			$same_members = $this->Member_model->get_same_members($member_idx, $group_id, $area_idx, $start_date, $end_date);
+			$same_members = $this->Member_model->get_same_members($member_idx, $org_id, $area_idx, $start_date, $end_date);
 
 			// 출석 유형 정보 가져오기
 			$this->load->model('Attendance_model');
-			$att_types = $this->Attendance_model->get_attendance_types($group_id);
+			$att_types = $this->Attendance_model->get_attendance_types($org_id);
 
 			if ($same_members) {
 				$response = array('status' => 'success', 'members' => $same_members, 'att_types' => $att_types);
@@ -656,7 +656,7 @@ class Main extends CI_Controller
 	{
 		if ($this->input->is_ajax_request()) {
 			$attendance_data = json_decode($this->input->post('attendance_data'), true);
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
@@ -687,10 +687,10 @@ class Main extends CI_Controller
 							'att_date' => $start_date,
 							'att_type_idx' => $att_type_idx,
 							'member_idx' => $member_idx,
-							'group_id' => $group_id
+							'org_id' => $org_id
 						);
 					}
-					$this->Attendance_model->save_attendance_data($att_data, $group_id, $start_date, $end_date);
+					$this->Attendance_model->save_attendance_data($att_data, $org_id, $start_date, $end_date);
 				}
 			}
 
@@ -703,14 +703,14 @@ class Main extends CI_Controller
 	public function get_last_week_attendance()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 			$area_idx = $this->input->post('area_idx');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
 			$this->load->model('Attendance_model');
-			$attendance_data = $this->Attendance_model->get_group_member_attendance($group_id, $area_idx, $start_date, $end_date);
-			$att_types = $this->Attendance_model->get_attendance_types($group_id);
+			$attendance_data = $this->Attendance_model->get_org_member_attendance($org_id, $area_idx, $start_date, $end_date);
+			$att_types = $this->Attendance_model->get_attendance_types($org_id);
 
 			$response = array(
 				'status' => 'success',
@@ -727,19 +727,19 @@ class Main extends CI_Controller
 	{
 		if ($this->input->is_ajax_request()) {
 			$area_name = $this->input->post('area_name');
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 
 			// Member_area_model 로드
 			$this->load->model('Member_area_model');
 
 			// 현재 최대 order 값 가져오기
-			$max_order = $this->Member_area_model->get_max_order($group_id);
+			$max_order = $this->Member_area_model->get_max_order($org_id);
 			$new_order = $max_order + 1;
 
 			$data = array(
 				'area_name' => $area_name,
 				'area_order' => $new_order,
-				'group_id' => $group_id
+				'org_id' => $org_id
 			);
 
 			$result = $this->Member_area_model->add_area($data);
@@ -757,10 +757,10 @@ class Main extends CI_Controller
 	public function get_areas()
 	{
 		if ($this->input->is_ajax_request()) {
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 
 			$this->load->model('Member_area_model');
-			$areas = $this->Member_area_model->get_member_areas($group_id);
+			$areas = $this->Member_area_model->get_member_areas($org_id);
 
 			echo json_encode(['areas' => $areas]);
 		}
@@ -770,7 +770,7 @@ class Main extends CI_Controller
 	{
 		if ($this->input->is_ajax_request()) {
 			$areas = json_decode($this->input->post('areas'), true);
-			$group_id = $this->input->post('group_id');
+			$org_id = $this->input->post('org_id');
 
 			$this->load->model('Member_area_model');
 			$success = $this->Member_area_model->update_areas($areas);

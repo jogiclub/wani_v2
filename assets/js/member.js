@@ -6,7 +6,7 @@
 $(document).ready(function() {
 	// 전역 변수
 	let memberGrid;
-	let selectedGroupId = null;
+	let selectedOrgId = null;
 	let selectedAreaIdx = null;
 	let selectedType = null;
 
@@ -27,7 +27,7 @@ $(document).ready(function() {
 	 */
 	function initializeFancytree() {
 		$.ajax({
-			url: window.memberPageData.baseUrl + 'member/get_group_tree',
+			url: window.memberPageData.baseUrl + 'member/get_org_tree',
 			method: 'POST',
 			dataType: 'json',
 			success: function(treeData) {
@@ -38,11 +38,11 @@ $(document).ready(function() {
 						const nodeData = node.data;
 
 						selectedType = nodeData.type;
-						selectedGroupId = nodeData.group_id;
+						selectedOrgId = nodeData.org_id;
 						selectedAreaIdx = nodeData.area_idx || null;
 
 						// 선택된 노드에 따라 제목 업데이트
-						updateSelectedGroupName(node.title, nodeData.type);
+						updateSelectedOrgName(node.title, nodeData.type);
 
 						// 회원 데이터 로드
 						loadMemberData();
@@ -161,7 +161,7 @@ $(document).ready(function() {
 	function bindEvents() {
 		// 회원 추가 버튼
 		$('#btnAddMember').on('click', function() {
-			if (!selectedGroupId) {
+			if (!selectedOrgId) {
 				alert('먼저 그룹을 선택해주세요.');
 				return;
 			}
@@ -197,23 +197,23 @@ $(document).ready(function() {
 	/**
 	 * 선택된 그룹명 업데이트
 	 */
-	function updateSelectedGroupName(title, type) {
+	function updateSelectedOrgName(title, type) {
 		const icon = type === 'group' ? '<i class="bi bi-diagram-3"></i>' : '<i class="bi bi-people"></i>';
-		$('#selectedGroupName').html(icon + ' ' + title);
+		$('#selectedOrgName').html(icon + ' ' + title);
 	}
 
 	/**
 	 * 회원 데이터 로드
 	 */
 	function loadMemberData() {
-		if (!selectedGroupId) return;
+		if (!selectedOrgId) return;
 
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/get_members',
 			method: 'POST',
 			data: {
 				type: selectedType,
-				group_id: selectedGroupId,
+				org_id: selectedOrgId,
 				area_idx: selectedAreaIdx
 			},
 			dataType: 'json',
@@ -249,7 +249,7 @@ $(document).ready(function() {
 		$('#memberForm')[0].reset();
 
 		// 소그룹 옵션 로드
-		loadAreaOptions(selectedGroupId);
+		loadAreaOptions(selectedOrgId);
 
 		if (mode === 'edit' && memberData) {
 			// 수정 모드일 때 기존 데이터 채우기
@@ -268,13 +268,13 @@ $(document).ready(function() {
 	/**
 	 * 소그룹 옵션 로드
 	 */
-	function loadAreaOptions(groupId) {
+	function loadAreaOptions(orgId) {
 		const areaSelect = $('#area_idx');
 		areaSelect.html('<option value="">소그룹 선택</option>');
 
 		// 현재 선택된 그룹의 소그룹 목록을 트리에서 찾기
 		const tree = $("#groupTree").fancytree("getTree");
-		const groupNode = tree.getNodeByKey('group_' + groupId);
+		const groupNode = tree.getNodeByKey('org_' + orgId);
 
 		if (groupNode && groupNode.children) {
 			groupNode.children.forEach(function(child) {
@@ -296,7 +296,7 @@ $(document).ready(function() {
 			area_idx: $('#area_idx').val(),
 			leader_yn: $('#leader_yn').is(':checked') ? 'Y' : 'N',
 			new_yn: $('#new_yn').is(':checked') ? 'Y' : 'N',
-			group_id: selectedGroupId
+			org_id: selectedOrgId
 		};
 
 		const url = formData.member_idx ?

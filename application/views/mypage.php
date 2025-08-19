@@ -8,7 +8,7 @@
 
 
     <div class="container-xl pt-5 pb-5">
-        <div class="table-responsive-xl mypage-group-list">
+        <div class="table-responsive-xl mypage-org-list">
         <table class="table align-middle" style="min-width: 1000px">
 
         <thead>
@@ -24,32 +24,32 @@
                 <th scope="col">그룹삭제</th>
             </tr>
         </thead>
-            <tbody class="table-group-divider">
-            <?php if (empty($groups)): ?>
+            <tbody class="table-org-divider">
+            <?php if (empty($orgs)): ?>
                 <td colspan="20" style="padding: 20px 0">개설된 그룹이 없습니다.<br/>오른쪽 하단의 그룹 추가 버튼을 선택하여 첫번째 그룹을 만들어보세요!</td>
             <?php else: ?>
-                <?php foreach ($groups as $group): ?>
+                <?php foreach ($orgs as $org): ?>
 
-                    <tr data-group-id="<?php echo $group['group_id']; ?>">
+                    <tr data-org-id="<?php echo $org['org_id']; ?>">
                         <td>
-                            <a class="btn btn-primary btn-sm open-group-main"><?php echo $group['group_name']; ?> <i class="bi bi-chevron-right"></i></a>
+                            <a class="btn btn-primary btn-sm open-org-main"><?php echo $org['org_name']; ?> <i class="bi bi-chevron-right"></i></a>
                         </td>
 
-                        <td><?php echo $group['member_count']; ?>명</td>
-                        <?php if ($group['user_level'] == 10): ?>
-                            <td><a class="btn btn-light btn-sm btn-user-setting" data-group-id="<?php echo $group['group_id']; ?>"><?php echo $group['user_count']; ?>명</a></td>
+                        <td><?php echo $org['member_count']; ?>명</td>
+                        <?php if ($org['user_level'] == 10): ?>
+                            <td><a class="btn btn-light btn-sm btn-user-setting" data-org-id="<?php echo $org['org_id']; ?>"><?php echo $org['user_count']; ?>명</a></td>
                         <?php else: ?>
-                            <td><?php echo $group['user_count']; ?>명</td>
+                            <td><?php echo $org['user_count']; ?>명</td>
                         <?php endif; ?>
 
-                        <?php if ($group['user_level'] == 10): ?>
-                        <td><a class="btn btn-light btn-sm btn-setting" data-group-id="<?php echo $group['group_id']; ?>" data-group-name="<?php echo $group['group_name']; ?>" data-leader-name="<?php echo $group['leader_name']; ?>" data-new-name="<?php echo $group['new_name']; ?>">그룹수정</a></td>
-                        <td><a class="btn btn-light btn-sm btn-summery" data-group-id="<?php echo $group['group_id']; ?>">통계</a></td>
-                        <td><a class="btn btn-light btn-sm btn-print-qr" data-group-id="<?php echo $group['group_id']; ?>">QR인쇄</a></td>
-                        <td><a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-group-id="<?php echo $group['group_id']; ?>" onclick="attendanceTypeSetting(<?php echo $group['group_id']; ?>)">출석타입설정</a>
+                        <?php if ($org['user_level'] == 10): ?>
+                        <td><a class="btn btn-light btn-sm btn-setting" data-org-id="<?php echo $org['org_id']; ?>" data-org-name="<?php echo $org['org_name']; ?>" data-leader-name="<?php echo $org['leader_name']; ?>" data-new-name="<?php echo $org['new_name']; ?>">그룹수정</a></td>
+                        <td><a class="btn btn-light btn-sm btn-summery" data-org-id="<?php echo $org['org_id']; ?>">통계</a></td>
+                        <td><a class="btn btn-light btn-sm btn-print-qr" data-org-id="<?php echo $org['org_id']; ?>">QR인쇄</a></td>
+                        <td><a href="#" class="btn btn-light btn-sm btn-attendance-type-setting" data-org-id="<?php echo $org['org_id']; ?>" onclick="attendanceTypeSetting(<?php echo $org['org_id']; ?>)">출석타입설정</a>
                         </td>
-                        <td><a href="#" class="btn btn-light btn-sm btn-member-excel-upload" data-group-id="<?php echo $group['group_id']; ?>">회원엑셀업로드</a></td>
-                        <td><a href="#" class="btn btn-danger btn-sm btn-del-group" data-group-id="<?php echo $group['group_id']; ?>">그룹삭제</a></td>
+                        <td><a href="#" class="btn btn-light btn-sm btn-member-excel-upload" data-org-id="<?php echo $org['org_id']; ?>">회원엑셀업로드</a></td>
+                        <td><a href="#" class="btn btn-danger btn-sm btn-del-org" data-org-id="<?php echo $org['org_id']; ?>">그룹삭제</a></td>
                         <?php else: ?>
                         <td></td>
                         <td></td>
@@ -80,18 +80,18 @@
 
 
 <!-- 그룹 수정 모달 -->
-<div class="modal fade" id="settingGroupModal" tabindex="-1" aria-labelledby="settingGroupModalLabel" aria-hidden="true">
+<div class="modal fade" id="settingOrgModal" tabindex="-1" aria-labelledby="settingOrgModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="settingGroupModalLabel">그룹 설정</h5>
+                <h5 class="modal-title" id="settingOrgModalLabel">그룹 설정</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="edit_group_name" class="form-label">그룹명</label>
-                    <input type="text" class="form-control" id="edit_group_name" name="edit_group_name" required>
-                    <input type="hidden" id="edit_group_id" name="edit_group_id">
+                    <label for="edit_org_name" class="form-label">그룹명</label>
+                    <input type="text" class="form-control" id="edit_org_name" name="edit_org_name" required>
+                    <input type="hidden" id="edit_org_id" name="edit_org_id">
                 </div>
 
                 <div class="mb-3">
@@ -106,7 +106,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" id="updateGroup">저장</button>
+                <button type="button" class="btn btn-primary" id="updateOrg">저장</button>
             </div>
         </div>
     </div>
@@ -160,7 +160,7 @@
                     </thead>
 
 
-                    <tbody class="table-group-divider" id="attendanceTypeTableBody">
+                    <tbody class="table-org-divider" id="attendanceTypeTableBody">
                     <!-- 출석 타입 목록이 동적으로 생성됩니다 -->
                     </tbody>
                     </table>
@@ -169,26 +169,26 @@
 
 
 
-                <input type="hidden" id="attendanceTypeGroupId" name="group_id" value="">
+                <input type="hidden" id="attendanceTypeOrgId" name="org_id" value="">
             </div>
         </div>
     </div>
 </div>
 
 <!-- 그룹 추가 모달 -->
-<div class="modal fade" id="addGroupModal" tabindex="-1" aria-labelledby="groupModalLabel" aria-hidden="true">
+<div class="modal fade" id="addOrgModal" tabindex="-1" aria-labelledby="orgModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="groupModalLabel">그룹 추가</h5>
+                <h5 class="modal-title" id="orgModalLabel">그룹 추가</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="group_name" class="form-label">그룹명</label>
+                    <label for="org_name" class="form-label">그룹명</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="group_name" name="group_name"  required>
-                        <button type="button" class="btn btn-primary" id="saveGroup">저장</button>
+                        <input type="text" class="form-control" id="org_name" name="org_name"  required>
+                        <button type="button" class="btn btn-primary" id="saveOrg">저장</button>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -241,7 +241,7 @@
                             <th class="master-hidden">로그인</th>
                         </tr>
                         </thead>
-                        <tbody class="table-group-divider" id="userListTableBody">
+                        <tbody class="table-org-divider" id="userListTableBody">
                         <!-- 사용자 목록이 여기에 동적으로 추가됩니다. -->
                         </tbody>
                     </table>

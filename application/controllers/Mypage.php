@@ -13,8 +13,6 @@ class Mypage extends CI_Controller
 
     public function index() {
 
-
-
         if ($this->session->userdata('user_id')) {
             $data['user'] = $this->session->userdata();
             $user_id = $this->session->userdata('user_id');
@@ -22,24 +20,24 @@ class Mypage extends CI_Controller
             $this->load->model('User_model');
             $data['user'] = $this->User_model->get_user_by_id($user_id);
 
-            $this->load->model('Group_model');
+            $this->load->model('Org_model');
 
             if($master_yn === "N"){
-                $groups = $this->Group_model->get_user_groups($user_id);
+                $orgs = $this->Org_model->get_user_orgs($user_id);
             } else {
-                $groups = $this->Group_model->get_user_groups_master($user_id);
+                $orgs = $this->Org_model->get_user_orgs_master($user_id);
             }
 
 
-            foreach ($groups as &$group) {
-                $group['user_count'] = $this->User_model->get_group_user_count($group['group_id']);
+            foreach ($orgs as &$org) {
+                $org['user_count'] = $this->User_model->get_org_user_count($org['org_id']);
 
                 // 그룹에 대한 사용자의 level 값과 master_yn 값을 가져옴
-                $group['user_level'] = $this->User_model->get_group_user_level($user_id, $group['group_id']);
-                $group['user_master_yn'] = $this->session->userdata('master_yn');
+                $org['user_level'] = $this->User_model->get_org_user_level($user_id, $org['org_id']);
+                $org['user_master_yn'] = $this->session->userdata('master_yn');
             }
 
-            $data['groups'] = $groups;
+            $data['orgs'] = $orgs;
 
             $this->load->view('mypage', $data);
         } else {
@@ -49,22 +47,22 @@ class Mypage extends CI_Controller
 
 
 
-    public function join_group_by_invite_code() {
+    public function join_org_by_invite_code() {
         if ($this->input->is_ajax_request()) {
             $invite_code = $this->input->post('invite_code');
             $user_id = $this->input->post('user_id');
 
-            $this->load->model('Group_model');
-            $group = $this->Group_model->get_group_by_invite_code($invite_code);
+            $this->load->model('Org_model');
+            $org = $this->Org_model->get_org_by_invite_code($invite_code);
 
-            if ($group) {
-                $group_id = $group['group_id'];
-                $existing_group_user = $this->Group_model->get_group_user($user_id, $group_id);
+            if ($org) {
+                $org_id = $org['org_id'];
+                $existing_org_user = $this->Org_model->get_org_user($user_id, $org_id);
 
-                if ($existing_group_user) {
+                if ($existing_org_user) {
                     $response = array('status' => 'already_joined');
                 } else {
-                    $this->Group_model->add_user_to_group($user_id, $group_id);
+                    $this->Org_model->add_user_to_org($user_id, $org_id);
                     $response = array('status' => 'success');
                 }
             } else {
@@ -76,16 +74,16 @@ class Mypage extends CI_Controller
     }
 
 
-    public function add_group() {
+    public function add_org() {
         if ($this->input->is_ajax_request()) {
-            $group_name = $this->input->post('group_name');
+            $org_name = $this->input->post('org_name');
             $user_id = $this->session->userdata('user_id');
 
-            $this->load->model('Group_model');
-            $group_id = $this->Group_model->create_group($group_name);
+            $this->load->model('Org_model');
+            $org_id = $this->Org_model->create_org($org_name);
 
-            if ($group_id) {
-                $this->Group_model->add_user_to_group($user_id, $group_id);
+            if ($org_id) {
+                $this->Org_model->add_user_to_org($user_id, $org_id);
                 $response = array('status' => 'success');
             } else {
                 $response = array('status' => 'error');
@@ -101,11 +99,11 @@ class Mypage extends CI_Controller
 
     public function update_del_yn() {
         if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
 
-            $this->load->model('Group_model');
-            $result = $this->Group_model->update_del_yn($group_id);
+            $this->load->model('Org_model');
+            $result = $this->Org_model->update_del_yn($org_id);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -125,15 +123,15 @@ class Mypage extends CI_Controller
 
 
 
-    public function update_group() {
+    public function update_org() {
         if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
-            $group_name = $this->input->post('group_name');
+            $org_id = $this->input->post('org_id');
+            $org_name = $this->input->post('org_name');
             $leader_name = $this->input->post('leader_name');
             $new_name = $this->input->post('new_name');
 
-            $this->load->model('Group_model');
-            $result = $this->Group_model->update_group($group_id, $group_name, $leader_name, $new_name);
+            $this->load->model('Org_model');
+            $result = $this->Org_model->update_org($org_id, $org_name, $leader_name, $new_name);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -149,18 +147,18 @@ class Mypage extends CI_Controller
 
 
 
-    public function edit_group($group_id) {
+    public function edit_org($org_id) {
 
-        $this->load->view('edit_group_modal', $data);
+        $this->load->view('edit_org_modal', $data);
     }
 
 
     public function get_attendance_types() {
         if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('Attendance_model');
-            $attendance_types = $this->Attendance_model->get_attendance_types($group_id);
+            $attendance_types = $this->Attendance_model->get_attendance_types($org_id);
 
             echo json_encode($attendance_types);
         }
@@ -168,17 +166,17 @@ class Mypage extends CI_Controller
 
     public function save_attendance_type() {
         if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
             $att_type_category_name = $this->input->post('att_type_category_name');
             $att_type_name = $this->input->post('att_type_name');
             $att_type_nickname = $this->input->post('att_type_nickname');
             $att_type_color = $this->input->post('att_type_color');
 
             // 출석 타입 카테고리 인덱스 관리
-            $att_type_category_idx = $this->Attendance_model->get_max_category_idx($group_id) + 1;
+            $att_type_category_idx = $this->Attendance_model->get_max_category_idx($org_id) + 1;
 
             $this->load->model('Attendance_model');
-            $result = $this->Attendance_model->save_attendance_type($group_id, $att_type_category_name, $att_type_name, $att_type_nickname, $att_type_color, $att_type_category_idx);
+            $result = $this->Attendance_model->save_attendance_type($org_id, $att_type_category_name, $att_type_name, $att_type_nickname, $att_type_color, $att_type_category_idx);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -215,12 +213,12 @@ class Mypage extends CI_Controller
     public function add_attendance_type_category() {
         if ($this->input->is_ajax_request()) {
             $att_type_category_name = $this->input->post('att_type_category_name');
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('Attendance_model');
 
             // 해당 그룹에서 사용하는 가장 큰 att_type_category_idx 값을 가져옴
-            $max_category_idx = $this->Attendance_model->get_max_category_idx($group_id);
+            $max_category_idx = $this->Attendance_model->get_max_category_idx($org_id);
             $att_type_category_idx = $max_category_idx + 1;
 
             $data = array(
@@ -228,7 +226,7 @@ class Mypage extends CI_Controller
                 'att_type_category_idx' => $att_type_category_idx,
                 'att_type_name' => '새출석타입',
                 'att_type_nickname' => '출',
-                'group_id' => $group_id
+                'org_id' => $org_id
             );
 
 
@@ -252,14 +250,14 @@ class Mypage extends CI_Controller
             $att_type_category_idx = $this->input->post('att_type_category_idx');
             $att_type_category_name = $this->input->post('att_type_category_name');
             $att_type_nickname = $this->input->post('att_type_nickname');
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $data = array(
                 'att_type_name' => $att_type_name,
                 'att_type_category_idx' => $att_type_category_idx,
                 'att_type_category_name' => $att_type_category_name,
                 'att_type_nickname' => $att_type_nickname,
-                'group_id' => $group_id
+                'org_id' => $org_id
             );
 
             $this->load->model('Attendance_model');
@@ -267,7 +265,7 @@ class Mypage extends CI_Controller
 
             if ($result) {
                 // add_attendance_type() 함수 실행 후 reordering() 함수 호출
-                $this->reordering($group_id);
+                $this->reordering($org_id);
                 $response = array('status' => 'success');
             } else {
                 $response = array('status' => 'error');
@@ -280,15 +278,15 @@ class Mypage extends CI_Controller
 
     public function attendance_type_setting() {
         if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('Attendance_model');
-            $attendance_type_categories = $this->Attendance_model->get_attendance_type_categories($group_id);
+            $attendance_type_categories = $this->Attendance_model->get_attendance_type_categories($org_id);
 
             $response = array(
                 'status' => 'success',
                 'attendance_type_categories' => $attendance_type_categories,
-                'group_id' => $group_id
+                'org_id' => $org_id
             );
 
             echo json_encode($response);
@@ -296,14 +294,14 @@ class Mypage extends CI_Controller
     }
 
 
-    public function reordering($group_id) {
+    public function reordering($org_id) {
 
 
 
-            // wb_att_type 테이블에서 해당 group_id의 데이터를 att_type_category_idx와 att_type_idx 순서로 정렬
+            // wb_att_type 테이블에서 해당 org_id의 데이터를 att_type_category_idx와 att_type_idx 순서로 정렬
             $this->db->select('att_type_idx');
             $this->db->from('wb_att_type');
-            $this->db->where('group_id', $group_id);
+            $this->db->where('org_id', $org_id);
             $this->db->order_by('att_type_category_idx', 'ASC');
             $this->db->order_by('att_type_idx', 'ASC');
             $query = $this->db->get();
@@ -342,19 +340,19 @@ class Mypage extends CI_Controller
             echo json_encode($response);
         }
     }
-    public function get_attendance_type_count($group_id) {
+    public function get_attendance_type_count($org_id) {
         $this->load->model('Attendance_model');
-        $count = $this->Attendance_model->get_attendance_type_count($group_id);
+        $count = $this->Attendance_model->get_attendance_type_count($org_id);
         return $count;
     }
 
 
-    public function get_group_users() {
+    public function get_org_users() {
         if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('User_model');
-            $users = $this->User_model->get_group_users($group_id);
+            $users = $this->User_model->get_org_users($org_id);
 
             echo json_encode($users);
         }
@@ -365,7 +363,7 @@ class Mypage extends CI_Controller
     {
         if ($this->input->is_ajax_request()) {
             try {
-                $group_id = $this->input->post('group_id');
+                $org_id = $this->input->post('org_id');
                 $file = $_FILES['excel_file']['tmp_name'];
 
                 // 엑셀 파일 읽기
@@ -376,7 +374,7 @@ class Mypage extends CI_Controller
 
                 for ($row = 2; $row <= $highestRow; $row++) {
                     $data = array(
-                        'group_id' => $group_id,
+                        'org_id' => $org_id,
                         'grade' => $sheet->getCell('A' . $row)->getValue(),
                         'area' => $sheet->getCell('B' . $row)->getValue(),
                         'member_name' => $sheet->getCell('C' . $row)->getValue(),
@@ -421,10 +419,10 @@ class Mypage extends CI_Controller
             $user_name = $this->input->post('user_name');
             $user_hp = $this->input->post('user_hp');
             $level = $this->input->post('level');
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('User_model');
-            $result = $this->User_model->save_user($user_id, $user_name, $user_hp, $level, $group_id);
+            $result = $this->User_model->save_user($user_id, $user_name, $user_hp, $level, $org_id);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -440,10 +438,10 @@ class Mypage extends CI_Controller
     public function delete_user() {
         if ($this->input->is_ajax_request()) {
             $user_id = $this->input->post('user_id');
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('User_model');
-            $result = $this->User_model->delete_user($user_id, $group_id);
+            $result = $this->User_model->delete_user($user_id, $org_id);
 
             if ($result) {
                 $response = array('status' => 'success');
@@ -459,24 +457,24 @@ class Mypage extends CI_Controller
     public function invite_user() {
         if ($this->input->is_ajax_request()) {
             $email = $this->input->post('email');
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('User_model');
             $existing_user = $this->User_model->get_user_by_email($email);
 
             if ($existing_user) {
                 $user_id = $existing_user['user_id'];
-                $existing_group_user = $this->User_model->get_group_user($user_id, $group_id);
+                $existing_org_user = $this->User_model->get_org_user($user_id, $org_id);
 
-                if ($existing_group_user) {
+                if ($existing_org_user) {
                     $response = array('status' => 'exists');
                 } else {
-                    $group_user_data = array(
+                    $org_user_data = array(
                         'user_id' => $user_id,
-                        'group_id' => $group_id,
+                        'org_id' => $org_id,
                         'level' => 1
                     );
-                    $this->User_model->insert_group_user($group_user_data);
+                    $this->User_model->insert_org_user($org_user_data);
                     $response = array('status' => 'success');
                 }
             } else {
@@ -494,12 +492,12 @@ class Mypage extends CI_Controller
                 $user_id = $this->User_model->insert_user($user_data);
 
                 if ($user_id) {
-                    $group_user_data = array(
+                    $org_user_data = array(
                         'user_id' => $email,
-                        'group_id' => $group_id,
+                        'org_id' => $org_id,
                         'level' => 1
                     );
-                    $this->User_model->insert_group_user($group_user_data);
+                    $this->User_model->insert_org_user($org_user_data);
                     $response = array('status' => 'success');
                 } else {
                     $response = array('status' => 'error');
@@ -562,25 +560,25 @@ class Mypage extends CI_Controller
 
 
 
-    public function get_group_members() {
+    public function get_org_members() {
         if ($this->input->is_ajax_request()) {
-            $group_id = $this->input->post('group_id');
+            $org_id = $this->input->post('org_id');
 
             $this->load->model('Member_model');
-            $members = $this->Member_model->get_group_members($group_id);
+            $members = $this->Member_model->get_org_members($org_id);
 
             echo json_encode($members);
         }
     }
 
     public function print_qr() {
-        $group_id = $this->input->get('group_id');
-        $data['group_id'] = $group_id;
+        $org_id = $this->input->get('org_id');
+        $data['org_id'] = $org_id;
         $this->load->view('print_qr_view', $data);
     }
 
     public function summery_week() {
-        $group_id = $this->input->get('group_id');
+        $org_id = $this->input->get('org_id');
 
         // 시작일과 종료일 계산
         $start_date = date('Y-m-d', strtotime('first sunday of january this year'));
@@ -601,17 +599,17 @@ class Mypage extends CI_Controller
 
         // 해당 그룹의 출석 타입 목록 가져오기 (att_type_order 순서대로)
         $this->load->model('Attendance_model');
-        $attendance_types = $this->Attendance_model->get_attendance_types($group_id);
+        $attendance_types = $this->Attendance_model->get_attendance_types($org_id);
 
         // 해당 그룹의 주차별 출석 타입 합산 데이터 가져오기
         $attendance_data = array();
         foreach ($weeks as $week) {
             $week_start = $week['start_date'];
             $week_end = $week['end_date'];
-            $attendance_data[$week['week_number']] = $this->Attendance_model->get_week_attendance_sum($group_id, $week_start, $week_end);
+            $attendance_data[$week['week_number']] = $this->Attendance_model->get_week_attendance_sum($org_id, $week_start, $week_end);
         }
 
-        $data['group_id'] = $group_id;
+        $data['org_id'] = $org_id;
         $data['weeks'] = $weeks;
         $data['attendance_types'] = $attendance_types;
         $data['attendance_data'] = $attendance_data;
@@ -622,8 +620,8 @@ class Mypage extends CI_Controller
 
 
     public function summery_member() {
-        $group_id = $this->input->get('group_id');
-        $post_group_id = $this->input->post('group_id');
+        $org_id = $this->input->get('org_id');
+        $post_org_id = $this->input->post('org_id');
         $att_type_idx = $this->input->post('att_type_idx');
 
 
@@ -646,12 +644,12 @@ class Mypage extends CI_Controller
 
         // 해당 그룹의 회원 목록 가져오기
         $this->load->model('Member_model');
-        $members = $this->Member_model->get_group_members($group_id);
+        $members = $this->Member_model->get_org_members($org_id);
 
         // 해당 그룹의 출석 타입 목록 가져오기
         $this->load->model('Attendance_model');
-        $attendance_types = $this->Attendance_model->get_attendance_types($group_id);
-        $data['group_id'] = $group_id;
+        $attendance_types = $this->Attendance_model->get_attendance_types($org_id);
+        $data['org_id'] = $org_id;
         $data['weeks'] = $weeks;
         $data['members'] = $members;
         $data['attendance_types'] = $attendance_types;
@@ -660,7 +658,7 @@ class Mypage extends CI_Controller
             // 선택된 출석 타입에 대한 회원별 출석 데이터 가져오기
             $attendance_data = array();
             if ($att_type_idx) {
-                $attendance_data = $this->Attendance_model->get_member_attendance_summery($post_group_id, $att_type_idx);
+                $attendance_data = $this->Attendance_model->get_member_attendance_summery($post_org_id, $att_type_idx);
             }
             echo json_encode($attendance_data);
         } else {

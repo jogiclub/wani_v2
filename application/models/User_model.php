@@ -15,40 +15,40 @@ class User_model extends CI_Model {
         return $this->db->insert_id();
     }
 
-    public function get_user_groups($user_id) {
-        $this->db->select('wb_group.idx as org_id, wb_group.group_name');
-        $this->db->from('wb_group');
-        $this->db->join('wb_group_user', 'wb_group.idx = wb_group_user.org_id');
-        $this->db->where('wb_group_user.user_id', $user_id);
+    public function get_user_orgs($user_id) {
+        $this->db->select('wb_org.idx as org_id, wb_org.org_name');
+        $this->db->from('wb_org');
+        $this->db->join('wb_org_user', 'wb_org.idx = wb_org_user.org_id');
+        $this->db->where('wb_org_user.user_id', $user_id);
         $query = $this->db->get();
         return $query->result_array();
     }
 
 
-    public function get_group_user_count($org_id) {
-        $this->db->where('wb_group_user.org_id', $org_id);
-        $this->db->from('wb_group_user');
-        $this->db->join('wb_user', 'wb_user.user_id = wb_group_user.user_id');
+    public function get_org_user_count($org_id) {
+        $this->db->where('wb_org_user.org_id', $org_id);
+        $this->db->from('wb_org_user');
+        $this->db->join('wb_user', 'wb_user.user_id = wb_org_user.user_id');
         $this->db->where('wb_user.del_yn', 'N');
         return $this->db->count_all_results();
     }
 
 
-    public function get_group_user_level($user_id, $org_id) {
+    public function get_org_user_level($user_id, $org_id) {
         $this->db->select('level');
         $this->db->where('user_id', $user_id);
         $this->db->where('org_id', $org_id);
-        $query = $this->db->get('wb_group_user');
+        $query = $this->db->get('wb_org_user');
         $result = $query->row_array();
         return $result ? $result['level'] : 0;
     }
 
 
-    public function get_group_users($org_id) {
-        $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_group_user.level, wb_user.user_mail, wb_user.user_hp, wb_user.master_yn');
+    public function get_org_users($org_id) {
+        $this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_org_user.level, wb_user.user_mail, wb_user.user_hp, wb_user.master_yn');
         $this->db->from('wb_user');
-        $this->db->join('wb_group_user', 'wb_user.user_id = wb_group_user.user_id');
-        $this->db->where('wb_group_user.org_id', $org_id);
+        $this->db->join('wb_org_user', 'wb_user.user_id = wb_org_user.user_id');
+        $this->db->where('wb_org_user.org_id', $org_id);
         $this->db->where('wb_user.del_yn', 'N');
         $query = $this->db->get();
         return $query->result_array();
@@ -66,13 +66,13 @@ class User_model extends CI_Model {
         $this->db->where('user_id', $user_id);
         $this->db->update('wb_user', $data);
 
-        $group_user_data = array(
+        $org_user_data = array(
             'level' => $level
         );
 
         $this->db->where('user_id', $user_id);
         $this->db->where('org_id', $org_id);
-        $result = $this->db->update('wb_group_user', $group_user_data);
+        $result = $this->db->update('wb_org_user', $org_user_data);
 
         return $result;
     }
@@ -89,7 +89,7 @@ class User_model extends CI_Model {
 
         $this->db->where('user_id', $user_id);
         $this->db->where('org_id', $org_id);
-        $this->db->delete('wb_group_user');
+        $this->db->delete('wb_org_user');
 
         return $this->db->affected_rows() > 0;
     }
@@ -111,15 +111,15 @@ class User_model extends CI_Model {
     }
 
 
-    public function insert_group_user($data) {
-        $this->db->insert('wb_group_user', $data);
+    public function insert_org_user($data) {
+        $this->db->insert('wb_org_user', $data);
         return $this->db->insert_id();
     }
 
-    public function get_group_user($user_id, $org_id) {
+    public function get_org_user($user_id, $org_id) {
         $this->db->where('user_id', $user_id);
         $this->db->where('org_id', $org_id);
-        $query = $this->db->get('wb_group_user');
+        $query = $this->db->get('wb_org_user');
         return $query->row_array();
     }
 

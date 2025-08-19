@@ -3,42 +3,42 @@
 
 // 그룹 수정 버튼 클릭 이벤트
 $(document).on('click', '.btn-setting', function() {
-    var groupId = $(this).data('group-id');
-    var groupName = $(this).data('group-name');
+    var orgId = $(this).data('org-id');
+    var orgName = $(this).data('org-name');
     var leaderName = $(this).data('leader-name');
     var newName = $(this).data('new-name');
 
-    $('#edit_group_id').val(groupId);
-    $('#edit_group_name').val(groupName);
+    $('#edit_org_id').val(orgId);
+    $('#edit_org_name').val(orgName);
     $('#edit_leader_name').val(leaderName);
     $('#edit_new_name').val(newName);
 
-    $('#settingGroupModal').modal('show');
+    $('#settingOrgModal').modal('show');
 });
 
 
 
 
 // 그룹명 클릭 이벤트
-$(document).on('click', '.open-group-main', function() {
-    var groupId = $(this).closest('tr').data('group-id');
-    var groupName = $(this).closest('tr').find('td:first-child').text().trim();
+$(document).on('click', '.open-org-main', function() {
+    var orgId = $(this).closest('tr').data('org-id');
+    var orgName = $(this).closest('tr').find('td:first-child').text().trim();
     var form = $('<form></form>');
     form.attr('method', 'post');
     form.attr('action', '/main/index');
 
-    var groupIdField = $('<input></input>');
-    groupIdField.attr('type', 'hidden');
-    groupIdField.attr('name', 'group_id');
-    groupIdField.attr('value', groupId);
+    var orgIdField = $('<input></input>');
+    orgIdField.attr('type', 'hidden');
+    orgIdField.attr('name', 'org_id');
+    orgIdField.attr('value', orgId);
 
-    var groupNameField = $('<input></input>');
-    groupNameField.attr('type', 'hidden');
-    groupNameField.attr('name', 'group_name');
-    groupNameField.attr('value', groupName);
+    var orgNameField = $('<input></input>');
+    orgNameField.attr('type', 'hidden');
+    orgNameField.attr('name', 'org_name');
+    orgNameField.attr('value', orgName);
 
-    form.append(groupIdField);
-    form.append(groupNameField);
+    form.append(orgIdField);
+    form.append(orgNameField);
     $(document.body).append(form);
     form.submit();
 });
@@ -48,26 +48,26 @@ $(document).on('click', '.open-group-main', function() {
 
 
 // 그룹 수정 저장 버튼 클릭 이벤트
-$(document).on('click', '#updateGroup', function() {
-    var groupId = $('#edit_group_id').val();
-    var groupName = $('#edit_group_name').val();
+$(document).on('click', '#updateOrg', function() {
+    var orgId = $('#edit_org_id').val();
+    var orgName = $('#edit_org_name').val();
     var leaderName = $('#edit_leader_name').val();
     var newName = $('#edit_new_name').val();
 
     $.ajax({
-        url: '/mypage/update_group',
+        url: '/mypage/update_org',
         type: 'POST',
         data: {
-        group_id: groupId,
-            group_name: groupName,
+        org_id: orgId,
+            org_name: orgName,
             leader_name: leaderName,
             new_name: newName
     },
     dataType: 'json',
         success: function(response) {
         if (response.status === 'success') {
-            $('tr[data-group-id="' + groupId + '"] td:nth-child(1)').text(groupName);
-            $('#settingGroupModal').modal('hide');
+            $('tr[data-org-id="' + orgId + '"] td:nth-child(1)').text(orgName);
+            $('#settingOrgModal').modal('hide');
         } else {
             alert('그룹 수정에 실패했습니다.');
         }
@@ -79,18 +79,18 @@ $(document).on('click', '#updateGroup', function() {
 });
 
 
-$(document).on('click', '#saveGroup', function () {
-    var groupName = $('#group_name').val();
+$(document).on('click', '#saveOrg', function () {
+    var orgName = $('#org_name').val();
 
-    if (groupName.trim() === '') {
+    if (orgName.trim() === '') {
         alert('그룹명을 입력해주세요.');
         return;
     }
 
     $.ajax({
-        url: '/mypage/add_group',
+        url: '/mypage/add_org',
         type: 'POST',
-        data: {group_name: groupName},
+        data: {org_name: orgName},
         dataType: 'json',
         success: function (response) {
             if (response.status === 'success') {
@@ -117,7 +117,7 @@ $(document).on('click', '#saveInvate', function () {
     }
 
     $.ajax({
-        url: '/mypage/join_group_by_invite_code',
+        url: '/mypage/join_org_by_invite_code',
         type: 'POST',
         data: {
             invite_code: inviteCode,
@@ -144,19 +144,19 @@ $(document).on('click', '#saveInvate', function () {
 });
 
 
-$(document).on('click', '.btn-del-group', function(e) {
+$(document).on('click', '.btn-del-org', function(e) {
     e.preventDefault();
-    var groupId = $(this).data('group-id');
+    var orgId = $(this).data('org-id');
 
     if (confirm('삭제 후 복구가 불가합니다.\n정말로 그룹을 삭제하시겠습니까?')) {
         $.ajax({
             url: '/mypage/update_del_yn',
             type: 'POST',
-            data: { group_id: groupId },
+            data: { org_id: orgId },
         dataType: 'json',
             success: function(response) {
             if (response.status === 'success') {
-                $('tr[data-group-id="' + groupId + '"]').remove();
+                $('tr[data-org-id="' + orgId + '"]').remove();
             } else {
                 alert('그룹 삭제에 실패했습니다.');
             }
@@ -168,12 +168,12 @@ $(document).on('click', '.btn-del-group', function(e) {
     }
 });
 
-$(document).on('click', '.add-group', function () {
+$(document).on('click', '.add-org', function () {
     if (confirm('그룹을 추가하시겠습니까?')) {
         $.ajax({
-            url: '/mypage/add_group',
+            url: '/mypage/add_org',
             type: 'POST',
-            data: {group_name: '새그룹'},
+            data: {org_name: '새그룹'},
             dataType: 'json',
             success: function (response) {
                 if (response.status === 'success') {
@@ -189,20 +189,20 @@ $(document).on('click', '.add-group', function () {
     }
 });
 
-$(document).on('click', '.btn-add-group', function () {
-    $('#addGroupModal').modal('show');
+$(document).on('click', '.btn-add-org', function () {
+    $('#addOrgModal').modal('show');
 });
 
 
 // 출석 타입 설정 버튼 클릭 이벤트
 $(document).on('click', '.btn-attendance-type-setting', function() {
-    var groupId = $(this).data('group-id');
+    var orgId = $(this).data('org-id');
 
     // 출석 타입 목록 가져오기
     $.ajax({
         url: '/mypage/get_attendance_types',
         type: 'POST',
-        data: { group_id: groupId },
+        data: { org_id: orgId },
         dataType: 'json',
         success: function(response) {
             var tableBody = $('#attendanceTypeTableBody');
@@ -242,7 +242,7 @@ $(document).on('click', '.btn-attendance-type-setting', function() {
 $(document).on('click', '#addAttendanceType', function() {
     var selectedCategoryIdx = $('#selectAttendanceTypeCategory').val();
     var selectedCategoryName = $('#selectAttendanceTypeCategory option:selected').text();
-    var groupId = $('#attendanceTypeGroupId').val();
+    var orgId = $('#attendanceTypeOrgId').val();
 
     $.ajax({
         url: '/mypage/add_attendance_type',
@@ -252,14 +252,14 @@ $(document).on('click', '#addAttendanceType', function() {
             att_type_category_idx: selectedCategoryIdx,
             att_type_category_name: selectedCategoryName,
             att_type_nickname: '출',
-            group_id: groupId
+            org_id: orgId
         },
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
                 alert('출석 타입이 추가되었습니다.');
                 // 출석 타입 목록 다시 로드
-                $('.btn-attendance-type-setting[data-group-id="' + groupId + '"]').trigger('click');
+                $('.btn-attendance-type-setting[data-org-id="' + orgId + '"]').trigger('click');
             } else {
                 alert('출석 타입 추가에 실패했습니다.');
             }
@@ -273,7 +273,7 @@ $(document).on('click', '#addAttendanceType', function() {
 // 출석 타입 저장 버튼 클릭 이벤트
 $(document).on('click', '.btn-save-attendance-type', function() {
     var row = $(this).closest('tr');
-    var groupId = $('.btn-attendance-type-setting').data('group-id');
+    var orgId = $('.btn-attendance-type-setting').data('org-id');
     var attTypeCategoryName = row.find('input[name="att_type_category_name"]').val();
     var attTypeName = row.find('input[name="att_type_name"]').val();
     var attTypeNickname = row.find('input[name="att_type_nickname"]').val();
@@ -283,7 +283,7 @@ $(document).on('click', '.btn-save-attendance-type', function() {
         url: '/mypage/save_attendance_type',
         type: 'POST',
         data: {
-            group_id: groupId,
+            org_id: orgId,
             att_type_category_name: attTypeCategoryName,
             att_type_name: attTypeName,
             att_type_nickname: attTypeNickname,
@@ -294,7 +294,7 @@ $(document).on('click', '.btn-save-attendance-type', function() {
             if (response.status === 'success') {
                 alert('출석 타입이 저장되었습니다.');
                 // 출석 타입 목록 다시 로드
-                $('.btn-attendance-type-setting[data-group-id="' + groupId + '"]').trigger('click');
+                $('.btn-attendance-type-setting[data-org-id="' + orgId + '"]').trigger('click');
             } else {
                 alert('출석 타입 저장에 실패했습니다.');
             }
@@ -348,8 +348,8 @@ $(document).on('click', '.btn-update-attendance-type', function() {
             if (response.status === 'success') {
                 alert('출석 타입이 수정되었습니다.');
                 // 출석 타입 목록 다시 로드
-                var groupId = $('#attendanceTypeGroupId').val();
-                $('.btn-attendance-type-setting[data-group-id="' + groupId + '"]').trigger('click');
+                var orgId = $('#attendanceTypeOrgId').val();
+                $('.btn-attendance-type-setting[data-org-id="' + orgId + '"]').trigger('click');
             } else {
                 alert('출석 타입 수정에 실패했습니다.');
             }
@@ -363,7 +363,7 @@ $(document).on('click', '.btn-update-attendance-type', function() {
 // 출석 타입 삭제 버튼 클릭 이벤트
 $(document).on('click', '.btn-delete-attendance-type', function() {
     var attTypeIdx = $(this).data('attendance-type-idx');
-    // console.log(groupId);
+    // console.log(orgId);
 
     if (confirm('정말로 출석 타입을 삭제하시겠습니까?')) {
         $.ajax({
@@ -375,8 +375,8 @@ $(document).on('click', '.btn-delete-attendance-type', function() {
                 if (response.status === 'success') {
                     alert('출석 타입이 삭제되었습니다.');
                     // 출석 타입 목록 다시 로드
-                    var groupId = $('#attendanceTypeGroupId').val();
-                    $('.btn-attendance-type-setting[data-group-id="' + groupId + '"]').trigger('click');
+                    var orgId = $('#attendanceTypeOrgId').val();
+                    $('.btn-attendance-type-setting[data-org-id="' + orgId + '"]').trigger('click');
                 } else {
                     alert('출석 타입 삭제에 실패했습니다.');
                 }
@@ -393,11 +393,11 @@ $(document).on('click', '.btn-delete-attendance-type', function() {
 
 
 
-function attendanceTypeSetting(groupId) {
+function attendanceTypeSetting(orgId) {
     $.ajax({
         url: '/mypage/attendance_type_setting',
         type: 'POST',
-        data: { group_id: groupId },
+        data: { org_id: orgId },
         dataType: 'json',
         success: function(response) {
 
@@ -414,7 +414,7 @@ function attendanceTypeSetting(groupId) {
                     selectOptions += '<option value="' + category.att_type_category_idx + '">' + category.att_type_category_name + '</option>';
                 });
                 $('#selectAttendanceTypeCategory').html(selectOptions);
-                $('#attendanceTypeGroupId').val(groupId);
+                $('#attendanceTypeOrgId').val(orgId);
                 // 모달 표시
                 $('#attendanceTypeModal').modal('show');
             } else {
@@ -430,20 +430,20 @@ function attendanceTypeSetting(groupId) {
 
 $(document).on('click', '#addAttendanceTypeCategory', function() {
     var newCategoryName = $('#inputAttendanceTypeCategory').val();
-    var groupId = $('#attendanceTypeGroupId').val();
+    var orgId = $('#attendanceTypeOrgId').val();
     $.ajax({
         url: '/mypage/add_attendance_type_category',
         type: 'POST',
         data: {
             att_type_category_name: newCategoryName,
-            group_id : groupId
+            org_id : orgId
         },
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success') {
                 alert('카테고리와 출석 타입이 추가되었습니다.');
                 // 출석 타입 목록 다시 로드
-                $('.btn-attendance-type-setting[data-group-id="' + groupId + '"]').trigger('click');
+                $('.btn-attendance-type-setting[data-org-id="' + orgId + '"]').trigger('click');
             } else {
                 alert('카테고리와 출석 타입 추가에 실패했습니다.');
             }
@@ -459,14 +459,14 @@ $(document).on('click', '#addAttendanceTypeCategory', function() {
 
 // 사용자 목록 버튼 클릭 이벤트
 $(document).on('click', '.btn-user-setting', function() {
-    var groupId = $(this).data('group-id');
-    $('#userListModal').data('group-id', groupId);
+    var orgId = $(this).data('org-id');
+    $('#userListModal').data('org-id', orgId);
 
     // 사용자 목록 가져오기
     $.ajax({
-        url: '/mypage/get_group_users',
+        url: '/mypage/get_org_users',
         type: 'POST',
-        data: { group_id: groupId },
+        data: { org_id: orgId },
         dataType: 'json',
         success: function(response) {
             var tableBody = $('#userListTableBody');
@@ -509,8 +509,8 @@ $(document).on('click', '.btn-user-setting', function() {
 // 엑셀 업로드 버튼 클릭 이벤트
 $(document).on('click', '.btn-member-excel-upload', function(e) {
     e.stopPropagation();
-    var groupId = $(this).closest('tr').data('group-id');
-    $('#excelUploadModal').data('group-id', groupId);
+    var orgId = $(this).closest('tr').data('org-id');
+    $('#excelUploadModal').data('org-id', orgId);
     $('#excelUploadModal').modal('show');
 });
 
@@ -518,13 +518,13 @@ $(document).on('click', '.btn-member-excel-upload', function(e) {
 
 // 업로드 시작 버튼 클릭 이벤트
 $(document).on('click', '#startUpload', function() {
-    var groupId = $('#excelUploadModal').data('group-id');
+    var orgId = $('#excelUploadModal').data('org-id');
     var file = $('#excelFile')[0].files[0];
 
     if (file) {
         var formData = new FormData();
         formData.append('excel_file', file);
-        formData.append('group_id', groupId);
+        formData.append('org_id', orgId);
 
         $('.progress').show(); // 프로그레스 바 표시
 
@@ -576,33 +576,33 @@ $(document).on('click', '#startUpload', function() {
 
 
 $(document).on('click', '.btn-print-qr', function() {
-    var groupId = $(this).data('group-id');
-    $('#printLabel01').data('group-id', groupId);
+    var orgId = $(this).data('org-id');
+    $('#printLabel01').data('org-id', orgId);
     $('#qrPrintModal').modal('show');
 });
 
 $(document).on('click', '#printLabel01', function() {
-    var groupId = $(this).data('group-id');
-    var url = '/mypage/print_qr?group_id=' + groupId;
+    var orgId = $(this).data('org-id');
+    var url = '/mypage/print_qr?org_id=' + orgId;
     window.open(url, '_blank', 'width=800,height=600');
 });
 
 
 $(document).on('click', '.btn-summery', function() {
-    var groupId = $(this).data('group-id');
-    $('#summery01').data('group-id', groupId);
-    $('#summery02').data('group-id', groupId);
+    var orgId = $(this).data('org-id');
+    $('#summery01').data('org-id', orgId);
+    $('#summery02').data('org-id', orgId);
     $('#summeryModal').modal('show');
 });
 
 $(document).on('click', '#summery01', function() {
-    var groupId = $(this).data('group-id');
-    var url = '/mypage/summery_week?group_id=' + groupId;
+    var orgId = $(this).data('org-id');
+    var url = '/mypage/summery_week?org_id=' + orgId;
     window.open(url, '_blank', 'width=800,height=600');
 });
 $(document).on('click', '#summery02', function() {
-    var groupId = $(this).data('group-id');
-    var url = '/mypage/summery_member?group_id=' + groupId;
+    var orgId = $(this).data('org-id');
+    var url = '/mypage/summery_member?org_id=' + orgId;
     window.open(url, '_blank', 'width=800,height=600');
 });
 
@@ -620,7 +620,7 @@ $(document).ready(function () {
         var userName = row.find('input[name="user_name"]').val();
         var userHp = row.find('input[name="user_hp"]').val();
         var level = row.find('select[name="level"]').val();
-        var groupId = $('#userListModal').data('group-id');
+        var orgId = $('#userListModal').data('org-id');
 
         $.ajax({
             url: '/mypage/save_user',
@@ -630,14 +630,14 @@ $(document).ready(function () {
                 user_name: userName,
                 user_hp: userHp,
                 level: level,
-                group_id: groupId
+                org_id: orgId
             },
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
                     alert('사용자 정보가 저장되었습니다.');
                     // 사용자 목록 다시 로드
-                    $('.btn-user-setting[data-group-id="' + groupId + '"]').trigger('click');
+                    $('.btn-user-setting[data-org-id="' + orgId + '"]').trigger('click');
                 } else {
                     alert('사용자 정보 저장에 실패했습니다.');
                 }
@@ -652,7 +652,7 @@ $(document).ready(function () {
     // 사용자 삭제 버튼 클릭 이벤트
     $(document).on('click', '.btn-delete-user', function() {
         var userId = $(this).closest('tr').find('td:eq(0)').text();
-        var groupId = $('#userListModal').data('group-id');
+        var orgId = $('#userListModal').data('org-id');
 
         if (confirm('정말로 사용자를 삭제하시겠습니까?')) {
             $.ajax({
@@ -660,15 +660,15 @@ $(document).ready(function () {
                 type: 'POST',
                 data: {
                     user_id: userId,
-                    group_id: groupId
+                    org_id: orgId
                 },
                 dataType: 'json',
                 success: function(response) {
                     if (response.status === 'success') {
                         alert('사용자가 삭제되었습니다.');
                         // 사용자 목록 다시 로드
-                        var groupId = $('#userListModal').data('group-id');
-                        $('.btn-user-setting[data-group-id="' + groupId + '"]').trigger('click');
+                        var orgId = $('#userListModal').data('org-id');
+                        $('.btn-user-setting[data-org-id="' + orgId + '"]').trigger('click');
                     } else {
                         alert('사용자 삭제에 실패했습니다.');
                     }
@@ -683,7 +683,7 @@ $(document).ready(function () {
     // 초대 메일 발송 버튼 클릭 이벤트
     $(document).on('click', '#invite-user', function() {
         var email = $('.form-control[aria-label="invite-email"]').val();
-        var groupId = $('#userListModal').data('group-id');
+        var orgId = $('#userListModal').data('org-id');
 
         if (email.trim() === '') {
             alert('메일 주소를 입력해주세요.');
@@ -695,7 +695,7 @@ $(document).ready(function () {
             type: 'POST',
             data: {
                 email: email,
-                group_id: groupId
+                org_id: orgId
             },
             dataType: 'json',
             success: function(response) {

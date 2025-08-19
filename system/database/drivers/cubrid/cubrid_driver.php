@@ -376,7 +376,7 @@ class CI_DB_cubrid_driver extends CI_DB {
 	/**
 	 * FROM tables
 	 *
-	 * Groups tables in FROM clauses if needed, so there is no confusion
+	 * Orgs tables in FROM clauses if needed, so there is no confusion
 	 * about operator precedence.
 	 *
 	 * @return	string

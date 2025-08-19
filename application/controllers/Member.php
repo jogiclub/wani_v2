@@ -11,7 +11,7 @@ class Member extends CI_Controller
 		parent::__construct();
 		$this->load->library('session');
 		$this->load->helper('url');
-		$this->load->model('Group_model');
+		$this->load->model('Org_model');
 		$this->load->model('Member_model');
 		$this->load->model('Member_area_model');
 		$this->load->model('User_model');
@@ -34,9 +34,9 @@ class Member extends CI_Controller
 
 		// 사용자가 접근 가능한 그룹 목록
 		if($master_yn === "N"){
-			$data['groups'] = $this->Group_model->get_user_groups($user_id);
+			$data['orgs'] = $this->Org_model->get_user_orgs($user_id);
 		} else {
-			$data['groups'] = $this->Group_model->get_user_groups_master($user_id);
+			$data['orgs'] = $this->Org_model->get_user_orgs_master($user_id);
 		}
 
 		$this->load->view('member', $data);
@@ -45,7 +45,7 @@ class Member extends CI_Controller
 	/**
 	 * 그룹 트리 데이터 가져오기 (Fancytree용)
 	 */
-	public function get_group_tree() {
+	public function get_org_tree() {
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -55,16 +55,16 @@ class Member extends CI_Controller
 
 		// 사용자가 접근 가능한 그룹 목록 가져오기
 		if($master_yn === "N"){
-			$groups = $this->Group_model->get_user_groups($user_id);
+			$orgs = $this->Org_model->get_user_orgs($user_id);
 		} else {
-			$groups = $this->Group_model->get_user_groups_master($user_id);
+			$orgs = $this->Org_model->get_user_orgs_master($user_id);
 		}
 
 		$tree_data = array();
 
-		foreach ($groups as $group) {
+		foreach ($orgs as $org) {
 			// 각 그룹의 소그룹(area) 가져오기
-			$areas = $this->Member_area_model->get_member_areas($group['group_id']);
+			$areas = $this->Member_area_model->get_member_areas($org['org_id']);
 
 			$children = array();
 			foreach ($areas as $area) {
@@ -72,16 +72,16 @@ class Member extends CI_Controller
 					'key' => 'area_' . $area['area_idx'],
 					'title' => $area['area_name'],
 					'type' => 'area',
-					'group_id' => $group['group_id'],
+					'org_id' => $org['org_id'],
 					'area_idx' => $area['area_idx']
 				);
 			}
 
 			$tree_data[] = array(
-				'key' => 'group_' . $group['group_id'],
-				'title' => $group['group_name'],
-				'type' => 'group',
-				'group_id' => $group['group_id'],
+				'key' => 'org_' . $org['org_id'],
+				'title' => $org['org_name'],
+				'type' => 'org',
+				'org_id' => $org['org_id'],
 				'expanded' => false,
 				'children' => $children
 			);
@@ -99,17 +99,17 @@ class Member extends CI_Controller
 			show_404();
 		}
 
-		$type = $this->input->post('type'); // 'group' 또는 'area'
-		$group_id = $this->input->post('group_id');
+		$type = $this->input->post('type'); // 'org' 또는 'area'
+		$org_id = $this->input->post('org_id');
 		$area_idx = $this->input->post('area_idx');
 
-		if (!$group_id) {
+		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '그룹 ID가 필요합니다.'));
 			return;
 		}
 
 		// 기본적으로 그룹의 모든 회원 가져오기
-		$members = $this->Member_model->get_group_members($group_id);
+		$members = $this->Member_model->get_org_members($org_id);
 
 		// 특정 소그룹이 선택된 경우 필터링
 		if ($type === 'area' && $area_idx) {

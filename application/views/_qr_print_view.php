@@ -18,12 +18,12 @@
 
 <script>
     $(document).ready(function() {
-        var groupId = <?php echo $group_id; ?>;
+        var orgId = <?php echo $org_id; ?>;
 
         $.ajax({
-            url: '/mypage/get_group_members',
+            url: '/mypage/get_org_members',
             type: 'POST',
-            data: { group_id: groupId },
+            data: { org_id: orgId },
             dataType: 'json',
             success: function(response) {
                 var qrCodeContainer = $('#qrCodeContainer');

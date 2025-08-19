@@ -2,7 +2,7 @@
 
 
 /*기본*/
-html, body{font-family: 'Pretendard'; font-size: 18px;}
+html, body{font-family: 'Pretendard'; font-size: 16px;}
 a{text-decoration: none; color: #0b0b0b}
 ul, dl{}
 
@@ -125,18 +125,18 @@ header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
 /*일반*/
 main{background: #fafafa; padding: 30px 0 200px;}
 
-.mypage-group-list table th{background: none}
-.mypage-group-list table td .btn-user-setting{width: 100%}
+.mypage-org-list table th{background: none}
+.mypage-org-list table td .btn-user-setting{width: 100%}
 
 .btn-profile{position: absolute; right: 10px;}
 .btn-home{font-size: 50px;border: 0;background: 0;padding: 0;margin: 0;height: initial; line-height: initial; position: absolute; left: 10px; top: 0;}
 
-.group-list-wrap{display: inline-block;width: 100%;text-align: right;position: absolute;bottom: 0;padding: 15px;border-top: 1px solid #ccc;background: #efefef;}
-.group-list-wrap .group-list{}
-.group-list-wrap .group-list ul li{cursor: pointer; display: flex;justify-content: flex-start; align-items: center; position: relative}
-.group-list-wrap .group-list ul li .btn-group-select{position: absolute; right: 0}
-.group-list-wrap .group-list ul li.active{color:#0000FF}
-.group-list-wrap .group-list ul li.active::before{content: '선택그룹'; display: inline-block; background: #0000FF; color: #fff; font-size: 12px;padding: 1px 3px;border-radius: 3px;}
+.org-list-wrap{display: inline-block;width: 100%;text-align: right;position: absolute;bottom: 0;padding: 15px;border-top: 1px solid #ccc;background: #efefef;}
+.org-list-wrap .org-list{}
+.org-list-wrap .org-list ul li{cursor: pointer; display: flex;justify-content: flex-start; align-items: center; position: relative}
+.org-list-wrap .org-list ul li .btn-org-select{position: absolute; right: 0}
+.org-list-wrap .org-list ul li.active{color:#0000FF}
+.org-list-wrap .org-list ul li.active::before{content: '선택그룹'; display: inline-block; background: #0000FF; color: #fff; font-size: 12px;padding: 1px 3px;border-radius: 3px;}
 
 .total-list-wrap{display: flex; justify-content: space-between; }
 .total-list {display: flex; justify-content: center; align-items: center;}
@@ -157,7 +157,7 @@ main{background: #fafafa; padding: 30px 0 200px;}
 .mode-list .btn-check:checked+.btn{border-bottom: 2px solid #0d9af0; color:#0d9af0!important;}
 
 @media screen and (max-width: 1200px){
-    .mode-list .btn-group{width: 100%}
+    .mode-list .btn-org{width: 100%}
     .mode-list label i{display: block; width: 100%; font-size: 30px;}
     .total-list-wrap{flex-direction: column; overflow: scroll;}
     .total-list{display: block; white-space: nowrap;}
@@ -181,8 +181,8 @@ footer .btn-area i{font-size:30px}
 
 /*모달(출석체크)*/
 .att-btn-list{display: flex; flex-direction: column; margin-bottom:20px}
-.att-btn-list .btn-group{}
-.att-btn-list .btn-group .btn{line-height: 20px;min-height: 60px;display: flex;align-items: center;font-size: 18px;justify-content: center; border: 1px solid #0d9af0; color:#0d9af0}
+.att-btn-list .btn-org{}
+.att-btn-list .btn-org .btn{line-height: 20px;min-height: 60px;display: flex;align-items: center;font-size: 18px;justify-content: center; border: 1px solid #0d9af0; color:#0d9af0}
 .att-btn-list .btn-check:checked+.btn{background: #0d9af0; border: 1px solid #0d9af0; color:#fff;}
 
 
@@ -217,10 +217,10 @@ table tr th, table tr td{text-align: center; font-weight: 500}
 #attendanceTypeModal table tr td .btn-color{border: 0;width: 25px;height: 25px;}
 
 
-.open-group-main{display: flex; width: 100%;align-items: center;justify-content: space-between;}
+.open-org-main{display: flex; width: 100%;align-items: center;justify-content: space-between;}
 
-footer .btn-add-group {position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
-footer .btn-add-group i{font-size:30px}
+footer .btn-add-org {position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
+footer .btn-add-org i{font-size:30px}
 
 .bi-info-circle-fill{color:#ff8000}
 

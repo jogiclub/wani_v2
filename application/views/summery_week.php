@@ -14,7 +14,7 @@
         <?php endforeach; ?>
     </tr>
     </thead>
-    <tbody class="table-group-divider">
+    <tbody class="table-org-divider">
     <?php foreach ($weeks as $week): ?>
         <tr>
             <td><?php echo $week['start_date']; ?> ~ <?php echo $week['end_date']; ?> (<?php echo $week['week_number']; ?>주차)</td>
