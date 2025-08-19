@@ -25,7 +25,7 @@ class Main extends CI_Controller
 			$data['user'] = $this->User_model->get_user_by_id($user_id);
 
 			// 사용자가 개설한 그룹이 있는지 확인
-			$userOrgs = $this->User_model->get_user_orgs($user_id);
+			$userOrgs = $this->Org_model->get_user_orgs($user_id);
 			if (empty($userOrgs)) {
 				// 개설한 그룹이 없으면 mypage로 리다이렉트
 				redirect('mypage');

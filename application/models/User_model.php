@@ -21,14 +21,14 @@ class User_model extends CI_Model {
 		return $query->row_array();
 	}
 
-	public function get_user_orgs($user_id) {
-		$this->db->select('wb_org.org_id as org_id, wb_org.org_name');
-		$this->db->from('wb_org');
-		$this->db->join('wb_org_user', 'wb_org.org_id = wb_org_user.org_id');
-		$this->db->where('wb_org_user.user_id', $user_id);
-		$query = $this->db->get();
-		return $query->result_array();
-	}
+//	public function get_user_orgs($user_id) {
+//		$this->db->select('wb_org.org_id as org_id, wb_org.org_name');
+//		$this->db->from('wb_org');
+//		$this->db->join('wb_org_user', 'wb_org.org_id = wb_org_user.org_id');
+//		$this->db->where('wb_org_user.user_id', $user_id);
+//		$query = $this->db->get();
+//		return $query->result_array();
+//	}
 
 	public function get_org_user_count($org_id) {
 		$this->db->where('wb_org_user.org_id', $org_id);

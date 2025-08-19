@@ -25,21 +25,21 @@
 
             <div class="col-lg-5 mb-2">
                 <div class="input-group">
-                    <button type="button" class="input-org-text prev-week"><i class="bi bi-chevron-left"></i></button>
-                    <button type="button" class="input-org-text dropdown-toggle current-week" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button type="button" class="input-group-text prev-week"><i class="bi bi-chevron-left"></i></button>
+                    <button type="button" class="input-group-text dropdown-toggle current-week" data-bs-toggle="dropdown" aria-expanded="false">
                         <!-- 현재 주차 범위는 프론트엔드에서 동적으로 설정됩니다. -->
                     </button>
                     <ul class="dropdown-menu dropdown-current-week">
                         <!-- 주차 범위 드롭다운 메뉴는 프론트엔드에서 동적으로 생성됩니다. -->
                     </ul>
-                    <button type="button" class="input-org-text next-week"><i class="bi bi-chevron-right"></i></button>
+                    <button type="button" class="input-group-text next-week"><i class="bi bi-chevron-right"></i></button>
                 </div>
             </div>
             <div class="col-lg-7 mb-2">
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="검색중..." aria-label="검색중..." aria-describedby="basic-addon2" id="input-search" value="검색중..." autocomplete="off"  disabled>
                     <div class="att-dropdown-wrap">
-                        <button class="input-org-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
+                        <button class="input-group-text dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="dropdown-toggle-att-type"></button>
                         <ul class="dropdown-menu dropdown-att-type">
                             <?php $prev_category_idx = null; ?>
                             <?php foreach ($attendance_types as $type): ?>
@@ -110,8 +110,8 @@
     </div>
 </main>
 <footer>
-	<button class="input-org-text btn-area" id="basic-addon3" data-bs-toggle="modal" data-bs-target="#newAreaModal"><i class="bi bi-folder"></i></button>
-    <button class="input-org-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
+	<button class="input-group-text btn-area" id="basic-addon3" data-bs-toggle="modal" data-bs-target="#newAreaModal"><i class="bi bi-folder"></i></button>
+    <button class="input-group-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
 </footer>
 
 

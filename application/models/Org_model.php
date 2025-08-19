@@ -41,7 +41,21 @@ class Org_model extends CI_Model {
 		$this->db->group_by('wb_org.org_id');
 		$query = $this->db->get();
 //		print_r($this->db->last_query());
-//		return false;
+
+		return $query->result_array();
+	}
+
+	public function get_user_orgs($user_id) {
+		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.leader_name, wb_org.new_name, COUNT(wb_member.member_idx) as member_count');
+		$this->db->from('wb_org');
+		$this->db->join('wb_org_user', 'wb_org.org_id = wb_org_user.org_id');
+		$this->db->join('wb_member', 'wb_org.org_id = wb_member.org_id AND wb_member.del_yn = "N"', 'left');
+		$this->db->where('wb_org_user.user_id', $user_id);
+		$this->db->where('wb_org.del_yn', 'N');
+		$this->db->group_by('wb_org.org_id');
+		$query = $this->db->get();
+//				print_r($this->db->last_query());
+
 		return $query->result_array();
 	}
 
