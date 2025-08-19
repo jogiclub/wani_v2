@@ -30,6 +30,7 @@
 							<label class="cursor-pointer avatar avatar-5xl" for="avatarFile">
 								<img src="/assets/images/photo_no.png" class="rounded-circle" width="100" height="100">
 							</label>
+
 							<div class="mb-3">
 								<label for="formFile" class="form-label">100×100 사이즈 이미지<br/>jpg/png 아이콘 가능</label>
 								<input class="form-control" type="file" id="formFile">

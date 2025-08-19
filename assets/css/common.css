@@ -255,3 +255,6 @@ footer .btn-add-org i{font-size:30px}
 @media screen and (max-width: 768px){
 	.gnb-menu .sidebar{position: initial}
 }
+
+
+.btn-group .dropdown-toggle-split{flex: 0 0 auto;}

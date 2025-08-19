@@ -15,84 +15,57 @@ class Main extends CI_Controller
 	public function index()
 	{
 		// 사용자가 로그인되어 있는지 확인
-		if ($this->session->userdata('user_id')) {
-			// 로그인된 사용자의 정보 가져오기
-			$data['user'] = $this->session->userdata();
-			$user_id = $this->session->userdata('user_id');
+		if (!$this->session->userdata('user_id')) {
+			redirect('login/index');
+			return;
+		}
 
-			// User_model을 로드하고 사용자 정보 가져오기
-			$this->load->model('User_model');
-			$data['user'] = $this->User_model->get_user_by_id($user_id);
+		// 헤더 데이터 준비
+		$header_data = $this->prepare_header_data();
+		if (empty($header_data['user_orgs'])) {
+			redirect('mypage');
+			return;
+		}
 
-			// 사용자가 개설한 그룹이 있는지 확인
-			$userOrgs = $this->Org_model->get_user_orgs($user_id);
-			if (empty($userOrgs)) {
-				// 개설한 그룹이 없으면 mypage로 리다이렉트
-				redirect('mypage');
-			}
+		$data = $header_data;
+		$user_id = $this->session->userdata('user_id');
+		$currentOrgId = $data['current_org']['org_id'];
 
-			// Org_model 로드
-			$this->load->model('Org_model');
-
-			// POST로 전달된 org_id 가져오기
-			$postOrgId = $this->input->post('org_id');
-
-			// 쿠키에 저장된 activeOrg 가져오기
-			$activeOrgId = $this->input->cookie('activeOrg');
-
-			if ($postOrgId) {
-				// POST로 전달된 org_id가 있는 경우
-				$postOrg = $this->Org_model->get_org_by_id($postOrgId);
-				$data['org_name'] = $postOrg['org_name'];
-				$data['postOrg'] = $postOrg;
-
-				// 쿠키에 activeOrg 설정 (만료 시간: 1일)
-				$this->input->set_cookie('activeOrg', $postOrgId, 86400);
-				$currentOrgId = $postOrgId;
-			} else if ($activeOrgId) {
-				// 쿠키에 저장된 activeOrg이 있는 경우
-				$activeOrg = $this->Org_model->get_org_by_id($activeOrgId);
-				$data['org_name'] = $activeOrg['org_name'];
-				$currentOrgId = $activeOrgId;
-			} else {
-				// POST로 전달된 org_id와 쿠키에 저장된 activeOrg이 없는 경우
-				$min_org_id = $this->Org_model->get_min_org_id($user_id);
-				if ($min_org_id) {
-					$activeOrg = $this->Org_model->get_org_by_id($min_org_id);
-					$data['org_name'] = $activeOrg['org_name'];
-					$currentOrgId = $min_org_id;
-
-					// 쿠키에 activeOrg 설정 (만료 시간: 1일)
-					$this->input->set_cookie('activeOrg', $min_org_id, 86400);
-				} else {
-					$data['org_name'] = ''; // 그룹이 없는 경우 기본값 설정
+		// POST로 조직 변경 요청이 있는 경우 처리
+		$postOrgId = $this->input->post('org_id');
+		if ($postOrgId) {
+			// 사용자가 해당 조직에 접근 권한이 있는지 확인
+			$has_access = false;
+			foreach ($data['user_orgs'] as $org) {
+				if ($org['org_id'] == $postOrgId) {
+					$has_access = true;
+					$data['current_org'] = $org;
+					$currentOrgId = $postOrgId;
+					$this->input->set_cookie('activeOrg', $postOrgId, 86400);
+					break;
 				}
 			}
 
-
-			// 해당 그룹의 area_name 목록 가져오기
-			$this->load->model('Member_area_model');
-			$data['member_areas'] = $this->Member_area_model->get_member_areas($currentOrgId);
-
-
-			// 활성화된 그룹의 출석타입 정보 가져오기
-			$this->load->model('Attendance_model');
-			$data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentOrgId);
-
-			// 선택된 모드 설정 (기본값: mode-1)
-			$data['mode'] = $this->input->post('mode') ?? 'mode-1';
-
-			// 사용자의 그룹 레벨 가져오기
-			$user_group = $this->User_model->get_org_user($user_id, $currentOrgId);
-			$user_level = $user_group ? $user_group['level'] : 0;
-			$data['user_level'] = $user_level;
-
-			// main 뷰 로드
-			$this->load->view('main', $data);
-		} else {
-			// 로그인되어 있지 않은 경우 로그인 페이지로 리다이렉트
-			redirect('login/index');
+			if (!$has_access) {
+				show_error('접근 권한이 없는 조직입니다.', 403);
+				return;
+			}
 		}
+
+
+		$this->load->model('Member_area_model');
+		$data['member_areas'] = $this->Member_area_model->get_member_areas($currentOrgId);
+
+		$this->load->model('Attendance_model');
+		$data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentOrgId);
+
+		$data['mode'] = $this->input->post('mode') ?? 'mode-1';
+
+		$user_group = $this->User_model->get_org_user($user_id, $currentOrgId);
+		$user_level = $user_group ? $user_group['level'] : 0;
+		$data['user_level'] = $user_level;
+
+		$this->load->view('main', $data);
 	}
 
 
@@ -595,7 +568,8 @@ class Main extends CI_Controller
 	}
 
 
-	public function logout() {
+	public function logout()
+	{
 		// 쿠키 헬퍼 로드
 		$this->load->helper('cookie');
 
