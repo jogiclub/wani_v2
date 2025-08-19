@@ -1,10 +1,7 @@
-<html lang="ko">
-<head>
-    <?php
-//	$this->load->view('header');
-	?>
-</head>
-<body>
+
+    <?php $this->load->view('header'); ?>
+
+
 
 <header class="pt-3 pb-3 border-bottom d-flex justify-content-center">
     <div class="logo"><img src="/assets/images/logo.png?2"></div>
@@ -27,10 +24,8 @@
         </div>
     </div>
 </main>
-<footer>
 
-</footer>
-<?php //$this->load->view('footer'); ?>
+<?php $this->load->view('footer'); ?>
 <script type="text/javascript" src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js"charset="utf-8"></script>
 <script src="/assets/js/login.js?<?php echo date('Ymdhis');?>"></script>
 <script>

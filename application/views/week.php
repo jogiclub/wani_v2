@@ -18,7 +18,7 @@
                     <li><a class="dropdown-item" href="#"><?php if(isset($user['user_name'])){echo $user['user_name'];} ?></a></li>
                     <li><a class="dropdown-item" href="#"><?php if(isset($user['user_mail'])){echo $user['user_mail'];} ?></a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
+                    <li><a class="dropdown-item" href="<?php echo base_url('login/logout'); ?>">로그아웃</a></li>
                 </ul>-->
             </div>
 

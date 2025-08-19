@@ -1,7 +1,6 @@
 <meta charset="utf-8">
-
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title></title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="왔니" />
 <meta name="keywords" content="출석 체크, 교적, 메모, 심방" />
@@ -31,46 +30,50 @@
 
 
 
-
-<header class="navbar sticky-top flex-md-nowrap p-0 shadow" data-bs-theme="dark">
-	<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 text-white logo" href="#">
-		<img src="/assets/images/logo.png?2">
-	</a>
-	<ul class="navbar-nav flex-row d-md-none">
-		<li class="nav-item text-nowrap">
-			<button class="nav-link px-3 text-white" type="button" data-bs-toggle="collapse"
-					data-bs-target="#navbarSearch" aria-controls="navbarSearch" aria-expanded="false"
-					aria-label="Toggle search">
-				<svg class="bi" aria-hidden="true">
-					<use xlink:href="#search"></use>
-				</svg>
-			</button>
-		</li>
-		<li class="nav-item text-nowrap">
-			<button class="nav-link px-3 text-white" type="button" data-bs-toggle="offcanvas"
-					data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false"
-					aria-label="Toggle navigation">
-				<svg class="bi" aria-hidden="true">
-					<use xlink:href="#list"></use>
-				</svg>
-			</button>
-		</li>
-	</ul>
-	<div id="navbarSearch" class="navbar-search w-100 collapse">
-		<input class="form-control w-100 rounded-0 border-0" type="text" placeholder="Search" aria-label="Search">
-	</div>
-
-	<div id="navbarProfile">
-		<a class="btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="top: -4px">
-			<img src="<?php if($user['user_profile_image']){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="40" height="40">
+<?php if($this->session->userdata('user_id')): ?>
+<header class="navbar sticky-top flex-md-nowrap p-0 justify-content-start shadow bg-white">
+	<div class="header-start col-md-6 col-10">
+		<a class="navbar-brand col-6 col-lg-1 me-0 px-3 fs-6 logo" href="#">
+			<img src="/assets/images/logo.png?2">
 		</a>
-		<ul class="dropdown-menu">
-			<li><a class="dropdown-item" href="#"><?php if($user['user_name']){echo $user['user_name'];} ?></a></li>
-			<li><a class="dropdown-item" href="#"><?php if($user['user_mail']){echo $user['user_mail'];} ?></a></li>
-			<li><hr class="dropdown-divider"></li>
-			<li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
-		</ul>
+
+		<div class="btn-group col-6">
+			<button type="button" class="btn btn-light text-truncate">오병이어교회 고등부</button>
+			<button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+				<span class="visually-hidden">Toggle Dropdown</span>
+			</button>
+			<ul class="dropdown-menu">
+				<li><a class="dropdown-item" href="#">오병이어교회 고등부</a></li>
+				<li><a class="dropdown-item" href="#">오병이어교회 1교구 1지역</a></li>
+				<li><a class="dropdown-item" href="#">오병이어교회 1교구 3지역</a></li>
+				<li><hr class="dropdown-divider"></li>
+				<li><a class="dropdown-item" href="#"><i class="bi bi-plus-square"></i> 조직 추가</a></li>
+			</ul>
+		</div>
 	</div>
+	<div class="header-end col-md-6 col-2 d-flex justify-content-end px-3 gap-3 align-items-center">
+		<ul class="navbar-nav flex-row d-md-none fs-1">
+			<li class="nav-item text-nowrap">
+				<button class="nav-link " type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+					<i class="bi bi-list"></i>
+				</button>
+			</li>
+		</ul>
+
+		<div id="navbarSearch" class="navbar-search w-100 collapse">
+			<input class="form-control w-100 rounded-0 border-0" type="text" placeholder="Search" aria-label="Search">
+		</div>
+
+
+		<div id="navbarProfile" class="profile-area d-md-flex align-items-center gap-3 d-none">
+			<img src="<?php if($user['user_profile_image']){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle profile-img" width="40" height="40">
+			<div class="profile-name">
+				<span><a class="dropdown-item" href="#"><?php if($user['user_name']){echo $user['user_name'];} ?></a></span>
+				<span class="profile-mail"><a class="dropdown-item" href="#"><?php if($user['user_mail']){echo $user['user_mail'];} ?></a></span>
+			</div>
+		</div>
+	</div>
+
 
 </header>
 
@@ -78,8 +81,7 @@
 <div class="container-fluid gnb-menu">
 	<div class="row">
 		<div class="sidebar border border-right col-md-3 col-lg-2 p-0 bg-body-tertiary">
-			<div class="offcanvas-md offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu"
-				 aria-labelledby="sidebarMenuLabel">
+			<div class="offcanvas-md offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
 				<div class="offcanvas-header">
 					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
 				</div>
@@ -88,39 +90,39 @@
 						OVERVIEW
 					</h6>					
 					<ul class="nav flex-column">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1 active" aria-current="page" href="#">대시보드</a></li>						
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1 active" aria-current="page" href="#"><i class="bi bi-file-earmark-ruled"></i> 대시보드</a></li>
 					</ul>
 					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
 					MEMBER
 					</h6>
 					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">회원관리</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">출석관리</a></li>						
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">판</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-people"></i> 회원관리</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-clipboard-check"></i> 출석관리</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-person-check"></i> 판</a></li>
 					</ul>
 					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
 						STATICS
 					</h6>
 					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">주별통계</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">회원별통계</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-graph-up-arrow"></i> 주별통계</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-clipboard-data"></i> 회원별통계</a></li>
 					</ul>
 					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
 						SETTING
 					</h6>
 					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">조직설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">상세필드설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">출석설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">사용자관리</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-diagram-3-fill"></i> 조직설정</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-input-cursor-text"></i> 상세필드설정</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-sliders2-vertical"></i> 출석설정</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i class="bi bi-person-video"></i> 사용자관리</a></li>
 					</ul>
 					<hr class="my-3">
 					<ul class="nav flex-column mb-auto">						
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('main/logout'); ?>"><i class="bi bi-box-arrow-right"></i> 로그아웃</a></li>
 					</ul>
 				</div>
 			</div>
 		</div>
 		<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-
+<?php endif; ?>
 

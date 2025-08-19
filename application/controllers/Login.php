@@ -12,6 +12,10 @@ class Login extends CI_Controller
     }
 
     public function index(){
+		$user_id = $this->session->userdata('user_id');
+		if($user_id) {
+			redirect('main/logout');
+		}
         $this->load->view('login');
     }
 
@@ -387,5 +391,7 @@ class Login extends CI_Controller
 
         redirect('login');
     }
+
+
 
 }

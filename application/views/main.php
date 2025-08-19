@@ -4,23 +4,10 @@
 </head>
 <body>
 
-<header class="pt-3 pb-2 ">
-    <div class="container-xl">
+<div class="pt-3 pb-2 ">
+    <div class="container">
         <div class="row">
-            <div class="col-12 text-center position-relative">
-                <h2 class="mb-1 group-name"><b></b></h2>
-                <button class="btn-home" type="button" onclick="go_url('/mypage')"><i class="bi bi-arrow-left-short"></i></button>
-                <!--
-                <a class="btn-profile dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" style="top: -4px">
-                    <img src="<?php if(isset($user['user_profile_image'])){echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle" width="50" height="50">
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#"><?php if(isset($user['user_name'])){echo $user['user_name'];} ?></a></li>
-                    <li><a class="dropdown-item" href="#"><?php if(isset($user['user_mail'])){echo $user['user_mail'];} ?></a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="<?php echo base_url('main/logout'); ?>">로그아웃</a></li>
-                </ul>-->
-            </div>
+
 
 
             <div class="col-xl-12 text-center mt-1 mb-3 mode-list">
@@ -100,7 +87,7 @@
 
         </div>
     </div>
-</header>
+</div>
 <main>
     <div class="container-xl">
         <div class="row">
