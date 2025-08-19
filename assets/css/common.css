@@ -113,7 +113,7 @@ header .header-start{}
 header .header-end{}
 header .profile-name {line-height: 18px;}
 header .profile-name .profile-mail{font-size: 12px; color:#999}
-header .logo img{width: 100px}
+header .logo img{width: 80px}
 header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
 header h2 b{position: relative;font-size: 38px;}
 header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}

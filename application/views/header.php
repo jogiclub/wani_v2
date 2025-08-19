@@ -33,12 +33,12 @@
 <?php if($this->session->userdata('user_id')): ?>
 <header class="navbar sticky-top flex-md-nowrap p-0 justify-content-start shadow bg-white">
 	<div class="header-start col-md-6 col-10">
-		<a class="navbar-brand col-6 col-lg-1 me-0 px-3 fs-6 logo" href="#">
-			<img src="/assets/images/logo.png?2">
+		<a class="navbar-brand col-6 col-lg-1 me-0 px-3 fs-6 logo pe-0" href="#">
+			<img src="/assets/images/logo.png">
 		</a>
 
-		<div class="btn-group col-6">
-			<button type="button" class="btn btn-light text-truncate">오병이어교회 고등부</button>
+		<div class="btn-group col-md-4 col-8">
+			<button type="button" class="btn btn-light text-truncate text-start">오병이어교회 고등부</button>
 			<button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
 				<span class="visually-hidden">Toggle Dropdown</span>
 			</button>
