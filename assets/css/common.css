@@ -240,9 +240,14 @@ footer .btn-add-group i{font-size:30px}
 
 /*메뉴*/
 .gnb-menu{}
-.gnb-menu h6.sidebar-heading{font-size: 12px; color:#999!important;}
-.gnb-menu ul.nav li a{color:#000; padding-top: 5px; padding-bottom: 5px}
+.gnb-menu .sidebar{position: fixed; height: 100%}
+.gnb-menu .sidebar h6.sidebar-heading{font-size: 12px; color:#999!important;}
+.gnb-menu .sidebar ul.nav li a{color:#000; padding-top: 5px; padding-bottom: 5px}
 
 .profile-area{}
 .profile-area .profile-img{}
 .profile-area .profile-name{}
+
+@media screen and (max-width: 768px){
+	.gnb-menu .sidebar{position: initial}
+}
