@@ -194,7 +194,7 @@ class Org extends CI_Controller
 		}
 
 		// 업로드 디렉토리 설정
-		$upload_path = './assets/uploads/org_icons/';
+		$upload_path = './uploads/org_icons/';
 		if (!is_dir($upload_path)) {
 			mkdir($upload_path, 0755, true);
 		}
@@ -210,7 +210,7 @@ class Org extends CI_Controller
 
 		if ($this->upload->do_upload('org_icon')) {
 			$upload_data = $this->upload->data();
-			$file_path = '/assets/uploads/org_icons/' . $upload_data['file_name'];
+			$file_path = '/uploads/org_icons/' . $upload_data['file_name'];
 
 			// 기존 아이콘 파일 삭제
 			$current_org = $this->Org_model->get_org_detail_by_id($org_id);
