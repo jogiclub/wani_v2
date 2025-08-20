@@ -148,10 +148,10 @@
 						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1"
 												href="<?php echo base_url('member'); ?>"><i class="bi bi-people"></i>
 								회원관리</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i
-									class="bi bi-clipboard-check"></i> 출석관리</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i
-									class="bi bi-person-check"></i> 판</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">
+								<i class="bi bi-clipboard-check"></i> 출석관리</a></li>
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('main'); ?>">
+								<i class="bi bi-person-check"></i> 판</a></li>
 					</ul>
 					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
 						STATICS

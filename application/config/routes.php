@@ -105,3 +105,10 @@ $route['week/(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
 
 // 직접 group_code/year/week 형식으로 접근하는 경우도 처리
 $route['(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
+
+
+// Org 컨트롤러 관련 라우팅 추가
+$route['org/update_org_info'] = 'org/update_org_info';
+$route['org/upload_org_icon'] = 'org/upload_org_icon';
+$route['org/delegate_admin'] = 'org/delegate_admin';
+$route['org/get_org_detail'] = 'org/get_org_detail';
