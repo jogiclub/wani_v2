@@ -22,7 +22,7 @@
 		</ol>
 	</nav>
 	<div class="row align-items-center justify-content-between g-3 mb-4">
-		<h3 class="col-6 my-1">회원관리</h3>
+		<h3 class="page-title col-6 my-1">회원관리</h3>
 		<div class="col-6 my-1">
 			<div class="text-end" role="group" aria-label="Basic example">
 				<button type="button" class="btn btn-sm btn-primary"><i class="bi bi-save"></i> 저장</button>

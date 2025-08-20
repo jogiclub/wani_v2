@@ -147,7 +147,7 @@ $(document).ready(function() {
 						preview.replaceWith(
 							`<img src="${response.file_path}" 
                                   alt="조직 아이콘" 
-                                  class="rounded" 
+                                  class="circle" 
                                   width="100" 
                                   height="100" 
                                   style="object-fit: cover; border: 1px solid #ddd;" 
@@ -184,7 +184,7 @@ $(document).ready(function() {
 					preview.replaceWith(
 						`<img src="${e.target.result}" 
                               alt="조직 아이콘" 
-                              class="rounded" 
+                              class="circle" 
                               width="100" 
                               height="100" 
                               style="object-fit: cover; border: 1px solid #ddd;" 

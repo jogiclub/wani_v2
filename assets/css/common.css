@@ -15,7 +15,8 @@ ul, dl{}
 .form-switch{display: flex; align-items: center}
 .form-switch label{margin-left: 5px}
 .offcanvas.offcanvas-end{width: 700px}
-
+.circle{border-radius: 50%;}
+.badge{font-weight: 400; letter-spacing: 0}
 
 .text-bg-primary{background: #0d9af0;}
 .offcanvas{border-left:1px solid #0d9af0!important;}
@@ -26,8 +27,8 @@ ul, dl{}
 .popover{font-family: 'Pretendard'; font-size: 16px;}
 .popover .popover-header{font-size: 16px;}
 .popover .popover-body{font-size: 16px;}
-
-
+.form-label{font-size: 14px; color: #999; font-weight: 600;}
+.list-group-item+.list-group-item.active{background: #0d9af0; border-color: #0d9af0; color:#fff}
 /*마손리*/
 .grid-sizer,.grid-item {width: 16.66%; padding: 3px;}
 .grid-item .member-card{border: 1px solid #999; padding: 25px 12px 6px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer; background: #fff}
@@ -258,3 +259,12 @@ footer .btn-add-org i{font-size:30px}
 
 
 .btn-group .dropdown-toggle-split{flex: 0 0 auto;}
+
+
+.card .card-header{padding:15px}
+.card .card-header .card-title{font-size: 20px; font-weight: 700;}
+
+.page-title{font-weight: 700;letter-spacing: -1px;}
+
+
+
