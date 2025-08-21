@@ -110,8 +110,7 @@ $(document).ready(function() {
 			}
 		});
 	});
-
-	// 필드 수정 버튼 클릭
+// 필드 수정 버튼 클릭
 	$(document).on('click', '.edit-field-btn', function() {
 		var fieldIdx = $(this).data('field-idx');
 		var fieldName = $(this).data('field-name');
@@ -122,13 +121,26 @@ $(document).ready(function() {
 		$('#edit_field_name').val(fieldName);
 		$('#edit_field_type').val(fieldType).trigger('change');
 
-		// 설정 정보 파싱
+		// 설정 정보 파싱 (한글 디코딩 처리)
 		try {
-			var settings = JSON.parse(fieldSettings);
-			if (fieldType === 'select' && settings.options) {
+			var settings;
+			if (typeof fieldSettings === 'string') {
+				// HTML entity가 있을 수 있으므로 디코딩
+				var tempDiv = document.createElement('div');
+				tempDiv.innerHTML = fieldSettings;
+				var decodedSettings = tempDiv.textContent || tempDiv.innerText || '';
+				settings = JSON.parse(decodedSettings);
+			} else {
+				settings = fieldSettings;
+			}
+
+			if (fieldType === 'select' && settings.options && Array.isArray(settings.options)) {
 				$('#edit_select_options').val(settings.options.join('\n'));
+			} else {
+				$('#edit_select_options').val('');
 			}
 		} catch (e) {
+			console.error('설정 파싱 오류:', e);
 			$('#edit_select_options').val('');
 		}
 

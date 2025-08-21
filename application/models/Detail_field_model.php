@@ -37,6 +37,14 @@ class Detail_field_model extends CI_Model {
 	 * 새로운 상세필드 추가
 	 */
 	public function insert_detail_field($data) {
+		// UTF-8 인코딩 보장
+		if (isset($data['field_settings']) && is_string($data['field_settings'])) {
+			// 이미 JSON 문자열인 경우 그대로 사용
+			if (!$this->is_json($data['field_settings'])) {
+				$data['field_settings'] = json_encode($data['field_settings'], JSON_UNESCAPED_UNICODE);
+			}
+		}
+
 		$data['regi_date'] = date('Y-m-d H:i:s');
 		$data['modi_date'] = date('Y-m-d H:i:s');
 		return $this->db->insert('wb_detail_field', $data);
@@ -46,9 +54,25 @@ class Detail_field_model extends CI_Model {
 	 * 상세필드 정보 업데이트
 	 */
 	public function update_detail_field($field_idx, $data) {
+		// UTF-8 인코딩 보장
+		if (isset($data['field_settings']) && is_string($data['field_settings'])) {
+			// 이미 JSON 문자열인 경우 그대로 사용
+			if (!$this->is_json($data['field_settings'])) {
+				$data['field_settings'] = json_encode($data['field_settings'], JSON_UNESCAPED_UNICODE);
+			}
+		}
+
 		$data['modi_date'] = date('Y-m-d H:i:s');
 		$this->db->where('field_idx', $field_idx);
 		return $this->db->update('wb_detail_field', $data);
+	}
+
+	/**
+	 * 문자열이 유효한 JSON인지 확인
+	 */
+	private function is_json($string) {
+		json_decode($string);
+		return (json_last_error() == JSON_ERROR_NONE);
 	}
 
 	/**

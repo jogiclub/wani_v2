@@ -169,14 +169,29 @@ class Detail_field extends CI_Controller
 	/**
 	 * 새로운 상세필드 추가
 	 */
-	public function add_field()
-	{
+	/**
+	 * 새로운 상세필드 추가
+	 */
+	public function add_field() {
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
 
 		$user_id = $this->session->userdata('user_id');
-		$org_id = $this->session->userdata('current_org_id');
+
+		// org_id 가져오기 - 우선순위: POST > 쿠키 > 세션
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			$org_id = $this->input->cookie('activeOrg');
+		}
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
 
 		// 권한 검증
 		$user_level = $this->Detail_field_model->get_org_user_level($user_id, $org_id);
@@ -198,7 +213,7 @@ class Detail_field extends CI_Controller
 			'field_name' => $field_name,
 			'org_id' => $org_id,
 			'field_type' => $field_type,
-			'field_settings' => $field_settings ? json_encode($field_settings) : '{}',
+			'field_settings' => $field_settings ? json_encode($field_settings, JSON_UNESCAPED_UNICODE) : '{}',
 			'display_order' => $this->Detail_field_model->get_next_display_order($org_id),
 			'is_active' => 'Y'
 		);
@@ -213,16 +228,25 @@ class Detail_field extends CI_Controller
 	}
 
 	/**
-	 * 상세필드 정보 업데이트
+	 * 상세필드 수정
 	 */
-	public function update_field()
-	{
+	public function update_field() {
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
 
 		$user_id = $this->session->userdata('user_id');
-		$org_id = $this->session->userdata('current_org_id');
+
+		// org_id 가져오기
+		$org_id = $this->input->cookie('activeOrg');
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
 
 		// 권한 검증
 		$user_level = $this->Detail_field_model->get_org_user_level($user_id, $org_id);
@@ -241,13 +265,13 @@ class Detail_field extends CI_Controller
 			return;
 		}
 
-		$data = array(
+		$update_data = array(
 			'field_name' => $field_name,
 			'field_type' => $field_type,
-			'field_settings' => $field_settings ? json_encode($field_settings) : '{}'
+			'field_settings' => $field_settings ? json_encode($field_settings, JSON_UNESCAPED_UNICODE) : '{}'
 		);
 
-		$result = $this->Detail_field_model->update_detail_field($field_idx, $data);
+		$result = $this->Detail_field_model->update_detail_field($field_idx, $update_data);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '상세필드가 수정되었습니다.'));
