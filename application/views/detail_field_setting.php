@@ -1,11 +1,6 @@
-<!--
-파일 위치: E:\SynologyDrive\Example\wani\application\views\detail_field_setting.php
-역할: 상세필드 설정 화면의 뷰 파일
--->
-<head>
+
 	<?php $this->load->view('header'); ?>
-</head>
-<body>
+
 
 <div class="container pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -267,5 +262,3 @@
 </div>
 
 <script src="<?php echo base_url('assets/js/detail_field.js'); ?>"></script>
-</body>
-</html>

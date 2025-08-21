@@ -11,6 +11,55 @@ class Detail_field extends CI_Controller {
 		parent::__construct();
 		$this->load->model('Detail_field_model');
 		$this->load->library('session');
+		$this->load->helper('url'); // URL 헬퍼 로드 추가
+		$this->load->model('User_model'); // User_model 추가
+	}
+
+	/**
+	 * 헤더에서 사용할 조직 데이터 준비
+	 */
+	private function prepare_header_data() {
+		if (!$this->session->userdata('user_id')) {
+			return array();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 사용자 정보 가져오기
+		$user_data = $this->User_model->get_user_by_id($user_id);
+
+		// 사용자가 접근 가능한 조직 목록 가져오기
+		if ($master_yn === "N") {
+			$user_orgs = $this->Detail_field_model->get_user_orgs($user_id);
+		} else {
+			$user_orgs = $this->Detail_field_model->get_user_orgs_master($user_id);
+		}
+
+		// 현재 활성화된 조직 정보
+		$active_org_id = $this->input->cookie('activeOrg');
+		$current_org = null;
+
+		if ($active_org_id) {
+			foreach ($user_orgs as $org) {
+				if ($org['org_id'] == $active_org_id) {
+					$current_org = $org;
+					break;
+				}
+			}
+		}
+
+		// 활성화된 조직이 없거나 유효하지 않으면 첫 번째 조직을 기본값으로 설정
+		if (!$current_org && !empty($user_orgs)) {
+			$current_org = $user_orgs[0];
+			$this->input->set_cookie('activeOrg', $current_org['org_id'], 86400);
+		}
+
+		return array(
+			'user' => $user_data,
+			'user_orgs' => $user_orgs,
+			'current_org' => $current_org
+		);
 	}
 
 	/**
@@ -20,6 +69,13 @@ class Detail_field extends CI_Controller {
 		$user_id = $this->session->userdata('user_id');
 		if (!$user_id) {
 			redirect('login');
+			return;
+		}
+
+		// 헤더 데이터 준비
+		$header_data = $this->prepare_header_data();
+		if (empty($header_data['user_orgs'])) {
+			redirect('mypage');
 			return;
 		}
 
@@ -33,7 +89,13 @@ class Detail_field extends CI_Controller {
 			$currentOrgId = $request_org_id;
 		}
 
-		// 여전히 current_org_id가 없으면 사용자의 첫 번째 조직을 기본값으로 설정
+		// 여전히 current_org_id가 없으면 현재 활성화된 조직을 기본값으로 설정
+		if (!$currentOrgId && $header_data['current_org']) {
+			$currentOrgId = $header_data['current_org']['org_id'];
+			$this->session->set_userdata('current_org_id', $currentOrgId);
+		}
+
+		// 그래도 없으면 첫 번째 조직을 사용
 		if (!$currentOrgId) {
 			$master_yn = $this->session->userdata('master_yn');
 			if ($master_yn === "N") {
@@ -72,6 +134,8 @@ class Detail_field extends CI_Controller {
 			$org['user_master_yn'] = $this->session->userdata('master_yn');
 		}
 
+		// 헤더 데이터와 페이지 데이터를 합쳐서 뷰에 전달
+		$data = $header_data; // 헤더 데이터 포함
 		$data['orgs'] = $orgs;
 
 		// 현재 선택된 조직의 상세 정보 가져오기
@@ -80,6 +144,10 @@ class Detail_field extends CI_Controller {
 		// 현재 조직의 상세필드 목록 가져오기
 		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields_by_org($currentOrgId);
 
+		// 뷰 로드 전 데이터 확인
+		log_message('debug', 'Detail_field: Loading view with data - org_id: ' . $currentOrgId);
+
+		// 뷰 로드
 		$this->load->view('detail_field_setting', $data);
 	}
 

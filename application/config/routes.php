@@ -112,3 +112,12 @@ $route['org/update_org_info'] = 'org/update_org_info';
 $route['org/upload_org_icon'] = 'org/upload_org_icon';
 $route['org/delegate_admin'] = 'org/delegate_admin';
 $route['org/get_org_detail'] = 'org/get_org_detail';
+
+// Detail_field 컨트롤러
+$route['detail_field'] = 'detail_field/index';
+$route['detail_field/index'] = 'detail_field/index';
+$route['detail_field/add_field'] = 'detail_field/add_field';
+$route['detail_field/update_field'] = 'detail_field/update_field';
+$route['detail_field/delete_field'] = 'detail_field/delete_field';
+$route['detail_field/toggle_field'] = 'detail_field/toggle_field';
+$route['detail_field/update_orders'] = 'detail_field/update_orders';

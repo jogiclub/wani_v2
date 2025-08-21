@@ -41,7 +41,7 @@ $(document).ready(function() {
 		}
 
 		$.ajax({
-			url: '/detail_field/add_field',
+			url: 'detail_field/add_field',
 			type: 'POST',
 			data: formData,
 			dataType: 'json',
@@ -108,7 +108,7 @@ $(document).ready(function() {
 		}
 
 		$.ajax({
-			url: '/detail_field/update_field',
+			url: 'detail_field/update_field',
 			type: 'POST',
 			data: formData,
 			dataType: 'json',
@@ -134,7 +134,7 @@ $(document).ready(function() {
 
 		if (confirm('"' + fieldName + '" 필드를 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) {
 			$.ajax({
-				url: '/detail_field/delete_field',
+				url: 'detail_field/delete_field',
 				type: 'POST',
 				data: { field_idx: fieldIdx },
 				dataType: 'json',
@@ -158,7 +158,7 @@ $(document).ready(function() {
 		var fieldIdx = $(this).data('field-idx');
 
 		$.ajax({
-			url: '/detail_field/toggle_field',
+			url: 'detail_field/toggle_field',
 			type: 'POST',
 			data: { field_idx: fieldIdx },
 			dataType: 'json',
@@ -217,7 +217,7 @@ $(document).ready(function() {
 		});
 
 		$.ajax({
-			url: '/detail_field/update_orders',
+			url: 'detail_field/update_orders',
 			type: 'POST',
 			data: { orders: orders },
 			dataType: 'json',
