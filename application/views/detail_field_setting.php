@@ -1,0 +1,271 @@
+<!--
+파일 위치: E:\SynologyDrive\Example\wani\application\views\detail_field_setting.php
+역할: 상세필드 설정 화면의 뷰 파일
+-->
+<head>
+	<?php $this->load->view('header'); ?>
+</head>
+<body>
+
+<div class="container pt-2 pb-2">
+	<nav class="mb-3" aria-label="breadcrumb">
+		<ol class="breadcrumb mb-0">
+			<li class="breadcrumb-item"><a href="#!">홈</a></li>
+			<li class="breadcrumb-item"><a href="#!">SETTING</a></li>
+			<li class="breadcrumb-item active">상세필드설정</li>
+		</ol>
+	</nav>
+	<div class="row align-items-center justify-content-between g-3 mb-4">
+		<h3 class="page-title col-6 my-1">상세필드설정</h3>
+		<div class="col-6 my-1">
+			<div class="text-end" role="group" aria-label="Basic example">
+				<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFieldModal">
+					<i class="bi bi-plus-circle"></i> 필드 추가
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
+		<div class="row">
+			<div class="col-lg-5">
+				<div class="card">
+					<div class="card-header">
+						<h5 class="card-title mb-0">
+							<i class="bi bi-diagram-3-fill"></i> 조직 목록
+						</h5>
+					</div>
+					<div class="card-body p-0">
+						<div class="list-group list-group-flush" id="orgList">
+							<?php if (isset($orgs) && !empty($orgs)): ?>
+								<?php foreach ($orgs as $org): ?>
+									<a href="<?php echo base_url('detail_field?org_id=' . $org['org_id']); ?>"
+									   class="list-group-item list-group-item-action <?php echo ($org['org_id'] == $selected_org_detail['org_id']) ? 'active' : ''; ?>"
+									   data-org-id="<?php echo $org['org_id']; ?>"
+									   data-org-name="<?php echo htmlspecialchars($org['org_name']); ?>">
+										<div class="d-flex w-100 justify-content-between align-items-center">
+											<div class="d-flex align-items-center gap-2">
+												<?php if ($org['org_icon']): ?>
+													<img src="<?php echo $org['org_icon']; ?>" alt="아이콘" class="circle"
+														 width="40" height="40" style="object-fit: cover;">
+												<?php else: ?>
+													<div
+														class="bg-warning circle d-flex align-items-center justify-content-center"
+														style="width: 40px; height: 40px;">
+														<i class="bi bi-building-fill text-white"
+														   style="font-size: 20px;"></i>
+													</div>
+												<?php endif; ?>
+												<div>
+													<h6 class="mb-0"><?php echo htmlspecialchars($org['org_name']); ?></h6>
+												</div>
+											</div>
+											<div class="text-end">
+												<small class="text-muted">
+													<?php
+													$type_names = array(
+														'church' => '교회',
+														'school' => '학교',
+														'company' => '회사',
+														'club' => '동아리',
+														'community' => '커뮤니티',
+														'other' => '기타'
+													);
+													echo $type_names[$org['org_type']] ?? $org['org_type'];
+													?>
+												</small>
+												<small class="text-muted">(<?php echo number_format($org['member_count']); ?>명)</small>
+											</div>
+										</div>
+									</a>
+								<?php endforeach; ?>
+							<?php else: ?>
+								<p class="text-muted p-3">접근 가능한 조직이 없습니다.</p>
+							<?php endif; ?>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-lg-7">
+				<div class="card">
+					<div class="card-header">
+						<h5 class="card-title mb-0">
+							<i class="bi bi-input-cursor-text"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?>
+							상세필드 관리
+						</h5>
+					</div>
+					<div class="card-body">
+						<?php if (isset($detail_fields) && !empty($detail_fields)): ?>
+							<div class="table-responsive">
+								<table class="table align-middle">
+									<thead>
+									<tr>
+										<th style="width: 50px;">순서</th>
+										<th>필드명</th>
+										<th style="width: 100px;">타입</th>
+										<th style="width: 80px;">상태</th>
+										<th style="width: 120px;">관리</th>
+									</tr>
+									</thead>
+									<tbody id="fieldTableBody" class="sortable">
+									<?php foreach ($detail_fields as $field): ?>
+										<tr data-field-idx="<?php echo $field['field_idx']; ?>">
+											<td class="text-center">
+												<i class="bi bi-grip-vertical text-muted handle" style="cursor: move;"></i>
+												<span class="order-number"><?php echo $field['display_order']; ?></span>
+											</td>
+											<td>
+												<strong><?php echo htmlspecialchars($field['field_name']); ?></strong>
+												<?php if ($field['field_settings'] && $field['field_settings'] !== '{}'): ?>
+													<br><small class="text-muted">
+														<?php
+														$settings = json_decode($field['field_settings'], true);
+														if ($field['field_type'] === 'select' && isset($settings['options'])) {
+															echo '옵션: ' . implode(', ', $settings['options']);
+														}
+														?>
+													</small>
+												<?php endif; ?>
+											</td>
+											<td>
+													<span class="badge bg-secondary">
+														<?php
+														$type_names = array(
+															'text' => '텍스트',
+															'select' => '선택박스',
+															'textarea' => '긴텍스트',
+															'checkbox' => '체크박스',
+															'date' => '날짜'
+														);
+														echo $type_names[$field['field_type']] ?? $field['field_type'];
+														?>
+													</span>
+											</td>
+											<td>
+												<div class="form-check form-switch">
+													<input class="form-check-input toggle-field" type="checkbox"
+														   data-field-idx="<?php echo $field['field_idx']; ?>"
+														<?php echo ($field['is_active'] === 'Y') ? 'checked' : ''; ?>>
+												</div>
+											</td>
+											<td>
+												<button type="button" class="btn btn-sm btn-outline-primary edit-field-btn"
+														data-field-idx="<?php echo $field['field_idx']; ?>"
+														data-field-name="<?php echo htmlspecialchars($field['field_name']); ?>"
+														data-field-type="<?php echo $field['field_type']; ?>"
+														data-field-settings="<?php echo htmlspecialchars($field['field_settings']); ?>">
+													<i class="bi bi-pencil"></i>
+												</button>
+												<button type="button" class="btn btn-sm btn-outline-danger delete-field-btn"
+														data-field-idx="<?php echo $field['field_idx']; ?>"
+														data-field-name="<?php echo htmlspecialchars($field['field_name']); ?>">
+													<i class="bi bi-trash"></i>
+												</button>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+									</tbody>
+								</table>
+							</div>
+						<?php else: ?>
+							<div class="text-center py-5">
+								<i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+								<p class="text-muted mt-3">등록된 상세필드가 없습니다.<br>새로운 필드를 추가해보세요.</p>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+		</div>
+	<?php else: ?>
+		<div class="alert alert-warning">
+			선택된 조직이 없습니다. 조직을 선택해주세요.
+		</div>
+	<?php endif; ?>
+</div>
+
+<!-- 필드 추가 모달 -->
+<div class="modal fade" id="addFieldModal" tabindex="-1" aria-labelledby="addFieldModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="addFieldModalLabel">새 상세필드 추가</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<form id="addFieldForm">
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="field_name" class="form-label">필드명 <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="field_name" name="field_name" required>
+					</div>
+					<div class="mb-3">
+						<label for="field_type" class="form-label">필드 타입 <span class="text-danger">*</span></label>
+						<select class="form-select" id="field_type" name="field_type" required>
+							<option value="">타입을 선택하세요</option>
+							<option value="text">텍스트</option>
+							<option value="select">선택박스</option>
+							<option value="textarea">긴텍스트</option>
+							<option value="checkbox">체크박스</option>
+							<option value="date">날짜</option>
+						</select>
+					</div>
+					<div class="mb-3" id="selectOptionsDiv" style="display: none;">
+						<label for="select_options" class="form-label">선택 옵션 (한 줄에 하나씩)</label>
+						<textarea class="form-control" id="select_options" name="select_options" rows="4"
+								  placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+					<button type="submit" class="btn btn-primary">추가</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<!-- 필드 수정 모달 -->
+<div class="modal fade" id="editFieldModal" tabindex="-1" aria-labelledby="editFieldModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editFieldModalLabel">상세필드 수정</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<form id="editFieldForm">
+				<input type="hidden" id="edit_field_idx" name="field_idx">
+				<div class="modal-body">
+					<div class="mb-3">
+						<label for="edit_field_name" class="form-label">필드명 <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="edit_field_name" name="field_name" required>
+					</div>
+					<div class="mb-3">
+						<label for="edit_field_type" class="form-label">필드 타입 <span class="text-danger">*</span></label>
+						<select class="form-select" id="edit_field_type" name="field_type" required>
+							<option value="">타입을 선택하세요</option>
+							<option value="text">텍스트</option>
+							<option value="select">선택박스</option>
+							<option value="textarea">긴텍스트</option>
+							<option value="checkbox">체크박스</option>
+							<option value="date">날짜</option>
+						</select>
+					</div>
+					<div class="mb-3" id="editSelectOptionsDiv" style="display: none;">
+						<label for="edit_select_options" class="form-label">선택 옵션 (한 줄에 하나씩)</label>
+						<textarea class="form-control" id="edit_select_options" name="select_options" rows="4"
+								  placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+					<button type="submit" class="btn btn-primary">수정</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script src="<?php echo base_url('assets/js/detail_field.js'); ?>"></script>
+</body>
+</html>

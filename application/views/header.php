@@ -161,7 +161,7 @@
 						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1"
 												href="<?php echo base_url('org'); ?>"><i
 									class="bi bi-diagram-3-fill"></i> 조직설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i
+						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('detail_field'); ?>"><i
 									class="bi bi-input-cursor-text"></i> 상세필드설정</a></li>
 						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i
 									class="bi bi-sliders2-vertical"></i> 출석설정</a></li>
