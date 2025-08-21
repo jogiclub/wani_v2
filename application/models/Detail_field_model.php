@@ -15,7 +15,7 @@ class Detail_field_model extends CI_Model {
 	 */
 	public function get_detail_fields_by_org($org_id) {
 		$this->db->select('field_idx, field_name, field_type, display_order, is_active, field_settings, regi_date, modi_date');
-		$this->db->from('wb_detail_field_settings');
+		$this->db->from('wb_detail_field');
 		$this->db->where('org_id', $org_id);
 		$this->db->order_by('display_order', 'ASC');
 		$query = $this->db->get();
@@ -27,7 +27,7 @@ class Detail_field_model extends CI_Model {
 	 */
 	public function get_detail_field_by_id($field_idx) {
 		$this->db->select('field_idx, field_name, org_id, display_order, field_type, field_settings, is_active, regi_date, modi_date');
-		$this->db->from('wb_detail_field_settings');
+		$this->db->from('wb_detail_field');
 		$this->db->where('field_idx', $field_idx);
 		$query = $this->db->get();
 		return $query->row_array();
@@ -39,7 +39,7 @@ class Detail_field_model extends CI_Model {
 	public function insert_detail_field($data) {
 		$data['regi_date'] = date('Y-m-d H:i:s');
 		$data['modi_date'] = date('Y-m-d H:i:s');
-		return $this->db->insert('wb_detail_field_settings', $data);
+		return $this->db->insert('wb_detail_field', $data);
 	}
 
 	/**
@@ -48,7 +48,7 @@ class Detail_field_model extends CI_Model {
 	public function update_detail_field($field_idx, $data) {
 		$data['modi_date'] = date('Y-m-d H:i:s');
 		$this->db->where('field_idx', $field_idx);
-		return $this->db->update('wb_detail_field_settings', $data);
+		return $this->db->update('wb_detail_field', $data);
 	}
 
 	/**
@@ -56,7 +56,7 @@ class Detail_field_model extends CI_Model {
 	 */
 	public function delete_detail_field($field_idx) {
 		$this->db->where('field_idx', $field_idx);
-		return $this->db->delete('wb_detail_field_settings');
+		return $this->db->delete('wb_detail_field');
 	}
 
 	/**
@@ -67,7 +67,7 @@ class Detail_field_model extends CI_Model {
 
 		foreach ($orders as $field_idx => $order) {
 			$this->db->where('field_idx', $field_idx);
-			$this->db->update('wb_detail_field_settings', array(
+			$this->db->update('wb_detail_field', array(
 				'display_order' => $order,
 				'modi_date' => date('Y-m-d H:i:s')
 			));
@@ -82,7 +82,7 @@ class Detail_field_model extends CI_Model {
 	 */
 	public function get_next_display_order($org_id) {
 		$this->db->select_max('display_order');
-		$this->db->from('wb_detail_field_settings');
+		$this->db->from('wb_detail_field');
 		$this->db->where('org_id', $org_id);
 		$query = $this->db->get();
 		$result = $query->row_array();
@@ -100,5 +100,79 @@ class Detail_field_model extends CI_Model {
 
 		$new_status = ($field['is_active'] === 'Y') ? 'N' : 'Y';
 		return $this->update_detail_field($field_idx, array('is_active' => $new_status));
+	}
+
+	/**
+	 * 사용자가 접근 가능한 조직 목록 가져오기 (일반 사용자)
+	 */
+	public function get_user_orgs($user_id) {
+		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, wb_org_user.level');
+		$this->db->from('wb_org');
+		$this->db->join('wb_org_user', 'wb_org.org_id = wb_org_user.org_id');
+		$this->db->where('wb_org_user.user_id', $user_id);
+		$this->db->where('wb_org.del_yn', 'N');
+		$this->db->order_by('wb_org.org_name', 'ASC');
+		$query = $this->db->get();
+		$result = $query->result_array();
+
+		// 회원 수 추가
+		foreach ($result as &$org) {
+			$org['member_count'] = $this->get_org_member_count($org['org_id']);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * 사용자가 접근 가능한 조직 목록 가져오기 (마스터 사용자)
+	 */
+	public function get_user_orgs_master($user_id) {
+		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, 10 as level');
+		$this->db->from('wb_org');
+		$this->db->where('wb_org.del_yn', 'N');
+		$this->db->order_by('wb_org.org_name', 'ASC');
+		$query = $this->db->get();
+		$result = $query->result_array();
+
+		// 회원 수 추가
+		foreach ($result as &$org) {
+			$org['member_count'] = $this->get_org_member_count($org['org_id']);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * 조직의 회원 수 가져오기
+	 */
+	public function get_org_member_count($org_id) {
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 조직 상세 정보 가져오기
+	 */
+	public function get_org_detail_by_id($org_id) {
+		$this->db->select('org_id, org_name, org_type, org_desc, org_icon, leader_name, new_name, invite_code, regi_date, modi_date');
+		$this->db->from('wb_org');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+	/**
+	 * 사용자의 조직 내 권한 레벨 가져오기
+	 */
+	public function get_org_user_level($user_id, $org_id) {
+		$this->db->select('level');
+		$this->db->where('user_id', $user_id);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get('wb_org_user');
+		$result = $query->row_array();
+		return $result ? $result['level'] : 0;
 	}
 }
