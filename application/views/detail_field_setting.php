@@ -116,6 +116,7 @@
 				</div>
 			</div>
 
+
 			<div class="col-lg-5">
 				<div class="card">
 					<div class="card-header">
@@ -127,14 +128,15 @@
 						<div class="list-group list-group-flush" id="orgList">
 							<?php if (isset($orgs) && !empty($orgs)): ?>
 								<?php foreach ($orgs as $org): ?>
-									<a href="<?php echo base_url('detail_field?org_id=' . $org['org_id']); ?>"
-									   class="list-group-item list-group-item-action <?php echo ($org['org_id'] == $selected_org_detail['org_id']) ? 'active' : ''; ?>"
+									<a href="#"
+									   class="list-group-item list-group-item-action org-selector-item <?php echo ($org['org_id'] == $selected_org_detail['org_id']) ? 'active' : ''; ?>"
 									   data-org-id="<?php echo $org['org_id']; ?>"
 									   data-org-name="<?php echo htmlspecialchars($org['org_name']); ?>">
 										<div class="d-flex w-100 justify-content-between align-items-center">
 											<div class="d-flex align-items-center gap-2">
 												<?php if ($org['org_icon']): ?>
-													<img src="<?php echo $org['org_icon']; ?>" alt="아이콘" class="circle"
+													<img src="<?php echo $org['org_icon']; ?>" alt="아이콘"
+														 class="circle"
 														 width="40" height="40" style="object-fit: cover;">
 												<?php else: ?>
 													<div
@@ -162,7 +164,12 @@
 													echo $type_names[$org['org_type']] ?? $org['org_type'];
 													?>
 												</small>
-												<small class="text-muted">(<?php echo number_format($org['member_count']); ?>명)</small>
+												<small class="text-muted">
+													(<?php echo number_format($org['member_count']); ?>명)
+												</small>
+												<small class="text-muted">
+													<?php echo ($org['user_level'] >= 9) ? '최고관리자' : '일반'; ?>
+												</small>
 											</div>
 										</div>
 									</a>
@@ -264,4 +271,29 @@
 	</div>
 </div>
 
-<script src="<?php echo base_url('assets/js/detail_field.js'); ?>"></script>
+
+	<!-- Toast 알림 -->
+	<div class="toast-container position-fixed bottom-0 end-0 p-3">
+		<div id="detailFieldToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+			<div class="toast-header">
+				<strong class="me-auto">상세필드 설정</strong>
+				<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+			</div>
+			<div class="toast-body"></div>
+		</div>
+	</div>
+
+	<!-- 필드 추가 모달 -->
+	<div class="modal fade" id="addFieldModal" tabindex="-1" aria-labelledby="addFieldModalLabel" aria-hidden="true">
+		<!-- 기존 모달 내용 -->
+	</div>
+
+	<!-- 필드 수정 모달 -->
+	<div class="modal fade" id="editFieldModal" tabindex="-1" aria-labelledby="editFieldModalLabel" aria-hidden="true">
+		<!-- 기존 모달 내용 -->
+	</div>
+
+
+
+	<?php $this->load->view('footer'); ?>
+	<script src="/assets/js/detail_field.js?<?php echo date('Ymdhis'); ?>"></script>

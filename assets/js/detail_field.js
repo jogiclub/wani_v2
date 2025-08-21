@@ -1,9 +1,47 @@
 /**
  * 파일 위치: E:\SynologyDrive\Example\wani\assets\js\detail_field.js
- * 역할: 상세필드 설정 페이지의 JavaScript 기능 처리
+ * 역할: 상세필드 설정 페이지의 JavaScript 기능 처리 (Toast 메시지 적용)
  */
 
 $(document).ready(function() {
+
+	// 조직 선택 이벤트 (조직목록에서 클릭 시 조직 변경)
+	$(document).on('click', '.org-selector-item', function(e) {
+		e.preventDefault();
+
+		const orgId = $(this).data('org-id');
+		const orgName = $(this).data('org-name');
+
+		if (!orgId) {
+			showToast('조직 정보를 가져올 수 없습니다.');
+			return;
+		}
+
+		// 이미 선택된 조직인 경우 처리하지 않음
+		if ($(this).hasClass('active')) {
+			return;
+		}
+
+		// 로딩 상태 표시 (헤더의 조직명 버튼)
+		const currentOrgBtn = $('#current-org-btn');
+		const originalText = currentOrgBtn.text();
+		currentOrgBtn.text('변경 중...');
+
+		// 조직 변경을 위한 폼 제출
+		const form = $('<form>', {
+			'method': 'POST',
+			'action': window.location.href
+		});
+
+		form.append($('<input>', {
+			'type': 'hidden',
+			'name': 'org_id',
+			'value': orgId
+		}));
+
+		$('body').append(form);
+		form.submit();
+	});
 
 	// 필드 타입 변경 시 옵션 영역 표시/숨김
 	$('#field_type, #edit_field_type').change(function() {
@@ -28,6 +66,19 @@ $(document).ready(function() {
 			field_settings: {}
 		};
 
+		// 필수 필드 검증
+		if (!formData.field_name) {
+			showToast('필드명을 입력해주세요.');
+			$('#field_name').focus();
+			return;
+		}
+
+		if (!formData.field_type) {
+			showToast('필드 타입을 선택해주세요.');
+			$('#field_type').focus();
+			return;
+		}
+
 		// 선택박스 타입인 경우 옵션 설정
 		if (formData.field_type === 'select') {
 			var options = $('#select_options').val().trim();
@@ -47,21 +98,21 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					showAlert('success', response.message);
+					showToast(response.message);
 					$('#addFieldModal').modal('hide');
 					location.reload();
 				} else {
-					showAlert('danger', response.message);
+					showToast(response.message);
 				}
 			},
 			error: function() {
-				showAlert('danger', '필드 추가 중 오류가 발생했습니다.');
+				showToast('필드 추가 중 오류가 발생했습니다.');
 			}
 		});
 	});
 
 	// 필드 수정 버튼 클릭
-	$('.edit-field-btn').on('click', function() {
+	$(document).on('click', '.edit-field-btn', function() {
 		var fieldIdx = $(this).data('field-idx');
 		var fieldName = $(this).data('field-name');
 		var fieldType = $(this).data('field-type');
@@ -95,6 +146,13 @@ $(document).ready(function() {
 			field_settings: {}
 		};
 
+		// 필수 필드 검증
+		if (!formData.field_name) {
+			showToast('필드명을 입력해주세요.');
+			$('#edit_field_name').focus();
+			return;
+		}
+
 		// 선택박스 타입인 경우 옵션 설정
 		if (formData.field_type === 'select') {
 			var options = $('#edit_select_options').val().trim();
@@ -114,21 +172,21 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					showAlert('success', response.message);
+					showToast(response.message);
 					$('#editFieldModal').modal('hide');
 					location.reload();
 				} else {
-					showAlert('danger', response.message);
+					showToast(response.message);
 				}
 			},
 			error: function() {
-				showAlert('danger', '필드 수정 중 오류가 발생했습니다.');
+				showToast('필드 수정 중 오류가 발생했습니다.');
 			}
 		});
 	});
 
 	// 필드 삭제 버튼 클릭
-	$('.delete-field-btn').on('click', function() {
+	$(document).on('click', '.delete-field-btn', function() {
 		var fieldIdx = $(this).data('field-idx');
 		var fieldName = $(this).data('field-name');
 
@@ -140,21 +198,21 @@ $(document).ready(function() {
 				dataType: 'json',
 				success: function(response) {
 					if (response.success) {
-						showAlert('success', response.message);
+						showToast(response.message);
 						location.reload();
 					} else {
-						showAlert('danger', response.message);
+						showToast(response.message);
 					}
 				},
 				error: function() {
-					showAlert('danger', '필드 삭제 중 오류가 발생했습니다.');
+					showToast('필드 삭제 중 오류가 발생했습니다.');
 				}
 			});
 		}
 	});
 
 	// 필드 활성화/비활성화 토글
-	$('.toggle-field').on('change', function() {
+	$(document).on('click', '.toggle-field', function() {
 		var fieldIdx = $(this).data('field-idx');
 
 		$.ajax({
@@ -164,16 +222,16 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					showAlert('success', response.message);
+					showToast(response.message);
 				} else {
-					showAlert('danger', response.message);
+					showToast(response.message);
 					// 실패 시 체크박스 상태 되돌리기
 					$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked',
 						!$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked'));
 				}
 			},
 			error: function() {
-				showAlert('danger', '필드 상태 변경 중 오류가 발생했습니다.');
+				showToast('필드 상태 변경 중 오류가 발생했습니다.');
 				// 실패 시 체크박스 상태 되돌리기
 				$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked',
 					!$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked'));
@@ -223,63 +281,25 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					showAlert('success', response.message);
+					showToast(response.message);
 				} else {
-					showAlert('danger', response.message);
+					showToast(response.message);
 					location.reload(); // 실패 시 페이지 새로고침
 				}
 			},
 			error: function() {
-				showAlert('danger', '순서 변경 중 오류가 발생했습니다.');
+				showToast('순서 변경 중 오류가 발생했습니다.');
 				location.reload(); // 실패 시 페이지 새로고침
 			}
 		});
 	}
 
 	/**
-	 * 알림 메시지 표시
+	 * Toast 메시지 표시
 	 */
-	function showAlert(type, message) {
-		// 기존 알림 제거
-		$('.alert-custom').remove();
-
-		var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show alert-custom" role="alert">' +
-			message +
-			'<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-			'</div>';
-
-		$('.container').prepend(alertHtml);
-
-		// 5초 후 자동 제거
-		setTimeout(function() {
-			$('.alert-custom').fadeOut(function() {
-				$(this).remove();
-			});
-		}, 5000);
+	function showToast(message) {
+		$('#detailFieldToast .toast-body').text(message);
+		const toast = new bootstrap.Toast($('#detailFieldToast'));
+		toast.show();
 	}
-
-	/**
-	 * 폼 유효성 검사
-	 */
-	function validateForm(formSelector) {
-		var isValid = true;
-
-		$(formSelector + ' [required]').each(function() {
-			if ($(this).val().trim() === '') {
-				$(this).addClass('is-invalid');
-				isValid = false;
-			} else {
-				$(this).removeClass('is-invalid');
-			}
-		});
-
-		return isValid;
-	}
-
-	// 입력 필드 실시간 유효성 검사
-	$('input[required], select[required]').on('input change', function() {
-		if ($(this).val().trim() !== '') {
-			$(this).removeClass('is-invalid');
-		}
-	});
 });

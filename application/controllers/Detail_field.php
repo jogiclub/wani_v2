@@ -3,11 +3,13 @@
  * 파일 위치: E:\SynologyDrive\Example\wani\application\controllers\Detail_field.php
  * 역할: 상세필드 설정 페이지의 컨트롤러
  */
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Detail_field extends CI_Controller {
+class Detail_field extends CI_Controller
+{
 
-	public function __construct() {
+	public function __construct()
+	{
 		parent::__construct();
 		$this->load->model('Detail_field_model');
 		$this->load->library('session');
@@ -18,7 +20,8 @@ class Detail_field extends CI_Controller {
 	/**
 	 * 헤더에서 사용할 조직 데이터 준비
 	 */
-	private function prepare_header_data() {
+	private function prepare_header_data()
+	{
 		if (!$this->session->userdata('user_id')) {
 			return array();
 		}
@@ -65,7 +68,8 @@ class Detail_field extends CI_Controller {
 	/**
 	 * 상세필드 설정 메인 페이지
 	 */
-	public function index() {
+	public function index()
+	{
 		$user_id = $this->session->userdata('user_id');
 		if (!$user_id) {
 			redirect('login');
@@ -79,20 +83,28 @@ class Detail_field extends CI_Controller {
 			return;
 		}
 
-		// URL 파라미터에서 org_id 확인
-		$request_org_id = $this->input->get('org_id');
-		$currentOrgId = $this->session->userdata('current_org_id');
+		$data = $header_data; // 헤더 데이터 포함
+		$currentOrgId = $data['current_org']['org_id'];
 
-		// URL로 org_id가 전달된 경우 세션 업데이트
-		if ($request_org_id && is_numeric($request_org_id)) {
-			$this->session->set_userdata('current_org_id', $request_org_id);
-			$currentOrgId = $request_org_id;
-		}
+		// POST로 조직 변경 요청이 있는 경우 처리
+		$postOrgId = $this->input->post('org_id');
+		if ($postOrgId) {
+			// 사용자가 해당 조직에 접근 권한이 있는지 확인
+			$has_access = false;
+			foreach ($data['user_orgs'] as $org) {
+				if ($org['org_id'] == $postOrgId) {
+					$has_access = true;
+					$data['current_org'] = $org; // header 데이터의 current_org 업데이트
+					$currentOrgId = $postOrgId;
+					$this->input->set_cookie('activeOrg', $postOrgId, 86400);
+					break;
+				}
+			}
 
-		// 여전히 current_org_id가 없으면 현재 활성화된 조직을 기본값으로 설정
-		if (!$currentOrgId && $header_data['current_org']) {
-			$currentOrgId = $header_data['current_org']['org_id'];
-			$this->session->set_userdata('current_org_id', $currentOrgId);
+			if (!$has_access) {
+				show_error('접근 권한이 없는 조직입니다.', 403);
+				return;
+			}
 		}
 
 		// 그래도 없으면 첫 번째 조직을 사용
@@ -106,7 +118,9 @@ class Detail_field extends CI_Controller {
 
 			if (!empty($user_orgs)) {
 				$currentOrgId = $user_orgs[0]['org_id'];
-				$this->session->set_userdata('current_org_id', $currentOrgId);
+				$data['current_org'] = $user_orgs[0]; // header 데이터 업데이트
+				// 쿠키도 업데이트
+				$this->input->set_cookie('activeOrg', $currentOrgId, 86400);
 			} else {
 				show_error('접근 가능한 조직이 없습니다.', 403);
 				return;
@@ -132,10 +146,11 @@ class Detail_field extends CI_Controller {
 		foreach ($orgs as &$org) {
 			$org['user_level'] = $this->Detail_field_model->get_org_user_level($user_id, $org['org_id']);
 			$org['user_master_yn'] = $this->session->userdata('master_yn');
+
+			// member_count 추가 (조직설정과 동일하게)
+			$org['member_count'] = $this->Detail_field_model->get_org_member_count($org['org_id']);
 		}
 
-		// 헤더 데이터와 페이지 데이터를 합쳐서 뷰에 전달
-		$data = $header_data; // 헤더 데이터 포함
 		$data['orgs'] = $orgs;
 
 		// 현재 선택된 조직의 상세 정보 가져오기
@@ -154,7 +169,8 @@ class Detail_field extends CI_Controller {
 	/**
 	 * 새로운 상세필드 추가
 	 */
-	public function add_field() {
+	public function add_field()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -199,7 +215,8 @@ class Detail_field extends CI_Controller {
 	/**
 	 * 상세필드 정보 업데이트
 	 */
-	public function update_field() {
+	public function update_field()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -242,7 +259,8 @@ class Detail_field extends CI_Controller {
 	/**
 	 * 상세필드 삭제
 	 */
-	public function delete_field() {
+	public function delete_field()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -276,7 +294,8 @@ class Detail_field extends CI_Controller {
 	/**
 	 * 필드 활성화/비활성화 토글
 	 */
-	public function toggle_field() {
+	public function toggle_field()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -310,7 +329,8 @@ class Detail_field extends CI_Controller {
 	/**
 	 * 필드 순서 업데이트
 	 */
-	public function update_orders() {
+	public function update_orders()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}

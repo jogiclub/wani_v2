@@ -175,4 +175,7 @@ class Detail_field_model extends CI_Model {
 		$result = $query->row_array();
 		return $result ? $result['level'] : 0;
 	}
+
+
+
 }
