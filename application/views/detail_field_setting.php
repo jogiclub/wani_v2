@@ -23,64 +23,7 @@
 
 	<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
 		<div class="row">
-			<div class="col-lg-5">
-				<div class="card">
-					<div class="card-header">
-						<h5 class="card-title mb-0">
-							<i class="bi bi-diagram-3-fill"></i> 조직 목록
-						</h5>
-					</div>
-					<div class="card-body p-0">
-						<div class="list-group list-group-flush" id="orgList">
-							<?php if (isset($orgs) && !empty($orgs)): ?>
-								<?php foreach ($orgs as $org): ?>
-									<a href="<?php echo base_url('detail_field?org_id=' . $org['org_id']); ?>"
-									   class="list-group-item list-group-item-action <?php echo ($org['org_id'] == $selected_org_detail['org_id']) ? 'active' : ''; ?>"
-									   data-org-id="<?php echo $org['org_id']; ?>"
-									   data-org-name="<?php echo htmlspecialchars($org['org_name']); ?>">
-										<div class="d-flex w-100 justify-content-between align-items-center">
-											<div class="d-flex align-items-center gap-2">
-												<?php if ($org['org_icon']): ?>
-													<img src="<?php echo $org['org_icon']; ?>" alt="아이콘" class="circle"
-														 width="40" height="40" style="object-fit: cover;">
-												<?php else: ?>
-													<div
-														class="bg-warning circle d-flex align-items-center justify-content-center"
-														style="width: 40px; height: 40px;">
-														<i class="bi bi-building-fill text-white"
-														   style="font-size: 20px;"></i>
-													</div>
-												<?php endif; ?>
-												<div>
-													<h6 class="mb-0"><?php echo htmlspecialchars($org['org_name']); ?></h6>
-												</div>
-											</div>
-											<div class="text-end">
-												<small class="text-muted">
-													<?php
-													$type_names = array(
-														'church' => '교회',
-														'school' => '학교',
-														'company' => '회사',
-														'club' => '동아리',
-														'community' => '커뮤니티',
-														'other' => '기타'
-													);
-													echo $type_names[$org['org_type']] ?? $org['org_type'];
-													?>
-												</small>
-												<small class="text-muted">(<?php echo number_format($org['member_count']); ?>명)</small>
-											</div>
-										</div>
-									</a>
-								<?php endforeach; ?>
-							<?php else: ?>
-								<p class="text-muted p-3">접근 가능한 조직이 없습니다.</p>
-							<?php endif; ?>
-						</div>
-					</div>
-				</div>
-			</div>
+
 
 			<div class="col-lg-7">
 				<div class="card">
@@ -172,6 +115,66 @@
 					</div>
 				</div>
 			</div>
+
+			<div class="col-lg-5">
+				<div class="card">
+					<div class="card-header">
+						<h5 class="card-title mb-0">
+							<i class="bi bi-diagram-3-fill"></i> 조직 목록
+						</h5>
+					</div>
+					<div class="card-body p-0">
+						<div class="list-group list-group-flush" id="orgList">
+							<?php if (isset($orgs) && !empty($orgs)): ?>
+								<?php foreach ($orgs as $org): ?>
+									<a href="<?php echo base_url('detail_field?org_id=' . $org['org_id']); ?>"
+									   class="list-group-item list-group-item-action <?php echo ($org['org_id'] == $selected_org_detail['org_id']) ? 'active' : ''; ?>"
+									   data-org-id="<?php echo $org['org_id']; ?>"
+									   data-org-name="<?php echo htmlspecialchars($org['org_name']); ?>">
+										<div class="d-flex w-100 justify-content-between align-items-center">
+											<div class="d-flex align-items-center gap-2">
+												<?php if ($org['org_icon']): ?>
+													<img src="<?php echo $org['org_icon']; ?>" alt="아이콘" class="circle"
+														 width="40" height="40" style="object-fit: cover;">
+												<?php else: ?>
+													<div
+														class="bg-warning circle d-flex align-items-center justify-content-center"
+														style="width: 40px; height: 40px;">
+														<i class="bi bi-building-fill text-white"
+														   style="font-size: 20px;"></i>
+													</div>
+												<?php endif; ?>
+												<div>
+													<h6 class="mb-0"><?php echo htmlspecialchars($org['org_name']); ?></h6>
+												</div>
+											</div>
+											<div class="text-end">
+												<small class="text-muted">
+													<?php
+													$type_names = array(
+														'church' => '교회',
+														'school' => '학교',
+														'company' => '회사',
+														'club' => '동아리',
+														'community' => '커뮤니티',
+														'other' => '기타'
+													);
+													echo $type_names[$org['org_type']] ?? $org['org_type'];
+													?>
+												</small>
+												<small class="text-muted">(<?php echo number_format($org['member_count']); ?>명)</small>
+											</div>
+										</div>
+									</a>
+								<?php endforeach; ?>
+							<?php else: ?>
+								<p class="text-muted p-3">접근 가능한 조직이 없습니다.</p>
+							<?php endif; ?>
+						</div>
+					</div>
+				</div>
+			</div>
+
 		</div>
 	<?php else: ?>
 		<div class="alert alert-warning">
