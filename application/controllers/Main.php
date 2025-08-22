@@ -223,7 +223,7 @@ class Main extends CI_Controller
 			$member_phone = $this->input->post('member_phone');
 			$member_birth = $this->input->post('member_birth');
 			$school = $this->input->post('school');
-			$address = $this->input->post('address');
+			$member_address = $this->input->post('member_address');
 			$member_etc = $this->input->post('member_etc');
 			$leader_yn = $this->input->post('leader_yn') ? 'Y' : 'N';
 			$area_idx = $this->input->post('area_idx');
@@ -238,7 +238,7 @@ class Main extends CI_Controller
 				'member_phone' => $member_phone,
 				'member_birth' => $member_birth,
 				'school' => $school,
-				'address' => $address,
+				'member_address' => $member_address,
 				'member_etc' => $member_etc,
 				'leader_yn' => $leader_yn,
 				'area_idx' => $area_idx,

@@ -529,7 +529,7 @@ function loadMemberInfo(memberIdx) {
             $('#memberPhone').val(response.member_phone);
             $('#memberBirth').val(response.member_birth);
             $('#school').val(response.school);
-            $('#address').val(response.address);
+            $('#member_address').val(response.member_address);
             $('#memberEtc').val(response.member_etc);
             $('#leaderYn').prop('checked', response.leader_yn === 'Y');
             $('#newYn').prop('checked', response.new_yn === 'Y');

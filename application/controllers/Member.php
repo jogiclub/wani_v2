@@ -394,6 +394,7 @@ class Member extends CI_Controller
 			'new_yn' => $new_yn ? $new_yn : 'N',
 			'org_id' => $org_id,
 			'regi_date' => date('Y-m-d H:i:s'),
+			'modi_date' => date('Y-m-d H:i:s'),
 			'del_yn' => 'N'
 		);
 

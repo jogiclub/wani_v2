@@ -306,8 +306,8 @@
                     <input type="text" class="form-control" id="school" name="school">
                 </div>
                 <div class="mb-1">
-                    <label for="address" class="form-label">주소</label>
-                    <input type="text" class="form-control" id="address" name="address">
+                    <label for="member_address" class="form-label">주소</label>
+                    <input type="text" class="form-control" id="member_address" name="member_address">
                 </div>
                 <div class="mb-1">
                     <label for="photo" class="form-label">사진</label>

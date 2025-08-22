@@ -17,7 +17,7 @@ class Member_model extends CI_Model {
     public function get_org_members($org_id, $level = null, $start_date = null, $end_date = null) {
         $user_id = $this->session->userdata('user_id');
 
-        $this->db->select('m.member_idx, m.org_id, m.member_name, m.photo, m.leader_yn, m.new_yn, m.member_birth, m.grade, a.area_idx, a.area_name, a.area_order');
+        $this->db->select('m.member_idx, m.org_id, m.member_name, m.photo, m.member_phone, m.member_address, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
         $this->db->from('wb_member m');
         $this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
