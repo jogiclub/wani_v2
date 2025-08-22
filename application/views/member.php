@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<div class="container pt-2 pb-2">
+<div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
@@ -23,9 +23,7 @@
 	<div class="row align-items-center justify-content-between g-3 mb-4">
 		<h3 class="page-title col-6 my-1">회원관리</h3>
 		<div class="col-6 my-1">
-			<div class="text-end" role="group" aria-label="Basic example">
-				<button type="button" class="btn btn-sm btn-primary"><i class="bi bi-save"></i> 저장</button>
-			</div>
+
 		</div>
 	</div>
 
