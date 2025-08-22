@@ -1,6 +1,4 @@
-
-	<?php $this->load->view('header'); ?>
-
+<?php $this->load->view('header'); ?>
 
 <div class="container pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -50,7 +48,8 @@
 									<?php foreach ($detail_fields as $field): ?>
 										<tr data-field-idx="<?php echo $field['field_idx']; ?>">
 											<td class="text-center">
-												<i class="bi bi-grip-vertical text-muted handle" style="cursor: move;"></i>
+												<i class="bi bi-grip-vertical text-muted handle"
+												   style="cursor: move;"></i>
 												<span class="order-number"><?php echo $field['display_order']; ?></span>
 											</td>
 											<td>
@@ -88,14 +87,16 @@
 												</div>
 											</td>
 											<td>
-												<button type="button" class="btn btn-sm btn-outline-primary edit-field-btn"
+												<button type="button"
+														class="btn btn-sm btn-outline-primary edit-field-btn"
 														data-field-idx="<?php echo $field['field_idx']; ?>"
 														data-field-name="<?php echo htmlspecialchars($field['field_name']); ?>"
 														data-field-type="<?php echo $field['field_type']; ?>"
 														data-field-settings="<?php echo htmlspecialchars($field['field_settings']); ?>">
 													<i class="bi bi-pencil"></i>
 												</button>
-												<button type="button" class="btn btn-sm btn-outline-danger delete-field-btn"
+												<button type="button"
+														class="btn btn-sm btn-outline-danger delete-field-btn"
 														data-field-idx="<?php echo $field['field_idx']; ?>"
 														data-field-name="<?php echo htmlspecialchars($field['field_name']); ?>">
 													<i class="bi bi-trash"></i>
@@ -272,28 +273,27 @@
 </div>
 
 
-	<!-- Toast 알림 -->
-	<div class="toast-container position-fixed bottom-0 end-0 p-3">
-		<div id="detailFieldToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-			<div class="toast-header">
-				<strong class="me-auto">상세필드 설정</strong>
-				<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-			</div>
-			<div class="toast-body"></div>
+<!-- Toast 알림 -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+	<div id="detailFieldToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+		<div class="toast-header">
+			<strong class="me-auto">상세필드 설정</strong>
+			<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
 		</div>
+		<div class="toast-body"></div>
 	</div>
+</div>
 
-	<!-- 필드 추가 모달 -->
-	<div class="modal fade" id="addFieldModal" tabindex="-1" aria-labelledby="addFieldModalLabel" aria-hidden="true">
-		<!-- 기존 모달 내용 -->
-	</div>
+<!-- 필드 추가 모달 -->
+<div class="modal fade" id="addFieldModal" tabindex="-1" aria-labelledby="addFieldModalLabel" aria-hidden="true">
+	<!-- 기존 모달 내용 -->
+</div>
 
-	<!-- 필드 수정 모달 -->
-	<div class="modal fade" id="editFieldModal" tabindex="-1" aria-labelledby="editFieldModalLabel" aria-hidden="true">
-		<!-- 기존 모달 내용 -->
-	</div>
+<!-- 필드 수정 모달 -->
+<div class="modal fade" id="editFieldModal" tabindex="-1" aria-labelledby="editFieldModalLabel" aria-hidden="true">
+	<!-- 기존 모달 내용 -->
+</div>
 
 
-
-	<?php $this->load->view('footer'); ?>
-	<script src="/assets/js/detail_field.js?<?php echo date('Ymdhis'); ?>"></script>
+<?php $this->load->view('footer'); ?>
+<script src="/assets/js/detail_field.js?<?php echo date('Ymdhis'); ?>"></script>
