@@ -1,5 +1,5 @@
 /**
- * 파일 위치: E:\SynologyDrive\Example\wani\assets\js\member.js
+ * 파일 위치: assets/js/member.js
  * 역할: 회원 관리 페이지 JavaScript - Fancytree와 ParamQuery 연동
  */
 
@@ -10,32 +10,73 @@ $(document).ready(function() {
 	let selectedAreaIdx = null;
 	let selectedType = null;
 
-	// 페이지 초기화
-	initializePage();
+	// 디버깅: 라이브러리 로드 상태 확인
+	console.log('jQuery:', typeof $);
+	console.log('Fancytree:', typeof $.fn.fancytree);
+	console.log('ParamQuery pqGrid:', typeof $.fn.pqGrid);
+
+	// 초기화 시도
+	setTimeout(function() {
+		initializePage();
+	}, 800); // 800ms 지연 후 초기화
 
 	/**
 	 * 페이지 초기화
 	 */
 	function initializePage() {
-		initializeFancytree();
-		initializeParamQuery();
-		bindEvents();
+		console.log('페이지 초기화 시작');
+
+		// ParamQuery 체크
+		if (typeof $.fn.pqGrid === 'undefined') {
+			console.error('ParamQuery 라이브러리가 로드되지 않았습니다.');
+			showToast('ParamQuery 라이브러리 로드 실패');
+			return;
+		}
+
+		// Fancytree 체크
+		if (typeof $.fn.fancytree === 'undefined') {
+			console.error('Fancytree 라이브러리가 로드되지 않았습니다.');
+			showToast('Fancytree 라이브러리 로드 실패');
+			return;
+		}
+
+		try {
+			initializeFancytree();
+			initializeParamQuery();
+			bindEvents();
+			console.log('페이지 초기화 완료');
+		} catch (error) {
+			console.error('초기화 중 오류:', error);
+			showToast('페이지 초기화 중 오류가 발생했습니다.');
+		}
 	}
 
 	/**
 	 * Fancytree 초기화
 	 */
 	function initializeFancytree() {
+		console.log('Fancytree 초기화 시작');
+
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/get_org_tree',
 			method: 'POST',
 			dataType: 'json',
 			success: function(treeData) {
+				console.log('트리 데이터:', treeData);
+
+				if (!treeData || treeData.length === 0) {
+					showToast('조직 데이터가 없습니다.');
+					return;
+				}
+
+				// 가장 단순한 Fancytree 설정
 				$("#groupTree").fancytree({
 					source: treeData,
 					activate: function(event, data) {
 						const node = data.node;
 						const nodeData = node.data;
+
+						console.log('선택된 노드:', nodeData);
 
 						selectedType = nodeData.type;
 						selectedOrgId = nodeData.org_id;
@@ -47,25 +88,35 @@ $(document).ready(function() {
 						// 회원 데이터 로드
 						loadMemberData();
 					},
-					extensions: ["wide"],
-					wide: {
-						iconWidth: "1em",
-						iconSpacing: "0.5em",
-						levelOfs: "1.5em"
-					}
+					// 기본 설정만 사용, 확장 기능 제거
+					autoScroll: true,
+					keyboard: true,
+					focusOnSelect: true
 				});
+
+				// 트리가 로드된 후 첫 번째 조직 자동 선택
+				const tree = $("#groupTree").fancytree("getTree");
+				if (tree && tree.rootNode && tree.rootNode.children.length > 0) {
+					const firstOrgNode = tree.rootNode.children[0];
+					firstOrgNode.setActive(true);
+				}
+
+				console.log('Fancytree 초기화 완료');
 			},
 			error: function(xhr, status, error) {
 				console.error('그룹 트리 로드 실패:', error);
-				alert('그룹 정보를 불러오는데 실패했습니다.');
+				console.error('Response:', xhr.responseText);
+				showToast('그룹 정보를 불러오는데 실패했습니다.');
 			}
 		});
 	}
 
 	/**
-	 * ParamQuery Grid 초기화
+	 * ParamQuery Grid 초기화 (3.5.1 버전 호환)
 	 */
 	function initializeParamQuery() {
+		console.log('ParamQuery 초기화 시작');
+
 		const colModel = [
 			{
 				title: "회원번호",
@@ -147,12 +198,19 @@ $(document).ready(function() {
 			sortable: false,
 			hoverMode: 'row',
 			selectEnd: function(event, ui) {
-				const selectedRow = ui.selection.length > 0;
-				$('#btnEditMember, #btnDeleteMember').prop('disabled', !selectedRow);
+				// 선택 이벤트 처리
+				const hasSelection = ui.selection && ui.selection.length > 0;
+				$('#btnEditMember, #btnDeleteMember').prop('disabled', !hasSelection);
 			}
 		};
 
-		memberGrid = pq.grid("#memberGrid", gridOptions);
+		try {
+			memberGrid = $("#memberGrid").pqGrid(gridOptions);
+			console.log('ParamQuery 초기화 완료');
+		} catch (error) {
+			console.error('ParamQuery Grid 초기화 실패:', error);
+			showToast('그리드 초기화에 실패했습니다.');
+		}
 	}
 
 	/**
@@ -162,7 +220,7 @@ $(document).ready(function() {
 		// 회원 추가 버튼
 		$('#btnAddMember').on('click', function() {
 			if (!selectedOrgId) {
-				alert('먼저 그룹을 선택해주세요.');
+				showToast('먼저 그룹을 선택해주세요.');
 				return;
 			}
 			openMemberModal('add');
@@ -170,22 +228,32 @@ $(document).ready(function() {
 
 		// 회원 수정 버튼
 		$('#btnEditMember').on('click', function() {
-			const selectedData = memberGrid.getSelection();
-			if (selectedData.length === 0) {
-				alert('수정할 회원을 선택해주세요.');
-				return;
+			try {
+				const selectedData = memberGrid.pqGrid("getSelection");
+				if (!selectedData || selectedData.length === 0) {
+					showToast('수정할 회원을 선택해주세요.');
+					return;
+				}
+				openMemberModal('edit', selectedData[0]);
+			} catch (error) {
+				console.error('선택 데이터 가져오기 실패:', error);
+				showToast('선택된 데이터를 가져올 수 없습니다.');
 			}
-			openMemberModal('edit', selectedData[0]);
 		});
 
 		// 회원 삭제 버튼
 		$('#btnDeleteMember').on('click', function() {
-			const selectedData = memberGrid.getSelection();
-			if (selectedData.length === 0) {
-				alert('삭제할 회원을 선택해주세요.');
-				return;
+			try {
+				const selectedData = memberGrid.pqGrid("getSelection");
+				if (!selectedData || selectedData.length === 0) {
+					showToast('삭제할 회원을 선택해주세요.');
+					return;
+				}
+				deleteMember(selectedData[0].member_idx);
+			} catch (error) {
+				console.error('선택 데이터 가져오기 실패:', error);
+				showToast('선택된 데이터를 가져올 수 없습니다.');
 			}
-			deleteMember(selectedData[0].member_idx);
 		});
 
 		// 회원 저장 버튼
@@ -198,7 +266,7 @@ $(document).ready(function() {
 	 * 선택된 그룹명 업데이트
 	 */
 	function updateSelectedOrgName(title, type) {
-		const icon = type === 'group' ? '<i class="bi bi-diagram-3"></i>' : '<i class="bi bi-people"></i>';
+		const icon = type === 'org' ? '<i class="bi bi-diagram-3"></i>' : '<i class="bi bi-people"></i>';
 		$('#selectedOrgName').html(icon + ' ' + title);
 	}
 
@@ -207,6 +275,12 @@ $(document).ready(function() {
 	 */
 	function loadMemberData() {
 		if (!selectedOrgId) return;
+
+		console.log('회원 데이터 로드:', {
+			type: selectedType,
+			org_id: selectedOrgId,
+			area_idx: selectedAreaIdx
+		});
 
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/get_members',
@@ -218,20 +292,31 @@ $(document).ready(function() {
 			},
 			dataType: 'json',
 			success: function(response) {
+				console.log('회원 데이터 응답:', response);
+
 				if (response.success) {
-					memberGrid.option("dataModel.data", response.data);
-					memberGrid.refreshDataAndView();
+					if (memberGrid) {
+						try {
+							memberGrid.pqGrid("option", "dataModel.data", response.data || []);
+							memberGrid.pqGrid("refreshDataAndView");
+						} catch (error) {
+							console.error('그리드 데이터 업데이트 실패:', error);
+						}
+					}
 
 					// 버튼 상태 초기화
 					$('#btnEditMember, #btnDeleteMember').prop('disabled', true);
+
+					showToast(`${response.data ? response.data.length : 0}명의 회원을 로드했습니다.`);
 				} else {
 					console.error('회원 데이터 로드 실패:', response.message);
-					alert('회원 데이터를 불러오는데 실패했습니다.');
+					showToast('회원 데이터를 불러오는데 실패했습니다.');
 				}
 			},
 			error: function(xhr, status, error) {
 				console.error('회원 데이터 로드 실패:', error);
-				alert('회원 데이터를 불러오는데 실패했습니다.');
+				console.error('Response:', xhr.responseText);
+				showToast('회원 데이터를 불러오는데 실패했습니다.');
 			}
 		});
 	}
@@ -273,14 +358,18 @@ $(document).ready(function() {
 		areaSelect.html('<option value="">소그룹 선택</option>');
 
 		// 현재 선택된 그룹의 소그룹 목록을 트리에서 찾기
-		const tree = $("#groupTree").fancytree("getTree");
-		const groupNode = tree.getNodeByKey('org_' + orgId);
+		try {
+			const tree = $("#groupTree").fancytree("getTree");
+			const groupNode = tree.getNodeByKey('org_' + orgId);
 
-		if (groupNode && groupNode.children) {
-			groupNode.children.forEach(function(child) {
-				const areaData = child.data;
-				areaSelect.append(`<option value="${areaData.area_idx}">${child.title}</option>`);
-			});
+			if (groupNode && groupNode.children) {
+				groupNode.children.forEach(function(child) {
+					const areaData = child.data;
+					areaSelect.append(`<option value="${areaData.area_idx}">${child.title}</option>`);
+				});
+			}
+		} catch (error) {
+			console.error('소그룹 옵션 로드 오류:', error);
 		}
 	}
 
@@ -310,16 +399,16 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					alert(response.message);
+					showToast(response.message);
 					$('#memberModal').modal('hide');
 					loadMemberData();
 				} else {
-					alert(response.message);
+					showToast(response.message);
 				}
 			},
 			error: function(xhr, status, error) {
 				console.error('회원 저장 실패:', error);
-				alert('회원 정보 저장에 실패했습니다.');
+				showToast('회원 정보 저장에 실패했습니다.');
 			}
 		});
 	}
@@ -341,16 +430,58 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					alert(response.message);
+					showToast(response.message);
 					loadMemberData();
 				} else {
-					alert(response.message);
+					showToast(response.message);
 				}
 			},
 			error: function(xhr, status, error) {
 				console.error('회원 삭제 실패:', error);
-				alert('회원 삭제에 실패했습니다.');
+				showToast('회원 삭제에 실패했습니다.');
 			}
+		});
+	}
+
+	/**
+	 * Toast 메시지 표시
+	 */
+	function showToast(message) {
+		// Bootstrap Toast 컨테이너가 없으면 생성
+		if ($('#toastContainer').length === 0) {
+			$('body').append(`
+				<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3">
+				</div>
+			`);
+		}
+
+		// Toast 요소 생성
+		const toastId = 'toast_' + Date.now();
+		const toastHtml = `
+			<div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+				<div class="toast-header">
+					<i class="bi bi-info-circle-fill text-primary me-2"></i>
+					<strong class="me-auto">알림</strong>
+					<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+				<div class="toast-body">
+					${message}
+				</div>
+			</div>
+		`;
+
+		$('#toastContainer').append(toastHtml);
+
+		// Bootstrap Toast 초기화 및 표시
+		const toastElement = document.getElementById(toastId);
+		const toast = new bootstrap.Toast(toastElement, {
+			delay: 3000
+		});
+		toast.show();
+
+		// Toast가 숨겨진 후 DOM에서 제거
+		toastElement.addEventListener('hidden.bs.toast', function() {
+			$(this).remove();
 		});
 	}
 });

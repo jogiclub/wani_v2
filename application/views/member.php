@@ -2,16 +2,15 @@
 <html lang="ko">
 <head>
 	<?php $this->load->view('header'); ?>
-	<!-- Fancytree CSS -->
+	<!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 	<link rel="stylesheet"
-		  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.3/skin-bootstrap/ui.fancytree.min.css">
+		  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
 	<!-- ParamQuery CSS -->
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqgrid/8.8.0/pqgrid.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
 	<!-- Member CSS -->
 	<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
 </head>
 <body>
-
 
 <div class="container pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -34,9 +33,11 @@
 		<!-- 왼쪽: 그룹 트리 -->
 		<div class="col-md-4 col-lg-3">
 			<div class="card">
-
+				<div class="card-header">
+					<h5 class="mb-0">조직 구조</h5>
+				</div>
 				<div class="card-body p-0">
-					<div id="orgTree" class="tree-container"></div>
+					<div id="groupTree" class="tree-container"></div>
 				</div>
 			</div>
 		</div>
@@ -45,8 +46,8 @@
 		<div class="col-md-8 col-lg-9">
 			<div class="card">
 				<div class="card-header d-flex justify-content-between align-items-center">
-					<h5 class="mb-0">
-
+					<h5 class="mb-0" id="selectedOrgName">
+						<i class="bi bi-people"></i> 조직을 선택해주세요
 					</h5>
 					<div class="btn-group" role="group">
 						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember">
@@ -140,12 +141,12 @@
 <!-- JavaScript 라이브러리 로드 -->
 <?php $this->load->view('footer'); ?>
 
+<!-- jQuery UI (Fancytree 의존성) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/jquery-ui.min.js"></script>
 <!-- Fancytree JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.3/jquery.fancytree-all-deps.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all.min.js"></script>
 <!-- ParamQuery JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pqgrid/8.8.0/pqgrid.min.js"></script>
-<!-- Member JS -->
-<script src="/assets/js/member.js?<?php echo date('Ymdhis'); ?>"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
 
 <script>
 	// PHP 데이터를 JavaScript로 전달
@@ -154,6 +155,9 @@
 		baseUrl: '<?php echo base_url(); ?>'
 	};
 </script>
+
+<!-- Member JS (라이브러리들이 로드된 후에 실행) -->
+<script src="/assets/js/member.js?<?php echo date('Ymdhis'); ?>"></script>
 
 </body>
 </html>

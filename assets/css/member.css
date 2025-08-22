@@ -1,5 +1,5 @@
 /**
- * 파일 위치: E:\SynologyDrive\Example\wani\assets\css\member.css
+ * 파일 위치: assets/css/member.css
  * 역할: 회원 관리 페이지 전용 스타일시트
  */
 
@@ -66,6 +66,7 @@ header {
 /* Fancytree 커스텀 스타일 */
 .ui-fancytree {
 	border: none;
+	font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .fancytree-container {
@@ -74,26 +75,32 @@ header {
 
 .fancytree-node {
 	border: none;
+	padding: 2px 0;
 }
 
 .fancytree-title {
 	color: #495057;
 	font-size: 0.9rem;
+	padding: 4px 8px;
+	border-radius: 4px;
+	transition: all 0.2s ease;
+}
+
+.fancytree-title:hover {
+	background-color: #f8f9fa;
 }
 
 .fancytree-active .fancytree-title {
-	background-color: #007bff;
-	color: white;
-	border-radius: 4px;
-	padding: 2px 6px;
+	background-color: #007bff !important;
+	color: white !important;
 }
 
 .fancytree-focused .fancytree-active .fancytree-title {
-	background-color: #0056b3;
+	background-color: #0056b3 !important;
 }
 
 /* 그룹과 소그룹 구분 스타일 */
-.fancytree-node[data-type="group"] .fancytree-title {
+.fancytree-node[data-type="org"] .fancytree-title {
 	font-weight: 600;
 	color: #007bff;
 }
@@ -101,7 +108,24 @@ header {
 .fancytree-node[data-type="area"] .fancytree-title {
 	font-weight: 400;
 	color: #6c757d;
-	margin-left: 1rem;
+	font-size: 0.85rem;
+}
+
+/* Fancytree 아이콘 및 들여쓰기 */
+.fancytree-icon {
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+}
+
+.fancytree-indent {
+	width: 24px;
+}
+
+.fancytree-expander {
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
 }
 
 /* ParamQuery Grid 커스텀 스타일 */
@@ -193,38 +217,20 @@ header {
 
 .tree-container::-webkit-scrollbar-track {
 	background: #f1f1f1;
-	border-radius: 3px;
+	border-radius: 6px;
 }
 
 .tree-container::-webkit-scrollbar-thumb {
 	background: #c1c1c1;
-	border-radius: 3px;
+	border-radius: 6px;
 }
 
 .tree-container::-webkit-scrollbar-thumb:hover {
 	background: #a8a8a8;
 }
 
-/* 반응형 디자인 */
+/* 반응형 스타일 */
 @media (max-width: 768px) {
-	.container-xl {
-		padding-left: 1rem;
-		padding-right: 1rem;
-	}
-
-	.btn-home {
-		left: 10px;
-	}
-
-	.card-header h5 {
-		font-size: 1rem;
-	}
-
-	.btn-group .btn {
-		font-size: 0.75rem;
-		padding: 0.25rem 0.5rem;
-	}
-
 	.tree-container {
 		height: 300px;
 	}
@@ -234,71 +240,23 @@ header {
 	}
 }
 
-@media (max-width: 576px) {
-	.row {
-		margin: 0;
-	}
-
-	.col-md-4, .col-md-8 {
-		padding-left: 0.5rem;
-		padding-right: 0.5rem;
-	}
-
-	.card {
-		margin-bottom: 1rem;
-	}
-
-	.btn-group {
-		width: 100%;
-	}
-
-	.btn-group .btn {
-		flex: 1;
-		font-size: 0.7rem;
-		padding: 0.2rem 0.3rem;
-	}
-
-	.tree-container {
-		height: 250px;
-	}
+/* Toast 컨테이너 z-index */
+#toastContainer {
+	z-index: 9999;
 }
 
-/* 로딩 스타일 */
-.loading {
-	text-align: center;
-	padding: 2rem;
-	color: #6c757d;
-}
-
-.loading i {
-	font-size: 2rem;
+/* 로딩 스피너 */
+.loading-spinner {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #007bff;
+	border-radius: 50%;
 	animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
 	0% { transform: rotate(0deg); }
 	100% { transform: rotate(360deg); }
-}
-
-/* 빈 상태 스타일 */
-.empty-state {
-	text-align: center;
-	padding: 3rem 1rem;
-	color: #6c757d;
-}
-
-.empty-state i {
-	font-size: 3rem;
-	margin-bottom: 1rem;
-	opacity: 0.5;
-}
-
-.empty-state h6 {
-	margin-bottom: 0.5rem;
-	color: #495057;
-}
-
-.empty-state p {
-	margin: 0;
-	font-size: 0.9rem;
 }
