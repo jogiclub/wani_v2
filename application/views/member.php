@@ -70,7 +70,7 @@
 
 <!-- 회원 정보 수정 모달 -->
 <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="memberModalLabel">회원 정보</h5>
@@ -80,9 +80,19 @@
 				<form id="memberForm">
 					<input type="hidden" id="member_idx" name="member_idx">
 
-					<div class="mb-3">
-						<label for="member_name" class="form-label">이름</label>
-						<input type="text" class="form-control" id="member_name" name="member_name" required>
+					<div class="row">
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label for="member_name" class="form-label">이름</label>
+								<input type="text" class="form-control" id="member_name" name="member_name" required>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="mb-3">
+								<label for="member_phone" class="form-label">휴대폰번호</label>
+								<input type="tel" class="form-control" id="member_phone" name="member_phone">
+							</div>
+						</div>
 					</div>
 
 					<div class="row">
@@ -101,6 +111,11 @@
 					</div>
 
 					<div class="mb-3">
+						<label for="member_address" class="form-label">주소</label>
+						<input type="text" class="form-control" id="member_address" name="member_address">
+					</div>
+
+					<div class="mb-3">
 						<label for="area_idx" class="form-label">소그룹</label>
 						<select class="form-select" id="area_idx" name="area_idx">
 							<option value="">소그룹 선택</option>
@@ -110,8 +125,7 @@
 					<div class="row">
 						<div class="col-md-6">
 							<div class="form-check mb-3">
-								<input class="form-check-input" type="checkbox" id="leader_yn" name="leader_yn"
-									   value="Y">
+								<input class="form-check-input" type="checkbox" id="leader_yn" name="leader_yn" value="Y">
 								<label class="form-check-label" for="leader_yn">
 									리더 여부
 								</label>
@@ -126,6 +140,14 @@
 							</div>
 						</div>
 					</div>
+
+					<div class="mb-3">
+						<label for="photo" class="form-label">사진</label>
+						<input type="file" class="form-control" id="photo" name="photo" accept="image/*">
+						<div id="photoPreview" class="mt-2" style="display: none;">
+							<img id="previewImage" src="" alt="미리보기" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+						</div>
+					</div>
 				</form>
 			</div>
 			<div class="modal-footer">
@@ -135,7 +157,6 @@
 		</div>
 	</div>
 </div>
-
 <!-- JavaScript 라이브러리 로드 -->
 <?php $this->load->view('footer'); ?>
 

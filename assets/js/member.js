@@ -3,7 +3,7 @@
  * 역할: 회원 관리 페이지 JavaScript - Fancytree와 ParamQuery 연동
  */
 
-$(document).ready(function() {
+$(document).ready(function () {
 	// 전역 변수
 	let memberGrid;
 	let selectedOrgId = null;
@@ -16,7 +16,7 @@ $(document).ready(function() {
 	console.log('ParamQuery pqGrid:', typeof $.fn.pqGrid);
 
 	// 초기화 시도
-	setTimeout(function() {
+	setTimeout(function () {
 		initializePage();
 	}, 800); // 800ms 지연 후 초기화
 
@@ -44,6 +44,7 @@ $(document).ready(function() {
 			initializeFancytree();
 			initializeParamQuery();
 			bindEvents();
+			bindPhotoEvents();
 			console.log('페이지 초기화 완료');
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
@@ -61,7 +62,7 @@ $(document).ready(function() {
 			url: window.memberPageData.baseUrl + 'member/get_org_tree',
 			method: 'POST',
 			dataType: 'json',
-			success: function(treeData) {
+			success: function (treeData) {
 				console.log('트리 데이터:', treeData);
 
 				if (!treeData || treeData.length === 0) {
@@ -72,7 +73,7 @@ $(document).ready(function() {
 				// 가장 단순한 Fancytree 설정
 				$("#groupTree").fancytree({
 					source: treeData,
-					activate: function(event, data) {
+					activate: function (event, data) {
 						const node = data.node;
 						const nodeData = node.data;
 
@@ -103,13 +104,14 @@ $(document).ready(function() {
 
 				console.log('Fancytree 초기화 완료');
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('그룹 트리 로드 실패:', error);
 				console.error('Response:', xhr.responseText);
 				showToast('그룹 정보를 불러오는데 실패했습니다.');
 			}
 		});
 	}
+
 
 	/**
 	 * ParamQuery Grid 초기화 (3.5.1 버전 호환)
@@ -119,17 +121,23 @@ $(document).ready(function() {
 
 		const colModel = [
 			{
+				title: '<input type="checkbox" id="selectAllCheckbox" />',
+				dataIndx: "pq_selected",
+				width: 50,
+				align: "center",
+				resizable: false,
+				sortable: false,
+				menuIcon: false,
+				render: function(ui) {
+					return '<input type="checkbox" class="member-checkbox" data-member-idx="' + ui.rowData.member_idx + '" />';
+				}
+			},
+			{
 				title: "회원번호",
 				dataIndx: "member_idx",
 				width: 80,
 				align: "center",
 				hidden: true
-			},
-			{
-				title: "이름",
-				dataIndx: "member_name",
-				width: 120,
-				align: "center"
 			},
 			{
 				title: "소그룹",
@@ -138,9 +146,25 @@ $(document).ready(function() {
 				align: "center"
 			},
 			{
-				title: "학년",
-				dataIndx: "grade",
-				width: 60,
+				title: "사진",
+				dataIndx: "photo",
+				width: 80,
+				align: "center",
+				render: function(ui) {
+					const photoUrl = ui.cellData || '/assets/images/photo_no.png';
+					return '<img src="' + photoUrl + '" alt="사진" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">';
+				}
+			},
+			{
+				title: "이름",
+				dataIndx: "member_name",
+				width: 120,
+				align: "center"
+			},
+			{
+				title: "휴대폰번호",
+				dataIndx: "member_phone",
+				width: 120,
 				align: "center"
 			},
 			{
@@ -148,6 +172,12 @@ $(document).ready(function() {
 				dataIndx: "member_birth",
 				width: 100,
 				align: "center"
+			},
+			{
+				title: "주소",
+				dataIndx: "member_address",
+				width: 200,
+				align: "left"
 			},
 			{
 				title: "리더",
@@ -165,6 +195,32 @@ $(document).ready(function() {
 				align: "center",
 				render: function(ui) {
 					return ui.cellData === 'Y' ? '<i class="bi bi-star-fill text-warning"></i>' : '';
+				}
+			},
+			{
+				title: "등록일",
+				dataIndx: "regi_date",
+				width: 120,
+				align: "center",
+				render: function(ui) {
+					if (ui.cellData) {
+						const date = new Date(ui.cellData);
+						return date.toLocaleDateString('ko-KR');
+					}
+					return '';
+				}
+			},
+			{
+				title: "수정일",
+				dataIndx: "modi_date",
+				width: 120,
+				align: "center",
+				render: function(ui) {
+					if (ui.cellData) {
+						const date = new Date(ui.cellData);
+						return date.toLocaleDateString('ko-KR');
+					}
+					return '';
 				}
 			},
 			{
@@ -201,17 +257,97 @@ $(document).ready(function() {
 				// 선택 이벤트 처리
 				const hasSelection = ui.selection && ui.selection.length > 0;
 				$('#btnEditMember, #btnDeleteMember').prop('disabled', !hasSelection);
+			},
+			refresh: function() {
+				// 그리드 새로고침 후 체크박스 이벤트 재바인딩
+				bindCheckboxEvents();
 			}
 		};
 
 		try {
 			memberGrid = $("#memberGrid").pqGrid(gridOptions);
 			console.log('ParamQuery 초기화 완료');
+
+			// 체크박스 이벤트 바인딩
+			bindCheckboxEvents();
 		} catch (error) {
 			console.error('ParamQuery Grid 초기화 실패:', error);
 			showToast('그리드 초기화에 실패했습니다.');
 		}
 	}
+
+
+	/**
+	 * 체크박스 이벤트 바인딩
+	 */
+	function bindCheckboxEvents() {
+		// 전체 선택 체크박스 이벤트
+		$(document).off('change', '#selectAllCheckbox').on('change', '#selectAllCheckbox', function() {
+			const isChecked = $(this).is(':checked');
+			$('.member-checkbox').prop('checked', isChecked);
+			updateSelectedMemberButtons();
+		});
+
+		// 개별 체크박스 이벤트
+		$(document).off('change', '.member-checkbox').on('change', '.member-checkbox', function() {
+			updateSelectAllCheckbox();
+			updateSelectedMemberButtons();
+		});
+	}
+
+	/**
+	 * 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateSelectAllCheckbox() {
+		const totalCheckboxes = $('.member-checkbox').length;
+		const checkedCheckboxes = $('.member-checkbox:checked').length;
+
+		const selectAllCheckbox = $('#selectAllCheckbox');
+
+		if (checkedCheckboxes === 0) {
+			selectAllCheckbox.prop('checked', false).prop('indeterminate', false);
+		} else if (checkedCheckboxes === totalCheckboxes) {
+			selectAllCheckbox.prop('checked', true).prop('indeterminate', false);
+		} else {
+			selectAllCheckbox.prop('checked', false).prop('indeterminate', true);
+		}
+	}
+
+	/**
+	 * 선택된 회원 기반 버튼 상태 업데이트
+	 */
+	function updateSelectedMemberButtons() {
+		const checkedCheckboxes = $('.member-checkbox:checked').length;
+
+		if (checkedCheckboxes > 0) {
+			$('#btnDeleteMember').prop('disabled', false);
+			if (checkedCheckboxes === 1) {
+				$('#btnEditMember').prop('disabled', false);
+			} else {
+				$('#btnEditMember').prop('disabled', true);
+			}
+		} else {
+			$('#btnEditMember, #btnDeleteMember').prop('disabled', true);
+		}
+	}
+
+	/**
+	 * 선택된 회원 데이터 가져오기
+	 */
+	function getSelectedMembers() {
+		const selectedMembers = [];
+		$('.member-checkbox:checked').each(function() {
+			const memberIdx = $(this).data('member-idx');
+			// 그리드에서 해당 회원 데이터 찾기
+			const gridData = memberGrid.pqGrid("option", "dataModel.data");
+			const memberData = gridData.find(member => member.member_idx == memberIdx);
+			if (memberData) {
+				selectedMembers.push(memberData);
+			}
+		});
+		return selectedMembers;
+	}
+
 
 	/**
 	 * 이벤트 바인딩
@@ -228,32 +364,26 @@ $(document).ready(function() {
 
 		// 회원 수정 버튼
 		$('#btnEditMember').on('click', function() {
-			try {
-				const selectedData = memberGrid.pqGrid("getSelection");
-				if (!selectedData || selectedData.length === 0) {
-					showToast('수정할 회원을 선택해주세요.');
-					return;
-				}
-				openMemberModal('edit', selectedData[0]);
-			} catch (error) {
-				console.error('선택 데이터 가져오기 실패:', error);
-				showToast('선택된 데이터를 가져올 수 없습니다.');
+			const selectedMembers = getSelectedMembers();
+			if (selectedMembers.length === 0) {
+				showToast('수정할 회원을 선택해주세요.');
+				return;
 			}
+			if (selectedMembers.length > 1) {
+				showToast('수정은 한 명씩만 가능합니다.');
+				return;
+			}
+			openMemberModal('edit', selectedMembers[0]);
 		});
 
 		// 회원 삭제 버튼
 		$('#btnDeleteMember').on('click', function() {
-			try {
-				const selectedData = memberGrid.pqGrid("getSelection");
-				if (!selectedData || selectedData.length === 0) {
-					showToast('삭제할 회원을 선택해주세요.');
-					return;
-				}
-				deleteMember(selectedData[0].member_idx);
-			} catch (error) {
-				console.error('선택 데이터 가져오기 실패:', error);
-				showToast('선택된 데이터를 가져올 수 없습니다.');
+			const selectedMembers = getSelectedMembers();
+			if (selectedMembers.length === 0) {
+				showToast('삭제할 회원을 선택해주세요.');
+				return;
 			}
+			deleteSelectedMembers(selectedMembers);
 		});
 
 		// 회원 저장 버튼
@@ -261,6 +391,44 @@ $(document).ready(function() {
 			saveMember();
 		});
 	}
+
+
+
+	/**
+	 * 선택된 회원들 삭제
+	 */
+	function deleteSelectedMembers(selectedMembers) {
+		const memberCount = selectedMembers.length;
+		const memberNames = selectedMembers.map(member => member.member_name).join(', ');
+
+		if (!confirm(`정말로 ${memberCount}명의 회원(${memberNames})을 삭제하시겠습니까?`)) {
+			return;
+		}
+
+		const memberIndices = selectedMembers.map(member => member.member_idx);
+
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/delete_members',
+			method: 'POST',
+			data: {
+				member_indices: memberIndices
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message);
+					loadMemberData();
+				} else {
+					showToast(response.message);
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('회원 삭제 실패:', error);
+				showToast('회원 삭제에 실패했습니다.');
+			}
+		});
+	}
+
 
 	/**
 	 * 선택된 그룹명 업데이트
@@ -307,7 +475,8 @@ $(document).ready(function() {
 					// 버튼 상태 초기화
 					$('#btnEditMember, #btnDeleteMember').prop('disabled', true);
 
-					showToast(`${response.data ? response.data.length : 0}명의 회원을 로드했습니다.`);
+					// Toast 메시지 제거
+					// showToast(`${response.data ? response.data.length : 0}명의 회원을 로드했습니다.`);
 				} else {
 					console.error('회원 데이터 로드 실패:', response.message);
 					showToast('회원 데이터를 불러오는데 실패했습니다.');
@@ -332,6 +501,7 @@ $(document).ready(function() {
 
 		// 폼 초기화
 		$('#memberForm')[0].reset();
+		$('#photoPreview').hide();
 
 		// 소그룹 옵션 로드
 		loadAreaOptions(selectedOrgId);
@@ -340,12 +510,23 @@ $(document).ready(function() {
 			// 수정 모드일 때 기존 데이터 채우기
 			$('#member_idx').val(memberData.member_idx);
 			$('#member_name').val(memberData.member_name);
+			$('#member_phone').val(memberData.member_phone);
 			$('#member_birth').val(memberData.member_birth);
+			$('#member_address').val(memberData.member_address);
 			$('#grade').val(memberData.grade);
 			$('#area_idx').val(memberData.area_idx);
 			$('#leader_yn').prop('checked', memberData.leader_yn === 'Y');
 			$('#new_yn').prop('checked', memberData.new_yn === 'Y');
+
+			// 기존 사진이 있으면 미리보기 표시
+			if (memberData.photo && memberData.photo !== '/assets/images/photo_no.png') {
+				$('#previewImage').attr('src', memberData.photo);
+				$('#photoPreview').show();
+			}
 		}
+
+		// 사진 이벤트 바인딩
+		bindPhotoEvents();
 
 		modal.modal('show');
 	}
@@ -363,7 +544,7 @@ $(document).ready(function() {
 			const groupNode = tree.getNodeByKey('org_' + orgId);
 
 			if (groupNode && groupNode.children) {
-				groupNode.children.forEach(function(child) {
+				groupNode.children.forEach(function (child) {
 					const areaData = child.data;
 					areaSelect.append(`<option value="${areaData.area_idx}">${child.title}</option>`);
 				});
@@ -380,7 +561,9 @@ $(document).ready(function() {
 		const formData = {
 			member_idx: $('#member_idx').val(),
 			member_name: $('#member_name').val(),
+			member_phone: $('#member_phone').val(),
 			member_birth: $('#member_birth').val(),
+			member_address: $('#member_address').val(),
 			grade: $('#grade').val(),
 			area_idx: $('#area_idx').val(),
 			leader_yn: $('#leader_yn').is(':checked') ? 'Y' : 'N',
@@ -399,9 +582,25 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					showToast(response.message);
-					$('#memberModal').modal('hide');
-					loadMemberData();
+					const memberIdx = formData.member_idx || response.member_idx;
+
+					// 사진이 선택되었으면 업로드 처리
+					const photoFile = $('#photo')[0].files[0];
+					if (photoFile && memberIdx) {
+						uploadMemberPhoto(memberIdx, function(photoSuccess, photoUrl) {
+							if (photoSuccess) {
+								showToast('회원 정보와 사진이 저장되었습니다.');
+							} else {
+								showToast('회원 정보는 저장되었으나 사진 업로드에 실패했습니다.');
+							}
+							$('#memberModal').modal('hide');
+							loadMemberData();
+						});
+					} else {
+						showToast(response.message);
+						$('#memberModal').modal('hide');
+						loadMemberData();
+					}
 				} else {
 					showToast(response.message);
 				}
@@ -428,7 +627,7 @@ $(document).ready(function() {
 				member_idx: memberIdx
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					showToast(response.message);
 					loadMemberData();
@@ -436,7 +635,7 @@ $(document).ready(function() {
 					showToast(response.message);
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('회원 삭제 실패:', error);
 				showToast('회원 삭제에 실패했습니다.');
 			}
@@ -480,8 +679,68 @@ $(document).ready(function() {
 		toast.show();
 
 		// Toast가 숨겨진 후 DOM에서 제거
-		toastElement.addEventListener('hidden.bs.toast', function() {
+		toastElement.addEventListener('hidden.bs.toast', function () {
 			$(this).remove();
 		});
 	}
+
+	/**
+	 * 사진 미리보기 이벤트 바인딩
+	 */
+	function bindPhotoEvents() {
+		// 사진 파일 선택 시 미리보기
+		$('#photo').on('change', function(e) {
+			const file = e.target.files[0];
+			if (file) {
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					$('#previewImage').attr('src', e.target.result);
+					$('#photoPreview').show();
+				};
+				reader.readAsDataURL(file);
+			} else {
+				$('#photoPreview').hide();
+			}
+		});
+	}
+
+	/**
+	 * 사진 업로드 처리
+	 */
+	function uploadMemberPhoto(memberIdx, callback) {
+		const photoFile = $('#photo')[0].files[0];
+
+		if (!photoFile) {
+			if (callback) callback(true, null);
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append('photo', photoFile);
+		formData.append('member_idx', memberIdx);
+		formData.append('org_id', selectedOrgId);
+
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/upload_member_photo',
+			method: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					if (callback) callback(true, response.photo_url);
+				} else {
+					showToast(response.message);
+					if (callback) callback(false, null);
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('사진 업로드 실패:', error);
+				showToast('사진 업로드에 실패했습니다.');
+				if (callback) callback(false, null);
+			}
+		});
+	}
+
 });
