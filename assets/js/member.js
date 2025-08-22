@@ -70,7 +70,7 @@ $(document).ready(function () {
 					return;
 				}
 
-				// 가장 단순한 Fancytree 설정
+				// Fancytree 설정
 				$("#groupTree").fancytree({
 					source: treeData,
 					activate: function (event, data) {
@@ -83,24 +83,22 @@ $(document).ready(function () {
 						selectedOrgId = nodeData.org_id;
 						selectedAreaIdx = nodeData.area_idx || null;
 
+						// localStorage에 선택된 소그룹 저장
+						saveSelectedGroupToStorage(nodeData);
+
 						// 선택된 노드에 따라 제목 업데이트
 						updateSelectedOrgName(node.title, nodeData.type);
 
 						// 회원 데이터 로드
 						loadMemberData();
 					},
-					// 기본 설정만 사용, 확장 기능 제거
 					autoScroll: true,
 					keyboard: true,
 					focusOnSelect: true
 				});
 
-				// 트리가 로드된 후 첫 번째 조직 자동 선택
-				const tree = $("#groupTree").fancytree("getTree");
-				if (tree && tree.rootNode && tree.rootNode.children.length > 0) {
-					const firstOrgNode = tree.rootNode.children[0];
-					firstOrgNode.setActive(true);
-				}
+				// 트리가 로드된 후 저장된 선택 상태 복원
+				restoreSelectedGroupFromStorage(treeData);
 
 				console.log('Fancytree 초기화 완료');
 			},
@@ -112,6 +110,94 @@ $(document).ready(function () {
 		});
 	}
 
+
+	/**
+	 * 선택된 그룹을 localStorage에 저장
+	 */
+	function saveSelectedGroupToStorage(nodeData) {
+		try {
+			const selectedGroup = {
+				type: nodeData.type,
+				org_id: nodeData.org_id,
+				area_idx: nodeData.area_idx || null,
+				timestamp: Date.now()
+			};
+
+			localStorage.setItem('member_selected_group', JSON.stringify(selectedGroup));
+			console.log('선택된 그룹 저장됨:', selectedGroup);
+		} catch (error) {
+			console.error('localStorage 저장 실패:', error);
+		}
+	}
+
+	/**
+	 * localStorage에서 저장된 그룹 선택 상태 복원
+	 */
+	function restoreSelectedGroupFromStorage(treeData) {
+		try {
+			const savedGroup = localStorage.getItem('member_selected_group');
+
+			if (!savedGroup) {
+				// 저장된 선택이 없으면 첫 번째 조직 자동 선택
+				selectFirstOrganization();
+				return;
+			}
+
+			const groupData = JSON.parse(savedGroup);
+
+			// 7일 이내의 데이터만 복원 (선택적)
+			const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+			if (groupData.timestamp < sevenDaysAgo) {
+				localStorage.removeItem('member_selected_group');
+				selectFirstOrganization();
+				return;
+			}
+
+			const tree = $("#groupTree").fancytree("getTree");
+			let nodeToSelect = null;
+
+			// 저장된 그룹이 소그룹(area)인 경우
+			if (groupData.type === 'area' && groupData.area_idx) {
+				nodeToSelect = tree.getNodeByKey('area_' + groupData.area_idx);
+			}
+			// 저장된 그룹이 조직(org)인 경우 또는 소그룹을 찾을 수 없는 경우
+			if (!nodeToSelect && groupData.org_id) {
+				nodeToSelect = tree.getNodeByKey('org_' + groupData.org_id);
+			}
+
+			if (nodeToSelect) {
+				nodeToSelect.setActive(true);
+				nodeToSelect.setFocus(true);
+
+				// 상위 노드가 있으면 확장
+				if (nodeToSelect.parent && nodeToSelect.parent.isRootNode() === false) {
+					nodeToSelect.parent.setExpanded(true);
+				}
+
+				console.log('저장된 그룹 선택 복원됨:', groupData);
+			} else {
+				console.log('저장된 그룹을 찾을 수 없음, 첫 번째 조직 선택');
+				selectFirstOrganization();
+			}
+
+		} catch (error) {
+			console.error('localStorage 복원 실패:', error);
+			selectFirstOrganization();
+		}
+	}
+
+	/**
+	 * 첫 번째 조직 자동 선택
+	 */
+	function selectFirstOrganization() {
+		const tree = $("#groupTree").fancytree("getTree");
+		if (tree && tree.rootNode && tree.rootNode.children.length > 0) {
+			const firstOrgNode = tree.rootNode.children[0];
+			firstOrgNode.setActive(true);
+			firstOrgNode.setFocus(true);
+			firstOrgNode.setExpanded(true);
+		}
+	}
 
 	/**
 	 * ParamQuery Grid 초기화 (3.5.1 버전 호환)
@@ -128,28 +214,24 @@ $(document).ready(function () {
 				resizable: false,
 				sortable: false,
 				menuIcon: false,
+				frozen: true,  // 체크박스 컬럼 고정
 				render: function(ui) {
 					return '<input type="checkbox" class="member-checkbox" data-member-idx="' + ui.rowData.member_idx + '" />';
 				}
 			},
 			{
-				title: "회원번호",
-				dataIndx: "member_idx",
-				width: 80,
-				align: "center",
-				hidden: true
-			},
-			{
 				title: "소그룹",
 				dataIndx: "area_name",
 				width: 100,
-				align: "center"
+				align: "center",
+				frozen: true  // 소그룹 컬럼 고정
 			},
 			{
 				title: "사진",
 				dataIndx: "photo",
 				width: 80,
 				align: "center",
+				frozen: true,  // 사진 컬럼 고정
 				render: function(ui) {
 					const photoUrl = ui.cellData || '/assets/images/photo_no.png';
 					return '<img src="' + photoUrl + '" alt="사진" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">';
@@ -159,25 +241,39 @@ $(document).ready(function () {
 				title: "이름",
 				dataIndx: "member_name",
 				width: 120,
-				align: "center"
+				align: "center",
+				frozen: true  // 이름 컬럼 고정
+			},
+			{
+				title: "회원번호",
+				dataIndx: "member_idx",
+				width: 80,
+				align: "center",
+				hidden: true
 			},
 			{
 				title: "휴대폰번호",
 				dataIndx: "member_phone",
-				width: 120,
+				width: 140,
 				align: "center"
 			},
 			{
 				title: "생년월일",
 				dataIndx: "member_birth",
-				width: 100,
+				width: 110,
 				align: "center"
 			},
 			{
 				title: "주소",
 				dataIndx: "member_address",
-				width: 200,
+				width: 250,
 				align: "left"
+			},
+			{
+				title: "등급",
+				dataIndx: "grade",
+				width: 80,
+				align: "center"
 			},
 			{
 				title: "리더",
@@ -244,8 +340,11 @@ $(document).ready(function () {
 				mode: 'single'
 			},
 			scrollModel: {
-				autoFit: true
+				autoFit: false,
+				horizontal: true,
+				vertical: true
 			},
+			freezeCols: 4,  // 첫 4개 컬럼 고정 (체크박스, 소그룹, 사진, 이름)
 			numberCell: {
 				show: false
 			},
@@ -253,13 +352,13 @@ $(document).ready(function () {
 			resizable: true,
 			sortable: false,
 			hoverMode: 'row',
+			wrap: false,
+			columnBorders: true,
 			selectEnd: function(event, ui) {
-				// 선택 이벤트 처리
 				const hasSelection = ui.selection && ui.selection.length > 0;
 				$('#btnEditMember, #btnDeleteMember').prop('disabled', !hasSelection);
 			},
 			refresh: function() {
-				// 그리드 새로고침 후 체크박스 이벤트 재바인딩
 				bindCheckboxEvents();
 			}
 		};
@@ -268,7 +367,6 @@ $(document).ready(function () {
 			memberGrid = $("#memberGrid").pqGrid(gridOptions);
 			console.log('ParamQuery 초기화 완료');
 
-			// 체크박스 이벤트 바인딩
 			bindCheckboxEvents();
 		} catch (error) {
 			console.error('ParamQuery Grid 초기화 실패:', error);
