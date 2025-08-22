@@ -124,7 +124,7 @@ header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
 .att-dropdown-wrap button{border: 0;background: none; font-size: 16px}
 
 /*일반*/
-main{background: #fafafa; padding: 30px 0 200px;}
+main{background: #fafafa; padding-top: 30px;}
 
 .mypage-org-list table th{background: none}
 .mypage-org-list table td .btn-user-setting{width: 100%}

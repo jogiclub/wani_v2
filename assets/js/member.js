@@ -330,7 +330,7 @@ $(document).ready(function () {
 
 		const gridOptions = {
 			width: "100%",
-			height: 500,
+			height: "100%",
 			dataModel: {
 				data: []
 			},

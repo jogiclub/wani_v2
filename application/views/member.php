@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
+
 	<?php $this->load->view('header'); ?>
 	<!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 	<link rel="stylesheet"
@@ -9,8 +7,7 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
 	<!-- Member CSS -->
 	<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
-</head>
-<body>
+
 
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -21,15 +18,12 @@
 		</ol>
 	</nav>
 	<div class="row align-items-center justify-content-between g-3 mb-4">
-		<h3 class="page-title col-6 my-1">회원관리</h3>
-		<div class="col-6 my-1">
-
-		</div>
+		<h3 class="page-title col-12 my-1">회원관리</h3>
 	</div>
 
 	<div class="row">
 		<!-- 왼쪽: 그룹 트리 -->
-		<div class="col-md-4 col-lg-3">
+		<div class="col-md-3 col-lg-2">
 			<div class="card">
 				<div class="card-header">
 					<h5 class="mb-0">조직 구조</h5>
@@ -41,7 +35,7 @@
 		</div>
 
 		<!-- 오른쪽: 회원 목록 -->
-		<div class="col-md-8 col-lg-9">
+		<div class="col-md-9 col-lg-10">
 			<div class="card">
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<h5 class="mb-0" id="selectedOrgName">
@@ -178,5 +172,3 @@
 <!-- Member JS (라이브러리들이 로드된 후에 실행) -->
 <script src="/assets/js/member.js?<?php echo date('Ymdhis'); ?>"></script>
 
-</body>
-</html>
