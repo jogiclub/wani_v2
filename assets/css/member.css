@@ -132,47 +132,17 @@ header {
 .pq-grid {
 	border: none;
 	font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-	overflow: hidden; /* 그리드 컨테이너 오버플로우 숨김 */
 }
 
-/* 그리드 컨테이너 스크롤바 커스터마이징 */
-.pq-grid-cont {
-	overflow: auto !important; /* 스크롤 강제 활성화 */
-}
-
-.pq-grid-cont::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
-}
-
-.pq-grid-cont::-webkit-scrollbar-track {
-	background: #f1f1f1;
-	border-radius: 4px;
-}
-
-.pq-grid-cont::-webkit-scrollbar-thumb {
-	background: #c1c1c1;
-	border-radius: 4px;
-}
-
-.pq-grid-cont::-webkit-scrollbar-thumb:hover {
-	background: #a8a8a8;
-}
-
-/* 헤더 고정 */
 .pq-grid-header {
 	background-color: #f8f9fa;
 	border-bottom: 2px solid #dee2e6;
-	position: sticky;
-	top: 0;
-	z-index: 10;
 }
 
 .pq-grid-header .pq-grid-cell {
 	font-weight: 600;
 	color: #495057;
 	border-right: 1px solid #dee2e6;
-	white-space: nowrap; /* 헤더 텍스트 줄바꿈 방지 */
 }
 
 .pq-grid-row {
@@ -190,20 +160,6 @@ header {
 .pq-grid-cell {
 	padding: 8px;
 	border-right: 1px solid #f1f3f4;
-	white-space: nowrap; /* 셀 내용 줄바꿈 방지 */
-	overflow: hidden;
-	text-overflow: ellipsis; /* 긴 텍스트는 ... 표시 */
-}
-
-/* 컬럼 리사이즈 핸들 스타일 */
-.pq-grid-col-resize {
-	border-right: 2px solid #007bff;
-	cursor: col-resize;
-}
-
-/* 그리드 최소 너비 설정 */
-.pq-grid-table {
-	min-width: 1200px; /* 최소 너비 설정으로 스크롤 보장 */
 }
 
 /* 버튼 그룹 스타일 */
