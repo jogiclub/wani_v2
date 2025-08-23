@@ -1,12 +1,11 @@
-
-	<?php $this->load->view('header'); ?>
-	<!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
-	<link rel="stylesheet"
-		  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
-	<!-- ParamQuery CSS -->
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
-	<!-- Member CSS -->
-	<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
+<?php $this->load->view('header'); ?>
+<!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
+<link rel="stylesheet"
+	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
+<!-- ParamQuery CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
+<!-- Member CSS -->
+<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
 
 
 <div class="container-fluid pt-2 pb-2">
@@ -45,9 +44,6 @@
 						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember">
 							<i class="bi bi-person-plus"></i> 회원 추가
 						</button>
-						<button type="button" class="btn btn-sm btn-outline-success" id="btnEditMember" disabled>
-							<i class="bi bi-pencil"></i> 수정
-						</button>
 						<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled>
 							<i class="bi bi-trash"></i> 삭제
 						</button>
@@ -62,113 +58,133 @@
 	</div>
 </div>
 
-<!-- 회원 정보 수정 모달 -->
-<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="memberModalLabel">회원 정보</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- 회원 정보 수정 offcanvas -->
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="memberOffcanvas" aria-labelledby="memberOffcanvasLabel">
+	<div class="offcanvas-header text-start">
+		<h5 class="offcanvas-title" id="memberOffcanvasLabel">회원 정보 수정</h5>
+		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<form id="memberForm" enctype="multipart/form-data">
+			<input type="hidden" id="member_idx" name="member_idx">
+			<input type="hidden" id="org_id" name="org_id">
+
+			<div class="row">
+				<!-- 스위치 버튼들 -->
+				<div class="d-flex justify-content-end text-end mb-4">
+					<div class="form-check form-switch">
+						<input type="checkbox" class="form-check-input" id="leader_yn" name="leader_yn">
+						<label class="form-check-label" for="leader_yn">리더</label>
+					</div>
+					<div class="form-check form-switch ms-3">
+						<input type="checkbox" class="form-check-input" id="new_yn" name="new_yn">
+						<label class="form-check-label" for="new_yn">새가족</label>
+					</div>
+				</div>
+
+				<!-- 사진 영역 -->
+				<div class="col-12 mb-3 text-center">
+					<div id="photoPreview" style="display: none;">
+						<img id="previewImage" src="" alt="미리보기" style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%;">
+						<div class="mt-2">
+							<button type="button" class="btn btn-sm btn-danger" id="removePhoto">사진 삭제</button>
+						</div>
+					</div>
+					<div id="photoUpload">
+						<label for="member_photo" class="form-label">
+							<div style="width: 150px; height: 150px; border: 2px dashed #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; cursor: pointer;">
+								<i class="bi bi-camera" style="font-size: 2rem; color: #ccc;"></i>
+							</div>
+						</label>
+						<input type="file" class="form-control d-none" id="member_photo" name="member_photo" accept="image/*">
+						<div class="mt-2">
+							<small class="text-muted">클릭하여 사진 선택</small>
+						</div>
+					</div>
+				</div>
+
+				<!-- 개인정보 입력 필드들 -->
+				<div class="col-12 mb-3">
+					<label for="member_name" class="form-label">이름 <span class="text-danger">*</span></label>
+					<input type="text" class="form-control" id="member_name" name="member_name" required>
+				</div>
+
+				<div class="col-12 mb-3">
+					<label for="member_phone" class="form-label">연락처</label>
+					<input type="tel" class="form-control" id="member_phone" name="member_phone">
+				</div>
+
+				<div class="col-12 mb-3">
+					<label for="member_birth" class="form-label">생년월일</label>
+					<input type="date" class="form-control" id="member_birth" name="member_birth">
+				</div>
+
+				<div class="col-12 mb-3">
+					<label for="member_address" class="form-label">주소</label>
+					<input type="text" class="form-control" id="member_address" name="member_address">
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="grade" class="form-label">학년</label>
+					<select class="form-select" id="grade" name="grade">
+						<option value="">학년 선택</option>
+						<option value="1">1학년</option>
+						<option value="2">2학년</option>
+						<option value="3">3학년</option>
+						<option value="4">4학년</option>
+						<option value="5">5학년</option>
+						<option value="6">6학년</option>
+						<option value="중1">중1</option>
+						<option value="중2">중2</option>
+						<option value="중3">중3</option>
+						<option value="고1">고1</option>
+						<option value="고2">고2</option>
+						<option value="고3">고3</option>
+						<option value="대1">대1</option>
+						<option value="대2">대2</option>
+						<option value="대3">대3</option>
+						<option value="대4">대4</option>
+						<option value="성인">성인</option>
+					</select>
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="area_idx" class="form-label">소그룹</label>
+					<select class="form-select" id="area_idx" name="area_idx">
+						<option value="">소그룹 선택</option>
+					</select>
+				</div>
 			</div>
-			<div class="modal-body">
-				<form id="memberForm">
-					<input type="hidden" id="member_idx" name="member_idx">
+		</form>
 
-					<div class="row">
-						<div class="col-md-6">
-							<div class="mb-3">
-								<label for="member_name" class="form-label">이름</label>
-								<input type="text" class="form-control" id="member_name" name="member_name" required>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="mb-3">
-								<label for="member_phone" class="form-label">휴대폰번호</label>
-								<input type="tel" class="form-control" id="member_phone" name="member_phone">
-							</div>
-						</div>
-					</div>
-
-					<div class="row">
-						<div class="col-md-6">
-							<div class="mb-3">
-								<label for="member_birth" class="form-label">생년월일</label>
-								<input type="date" class="form-control" id="member_birth" name="member_birth">
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="mb-3">
-								<label for="grade" class="form-label">학년</label>
-								<input type="number" class="form-control" id="grade" name="grade">
-							</div>
-						</div>
-					</div>
-
-					<div class="mb-3">
-						<label for="member_address" class="form-label">주소</label>
-						<input type="text" class="form-control" id="member_address" name="member_address">
-					</div>
-
-					<div class="mb-3">
-						<label for="area_idx" class="form-label">소그룹</label>
-						<select class="form-select" id="area_idx" name="area_idx">
-							<option value="">소그룹 선택</option>
-						</select>
-					</div>
-
-					<div class="row">
-						<div class="col-md-6">
-							<div class="form-check mb-3">
-								<input class="form-check-input" type="checkbox" id="leader_yn" name="leader_yn" value="Y">
-								<label class="form-check-label" for="leader_yn">
-									리더 여부
-								</label>
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="form-check mb-3">
-								<input class="form-check-input" type="checkbox" id="new_yn" name="new_yn" value="Y">
-								<label class="form-check-label" for="new_yn">
-									신규 회원
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div class="mb-3">
-						<label for="photo" class="form-label">사진</label>
-						<input type="file" class="form-control" id="photo" name="photo" accept="image/*">
-						<div id="photoPreview" class="mt-2" style="display: none;">
-							<img id="previewImage" src="" alt="미리보기" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
-						</div>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-primary" id="btnSaveMember">저장</button>
-			</div>
+		<!-- 버튼 영역 -->
+		<div class="d-flex gap-2 mt-4">
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="flex: 1">취소</button>
+			<button type="button" class="btn btn-primary" id="btnSaveMember" style="flex: 1">저장</button>
 		</div>
 	</div>
 </div>
-<!-- JavaScript 라이브러리 로드 -->
+
+<!-- Toast 메시지 -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+	<div id="memberToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+		<div class="toast-header">
+			<strong class="me-auto">회원관리</strong>
+			<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+		</div>
+		<div class="toast-body"></div>
+	</div>
+</div>
+
 <?php $this->load->view('footer'); ?>
-
-<!-- jQuery UI (Fancytree 의존성) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/jquery-ui.min.js"></script>
 <!-- Fancytree JS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all.min.js"></script>
-<!-- ParamQuery JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
+<!-- ParamQuery Grid JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
-
+<!-- Member JS -->
 <script>
-	// PHP 데이터를 JavaScript로 전달
 	window.memberPageData = {
-		orgs: <?php echo json_encode($orgs); ?>,
 		baseUrl: '<?php echo base_url(); ?>'
 	};
 </script>
-
-<!-- Member JS (라이브러리들이 로드된 후에 실행) -->
 <script src="/assets/js/member.js?<?php echo date('Ymdhis'); ?>"></script>
-

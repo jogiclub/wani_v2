@@ -205,7 +205,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * ParamQuery Grid 초기화 (3.5.1 버전 호환)
+	 * ParamQuery Grid 초기화 (이벤트 분리된 버전)
 	 */
 	function initializeParamQuery() {
 		console.log('ParamQuery 초기화 시작');
@@ -219,7 +219,7 @@ $(document).ready(function () {
 				resizable: false,
 				sortable: false,
 				menuIcon: false,
-				frozen: true,  // 체크박스 컬럼 고정
+				frozen: true,
 				render: function (ui) {
 					return '<input type="checkbox" class="member-checkbox" data-member-idx="' + ui.rowData.member_idx + '" />';
 				}
@@ -229,14 +229,14 @@ $(document).ready(function () {
 				dataIndx: "area_name",
 				width: 100,
 				align: "center",
-				frozen: true  // 소그룹 컬럼 고정
+				frozen: true
 			},
 			{
 				title: "사진",
 				dataIndx: "photo",
 				width: 80,
 				align: "center",
-				frozen: true,  // 사진 컬럼 고정
+				frozen: true,
 				render: function (ui) {
 					const photoUrl = ui.cellData || '/assets/images/photo_no.png';
 					return '<img src="' + photoUrl + '" alt="사진" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">';
@@ -247,7 +247,7 @@ $(document).ready(function () {
 				dataIndx: "member_name",
 				width: 120,
 				align: "center",
-				frozen: true  // 이름 컬럼 고정
+				frozen: true
 			},
 			{
 				title: "회원번호",
@@ -349,7 +349,7 @@ $(document).ready(function () {
 				horizontal: true,
 				vertical: true
 			},
-			freezeCols: 4,  // 첫 4개 컬럼 고정 (체크박스, 소그룹, 사진, 이름)
+			freezeCols: 4,
 			numberCell: {
 				show: false
 			},
@@ -359,9 +359,33 @@ $(document).ready(function () {
 			hoverMode: 'row',
 			wrap: false,
 			columnBorders: true,
-			selectEnd: function (event, ui) {
-				const hasSelection = ui.selection && ui.selection.length > 0;
-				$('#btnEditMember, #btnDeleteMember').prop('disabled', !hasSelection);
+			// 셀 클릭 이벤트 - 체크박스와 수정 이벤트 분리
+			cellClick: function(event, ui) {
+				const colIndx = ui.colIndx;
+				const rowData = ui.rowData;
+				const memberIdx = rowData.member_idx;
+
+				// 첫 번째 컬럼(체크박스 컬럼)인 경우
+				if (colIndx === 0) {
+					// 체크박스를 직접 클릭한 경우가 아니라면 체크박스 토글
+					if (!$(event.originalEvent.target).hasClass('member-checkbox')) {
+						const checkbox = $('.member-checkbox[data-member-idx="' + memberIdx + '"]');
+						const isCurrentlyChecked = checkbox.is(':checked');
+						checkbox.prop('checked', !isCurrentlyChecked);
+
+						// 체크박스 상태 업데이트
+						updateSelectAllCheckbox();
+						updateSelectedMemberButtons();
+					}
+					// 체크박스 컬럼에서는 수정 창을 열지 않음
+					return;
+				}
+
+				// 체크박스 컬럼이 아닌 경우 - 수정 offcanvas 열기
+				clearTimeout(window.memberCellClickTimeout);
+				window.memberCellClickTimeout = setTimeout(function() {
+					openMemberOffcanvas('edit', rowData);
+				}, 200);
 			},
 			refresh: function () {
 				bindCheckboxEvents();
@@ -379,6 +403,38 @@ $(document).ready(function () {
 		}
 	}
 
+	/**
+	 * 선택된 회원 기반 버튼 상태 업데이트 (수정 버튼 제거)
+	 */
+	function updateSelectedMemberButtons() {
+		const checkedCheckboxes = $('.member-checkbox:checked').length;
+
+		if (checkedCheckboxes > 0) {
+			$('#btnDeleteMember').prop('disabled', false);
+		} else {
+			$('#btnDeleteMember').prop('disabled', true);
+		}
+	}
+
+	/**
+	 * 이벤트 바인딩 (수정된 버전 - 수정 버튼 이벤트 제거)
+	 */
+	function bindEvents() {
+		// 회원 삭제 버튼
+		$('#btnDeleteMember').on('click', function () {
+			const selectedMembers = getSelectedMembers();
+			if (selectedMembers.length === 0) {
+				showToast('삭제할 회원을 선택해주세요.');
+				return;
+			}
+			deleteSelectedMembers(selectedMembers);
+		});
+
+		// 회원 저장 버튼
+		$('#btnSaveMember').on('click', function () {
+			saveMember();
+		});
+	}
 
 	/**
 	 * 체크박스 이벤트 바인딩
@@ -464,48 +520,6 @@ $(document).ready(function () {
 		loadMembersForGroup(nodeData);
 	}
 
-	/**
-	 * 이벤트 바인딩
-	 */
-	function bindEvents() {
-		// 기존 회원 추가 모달 관련 코드 제거 - 이 부분을 삭제
-		// $('#btnAddMember').on('click', function () {
-		//     if (!selectedOrgId) {
-		//         showToast('먼저 그룹을 선택해주세요.');
-		//         return;
-		//     }
-		//     openMemberModal('add');
-		// });
-
-		// 회원 수정 버튼
-		$('#btnEditMember').on('click', function () {
-			const selectedMembers = getSelectedMembers();
-			if (selectedMembers.length === 0) {
-				showToast('수정할 회원을 선택해주세요.');
-				return;
-			}
-			if (selectedMembers.length > 1) {
-				showToast('수정은 한 명씩만 가능합니다.');
-				return;
-			}
-			openMemberModal('edit', selectedMembers[0]);
-		});
-
-		// 회원 삭제 버튼
-		$('#btnDeleteMember').on('click', function () {
-			const selectedMembers = getSelectedMembers();
-			if (selectedMembers.length === 0) {
-				showToast('삭제할 회원을 선택해주세요.');
-				return;
-			}
-			deleteSelectedMembers(selectedMembers);
-		});
-
-		// 회원 저장 버튼
-		$('#btnSaveMember').on('click', function () {
-			saveMember();
-		});
-	}
 
 	// 회원 추가 버튼 이벤트 - 이 부분은 유지
 	$(document).on('click', '#btnAddMember', function (e) {
@@ -670,17 +684,18 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 회원 모달 열기
+	 * 회원 offcanvas 열기
 	 */
-	function openMemberModal(mode, memberData = null) {
-		const modal = $('#memberModal');
+	function openMemberOffcanvas(mode, memberData = null) {
+		const offcanvas = $('#memberOffcanvas');
 		const title = mode === 'add' ? '회원 추가' : '회원 정보 수정';
 
-		$('#memberModalLabel').text(title);
+		$('#memberOffcanvasLabel').text(title);
 
 		// 폼 초기화
 		$('#memberForm')[0].reset();
 		$('#photoPreview').hide();
+		$('#photoUpload').show();
 
 		// 소그룹 옵션 로드
 		loadAreaOptions(selectedOrgId);
@@ -694,6 +709,7 @@ $(document).ready(function () {
 			$('#member_address').val(memberData.member_address);
 			$('#grade').val(memberData.grade);
 			$('#area_idx').val(memberData.area_idx);
+			$('#org_id').val(memberData.org_id);
 			$('#leader_yn').prop('checked', memberData.leader_yn === 'Y');
 			$('#new_yn').prop('checked', memberData.new_yn === 'Y');
 
@@ -701,14 +717,102 @@ $(document).ready(function () {
 			if (memberData.photo && memberData.photo !== '/assets/images/photo_no.png') {
 				$('#previewImage').attr('src', memberData.photo);
 				$('#photoPreview').show();
+				$('#photoUpload').hide();
 			}
 		}
 
 		// 사진 이벤트 바인딩
 		bindPhotoEvents();
 
-		modal.modal('show');
+		// offcanvas 표시
+		const offcanvasInstance = new bootstrap.Offcanvas(offcanvas[0]);
+		offcanvasInstance.show();
 	}
+
+	/**
+	 * 사진 관련 이벤트 바인딩
+	 */
+	function bindPhotoEvents() {
+		// 파일 선택 이벤트
+		$('#member_photo').off('change').on('change', function(e) {
+			const file = e.target.files[0];
+			if (file) {
+				if (!file.type.startsWith('image/')) {
+					showToast('이미지 파일만 선택 가능합니다.');
+					return;
+				}
+
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					$('#previewImage').attr('src', e.target.result);
+					$('#photoPreview').show();
+					$('#photoUpload').hide();
+				};
+				reader.readAsDataURL(file);
+			}
+		});
+
+		// 사진 삭제 버튼
+		$('#removePhoto').off('click').on('click', function() {
+			$('#member_photo').val('');
+			$('#photoPreview').hide();
+			$('#photoUpload').show();
+		});
+	}
+
+	/**
+	 * 회원 저장
+	 */
+	function saveMember() {
+		const form = $('#memberForm')[0];
+		const formData = new FormData(form);
+
+		// 필수 필드 검증
+		const memberName = $('#member_name').val().trim();
+		if (!memberName) {
+			showToast('이름을 입력해주세요.');
+			$('#member_name').focus();
+			return;
+		}
+
+		// 조직 ID 설정
+		formData.append('org_id', selectedOrgId);
+
+		const url = formData.get('member_idx') ?
+			window.memberPageData.baseUrl + 'member/update_member' :
+			window.memberPageData.baseUrl + 'member/add_member';
+
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message);
+
+					// offcanvas 닫기
+					const offcanvasInstance = bootstrap.Offcanvas.getInstance($('#memberOffcanvas')[0]);
+					if (offcanvasInstance) {
+						offcanvasInstance.hide();
+					}
+
+					// 그리드 새로고침
+					loadMemberData();
+				} else {
+					showToast(response.message);
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('회원 저장 실패:', error);
+				showToast('회원 정보 저장에 실패했습니다.');
+			}
+		});
+	}
+
+
 
 	/**
 	 * 소그룹 옵션 로드
