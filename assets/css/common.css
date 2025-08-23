@@ -263,7 +263,7 @@ footer .btn-add-org i{font-size:30px}
 
 .card .card-header{padding:15px}
 .card .card-header .card-title{font-size: 20px; font-weight: 700;}
-.card .card-body{overflow: auto}
+.card .card-body{overflow: auto; height: calc(100vh - 290px);}
 .page-title{font-weight: 700;letter-spacing: -1px;}
 
 
