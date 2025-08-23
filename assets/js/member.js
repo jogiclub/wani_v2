@@ -219,14 +219,14 @@ $(document).ready(function () {
 			{
 				title: "소그룹",
 				dataIndx: "area_name",
-				width: 100,
+				width: 140,
 				align: "center",
 				frozen: true
 			},
 			{
 				title: "사진",
 				dataIndx: "photo",
-				width: 80,
+				width: 70,
 				align: "center",
 				frozen: true,
 				render: function (ui) {
@@ -237,7 +237,7 @@ $(document).ready(function () {
 			{
 				title: "이름",
 				dataIndx: "member_name",
-				width: 120,
+				width: 80,
 				align: "center",
 				frozen: true
 			},
@@ -293,12 +293,20 @@ $(document).ready(function () {
 			{
 				title: "등록일",
 				dataIndx: "regi_date",
-				width: 120,
+				width: 120,  // 시분초 표시를 위해 너비 증가
 				align: "center",
 				render: function (ui) {
 					if (ui.cellData) {
 						const date = new Date(ui.cellData);
-						return date.toLocaleDateString('ko-KR');
+						// YYYY-MM-DD HH:MM:SS 형태로 포맷
+						const year = date.getFullYear();
+						const month = String(date.getMonth() + 1).padStart(2, '0');
+						const day = String(date.getDate()).padStart(2, '0');
+						const hours = String(date.getHours()).padStart(2, '0');
+						const minutes = String(date.getMinutes()).padStart(2, '0');
+						const seconds = String(date.getSeconds()).padStart(2, '0');
+
+						return `${year}-${month}-${day}<br>${hours}:${minutes}:${seconds}`;
 					}
 					return '';
 				}
@@ -306,12 +314,20 @@ $(document).ready(function () {
 			{
 				title: "수정일",
 				dataIndx: "modi_date",
-				width: 120,
+				width: 120,  // 시분초 표시를 위해 너비 증가
 				align: "center",
 				render: function (ui) {
 					if (ui.cellData) {
 						const date = new Date(ui.cellData);
-						return date.toLocaleDateString('ko-KR');
+						// YYYY-MM-DD HH:MM:SS 형태로 포맷
+						const year = date.getFullYear();
+						const month = String(date.getMonth() + 1).padStart(2, '0');
+						const day = String(date.getDate()).padStart(2, '0');
+						const hours = String(date.getHours()).padStart(2, '0');
+						const minutes = String(date.getMinutes()).padStart(2, '0');
+						const seconds = String(date.getSeconds()).padStart(2, '0');
+
+						return `${year}-${month}-${day}<br>${hours}:${minutes}:${seconds}`;
 					}
 					return '';
 				}
