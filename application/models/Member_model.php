@@ -130,19 +130,6 @@ class Member_model extends CI_Model
 		return $query->result_array();
 	}
 
-
-	/**
-	 * 소속 그룹이 없는 회원 수 조회
-	 */
-	public function get_unassigned_members_count($org_id)
-	{
-		$this->db->from('wb_member');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('(area_idx IS NULL OR area_idx = "")', null, false);
-		$this->db->where('del_yn', 'N');
-		return $this->db->count_all_results();
-	}
-
 	/**
 	 * 소속 그룹이 없는 회원 목록 조회
 	 */
@@ -151,12 +138,40 @@ class Member_model extends CI_Model
 		$this->db->select('m.*, "" as area_name');
 		$this->db->from('wb_member m');
 		$this->db->where('m.org_id', $org_id);
-		$this->db->where('(m.area_idx IS NULL OR m.area_idx = "")', null, false);
+		$this->db->where('(m.area_idx IS NULL OR m.area_idx = "" OR m.area_idx = 0)', null, false);
 		$this->db->where('m.del_yn', 'N');
+		$this->db->order_by('m.regi_date', 'DESC'); // 최신 등록순으로 정렬
 		$this->db->order_by('m.member_name', 'ASC');
 
 		$query = $this->db->get();
 		return $query->result_array();
+	}
+
+
+	/**
+	 * 소속 그룹이 없는 회원 수 조회
+	 */
+	public function get_unassigned_members_count($org_id)
+	{
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('(area_idx IS NULL OR area_idx = "" OR area_idx = 0)', null, false);
+		$this->db->where('del_yn', 'N');
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 조직의 다음 회원 번호 가져오기
+	 */
+	public function get_next_member_idx($org_id)
+	{
+		$this->db->select_max('member_idx');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get('wb_member');
+		$result = $query->row_array();
+
+		return ($result['member_idx'] ? $result['member_idx'] : 0) + 1;
 	}
 
 

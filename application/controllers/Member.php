@@ -390,40 +390,55 @@ class Member extends CI_Controller
 			show_404();
 		}
 
-		$member_name = $this->input->post('member_name');
-		$member_phone = $this->input->post('member_phone');
-		$member_birth = $this->input->post('member_birth');
-		$member_address = $this->input->post('member_address');
-		$grade = $this->input->post('grade');
-		$area_idx = $this->input->post('area_idx');
-		$leader_yn = $this->input->post('leader_yn');
-		$new_yn = $this->input->post('new_yn');
 		$org_id = $this->input->post('org_id');
+		$area_idx = $this->input->post('area_idx');
 
-		if (!$member_name || !$org_id) {
-			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+		// 유효성 검증
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
 			return;
 		}
 
+		// 가장 상위 그룹에서는 추가 불가 (area_idx가 없거나 빈 값인 경우)
+		if (!$area_idx) {
+			echo json_encode(array('success' => false, 'message' => '가장 상위 그룹에서는 회원을 추가할 수 없습니다.\n하위 그룹을 선택해주세요.'));
+			return;
+		}
+
+		// 조직 정보 가져오기 (신규 회원 호칭 확인)
+		$org_info = $this->Org_model->get_org_detail_by_id($org_id);
+		if (!$org_info) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		$new_name = $org_info['new_name'] ? $org_info['new_name'] : '새가족';
+
+		// 다음 회원 번호 생성
+		$next_member_idx = $this->Member_model->get_next_member_idx($org_id);
+		$member_name = $new_name . $next_member_idx;
+
 		$insert_data = array(
 			'member_name' => $member_name,
-			'member_phone' => $member_phone ? $member_phone : null,
-			'member_birth' => $member_birth ? $member_birth : null,
-			'member_address' => $member_address ? $member_address : null,
-			'grade' => $grade ? $grade : null,
-			'area_idx' => $area_idx ? $area_idx : null,
-			'leader_yn' => $leader_yn ? $leader_yn : 'N',
-			'new_yn' => $new_yn ? $new_yn : 'N',
+			'member_nick' => $member_name,
 			'org_id' => $org_id,
+			'area_idx' => $area_idx,
+			'grade' => 0,
+			'leader_yn' => 'N',
+			'new_yn' => 'Y',
+			'del_yn' => 'N',
 			'regi_date' => date('Y-m-d H:i:s'),
-			'modi_date' => date('Y-m-d H:i:s'),
-			'del_yn' => 'N'
+			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		$result = $this->db->insert('wb_member', $insert_data);
+		$result = $this->Member_model->add_member($insert_data);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '회원이 추가되었습니다.'));
+			echo json_encode(array(
+				'success' => true,
+				'message' => '회원이 추가되었습니다.',
+				'member_name' => $member_name
+			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '회원 추가에 실패했습니다.'));
 		}

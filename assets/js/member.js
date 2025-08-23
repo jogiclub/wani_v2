@@ -131,7 +131,6 @@ $(document).ready(function () {
 	}
 
 
-
 	/**
 	 * localStorage에서 저장된 그룹 선택 상태 복원
 	 */
@@ -453,18 +452,30 @@ $(document).ready(function () {
 	}
 
 
+
+
+	/**
+	 * 회원 그리드 새로고침
+	 */
+	function refreshMemberGrid(nodeData) {
+		if (!currentGridData) return;
+
+		// 현재 선택된 그룹의 회원 목록 다시 로드
+		loadMembersForGroup(nodeData);
+	}
+
 	/**
 	 * 이벤트 바인딩
 	 */
 	function bindEvents() {
-		// 회원 추가 버튼
-		$('#btnAddMember').on('click', function () {
-			if (!selectedOrgId) {
-				showToast('먼저 그룹을 선택해주세요.');
-				return;
-			}
-			openMemberModal('add');
-		});
+		// 기존 회원 추가 모달 관련 코드 제거 - 이 부분을 삭제
+		// $('#btnAddMember').on('click', function () {
+		//     if (!selectedOrgId) {
+		//         showToast('먼저 그룹을 선택해주세요.');
+		//         return;
+		//     }
+		//     openMemberModal('add');
+		// });
 
 		// 회원 수정 버튼
 		$('#btnEditMember').on('click', function () {
@@ -493,6 +504,63 @@ $(document).ready(function () {
 		// 회원 저장 버튼
 		$('#btnSaveMember').on('click', function () {
 			saveMember();
+		});
+	}
+
+	// 회원 추가 버튼 이벤트 - 이 부분은 유지
+	$(document).on('click', '#btnAddMember', function (e) {
+		e.preventDefault();
+
+		// 현재 선택된 그룹 정보 확인
+		const tree = $("#groupTree").fancytree("getTree");
+		const activeNode = tree.getActiveNode();
+
+		if (!activeNode) {
+			showToast('그룹을 선택해주세요.');
+			return;
+		}
+
+		const nodeData = activeNode.data;
+
+		// 가장 상위 그룹(조직)에서는 추가 불가
+		if (nodeData.type === 'org') {
+			showToast('가장 상위 그룹에서는 회원을 추가할 수 없습니다. 하위 그룹을 선택해주세요.');
+			return;
+		}
+
+		// 바로 회원 추가 실행
+		addNewMember(nodeData);
+	});
+
+	/**
+	 * 새 회원 추가
+	 */
+	function addNewMember(nodeData) {
+		const addData = {
+			org_id: nodeData.org_id,
+			area_idx: nodeData.area_idx || null
+		};
+
+		$.ajax({
+			url: '/member/add_member',
+			type: 'POST',
+			data: addData,
+			dataType: 'json',
+			success: function (response) {
+				if (response.success) {
+					showToast('회원이 추가되었습니다: ' + response.member_name);
+
+					// 그리드 새로고침 - 새로 추가된 회원이 가장 상단에 표시되도록
+					loadMemberData();
+
+				} else {
+					showToast(response.message || '회원 추가에 실패했습니다.');
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error('회원 추가 오류:', error);
+				showToast('회원 추가 중 오류가 발생했습니다.');
+			}
 		});
 	}
 
