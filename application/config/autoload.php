@@ -103,7 +103,8 @@ $autoload['helper'] = array();
 | config files.  Otherwise, leave it blank.
 |
 */
-$autoload['config'] = array();
+
+$autoload['config'] = array('menu_constants');
 
 /*
 | -------------------------------------------------------------------

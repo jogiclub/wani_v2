@@ -2,11 +2,13 @@
 // application/models/User_management_model.php
 // 사용자 관리 모델 - 사용자 정보 조회 및 관리 기능
 
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class User_management_model extends CI_Model {
+class User_management_model extends CI_Model
+{
 
-	public function __construct() {
+	public function __construct()
+	{
 		parent::__construct();
 		$this->load->database();
 	}
@@ -14,7 +16,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 사용자가 접근 가능한 조직 목록 가져오기 (일반 사용자)
 	 */
-	public function get_user_orgs($user_id) {
+	public function get_user_orgs($user_id)
+	{
 		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, wb_org_user.level');
 		$this->db->from('wb_org');
 		$this->db->join('wb_org_user', 'wb_org.org_id = wb_org_user.org_id');
@@ -28,7 +31,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 사용자가 접근 가능한 조직 목록 가져오기 (마스터 사용자)
 	 */
-	public function get_user_orgs_master($user_id) {
+	public function get_user_orgs_master($user_id)
+	{
 		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, 10 as level');
 		$this->db->from('wb_org');
 		$this->db->where('wb_org.del_yn', 'N');
@@ -40,7 +44,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 조직 상세 정보 가져오기
 	 */
-	public function get_org_detail_by_id($org_id) {
+	public function get_org_detail_by_id($org_id)
+	{
 		$this->db->select('org_id, org_name, org_type, org_desc, org_icon, leader_name, new_name, invite_code');
 		$this->db->from('wb_org');
 		$this->db->where('org_id', $org_id);
@@ -52,7 +57,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 사용자의 조직 내 권한 레벨 가져오기
 	 */
-	public function get_org_user_level($user_id, $org_id) {
+	public function get_org_user_level($user_id, $org_id)
+	{
 		$this->db->select('level');
 		$this->db->from('wb_org_user');
 		$this->db->where('user_id', $user_id);
@@ -65,7 +71,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 조직의 사용자 수 가져오기
 	 */
-	public function get_org_user_count($org_id) {
+	public function get_org_user_count($org_id)
+	{
 		$this->db->from('wb_org_user');
 		$this->db->join('wb_user', 'wb_org_user.user_id = wb_user.user_id');
 		$this->db->where('wb_org_user.org_id', $org_id);
@@ -76,7 +83,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 조직의 사용자 목록 가져오기
 	 */
-	public function get_org_users($org_id) {
+	public function get_org_users($org_id)
+	{
 		$this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_user.user_mail, wb_user.user_hp, wb_user.user_profile_image, wb_user.regi_date, wb_user.master_yn, wb_org_user.level');
 		$this->db->from('wb_user');
 		$this->db->join('wb_org_user', 'wb_user.user_id = wb_org_user.user_id');
@@ -88,21 +96,14 @@ class User_management_model extends CI_Model {
 		return $query->result_array();
 	}
 
+
 	/**
-	 * 사용자 정보 업데이트
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 사용자 정보 업데이트 (관리 메뉴 및 그룹 포함)
 	 */
-	public function update_user_info($target_user_id, $org_id, $user_name, $user_hp, $level) {
+	public function update_user_info($target_user_id, $org_id, $user_name, $user_hp, $level, $managed_menus = null, $managed_areas = null)
+	{
 		$this->db->trans_start();
-
-		// wb_user 테이블 업데이트
-		$user_data = array(
-			'user_name' => $user_name,
-			'user_hp' => $user_hp,
-			'modi_date' => date('Y-m-d H:i:s')
-		);
-
-		$this->db->where('user_id', $target_user_id);
-		$this->db->update('wb_user', $user_data);
 
 		// wb_org_user 테이블 업데이트
 		$org_user_data = array(
@@ -113,14 +114,34 @@ class User_management_model extends CI_Model {
 		$this->db->where('org_id', $org_id);
 		$this->db->update('wb_org_user', $org_user_data);
 
+		// wb_user 테이블 업데이트
+		$user_data = array(
+			'user_name' => $user_name,
+			'user_hp' => $user_hp,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		// 최고관리자가 아닌 경우에만 관리 메뉴/그룹 필드 업데이트
+		if ($managed_menus !== null) {
+			$user_data['managed_menus'] = $managed_menus;
+		}
+		if ($managed_areas !== null) {
+			$user_data['managed_areas'] = $managed_areas;
+		}
+
+		$this->db->where('user_id', $target_user_id);
+		$this->db->update('wb_user', $user_data);
+
 		$this->db->trans_complete();
+
 		return $this->db->trans_status();
 	}
 
 	/**
 	 * 조직에서 사용자 제외
 	 */
-	public function delete_org_user($target_user_id, $org_id) {
+	public function delete_org_user($target_user_id, $org_id)
+	{
 		$this->db->where('user_id', $target_user_id);
 		$this->db->where('org_id', $org_id);
 		return $this->db->delete('wb_org_user');
@@ -129,7 +150,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 사용자가 조직에 속해있는지 확인
 	 */
-	public function check_user_in_org($user_email, $org_id) {
+	public function check_user_in_org($user_email, $org_id)
+	{
 		$this->db->select('wb_org_user.idx');
 		$this->db->from('wb_user');
 		$this->db->join('wb_org_user', 'wb_user.user_id = wb_org_user.user_id');
@@ -143,7 +165,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 초대 메일 발송 (실제 메일 발송 로직은 별도 구현 필요)
 	 */
-	public function send_invite_email($invite_email, $org_id, $inviter_id) {
+	public function send_invite_email($invite_email, $org_id, $inviter_id)
+	{
 		// 조직 정보 가져오기
 		$org_info = $this->get_org_detail_by_id($org_id);
 		if (!$org_info) {
@@ -207,7 +230,8 @@ class User_management_model extends CI_Model {
 	/**
 	 * 사용자 정보 가져오기
 	 */
-	public function get_user_info($user_id) {
+	public function get_user_info($user_id)
+	{
 		$this->db->select('user_id, user_name, user_mail, user_hp');
 		$this->db->from('wb_user');
 		$this->db->where('user_id', $user_id);
@@ -215,4 +239,56 @@ class User_management_model extends CI_Model {
 		$query = $this->db->get();
 		return $query->row_array();
 	}
+
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 조직의 그룹 목록 조회
+	 */
+	public function get_org_areas($org_id)
+	{
+		$this->db->select('area_idx, area_name');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->order_by('area_order', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 사용자의 관리 메뉴 조회
+	 */
+	public function get_user_managed_menus($user_id)
+	{
+		$this->db->select('managed_menus');
+		$this->db->from('wb_user');
+		$this->db->where('user_id', $user_id);
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		if ($result && $result['managed_menus']) {
+			return json_decode($result['managed_menus'], true);
+		}
+		return array();
+	}
+
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 사용자의 관리 그룹 조회
+	 */
+	public function get_user_managed_areas($user_id)
+	{
+		$this->db->select('managed_areas');
+		$this->db->from('wb_user');
+		$this->db->where('user_id', $user_id);
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		if ($result && $result['managed_areas']) {
+			return json_decode($result['managed_areas'], true);
+		}
+		return array();
+	}
+
 }

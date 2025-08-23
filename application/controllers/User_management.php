@@ -2,11 +2,13 @@
 // application/controllers/User_management.php
 // 사용자 관리 컨트롤러 - 조직 내 사용자 목록 조회 및 관리
 
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class User_management extends CI_Controller {
+class User_management extends CI_Controller
+{
 
-	public function __construct() {
+	public function __construct()
+	{
 		parent::__construct();
 		$this->load->library('session');
 		$this->load->helper('url');
@@ -21,7 +23,8 @@ class User_management extends CI_Controller {
 	/**
 	 * 헤더에서 사용할 조직 데이터 준비
 	 */
-	private function prepare_header_data() {
+	private function prepare_header_data()
+	{
 		if (!$this->session->userdata('user_id')) {
 			return array();
 		}
@@ -70,7 +73,8 @@ class User_management extends CI_Controller {
 	/**
 	 * 사용자 관리 메인 화면
 	 */
-	public function index() {
+	public function index()
+	{
 		$user_id = $this->session->userdata('user_id');
 
 		// 헤더 데이터 준비
@@ -148,9 +152,11 @@ class User_management extends CI_Controller {
 	}
 
 	/**
-	 * 사용자 정보 수정
+	 * 파일 위치: application/controllers/User_management.php
+	 * 역할: 사용자 정보 수정 (관리 메뉴 및 그룹 포함)
 	 */
-	public function update_user() {
+	public function update_user()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -169,6 +175,8 @@ class User_management extends CI_Controller {
 		$user_name = $this->input->post('user_name');
 		$user_hp = $this->input->post('user_hp');
 		$level = $this->input->post('level');
+		$managed_menus = $this->input->post('managed_menus');
+		$managed_areas = $this->input->post('managed_areas');
 
 		if (empty($target_user_id) || empty($user_name) || empty($user_hp)) {
 			echo json_encode(array('success' => false, 'message' => '필수 입력 항목이 누락되었습니다.'));
@@ -181,7 +189,35 @@ class User_management extends CI_Controller {
 			return;
 		}
 
-		$result = $this->User_management_model->update_user_info($target_user_id, $org_id, $user_name, $user_hp, $level);
+		// 최고관리자가 아닌 경우 관리 메뉴/그룹 처리
+		$managed_menus_json = null;
+		$managed_areas_json = null;
+
+		if ($this->session->userdata('master_yn') !== 'Y') {
+			// 관리 메뉴 JSON 변환
+			if ($managed_menus && is_array($managed_menus)) {
+				$managed_menus_json = json_encode($managed_menus, JSON_UNESCAPED_UNICODE);
+			} else {
+				$managed_menus_json = json_encode(array(), JSON_UNESCAPED_UNICODE);
+			}
+
+			// 관리 그룹 JSON 변환
+			if ($managed_areas && is_array($managed_areas)) {
+				$managed_areas_json = json_encode($managed_areas, JSON_UNESCAPED_UNICODE);
+			} else {
+				$managed_areas_json = json_encode(array(), JSON_UNESCAPED_UNICODE);
+			}
+		}
+
+		$result = $this->User_management_model->update_user_info(
+			$target_user_id,
+			$org_id,
+			$user_name,
+			$user_hp,
+			$level,
+			$managed_menus_json,
+			$managed_areas_json
+		);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '사용자 정보가 수정되었습니다.'));
@@ -193,7 +229,8 @@ class User_management extends CI_Controller {
 	/**
 	 * 사용자 삭제 (조직에서 제외)
 	 */
-	public function delete_user() {
+	public function delete_user()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -227,7 +264,8 @@ class User_management extends CI_Controller {
 	/**
 	 * 사용자 초대 메일 발송
 	 */
-	public function invite_user() {
+	public function invite_user()
+	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -270,4 +308,77 @@ class User_management extends CI_Controller {
 			echo json_encode(array('success' => false, 'message' => '초대 메일 발송에 실패했습니다.'));
 		}
 	}
+
+	/**
+	 * 파일 위치: application/controllers/User_management.php
+	 * 역할: 관리 메뉴 목록 조회 API
+	 */
+	public function get_managed_menus()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		// 메뉴 상수 로드
+		$this->config->load('menu_constants');
+
+		$menus = array();
+		foreach (SYSTEM_MENUS as $menu_key => $menu_info) {
+			$menus[] = array(
+				'key' => $menu_key,
+				'name' => $menu_info['name']
+			);
+		}
+
+		echo json_encode(array('success' => true, 'menus' => $menus));
+	}
+
+	/**
+	 * 파일 위치: application/controllers/User_management.php
+	 * 역할: 관리 그룹 목록 조회 API
+	 */
+	public function get_managed_areas()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		// 조직의 그룹 목록 조회
+		$areas = $this->User_management_model->get_org_areas($org_id);
+
+		echo json_encode(array('success' => true, 'areas' => $areas));
+	}
+
+	/**
+	 * 파일 위치: application/controllers/User_management.php
+	 * 역할: 사용자 관리 정보 조회 API
+	 */
+	public function get_user_management_info()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->input->post('user_id');
+		if (!$user_id) {
+			echo json_encode(array('success' => false, 'message' => '사용자 ID가 필요합니다.'));
+			return;
+		}
+
+		$managed_menus = $this->User_management_model->get_user_managed_menus($user_id);
+		$managed_areas = $this->User_management_model->get_user_managed_areas($user_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'managed_menus' => $managed_menus,
+			'managed_areas' => $managed_areas
+		));
+	}
+
 }

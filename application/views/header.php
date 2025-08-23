@@ -1,3 +1,5 @@
+
+
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
@@ -114,6 +116,43 @@
 
 </header>
 
+<?php
+/**
+ * 파일 위치: application/views/header.php
+ * 역할: 사용자 권한에 따른 메뉴 표시 로직 추가
+ */
+
+// 메뉴 상수 로드
+$this->config->load('menu_constants');
+
+// 사용자의 관리 메뉴 조회
+$user_managed_menus = array();
+if ($this->session->userdata('master_yn') !== 'Y') {
+	// 최고관리자가 아닌 경우 관리 메뉴 조회
+	$this->load->model('User_management_model');
+	$user_managed_menus = $this->User_management_model->get_user_managed_menus($this->session->userdata('user_id'));
+}
+
+/**
+ * 메뉴 접근 권한 확인 함수
+ */
+function can_access_menu($menu_key, $user_managed_menus, $is_master) {
+	// 최고관리자는 모든 메뉴 접근 가능
+	if ($is_master === 'Y') {
+		return true;
+	}
+
+	// 관리 메뉴가 설정되지 않은 경우 접근 불가
+	if (empty($user_managed_menus)) {
+		return false;
+	}
+
+	// 관리 메뉴에 포함된 경우 접근 가능
+	return in_array($menu_key, $user_managed_menus);
+}
+
+$is_master = $this->session->userdata('master_yn');
+?>
 
 <div class="container-fluid gnb-menu">
 	<div class="row">
@@ -125,59 +164,144 @@
 							aria-label="Close"></button>
 				</div>
 				<div class="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
-					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
-						OVERVIEW
-					</h6>
-					<ul class="nav flex-column">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1 active"
-												aria-current="page" href="#"><i class="bi bi-file-earmark-ruled"></i>
-								대시보드</a></li>
-					</ul>
-					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
-						MEMBER
-					</h6>
-					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1"
-												href="<?php echo base_url('member'); ?>"><i class="bi bi-people"></i>
-								회원관리</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#">
-								<i class="bi bi-clipboard-check"></i> 출석관리</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('main'); ?>">
-								<i class="bi bi-person-check"></i> 판</a></li>
-					</ul>
-					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
-						STATICS
-					</h6>
-					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i
-									class="bi bi-graph-up-arrow"></i> 주별통계</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i
-									class="bi bi-clipboard-data"></i> 회원별통계</a></li>
-					</ul>
-					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
-						SETTING
-					</h6>
-					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1"
-												href="<?php echo base_url('org'); ?>"><i class="bi bi-building-gear"></i> 조직설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1"
-												href="<?php echo base_url('member_area'); ?>"><i class="bi bi-diagram-3"></i> 그룹설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('detail_field'); ?>"><i
-									class="bi bi-input-cursor-text"></i> 상세필드설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="#"><i
-									class="bi bi-sliders2-vertical"></i> 출석설정</a></li>
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('user_management '); ?>"><i
-									class="bi bi-person-video"></i> 사용자관리</a></li>
-					</ul>
+
+					<!-- OVERVIEW 섹션 -->
+					<?php if (can_access_menu('OVERVIEW', $user_managed_menus, $is_master)): ?>
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+							OVERVIEW
+						</h6>
+						<ul class="nav flex-column">
+							<li class="nav-item">
+								<a class="nav-link d-flex align-items-center gap-1 active" aria-current="page" href="<?php echo base_url('main'); ?>">
+									<i class="bi bi-file-earmark-ruled"></i> 대시보드
+								</a>
+							</li>
+						</ul>
+					<?php endif; ?>
+
+					<!-- MEMBER 섹션 -->
+					<?php
+					$show_member_section = can_access_menu('MEMBER_MANAGEMENT', $user_managed_menus, $is_master) ||
+						can_access_menu('ATTENDANCE_MANAGEMENT', $user_managed_menus, $is_master) ||
+						can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master);
+					?>
+					<?php if ($show_member_section): ?>
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+							MEMBER
+						</h6>
+						<ul class="nav flex-column mb-auto">
+							<?php if (can_access_menu('MEMBER_MANAGEMENT', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('member'); ?>">
+										<i class="bi bi-people"></i> 회원관리
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if (can_access_menu('ATTENDANCE_MANAGEMENT', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="#">
+										<i class="bi bi-clipboard-check"></i> 출석관리
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if (can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('main'); ?>">
+										<i class="bi bi-person-check"></i> 판
+									</a>
+								</li>
+							<?php endif; ?>
+						</ul>
+					<?php endif; ?>
+
+					<!-- STATICS 섹션 -->
+					<?php
+					$show_statics_section = can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master) ||
+						can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master);
+					?>
+					<?php if ($show_statics_section): ?>
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+							STATICS
+						</h6>
+						<ul class="nav flex-column mb-auto">
+							<?php if (can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="#">
+										<i class="bi bi-graph-up-arrow"></i> 주별통계
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if (can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="#">
+										<i class="bi bi-clipboard-data"></i> 회원별통계
+									</a>
+								</li>
+							<?php endif; ?>
+						</ul>
+					<?php endif; ?>
+
+					<!-- SETTING 섹션 -->
+					<?php
+					$show_setting_section = can_access_menu('ORG_SETTING', $user_managed_menus, $is_master) ||
+						can_access_menu('GROUP_SETTING', $user_managed_menus, $is_master) ||
+						can_access_menu('DETAIL_FIELD_SETTING', $user_managed_menus, $is_master) ||
+						can_access_menu('ATTENDANCE_SETTING', $user_managed_menus, $is_master) ||
+						can_access_menu('USER_MANAGEMENT', $user_managed_menus, $is_master);
+					?>
+					<?php if ($show_setting_section): ?>
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+							SETTING
+						</h6>
+						<ul class="nav flex-column mb-auto">
+							<?php if (can_access_menu('ORG_SETTING', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('org'); ?>">
+										<i class="bi bi-building-gear"></i> 조직설정
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if (can_access_menu('GROUP_SETTING', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('member_area'); ?>">
+										<i class="bi bi-diagram-3"></i> 그룹설정
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if (can_access_menu('DETAIL_FIELD_SETTING', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('detail_field'); ?>">
+										<i class="bi bi-input-cursor-text"></i> 상세필드설정
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if (can_access_menu('ATTENDANCE_SETTING', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="#">
+										<i class="bi bi-sliders2-vertical"></i> 출석설정
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if (can_access_menu('USER_MANAGEMENT', $user_managed_menus, $is_master)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('user_management'); ?>">
+										<i class="bi bi-person-video"></i> 사용자관리
+									</a>
+								</li>
+							<?php endif; ?>
+						</ul>
+					<?php endif; ?>
+
 					<hr class="my-3">
 					<ul class="nav flex-column mb-auto">
-						<li class="nav-item"><a class="nav-link d-flex align-items-center gap-1"
-												href="<?php echo base_url('main/logout'); ?>"><i
-									class="bi bi-box-arrow-right"></i> 로그아웃</a></li>
+						<li class="nav-item">
+							<a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('main/logout'); ?>">
+								<i class="bi bi-box-arrow-right"></i> 로그아웃
+							</a>
+						</li>
 					</ul>
 				</div>
 			</div>
 		</div>
 		<main class="col-md-9 ms-sm-auto col-lg-10">
 			<?php endif; ?>
-

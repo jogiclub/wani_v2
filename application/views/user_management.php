@@ -4,6 +4,9 @@
 
 $this->load->view('header'); ?>
 
+<!-- Select2 CSS 추가 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 <div class="container pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
@@ -193,7 +196,7 @@ $this->load->view('header'); ?>
 
 <!-- 사용자 수정 모달 -->
 <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="editUserModalLabel">사용자 정보 수정</h5>
@@ -201,6 +204,7 @@ $this->load->view('header'); ?>
 			</div>
 			<form id="editUserForm">
 				<input type="hidden" id="edit_user_id" name="target_user_id">
+				<input type="hidden" id="edit_org_id" name="org_id">
 				<div class="modal-body">
 					<div class="mb-3">
 						<label for="edit_user_name" class="form-label">이름 <span class="text-danger">*</span></label>
@@ -216,11 +220,27 @@ $this->load->view('header'); ?>
 						<select class="form-select" id="edit_user_level" name="level">
 							<option value="0">일반 사용자 (0)</option>
 							<option value="1">회원 (1)</option>
-							<option value="5">부리더 (5)</option>
+							<option value="2">구역장 (2)</option>
+							<option value="5">부관리자 (5)</option>
 							<option value="9">관리자 (9)</option>
 							<option value="10">최고관리자 (10)</option>
 						</select>
-						<div class="form-text">권한이 높을수록 더 많은 기능에 접근할 수 있습니다.</div>
+					</div>
+					<!-- 관리 메뉴 필드 -->
+					<div class="mb-3" id="managed_menus_group">
+						<label for="edit_managed_menus" class="form-label">관리 메뉴</label>
+						<select class="form-select" id="edit_managed_menus" name="managed_menus[]" multiple>
+							<!-- JavaScript로 동적 로드 -->
+						</select>
+						<div class="form-text">사용자가 접근할 수 있는 메뉴를 선택하세요. (최고관리자는 모든 메뉴에 접근 가능)</div>
+					</div>
+					<!-- 관리 그룹 필드 -->
+					<div class="mb-3" id="managed_areas_group">
+						<label for="edit_managed_areas" class="form-label">관리 그룹</label>
+						<select class="form-select" id="edit_managed_areas" name="managed_areas[]" multiple>
+							<!-- JavaScript로 동적 로드 -->
+						</select>
+						<div class="form-text">사용자가 관리할 수 있는 그룹을 선택하세요.</div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -268,3 +288,11 @@ $this->load->view('header'); ?>
 
 <?php $this->load->view('footer'); ?>
 <script src="/assets/js/user_management.js?<?php echo date('Ymdhis'); ?>"></script>
+
+
+
+
+
+
+<!-- Select2 JS 추가 (jQuery 이후에 로드) -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
