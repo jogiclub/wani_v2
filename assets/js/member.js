@@ -44,7 +44,6 @@ $(document).ready(function () {
 			initializeFancytree();
 			initializeParamQuery();
 			bindEvents();
-			bindPhotoEvents();
 			console.log('페이지 초기화 완료');
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
@@ -110,7 +109,6 @@ $(document).ready(function () {
 		});
 	}
 
-
 	/**
 	 * 선택된 그룹을 localStorage에 저장
 	 */
@@ -130,7 +128,6 @@ $(document).ready(function () {
 		}
 	}
 
-
 	/**
 	 * localStorage에서 저장된 그룹 선택 상태 복원
 	 */
@@ -139,14 +136,13 @@ $(document).ready(function () {
 			const savedGroup = localStorage.getItem('member_selected_group');
 
 			if (!savedGroup) {
-				// 저장된 선택이 없으면 첫 번째 조직 자동 선택
 				selectFirstOrganization();
 				return;
 			}
 
 			const groupData = JSON.parse(savedGroup);
 
-			// 7일 이내의 데이터만 복원 (선택적)
+			// 7일 이내의 데이터만 복원
 			const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
 			if (groupData.timestamp < sevenDaysAgo) {
 				localStorage.removeItem('member_selected_group');
@@ -157,15 +153,12 @@ $(document).ready(function () {
 			const tree = $("#groupTree").fancytree("getTree");
 			let nodeToSelect = null;
 
-			// 저장된 그룹이 미분류인 경우 (root 레벨에서 찾기)
 			if (groupData.type === 'unassigned' && groupData.org_id) {
 				nodeToSelect = tree.getNodeByKey('unassigned_' + groupData.org_id);
-			}
-			// 저장된 그룹이 소그룹(area)인 경우
-			else if (groupData.type === 'area' && groupData.area_idx) {
+			} else if (groupData.type === 'area' && groupData.area_idx) {
 				nodeToSelect = tree.getNodeByKey('area_' + groupData.area_idx);
 			}
-			// 저장된 그룹이 조직(org)인 경우 또는 다른 그룹을 찾을 수 없는 경우
+
 			if (!nodeToSelect && groupData.org_id) {
 				nodeToSelect = tree.getNodeByKey('org_' + groupData.org_id);
 			}
@@ -174,7 +167,6 @@ $(document).ready(function () {
 				nodeToSelect.setActive(true);
 				nodeToSelect.setFocus(true);
 
-				// 미분류가 아닌 경우에만 상위 노드 확장 (미분류는 root 레벨이므로 상위 노드가 없음)
 				if (groupData.type !== 'unassigned' && nodeToSelect.parent && nodeToSelect.parent.isRootNode() === false) {
 					nodeToSelect.parent.setExpanded(true);
 				}
@@ -404,39 +396,6 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 선택된 회원 기반 버튼 상태 업데이트 (수정 버튼 제거)
-	 */
-	function updateSelectedMemberButtons() {
-		const checkedCheckboxes = $('.member-checkbox:checked').length;
-
-		if (checkedCheckboxes > 0) {
-			$('#btnDeleteMember').prop('disabled', false);
-		} else {
-			$('#btnDeleteMember').prop('disabled', true);
-		}
-	}
-
-	/**
-	 * 이벤트 바인딩 (수정된 버전 - 수정 버튼 이벤트 제거)
-	 */
-	function bindEvents() {
-		// 회원 삭제 버튼
-		$('#btnDeleteMember').on('click', function () {
-			const selectedMembers = getSelectedMembers();
-			if (selectedMembers.length === 0) {
-				showToast('삭제할 회원을 선택해주세요.');
-				return;
-			}
-			deleteSelectedMembers(selectedMembers);
-		});
-
-		// 회원 저장 버튼
-		$('#btnSaveMember').on('click', function () {
-			saveMember();
-		});
-	}
-
-	/**
 	 * 체크박스 이벤트 바인딩
 	 */
 	function bindCheckboxEvents() {
@@ -473,20 +432,15 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 선택된 회원 기반 버튼 상태 업데이트
+	 * 선택된 회원 기반 버튼 상태 업데이트 (수정 버튼 제거)
 	 */
 	function updateSelectedMemberButtons() {
 		const checkedCheckboxes = $('.member-checkbox:checked').length;
 
 		if (checkedCheckboxes > 0) {
 			$('#btnDeleteMember').prop('disabled', false);
-			if (checkedCheckboxes === 1) {
-				$('#btnEditMember').prop('disabled', false);
-			} else {
-				$('#btnEditMember').prop('disabled', true);
-			}
 		} else {
-			$('#btnEditMember, #btnDeleteMember').prop('disabled', true);
+			$('#btnDeleteMember').prop('disabled', true);
 		}
 	}
 
@@ -497,7 +451,6 @@ $(document).ready(function () {
 		const selectedMembers = [];
 		$('.member-checkbox:checked').each(function () {
 			const memberIdx = $(this).data('member-idx');
-			// 그리드에서 해당 회원 데이터 찾기
 			const gridData = memberGrid.pqGrid("option", "dataModel.data");
 			const memberData = gridData.find(member => member.member_idx == memberIdx);
 			if (memberData) {
@@ -507,21 +460,27 @@ $(document).ready(function () {
 		return selectedMembers;
 	}
 
-
-
-
 	/**
-	 * 회원 그리드 새로고침
+	 * 이벤트 바인딩 (수정된 버전 - 수정 버튼 이벤트 제거)
 	 */
-	function refreshMemberGrid(nodeData) {
-		if (!currentGridData) return;
+	function bindEvents() {
+		// 회원 삭제 버튼
+		$('#btnDeleteMember').on('click', function () {
+			const selectedMembers = getSelectedMembers();
+			if (selectedMembers.length === 0) {
+				showToast('삭제할 회원을 선택해주세요.');
+				return;
+			}
+			deleteSelectedMembers(selectedMembers);
+		});
 
-		// 현재 선택된 그룹의 회원 목록 다시 로드
-		loadMembersForGroup(nodeData);
+		// 회원 저장 버튼
+		$('#btnSaveMember').on('click', function () {
+			saveMember();
+		});
 	}
 
-
-	// 회원 추가 버튼 이벤트 - 이 부분은 유지
+	// 회원 추가 버튼 이벤트
 	$(document).on('click', '#btnAddMember', function (e) {
 		e.preventDefault();
 
@@ -563,10 +522,7 @@ $(document).ready(function () {
 			success: function (response) {
 				if (response.success) {
 					showToast('회원이 추가되었습니다: ' + response.member_name);
-
-					// 그리드 새로고침 - 새로 추가된 회원이 가장 상단에 표시되도록
 					loadMemberData();
-
 				} else {
 					showToast(response.message || '회원 추가에 실패했습니다.');
 				}
@@ -577,7 +533,6 @@ $(document).ready(function () {
 			}
 		});
 	}
-
 
 	/**
 	 * 선택된 회원들 삭제
@@ -613,7 +568,6 @@ $(document).ready(function () {
 			}
 		});
 	}
-
 
 	/**
 	 * 선택된 조직명 업데이트
@@ -666,10 +620,7 @@ $(document).ready(function () {
 					}
 
 					// 버튼 상태 초기화
-					$('#btnEditMember, #btnDeleteMember').prop('disabled', true);
-
-					// Toast 메시지 제거
-					// showToast(`${response.data ? response.data.length : 0}명의 회원을 로드했습니다.`);
+					$('#btnDeleteMember').prop('disabled', true);
 				} else {
 					console.error('회원 데이터 로드 실패:', response.message);
 					showToast('회원 데이터를 불러오는데 실패했습니다.');
@@ -812,8 +763,6 @@ $(document).ready(function () {
 		});
 	}
 
-
-
 	/**
 	 * 소그룹 옵션 로드
 	 */
@@ -841,192 +790,20 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 회원 저장
-	 */
-	function saveMember() {
-		const formData = {
-			member_idx: $('#member_idx').val(),
-			member_name: $('#member_name').val(),
-			member_phone: $('#member_phone').val(),
-			member_birth: $('#member_birth').val(),
-			member_address: $('#member_address').val(),
-			grade: $('#grade').val(),
-			area_idx: $('#area_idx').val(),
-			leader_yn: $('#leader_yn').is(':checked') ? 'Y' : 'N',
-			new_yn: $('#new_yn').is(':checked') ? 'Y' : 'N',
-			org_id: selectedOrgId
-		};
-
-		const url = formData.member_idx ?
-			window.memberPageData.baseUrl + 'member/update_member' :
-			window.memberPageData.baseUrl + 'member/add_member';
-
-		$.ajax({
-			url: url,
-			method: 'POST',
-			data: formData,
-			dataType: 'json',
-			success: function (response) {
-				if (response.success) {
-					const memberIdx = formData.member_idx || response.member_idx;
-
-					// 사진이 선택되었으면 업로드 처리
-					const photoFile = $('#photo')[0].files[0];
-					if (photoFile && memberIdx) {
-						uploadMemberPhoto(memberIdx, function (photoSuccess, photoUrl) {
-							if (photoSuccess) {
-								showToast('회원 정보와 사진이 저장되었습니다.');
-							} else {
-								showToast('회원 정보는 저장되었으나 사진 업로드에 실패했습니다.');
-							}
-							$('#memberModal').modal('hide');
-							loadMemberData();
-						});
-					} else {
-						showToast(response.message);
-						$('#memberModal').modal('hide');
-						loadMemberData();
-					}
-				} else {
-					showToast(response.message);
-				}
-			},
-			error: function (xhr, status, error) {
-				console.error('회원 저장 실패:', error);
-				showToast('회원 정보 저장에 실패했습니다.');
-			}
-		});
-	}
-
-	/**
-	 * 회원 삭제
-	 */
-	function deleteMember(memberIdx) {
-		if (!confirm('정말로 이 회원을 삭제하시겠습니까?')) {
-			return;
-		}
-
-		$.ajax({
-			url: window.memberPageData.baseUrl + 'member/delete_member',
-			method: 'POST',
-			data: {
-				member_idx: memberIdx
-			},
-			dataType: 'json',
-			success: function (response) {
-				if (response.success) {
-					showToast(response.message);
-					loadMemberData();
-				} else {
-					showToast(response.message);
-				}
-			},
-			error: function (xhr, status, error) {
-				console.error('회원 삭제 실패:', error);
-				showToast('회원 삭제에 실패했습니다.');
-			}
-		});
-	}
-
-	/**
 	 * Toast 메시지 표시
 	 */
 	function showToast(message) {
-		// Bootstrap Toast 컨테이너가 없으면 생성
-		if ($('#toastContainer').length === 0) {
-			$('body').append(`
-				<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3">
-				</div>
-			`);
-		}
+		const toastElement = $('#memberToast');
+		const toastBody = toastElement.find('.toast-body');
 
-		// Toast 요소 생성
-		const toastId = 'toast_' + Date.now();
-		const toastHtml = `
-			<div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-				<div class="toast-header">
-					<i class="bi bi-info-circle-fill text-primary me-2"></i>
-					<strong class="me-auto">알림</strong>
-					<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-				</div>
-				<div class="toast-body">
-					${message}
-				</div>
-			</div>
-		`;
+		toastBody.text(message);
 
-		$('#toastContainer').append(toastHtml);
-
-		// Bootstrap Toast 초기화 및 표시
-		const toastElement = document.getElementById(toastId);
-		const toast = new bootstrap.Toast(toastElement, {
+		const toast = new bootstrap.Toast(toastElement[0], {
+			autohide: true,
 			delay: 3000
 		});
+
 		toast.show();
-
-		// Toast가 숨겨진 후 DOM에서 제거
-		toastElement.addEventListener('hidden.bs.toast', function () {
-			$(this).remove();
-		});
-	}
-
-	/**
-	 * 사진 미리보기 이벤트 바인딩
-	 */
-	function bindPhotoEvents() {
-		// 사진 파일 선택 시 미리보기
-		$('#photo').on('change', function (e) {
-			const file = e.target.files[0];
-			if (file) {
-				const reader = new FileReader();
-				reader.onload = function (e) {
-					$('#previewImage').attr('src', e.target.result);
-					$('#photoPreview').show();
-				};
-				reader.readAsDataURL(file);
-			} else {
-				$('#photoPreview').hide();
-			}
-		});
-	}
-
-	/**
-	 * 사진 업로드 처리
-	 */
-	function uploadMemberPhoto(memberIdx, callback) {
-		const photoFile = $('#photo')[0].files[0];
-
-		if (!photoFile) {
-			if (callback) callback(true, null);
-			return;
-		}
-
-		const formData = new FormData();
-		formData.append('photo', photoFile);
-		formData.append('member_idx', memberIdx);
-		formData.append('org_id', selectedOrgId);
-
-		$.ajax({
-			url: window.memberPageData.baseUrl + 'member/upload_member_photo',
-			method: 'POST',
-			data: formData,
-			processData: false,
-			contentType: false,
-			dataType: 'json',
-			success: function (response) {
-				if (response.success) {
-					if (callback) callback(true, response.photo_url);
-				} else {
-					showToast(response.message);
-					if (callback) callback(false, null);
-				}
-			},
-			error: function (xhr, status, error) {
-				console.error('사진 업로드 실패:', error);
-				showToast('사진 업로드에 실패했습니다.');
-				if (callback) callback(false, null);
-			}
-		});
 	}
 
 });
