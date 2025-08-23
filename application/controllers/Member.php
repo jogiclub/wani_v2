@@ -186,24 +186,41 @@ class Member extends CI_Controller
 			);
 		}
 
-		// 현재 조직만 포함된 트리 데이터
-		$tree_data = array(
-			array(
-				'key' => 'org_' . $current_org['org_id'],
-				'title' => $current_org['org_name'],
-				'data' => array(
-					'type' => 'org',
-					'org_id' => $current_org['org_id']
-				),
-				'expanded' => true, // 기본적으로 펼쳐진 상태
-				'children' => $children
-			)
+		// 현재 조직 노드 생성
+		$org_node = array(
+			'key' => 'org_' . $current_org['org_id'],
+			'title' => $current_org['org_name'],
+			'data' => array(
+				'type' => 'org',
+				'org_id' => $current_org['org_id']
+			),
+			'expanded' => true, // 기본적으로 펼쳐진 상태
+			'children' => $children
 		);
+
+		// 트리 데이터 배열 초기화
+		$tree_data = array($org_node);
+
+		// 소속 그룹이 없는 회원 수 확인
+		$unassigned_members_count = $this->Member_model->get_unassigned_members_count($active_org_id);
+
+		// 미분류 그룹이 있는 경우 root 레벨에 추가 (조직과 동일한 depth)
+		if ($unassigned_members_count > 0) {
+			$unassigned_node = array(
+				'key' => 'unassigned_' . $active_org_id,
+				'title' => '미분류 (' . $unassigned_members_count . '명)',
+				'data' => array(
+					'type' => 'unassigned',
+					'org_id' => $active_org_id,
+					'area_idx' => null
+				)
+			);
+			$tree_data[] = $unassigned_node;
+		}
 
 		header('Content-Type: application/json');
 		echo json_encode($tree_data);
 	}
-
 	/**
 	 * 회원 목록 조회 (ParamQuery Grid용)
 	 */
@@ -245,15 +262,20 @@ class Member extends CI_Controller
 			return;
 		}
 
-		// 기본적으로 그룹의 모든 회원 가져오기
-		$members = $this->Member_model->get_org_members($org_id);
-
-		// 특정 소그룹이 선택된 경우 필터링
-		if ($type === 'area' && $area_idx) {
+		// 타입에 따라 회원 데이터 가져오기
+		if ($type === 'unassigned') {
+			// 소속 그룹이 없는 회원들
+			$members = $this->Member_model->get_unassigned_members($org_id);
+		} else if ($type === 'area' && $area_idx) {
+			// 특정 소그룹의 회원들
+			$members = $this->Member_model->get_org_members($org_id);
 			$members = array_filter($members, function ($member) use ($area_idx) {
 				return $member['area_idx'] == $area_idx;
 			});
 			$members = array_values($members); // 인덱스 재정렬
+		} else {
+			// 기본적으로 그룹의 모든 회원 가져오기
+			$members = $this->Member_model->get_org_members($org_id);
 		}
 
 		// ParamQuery 형식으로 데이터 가공 - 안전한 배열 접근
@@ -454,8 +476,6 @@ class Member extends CI_Controller
 	}
 
 
-
-
 	/**
 	 * 다중 회원 삭제 (del_yn = 'Y')
 	 */
@@ -487,4 +507,5 @@ class Member extends CI_Controller
 			echo json_encode(array('success' => false, 'message' => '회원 삭제에 실패했습니다.'));
 		}
 	}
+
 }

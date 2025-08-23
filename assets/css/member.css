@@ -113,6 +113,43 @@ header {
 	font-size: 0.85rem;
 }
 
+* 미분류 그룹 스타일 - root 레벨 */
+.fancytree-node[data-type="unassigned"] .fancytree-title {
+	font-weight: 600;
+	color: #dc3545;
+	font-size: 0.9rem;
+	font-style: italic;
+	border-left: 3px solid #dc3545;
+	padding-left: 8px;
+	margin-left: -8px;
+}
+
+.fancytree-node[data-type="unassigned"]:hover .fancytree-title {
+	background-color: #f8d7da !important;
+	color: #721c24 !important;
+}
+
+.fancytree-active .fancytree-node[data-type="unassigned"] .fancytree-title {
+	background-color: #dc3545 !important;
+	color: white !important;
+	border-left-color: #fff;
+}
+
+/* 미분류 그룹 아이콘 */
+.fancytree-node[data-type="unassigned"] .fancytree-icon::before {
+	content: "⚠";
+	color: #dc3545;
+	font-weight: bold;
+}
+
+/* root 레벨의 미분류 그룹은 조직과 동일한 스타일 적용 */
+.fancytree-node[data-type="unassigned"] {
+	border-bottom: 1px solid #e9ecef;
+	margin-bottom: 8px;
+	padding-bottom: 4px;
+}
+
+
 /* Fancytree 아이콘 및 들여쓰기 */
 .fancytree-icon {
 	width: 16px;
