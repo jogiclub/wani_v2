@@ -205,7 +205,7 @@ class Member extends CI_Controller
 		$unassigned_members_count = $this->Member_model->get_unassigned_members_count($active_org_id);
 
 		// 미분류 그룹이 있는 경우 root 레벨에 추가 (조직과 동일한 depth)
-		if ($unassigned_members_count > 0) {
+
 			$unassigned_node = array(
 				'key' => 'unassigned_' . $active_org_id,
 				'title' => '미분류 (' . $unassigned_members_count . '명)',
@@ -216,7 +216,7 @@ class Member extends CI_Controller
 				)
 			);
 			$tree_data[] = $unassigned_node;
-		}
+
 
 		header('Content-Type: application/json');
 		echo json_encode($tree_data);
