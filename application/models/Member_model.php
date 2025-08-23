@@ -175,6 +175,89 @@ class Member_model extends CI_Model
 	}
 
 
+	/**
+	 * 조직의 전체 회원 수 조회
+	 */
+	public function get_org_member_count($org_id)
+	{
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 특정 영역과 그 하위 영역들의 모든 회원 조회
+	 */
+	public function get_area_members_with_children($org_id, $area_idx)
+	{
+		// Member_area_model 로드
+		$CI =& get_instance();
+		$CI->load->model('Member_area_model');
+
+		// 해당 영역과 모든 하위 영역들의 area_idx 수집
+		$area_ids = $this->get_all_child_area_ids($area_idx, $org_id);
+		$area_ids[] = $area_idx; // 자기 자신도 포함
+
+		// 회원 조회
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.photo, m.member_phone, m.member_address, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where_in('m.area_idx', $area_ids);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->order_by('a.area_order', 'ASC');
+		$this->db->order_by('m.leader_yn', 'ASC');
+		$this->db->order_by('m.member_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 특정 영역의 모든 하위 영역 ID들을 재귀적으로 가져오기
+	 */
+	private function get_all_child_area_ids($parent_area_idx, $org_id)
+	{
+		$area_ids = array();
+
+		// 직접 하위 영역들 조회
+		$this->db->select('area_idx');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('parent_idx', $parent_area_idx);
+
+		$query = $this->db->get();
+		$child_areas = $query->result_array();
+
+		foreach ($child_areas as $child_area) {
+			$area_ids[] = $child_area['area_idx'];
+
+			// 재귀적으로 하위의 하위 영역들도 가져오기
+			$grandchild_ids = $this->get_all_child_area_ids($child_area['area_idx'], $org_id);
+			$area_ids = array_merge($area_ids, $grandchild_ids);
+		}
+
+		return $area_ids;
+	}
+
+	/**
+	 * 특정 영역과 그 하위 영역들의 회원 수 조회
+	 */
+	public function get_area_members_count_with_children($org_id, $area_idx)
+	{
+		// 해당 영역과 모든 하위 영역들의 area_idx 수집
+		$area_ids = $this->get_all_child_area_ids($area_idx, $org_id);
+		$area_ids[] = $area_idx; // 자기 자신도 포함
+
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where_in('area_idx', $area_ids);
+		$this->db->where('del_yn', 'N');
+
+		return $this->db->count_all_results();
+	}
+
 }
 
 

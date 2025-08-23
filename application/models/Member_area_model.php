@@ -1,20 +1,90 @@
 <?php
 class Member_area_model extends CI_Model {
-    public function __construct() {
-        parent::__construct();
-        $this->load->database();
-    }
+	public function __construct() {
+		parent::__construct();
+		$this->load->database();
+	}
 
-    public function get_member_areas($org_id) {
-        $this->db->select('area_idx, area_name');
-        $this->db->from('wb_member_area');
-        $this->db->where('org_id', $org_id);
-        $this->db->order_by('area_order', 'ASC');
+	/**
+	 * 조직의 모든 멤버 영역 가져오기 (트리 구조용)
+	 */
+	public function get_member_areas($org_id) {
+		$this->db->select('area_idx, area_name, parent_idx, area_order');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->order_by('area_order', 'ASC');
 
-        $query = $this->db->get();
-        return $query->result_array();
-    }
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 
+	/**
+	 * 계층적 트리 구조로 영역 데이터 변환
+	 */
+	public function get_member_areas_tree($org_id) {
+		// 모든 영역 가져오기
+		$areas = $this->get_member_areas($org_id);
+
+		// 트리 구조로 변환
+		return $this->build_tree($areas);
+	}
+
+	/**
+	 * 배열을 트리 구조로 변환하는 재귀 함수
+	 */
+	private function build_tree($areas, $parent_idx = null) {
+		$tree = array();
+
+		foreach ($areas as $area) {
+			// parent_idx가 null이면 최상위, 아니면 해당 부모의 자식
+			$area_parent_idx = empty($area['parent_idx']) ? null : $area['parent_idx'];
+
+			if ($area_parent_idx == $parent_idx) {
+				// 현재 영역의 자식들을 찾아서 추가
+				$children = $this->build_tree($areas, $area['area_idx']);
+
+				$tree_node = array(
+					'area_idx' => $area['area_idx'],
+					'area_name' => $area['area_name'],
+					'parent_idx' => $area['parent_idx'],
+					'area_order' => $area['area_order'],
+					'children' => $children
+				);
+
+				$tree[] = $tree_node;
+			}
+		}
+
+		return $tree;
+	}
+
+	/**
+	 * 특정 영역의 자식 영역들 가져오기
+	 */
+	public function get_child_areas($parent_area_idx, $org_id) {
+		$this->db->select('area_idx, area_name, parent_idx, area_order');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('parent_idx', $parent_area_idx);
+		$this->db->order_by('area_order', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 최상위 영역들(parent_idx가 null인 영역들) 가져오기
+	 */
+	public function get_root_areas($org_id) {
+		$this->db->select('area_idx, area_name, parent_idx, area_order');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('(parent_idx IS NULL OR parent_idx = "" OR parent_idx = 0)', null, false);
+		$this->db->order_by('area_order', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 
 	public function get_max_order($org_id) {
 		$this->db->select_max('area_order');
@@ -29,7 +99,6 @@ class Member_area_model extends CI_Model {
 		return $this->db->affected_rows() > 0;
 	}
 
-
 	public function update_areas($areas) {
 		$success = true;
 
@@ -43,6 +112,7 @@ class Member_area_model extends CI_Model {
 
 		return $success;
 	}
+
 	public function check_area_members($area_idx) {
 		$this->db->where('area_idx', $area_idx);
 		$this->db->where('del_yn', 'N');

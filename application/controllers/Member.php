@@ -115,8 +115,11 @@ class Member extends CI_Controller
 		$this->load->view('member', $data);
 	}
 
+
+
+
 	/**
-	 * 그룹 트리 데이터 가져오기 (Fancytree용) - 현재 선택된 조직만
+	 * 그룹 트리 데이터 가져오기 (Fancytree용) - 계층적 구조 및 회원 수 표시
 	 */
 	public function get_org_tree()
 	{
@@ -170,29 +173,64 @@ class Member extends CI_Controller
 			return;
 		}
 
-		// 현재 선택된 조직의 소그룹(area) 가져오기
-		$areas = $this->Member_area_model->get_member_areas($active_org_id);
+		// 현재 선택된 조직의 소그룹(area) 트리 구조로 가져오기
+		$areas_tree = $this->Member_area_model->get_member_areas_tree($active_org_id);
 
-		$children = array();
-		foreach ($areas as $area) {
-			$children[] = array(
-				'key' => 'area_' . $area['area_idx'],
-				'title' => $area['area_name'],
-				'data' => array(
-					'type' => 'area',
-					'org_id' => $active_org_id,
-					'area_idx' => $area['area_idx']
-				)
-			);
+		// 트리 구조를 Fancytree 형식으로 변환하는 재귀 함수 (회원 수 포함)
+		$build_fancytree_nodes = function($areas) use (&$build_fancytree_nodes, $active_org_id) {
+			$nodes = array();
+
+			foreach ($areas as $area) {
+				// 해당 영역과 하위 영역들의 총 회원 수 계산
+				$member_count = $this->Member_model->get_area_members_count_with_children($active_org_id, $area['area_idx']);
+
+				$title = $area['area_name'];
+				if ($member_count > 0) {
+					$title .= ' (' . $member_count . '명)';
+				}
+
+				$node = array(
+					'key' => 'area_' . $area['area_idx'],
+					'title' => $title,
+					'data' => array(
+						'type' => 'area',
+						'org_id' => $active_org_id,
+						'area_idx' => $area['area_idx'],
+						'parent_idx' => $area['parent_idx'],
+						'member_count' => $member_count
+					)
+				);
+
+				// 자식 노드가 있으면 재귀적으로 처리
+				if (!empty($area['children'])) {
+					$node['children'] = $build_fancytree_nodes($area['children']);
+					$node['expanded'] = false; // 하위 노드는 기본적으로 접힌 상태
+				}
+
+				$nodes[] = $node;
+			}
+
+			return $nodes;
+		};
+
+		// Fancytree 형식의 자식 노드들 생성
+		$children = $build_fancytree_nodes($areas_tree);
+
+		// 조직 전체 회원 수 계산
+		$org_total_members = $this->Member_model->get_org_member_count($active_org_id);
+		$org_title = $current_org['org_name'];
+		if ($org_total_members > 0) {
+			$org_title .= ' (' . $org_total_members . '명)';
 		}
 
 		// 현재 조직 노드 생성
 		$org_node = array(
 			'key' => 'org_' . $current_org['org_id'],
-			'title' => $current_org['org_name'],
+			'title' => $org_title,
 			'data' => array(
 				'type' => 'org',
-				'org_id' => $current_org['org_id']
+				'org_id' => $current_org['org_id'],
+				'member_count' => $org_total_members
 			),
 			'expanded' => true, // 기본적으로 펼쳐진 상태
 			'children' => $children
@@ -205,24 +243,28 @@ class Member extends CI_Controller
 		$unassigned_members_count = $this->Member_model->get_unassigned_members_count($active_org_id);
 
 		// 미분류 그룹이 있는 경우 root 레벨에 추가 (조직과 동일한 depth)
-
+		if ($unassigned_members_count > 0) {
 			$unassigned_node = array(
 				'key' => 'unassigned_' . $active_org_id,
 				'title' => '미분류 (' . $unassigned_members_count . '명)',
 				'data' => array(
 					'type' => 'unassigned',
 					'org_id' => $active_org_id,
-					'area_idx' => null
+					'area_idx' => null,
+					'member_count' => $unassigned_members_count
 				)
 			);
 			$tree_data[] = $unassigned_node;
-
+		}
 
 		header('Content-Type: application/json');
 		echo json_encode($tree_data);
 	}
+
+
+
 	/**
-	 * 회원 목록 조회 (ParamQuery Grid용)
+	 * 회원 목록 조회 (ParamQuery Grid용) - 계층적 구조 지원
 	 */
 	public function get_members()
 	{
@@ -267,12 +309,11 @@ class Member extends CI_Controller
 			// 소속 그룹이 없는 회원들
 			$members = $this->Member_model->get_unassigned_members($org_id);
 		} else if ($type === 'area' && $area_idx) {
-			// 특정 소그룹의 회원들
+			// 특정 소그룹과 그 하위 그룹들의 회원들 (계층적 조회)
+			$members = $this->Member_model->get_area_members_with_children($org_id, $area_idx);
+		} else if ($type === 'org') {
+			// 조직의 모든 회원 가져오기
 			$members = $this->Member_model->get_org_members($org_id);
-			$members = array_filter($members, function ($member) use ($area_idx) {
-				return $member['area_idx'] == $area_idx;
-			});
-			$members = array_values($members); // 인덱스 재정렬
 		} else {
 			// 기본적으로 그룹의 모든 회원 가져오기
 			$members = $this->Member_model->get_org_members($org_id);
@@ -298,27 +339,25 @@ class Member extends CI_Controller
 				'member_name' => isset($member['member_name']) ? $member['member_name'] : '',
 				'photo' => $photo_url,
 				'member_phone' => isset($member['member_phone']) ? $member['member_phone'] : '',
-				'member_birth' => isset($member['member_birth']) ? $member['member_birth'] : '',
 				'member_address' => isset($member['member_address']) ? $member['member_address'] : '',
 				'leader_yn' => isset($member['leader_yn']) ? $member['leader_yn'] : 'N',
 				'new_yn' => isset($member['new_yn']) ? $member['new_yn'] : 'N',
-				'regi_date' => isset($member['regi_date']) ? $member['regi_date'] : '',
-				'modi_date' => isset($member['modi_date']) ? $member['modi_date'] : '',
+				'member_birth' => isset($member['member_birth']) ? $member['member_birth'] : '',
+				'grade' => isset($member['grade']) ? $member['grade'] : '',
 				'area_name' => isset($member['area_name']) ? $member['area_name'] : '',
 				'area_idx' => isset($member['area_idx']) ? $member['area_idx'] : '',
-				'grade' => isset($member['grade']) ? $member['grade'] : ''
+				'regi_date' => isset($member['regi_date']) ? $member['regi_date'] : '',
+				'modi_date' => isset($member['modi_date']) ? $member['modi_date'] : ''
 			);
 		}
 
-		$response = array(
+		echo json_encode(array(
 			'success' => true,
 			'data' => $formatted_members,
 			'totalRecords' => count($formatted_members)
-		);
-
-		header('Content-Type: application/json');
-		echo json_encode($response);
+		));
 	}
+
 
 	/**
 	 * 회원 사진 업로드
@@ -535,5 +574,7 @@ class Member extends CI_Controller
 			echo json_encode(array('success' => false, 'message' => '회원 삭제에 실패했습니다.'));
 		}
 	}
+
+
 
 }

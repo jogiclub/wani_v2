@@ -854,4 +854,133 @@ $(document).ready(function () {
 		toast.show();
 	}
 
+	/**
+	 * 트리 초기화 (계층적 구조 지원)
+	 */
+	function initializeTree() {
+		console.log('트리 초기화 중...');
+
+		// 기존 트리가 있다면 제거
+		if ($("#groupTree").fancytree("getTree")) {
+			$("#groupTree").fancytree("destroy");
+		}
+
+		// 트리 데이터 가져오기
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/get_org_tree',
+			method: 'POST',
+			dataType: 'json',
+			success: function(data) {
+				console.log('트리 데이터 로드됨:', data);
+
+				$("#groupTree").fancytree({
+					checkbox: false,
+					selectMode: 1,
+					source: data,
+
+					// 계층적 구조 설정
+					extensions: ["wide"],
+					wide: {
+						iconWidth: "1em",
+						iconSpacing: "0.5em",
+						levelOfs: "1.5em"
+					},
+
+					// 트리 확장/축소 설정
+					autoCollapse: false,
+					clickFolderMode: 1, // 폴더 클릭 시 확장/축소
+
+					activate: function(event, data) {
+						const node = data.node;
+						console.log('노드 선택됨:', node.data);
+
+						// 선택된 그룹 저장
+						saveSelectedGroupToStorage(node.data);
+
+						// 선택된 조직/그룹 제목 업데이트
+						updateSelectedOrgTitle(node);
+
+						// 회원 목록 로드
+						loadMemberList(node.data);
+					},
+
+					expand: function(event, data) {
+						console.log('노드 확장됨:', data.node.title);
+					},
+
+					collapse: function(event, data) {
+						console.log('노드 축소됨:', data.node.title);
+					},
+
+					renderNode: function(event, data) {
+						const node = data.node;
+						const $span = $(node.span);
+
+						// 조직 노드에 아이콘 추가
+						if (node.data && node.data.type === 'org') {
+							$span.find('.fancytree-title').prepend('<i class="bi bi-building me-1"></i>');
+						}
+						// 영역 노드에 아이콘 추가
+						else if (node.data && node.data.type === 'area') {
+							const level = node.getLevel();
+							if (level === 2) { // 1차 하위 그룹
+								$span.find('.fancytree-title').prepend('<i class="bi bi-folder me-1"></i>');
+							} else if (level >= 3) { // 2차 이상 하위 그룹
+								$span.find('.fancytree-title').prepend('<i class="bi bi-folder2-open me-1"></i>');
+							}
+						}
+						// 미분류 노드에 아이콘 추가
+						else if (node.data && node.data.type === 'unassigned') {
+							$span.find('.fancytree-title').prepend('<i class="bi bi-question-circle me-1"></i>');
+						}
+					}
+				});
+
+				// 저장된 선택 상태 복원 또는 첫 번째 조직 선택
+				restoreSelectedGroupFromStorage(data);
+			},
+			error: function(xhr, status, error) {
+				console.error('트리 데이터 로드 실패:', error);
+				showToast('트리 데이터를 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 선택된 조직/그룹 제목 업데이트 (계층 구조 고려)
+	 */
+	function updateSelectedOrgTitle(node) {
+		let title = '';
+		let icon = '';
+
+		if (node.data.type === 'org') {
+			icon = '<i class="bi bi-building"></i>';
+			title = node.title;
+		} else if (node.data.type === 'area') {
+			icon = '<i class="bi bi-people"></i>';
+
+			// 계층 구조에 따른 제목 생성
+			const breadcrumb = [];
+			let currentNode = node;
+
+			// 상위 노드들을 역순으로 수집
+			while (currentNode && currentNode.data.type !== 'org') {
+				breadcrumb.unshift(currentNode.title);
+				currentNode = currentNode.parent;
+			}
+
+			// 조직명 추가
+			if (currentNode && currentNode.data.type === 'org') {
+				breadcrumb.unshift(currentNode.title);
+			}
+
+			title = breadcrumb.join(' > ');
+		} else if (node.data.type === 'unassigned') {
+			icon = '<i class="bi bi-question-circle"></i>';
+			title = node.title;
+		}
+
+		$('#selectedOrgName').html(icon + ' ' + title);
+	}
+
 });
