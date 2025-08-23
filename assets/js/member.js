@@ -876,6 +876,9 @@ $(document).ready(function () {
 				$("#groupTree").fancytree({
 					checkbox: false,
 					selectMode: 1,
+					postInit: function(event, data) {
+						this.expandAll();
+					},
 					source: data,
 
 					// 계층적 구조 설정
