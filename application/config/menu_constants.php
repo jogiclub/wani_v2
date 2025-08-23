@@ -1,14 +1,14 @@
 <?php
 /**
  * 파일 위치: application/config/menu_constants.php
- * 역할: 시스템 메뉴 상수 정의
+ * 역할: 시스템 메뉴 설정 파일
  */
 
 if (!defined('BASEPATH'))
 	exit('No direct script access allowed');
 
 // 시스템 메뉴 정의
-define('SYSTEM_MENUS', array(
+$config['system_menus'] = array(
 	'OVERVIEW' => array(
 		'name' => '대시보드',
 		'key' => 'OVERVIEW',
@@ -86,14 +86,14 @@ define('SYSTEM_MENUS', array(
 		'icon' => 'bi bi-person-video',
 		'level' => 9
 	)
-));
+);
 
 /**
  * 메뉴 카테고리별 분류
  */
-define('MENU_CATEGORIES', array(
+$config['menu_categories'] = array(
 	'OVERVIEW' => array('OVERVIEW'),
 	'MEMBER' => array('MEMBER_MANAGEMENT', 'ATTENDANCE_MANAGEMENT', 'ATTENDANCE_BOARD'),
 	'STATICS' => array('WEEKLY_STATISTICS', 'MEMBER_STATISTICS'),
 	'SETTING' => array('ORG_SETTING', 'GROUP_SETTING', 'DETAIL_FIELD_SETTING', 'ATTENDANCE_SETTING', 'USER_MANAGEMENT')
-));
+);
