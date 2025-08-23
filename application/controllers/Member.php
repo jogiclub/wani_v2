@@ -490,9 +490,8 @@ class Member extends CI_Controller
 		}
 	}
 
-
 	/**
-	 * 다중 회원 삭제 (del_yn = 'Y')
+	 * 다중 회원 삭제 (미분류: del_yn = 'Y', 소그룹: area_idx = null)
 	 */
 	public function delete_members()
 	{
@@ -501,23 +500,37 @@ class Member extends CI_Controller
 		}
 
 		$member_indices = $this->input->post('member_indices');
+		$delete_type = $this->input->post('delete_type'); // 'unassigned' 또는 'area'
 
 		if (!$member_indices || !is_array($member_indices)) {
 			echo json_encode(array('success' => false, 'message' => '삭제할 회원 정보가 없습니다.'));
 			return;
 		}
 
-		$update_data = array(
-			'del_yn' => 'Y',
-			'del_date' => date('Y-m-d H:i:s')
-		);
+		if ($delete_type === 'unassigned') {
+			// 미분류에서의 삭제 - del_yn을 'Y'로 변경 (완전 삭제)
+			$update_data = array(
+				'del_yn' => 'Y',
+				'del_date' => date('Y-m-d H:i:s')
+			);
+		} else {
+			// 일반 소그룹에서의 삭제 - area_idx를 null로 변경 (미분류로 이동)
+			$update_data = array(
+				'area_idx' => null,
+				'modi_date' => date('Y-m-d H:i:s')
+			);
+		}
 
 		$this->db->where_in('member_idx', $member_indices);
 		$result = $this->db->update('wb_member', $update_data);
 
 		if ($result) {
 			$count = count($member_indices);
-			echo json_encode(array('success' => true, 'message' => "{$count}명의 회원이 삭제되었습니다."));
+			if ($delete_type === 'unassigned') {
+				echo json_encode(array('success' => true, 'message' => "{$count}명의 회원이 삭제되었습니다."));
+			} else {
+				echo json_encode(array('success' => true, 'message' => "{$count}명의 회원이 미분류로 이동되었습니다."));
+			}
 		} else {
 			echo json_encode(array('success' => false, 'message' => '회원 삭제에 실패했습니다.'));
 		}

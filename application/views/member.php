@@ -165,6 +165,26 @@
 	</div>
 </div>
 
+<!-- 회원 삭제 확인 모달 -->
+<div class="modal fade" id="deleteMemberModal" tabindex="-1" aria-labelledby="deleteMemberModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="deleteMemberModalLabel">회원 삭제 확인</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p id="deleteMessage"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
 <!-- Toast 메시지 -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
 	<div id="memberToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">

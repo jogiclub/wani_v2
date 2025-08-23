@@ -477,7 +477,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 이벤트 바인딩 (수정된 버전 - 수정 버튼 이벤트 제거)
+	 * 이벤트 바인딩 (수정된 버전 - 모달 사용)
 	 */
 	function bindEvents() {
 		// 회원 삭제 버튼
@@ -555,19 +555,52 @@ $(document).ready(function () {
 	 */
 	function deleteSelectedMembers(selectedMembers) {
 		const memberCount = selectedMembers.length;
-		const memberNames = selectedMembers.map(member => member.member_name).join(', ');
 
-		if (!confirm(`정말로 ${memberCount}명의 회원(${memberNames})을 삭제하시겠습니까?`)) {
+		// 현재 선택된 그룹 타입 확인
+		const tree = $("#groupTree").fancytree("getTree");
+		const activeNode = tree.getActiveNode();
+
+		if (!activeNode) {
+			showToast('그룹을 선택해주세요.');
 			return;
 		}
 
+		const nodeData = activeNode.data;
+		const isUnassigned = nodeData.type === 'unassigned';
+
+		// 메시지 설정
+		let message;
+		if (isUnassigned) {
+			message = `미분류에서의 삭제는 복원이 불가합니다. 정말로 ${memberCount}명의 회원을 삭제하시겠습니까?`;
+		} else {
+			message = `정말로 ${memberCount}명의 회원을 삭제하시겠습니까?(미분류로 이동)`;
+		}
+
+		// 모달에 메시지 설정
+		$('#deleteMessage').text(message);
+
+		// 삭제 확인 버튼 이벤트 설정
+		$('#confirmDeleteBtn').off('click').on('click', function() {
+			executeMemberDelete(selectedMembers, isUnassigned ? 'unassigned' : 'area');
+			$('#deleteMemberModal').modal('hide');
+		});
+
+		// 모달 표시
+		$('#deleteMemberModal').modal('show');
+	}
+
+	/**
+	 * 실제 회원 삭제 실행
+	 */
+	function executeMemberDelete(selectedMembers, deleteType) {
 		const memberIndices = selectedMembers.map(member => member.member_idx);
 
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/delete_members',
 			method: 'POST',
 			data: {
-				member_indices: memberIndices
+				member_indices: memberIndices,
+				delete_type: deleteType
 			},
 			dataType: 'json',
 			success: function (response) {
@@ -584,7 +617,6 @@ $(document).ready(function () {
 			}
 		});
 	}
-
 	/**
 	 * 선택된 조직명 업데이트
 	 */
