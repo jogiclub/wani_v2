@@ -1,11 +1,11 @@
 <?php
 /**
- * 파일 위치: E:\SynologyDrive\Example\wani\application\controllers\Detail_field.php
+ * 파일 위치: application/controllers/Detail_field.php
  * 역할: 상세필드 설정 페이지의 컨트롤러
  */
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Detail_field extends CI_Controller
+class Detail_field extends Base_Controller
 {
 
 	public function __construct()
@@ -13,8 +13,49 @@ class Detail_field extends CI_Controller
 		parent::__construct();
 		$this->load->model('Detail_field_model');
 		$this->load->library('session');
-		$this->load->helper('url'); // URL 헬퍼 로드 추가
-		$this->load->model('User_model'); // User_model 추가
+		$this->load->helper('url');
+		$this->load->model('User_model');
+	}
+
+	/**
+	 * 상세필드 설정 메인 페이지
+	 */
+	public function index()
+	{
+		$user_id = $this->session->userdata('user_id');
+		if (!$user_id) {
+			redirect('login');
+			return;
+		}
+
+		// 헤더 데이터 준비
+		$header_data = $this->prepare_header_data();
+		if (empty($header_data['user_orgs'])) {
+			redirect('mypage');
+			return;
+		}
+
+		$data = $header_data;
+
+		// POST로 조직 변경 요청 처리 (Base_Controller의 메소드 사용)
+		$this->handle_org_change($data);
+
+		$currentOrgId = $data['current_org']['org_id'];
+
+		// 사용자의 조직 접근 권한 확인 - 상세필드 관리는 최소 레벨 8 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $currentOrgId);
+		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
+			$this->handle_access_denied('상세필드를 관리할 권한이 없습니다.');
+			return;
+		}
+
+		// 선택된 조직의 상세필드 목록 가져오기
+		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields($currentOrgId);
+
+		// 현재 조직 정보를 JavaScript로 전달하기 위해 orgs 배열에 추가
+		$data['orgs'] = array($data['current_org']);
+
+		$this->load->view('detail_field_setting', $data);
 	}
 
 	/**
@@ -63,107 +104,6 @@ class Detail_field extends CI_Controller
 			'user_orgs' => $user_orgs,
 			'current_org' => $current_org
 		);
-	}
-
-	/**
-	 * 상세필드 설정 메인 페이지
-	 */
-	public function index()
-	{
-		$user_id = $this->session->userdata('user_id');
-		if (!$user_id) {
-			redirect('login');
-			return;
-		}
-
-		// 헤더 데이터 준비
-		$header_data = $this->prepare_header_data();
-		if (empty($header_data['user_orgs'])) {
-			redirect('mypage');
-			return;
-		}
-
-		$data = $header_data; // 헤더 데이터 포함
-		$currentOrgId = $data['current_org']['org_id'];
-
-		// POST로 조직 변경 요청이 있는 경우 처리
-		$postOrgId = $this->input->post('org_id');
-		if ($postOrgId) {
-			// 사용자가 해당 조직에 접근 권한이 있는지 확인
-			$has_access = false;
-			foreach ($data['user_orgs'] as $org) {
-				if ($org['org_id'] == $postOrgId) {
-					$has_access = true;
-					$data['current_org'] = $org; // header 데이터의 current_org 업데이트
-					$currentOrgId = $postOrgId;
-					$this->input->set_cookie('activeOrg', $postOrgId, 86400);
-					break;
-				}
-			}
-
-			if (!$has_access) {
-				show_error('접근 권한이 없는 조직입니다.', 403);
-				return;
-			}
-		}
-
-		// 그래도 없으면 첫 번째 조직을 사용
-		if (!$currentOrgId) {
-			$master_yn = $this->session->userdata('master_yn');
-			if ($master_yn === "N") {
-				$user_orgs = $this->Detail_field_model->get_user_orgs($user_id);
-			} else {
-				$user_orgs = $this->Detail_field_model->get_user_orgs_master($user_id);
-			}
-
-			if (!empty($user_orgs)) {
-				$currentOrgId = $user_orgs[0]['org_id'];
-				$data['current_org'] = $user_orgs[0]; // header 데이터 업데이트
-				// 쿠키도 업데이트
-				$this->input->set_cookie('activeOrg', $currentOrgId, 86400);
-			} else {
-				show_error('접근 가능한 조직이 없습니다.', 403);
-				return;
-			}
-		}
-
-		// 권한 검증
-		$user_level = $this->Detail_field_model->get_org_user_level($user_id, $currentOrgId);
-		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
-			show_error('상세필드를 관리할 권한이 없습니다.', 403);
-			return;
-		}
-
-		$master_yn = $this->session->userdata('master_yn');
-
-		// 사용자가 접근 가능한 모든 조직 목록
-		if ($master_yn === "N") {
-			$orgs = $this->Detail_field_model->get_user_orgs($user_id);
-		} else {
-			$orgs = $this->Detail_field_model->get_user_orgs_master($user_id);
-		}
-
-		foreach ($orgs as &$org) {
-			$org['user_level'] = $this->Detail_field_model->get_org_user_level($user_id, $org['org_id']);
-			$org['user_master_yn'] = $this->session->userdata('master_yn');
-
-			// member_count 추가 (조직설정과 동일하게)
-			$org['member_count'] = $this->Detail_field_model->get_org_member_count($org['org_id']);
-		}
-
-		$data['orgs'] = $orgs;
-
-		// 현재 선택된 조직의 상세 정보 가져오기
-		$data['selected_org_detail'] = $this->Detail_field_model->get_org_detail_by_id($currentOrgId);
-
-		// 현재 조직의 상세필드 목록 가져오기
-		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields_by_org($currentOrgId);
-
-		// 뷰 로드 전 데이터 확인
-		log_message('debug', 'Detail_field: Loading view with data - org_id: ' . $currentOrgId);
-
-		// 뷰 로드
-		$this->load->view('detail_field_setting', $data);
 	}
 
 	/**

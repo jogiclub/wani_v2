@@ -1,47 +1,12 @@
 /**
- * 파일 위치: E:\SynologyDrive\Example\wani\assets\js\detail_field.js
+ * 파일 위치: assets/js/detail_field.js
  * 역할: 상세필드 설정 페이지의 JavaScript 기능 처리 (Toast 메시지 적용)
  */
 
 $(document).ready(function() {
 
-	// 조직 선택 이벤트 (조직목록에서 클릭 시 조직 변경)
-	$(document).on('click', '.org-selector-item', function(e) {
-		e.preventDefault();
-
-		const orgId = $(this).data('org-id');
-		const orgName = $(this).data('org-name');
-
-		if (!orgId) {
-			showToast('조직 정보를 가져올 수 없습니다.');
-			return;
-		}
-
-		// 이미 선택된 조직인 경우 처리하지 않음
-		if ($(this).hasClass('active')) {
-			return;
-		}
-
-		// 로딩 상태 표시 (헤더의 조직명 버튼)
-		const currentOrgBtn = $('#current-org-btn');
-		const originalText = currentOrgBtn.text();
-		currentOrgBtn.text('변경 중...');
-
-		// 조직 변경을 위한 폼 제출
-		const form = $('<form>', {
-			'method': 'POST',
-			'action': window.location.href
-		});
-
-		form.append($('<input>', {
-			'type': 'hidden',
-			'name': 'org_id',
-			'value': orgId
-		}));
-
-		$('body').append(form);
-		form.submit();
-	});
+	// 조직 선택 이벤트는 common.js에서 통합 처리하므로 제거
+	// 기존 .org-selector-item 이벤트 핸들러 제거됨
 
 	// 필드 타입 변경 시 옵션 영역 표시/숨김
 	$('#field_type, #edit_field_type').change(function() {
@@ -91,6 +56,11 @@ $(document).ready(function() {
 			}
 		}
 
+		// 저장 중 상태 표시
+		const submitBtn = $(this).find('button[type="submit"]');
+		const originalText = submitBtn.html();
+		submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 추가 중...');
+
 		$.ajax({
 			url: 'detail_field/add_field',
 			type: 'POST',
@@ -107,44 +77,11 @@ $(document).ready(function() {
 			},
 			error: function() {
 				showToast('필드 추가 중 오류가 발생했습니다.');
+			},
+			complete: function() {
+				submitBtn.prop('disabled', false).html(originalText);
 			}
 		});
-	});
-// 필드 수정 버튼 클릭
-	$(document).on('click', '.edit-field-btn', function() {
-		var fieldIdx = $(this).data('field-idx');
-		var fieldName = $(this).data('field-name');
-		var fieldType = $(this).data('field-type');
-		var fieldSettings = $(this).data('field-settings');
-
-		$('#edit_field_idx').val(fieldIdx);
-		$('#edit_field_name').val(fieldName);
-		$('#edit_field_type').val(fieldType).trigger('change');
-
-		// 설정 정보 파싱 (한글 디코딩 처리)
-		try {
-			var settings;
-			if (typeof fieldSettings === 'string') {
-				// HTML entity가 있을 수 있으므로 디코딩
-				var tempDiv = document.createElement('div');
-				tempDiv.innerHTML = fieldSettings;
-				var decodedSettings = tempDiv.textContent || tempDiv.innerText || '';
-				settings = JSON.parse(decodedSettings);
-			} else {
-				settings = fieldSettings;
-			}
-
-			if (fieldType === 'select' && settings.options && Array.isArray(settings.options)) {
-				$('#edit_select_options').val(settings.options.join('\n'));
-			} else {
-				$('#edit_select_options').val('');
-			}
-		} catch (e) {
-			console.error('설정 파싱 오류:', e);
-			$('#edit_select_options').val('');
-		}
-
-		$('#editFieldModal').modal('show');
 	});
 
 	// 필드 수정 폼 제출
@@ -165,6 +102,12 @@ $(document).ready(function() {
 			return;
 		}
 
+		if (!formData.field_type) {
+			showToast('필드 타입을 선택해주세요.');
+			$('#edit_field_type').focus();
+			return;
+		}
+
 		// 선택박스 타입인 경우 옵션 설정
 		if (formData.field_type === 'select') {
 			var options = $('#edit_select_options').val().trim();
@@ -176,6 +119,11 @@ $(document).ready(function() {
 				};
 			}
 		}
+
+		// 저장 중 상태 표시
+		const submitBtn = $(this).find('button[type="submit"]');
+		const originalText = submitBtn.html();
+		submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 수정 중...');
 
 		$.ajax({
 			url: 'detail_field/update_field',
@@ -193,125 +141,121 @@ $(document).ready(function() {
 			},
 			error: function() {
 				showToast('필드 수정 중 오류가 발생했습니다.');
+			},
+			complete: function() {
+				submitBtn.prop('disabled', false).html(originalText);
 			}
 		});
 	});
 
-	// 필드 삭제 버튼 클릭
+	// 필드 수정 모달 열기
+	$(document).on('click', '.edit-field-btn', function() {
+		var fieldIdx = $(this).data('field-idx');
+		var fieldName = $(this).data('field-name');
+		var fieldType = $(this).data('field-type');
+		var fieldOptions = $(this).data('field-options');
+
+		$('#edit_field_idx').val(fieldIdx);
+		$('#edit_field_name').val(fieldName);
+		$('#edit_field_type').val(fieldType).trigger('change');
+
+		if (fieldType === 'select' && fieldOptions) {
+			$('#edit_select_options').val(fieldOptions.join('\n'));
+		}
+
+		$('#editFieldModal').modal('show');
+	});
+
+	// 필드 삭제
 	$(document).on('click', '.delete-field-btn', function() {
 		var fieldIdx = $(this).data('field-idx');
 		var fieldName = $(this).data('field-name');
 
-		if (confirm('"' + fieldName + '" 필드를 정말 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.')) {
-			$.ajax({
-				url: 'detail_field/delete_field',
-				type: 'POST',
-				data: { field_idx: fieldIdx },
-				dataType: 'json',
-				success: function(response) {
-					if (response.success) {
-						showToast(response.message);
-						location.reload();
-					} else {
-						showToast(response.message);
-					}
-				},
-				error: function() {
-					showToast('필드 삭제 중 오류가 발생했습니다.');
+		// 모달로 확인
+		if (typeof showConfirmModal === 'function') {
+			showConfirmModal(
+				'필드 삭제',
+				`"${fieldName}" 필드를 삭제하시겠습니까? 삭제된 필드의 데이터는 복구할 수 없습니다.`,
+				function() {
+					deleteField(fieldIdx);
 				}
-			});
+			);
+		} else {
+			// 모달 함수가 없으면 confirm 사용
+			if (confirm(`"${fieldName}" 필드를 삭제하시겠습니까?\n삭제된 필드의 데이터는 복구할 수 없습니다.`)) {
+				deleteField(fieldIdx);
+			}
 		}
 	});
 
-	// 필드 활성화/비활성화 토글
-	$(document).on('click', '.toggle-field', function() {
-		var fieldIdx = $(this).data('field-idx');
-
+	// 필드 삭제 실행 함수
+	function deleteField(fieldIdx) {
 		$.ajax({
-			url: 'detail_field/toggle_field',
+			url: 'detail_field/delete_field',
 			type: 'POST',
 			data: { field_idx: fieldIdx },
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
 					showToast(response.message);
+					location.reload();
 				} else {
 					showToast(response.message);
-					// 실패 시 체크박스 상태 되돌리기
-					$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked',
-						!$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked'));
 				}
 			},
 			error: function() {
-				showToast('필드 상태 변경 중 오류가 발생했습니다.');
-				// 실패 시 체크박스 상태 되돌리기
-				$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked',
-					!$('.toggle-field[data-field-idx="' + fieldIdx + '"]').prop('checked'));
-			}
-		});
-	});
-
-	// 정렬 기능 초기화
-	if (typeof Sortable !== 'undefined' && $('#fieldTableBody').length > 0) {
-		var sortable = Sortable.create(document.getElementById('fieldTableBody'), {
-			handle: '.handle',
-			animation: 150,
-			onEnd: function(evt) {
-				updateFieldOrders();
+				showToast('필드 삭제 중 오류가 발생했습니다.');
 			}
 		});
 	}
 
-	// 모달 초기화 이벤트
+	// 필드 순서 변경 (드래그 앤 드롭)
+	if ($('#fieldsList').length > 0) {
+		$('#fieldsList').sortable({
+			handle: '.drag-handle',
+			axis: 'y',
+			placeholder: 'field-placeholder',
+			update: function(event, ui) {
+				var fieldOrder = [];
+				$('#fieldsList .field-item').each(function(index) {
+					fieldOrder.push({
+						field_idx: $(this).data('field-idx'),
+						order: index + 1
+					});
+				});
+
+				$.ajax({
+					url: 'detail_field/update_field_order',
+					type: 'POST',
+					data: { field_order: fieldOrder },
+					dataType: 'json',
+					success: function(response) {
+						if (response.success) {
+							showToast('필드 순서가 변경되었습니다.');
+						} else {
+							showToast(response.message);
+							// 실패 시 원래 순서로 복원
+							$('#fieldsList').sortable('cancel');
+						}
+					},
+					error: function() {
+						showToast('필드 순서 변경 중 오류가 발생했습니다.');
+						// 실패 시 원래 순서로 복원
+						$('#fieldsList').sortable('cancel');
+					}
+				});
+			}
+		});
+	}
+
+	// 모달 초기화
 	$('#addFieldModal').on('hidden.bs.modal', function() {
-		$('#addFieldForm')[0].reset();
+		$(this).find('form')[0].reset();
 		$('#selectOptionsDiv').hide();
 	});
 
 	$('#editFieldModal').on('hidden.bs.modal', function() {
-		$('#editFieldForm')[0].reset();
+		$(this).find('form')[0].reset();
 		$('#editSelectOptionsDiv').hide();
 	});
-
-	/**
-	 * 필드 순서 업데이트
-	 */
-	function updateFieldOrders() {
-		var orders = {};
-		var orderNumber = 1;
-
-		$('#fieldTableBody tr').each(function() {
-			var fieldIdx = $(this).data('field-idx');
-			orders[fieldIdx] = orderNumber++;
-			$(this).find('.order-number').text(orderNumber - 1);
-		});
-
-		$.ajax({
-			url: 'detail_field/update_orders',
-			type: 'POST',
-			data: { orders: orders },
-			dataType: 'json',
-			success: function(response) {
-				if (response.success) {
-					showToast(response.message);
-				} else {
-					showToast(response.message);
-					location.reload(); // 실패 시 페이지 새로고침
-				}
-			},
-			error: function() {
-				showToast('순서 변경 중 오류가 발생했습니다.');
-				location.reload(); // 실패 시 페이지 새로고침
-			}
-		});
-	}
-
-	/**
-	 * Toast 메시지 표시
-	 */
-	function showToast(message) {
-		$('#detailFieldToast .toast-body').text(message);
-		const toast = new bootstrap.Toast($('#detailFieldToast'));
-		toast.show();
-	}
 });

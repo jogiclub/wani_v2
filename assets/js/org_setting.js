@@ -35,7 +35,7 @@ $(document).ready(function() {
 		form.submit();
 	});
 
-	// 조직 정보 저장
+// 조직 정보 저장
 	$('#orgSettingForm').on('submit', function(e) {
 		e.preventDefault();
 
@@ -123,7 +123,6 @@ $(document).ready(function() {
 		formData.append('org_icon', file);
 		formData.append('org_id', $('#org_id').val());
 
-		// 업로드 중 상태 표시
 		const uploadBtn = $(this);
 		const originalText = uploadBtn.html();
 		uploadBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 업로드 중...');
@@ -137,26 +136,11 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					showToast('조직 아이콘이 업로드되었습니다.');
-
-					// 미리보기 이미지 업데이트
-					const preview = $('#iconPreview');
-					if (preview.is('img')) {
-						preview.attr('src', response.file_path);
-					} else {
-						preview.replaceWith(
-							`<img src="${response.file_path}" 
-                                  alt="조직 아이콘" 
-                                  class="circle" 
-                                  width="100" 
-                                  height="100" 
-                                  style="object-fit: cover; border: 1px solid #ddd;" 
-                                  id="iconPreview">`
-						);
+					showToast('아이콘이 업로드되었습니다.');
+					// 아이콘 미리보기 업데이트
+					if (response.icon_url) {
+						$('#orgIconPreview').attr('src', response.icon_url);
 					}
-
-					// 파일 입력 초기화
-					fileInput.value = '';
 				} else {
 					showToast(response.message || '아이콘 업로드에 실패했습니다.');
 				}
@@ -170,6 +154,19 @@ $(document).ready(function() {
 			}
 		});
 	});
+
+	// 파일 선택 시 미리보기
+	$('#orgIconFile').on('change', function() {
+		const file = this.files[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = function(e) {
+				$('#orgIconPreview').attr('src', e.target.result);
+			};
+			reader.readAsDataURL(file);
+		}
+	});
+});
 
 	// 아이콘 파일 선택 시 미리보기
 	$('#orgIconFile').on('change', function() {

@@ -29,7 +29,7 @@ $this->load->view('header'); ?>
 
 	<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
 		<div class="row">
-			<div class="col-lg-7">
+			<div class="col-lg-12">
 				<div class="card">
 					<div class="card-header">
 						<h5 class="card-title mb-0">
@@ -43,9 +43,9 @@ $this->load->view('header'); ?>
 									<thead>
 									<tr>
 										<th style="width: 60px;">프로필</th>
-										<th>이름</th>
+										<th style="width: 180px;">이름</th>
 										<th>이메일</th>
-										<th style="width: 120px;">연락처</th>
+										<th style="width: 180px;">연락처</th>
 										<th style="width: 80px;">권한</th>
 										<th style="width: 120px;">관리</th>
 									</tr>
@@ -125,42 +125,7 @@ $this->load->view('header'); ?>
 				</div>
 			</div>
 
-			<div class="col-lg-5">
-				<div class="card">
-					<div class="card-header">
-						<h5 class="card-title mb-0">
-							<i class="bi bi-diagram-3-fill"></i> 조직 목록
-						</h5>
-					</div>
-					<div class="card-body p-0">
-						<div class="list-group list-group-flush" id="orgList">
-							<?php if (isset($orgs) && !empty($orgs)): ?>
-								<?php foreach ($orgs as $org): ?>
-									<a href="?org_id=<?php echo $org['org_id']; ?>"
-									   class="list-group-item list-group-item-action org-selector-item <?php echo ($org['org_id'] == $selected_org_detail['org_id']) ? 'active' : ''; ?>"
-									   data-org-id="<?php echo $org['org_id']; ?>">
-										<div class="d-flex w-100 justify-content-between align-items-center">
-											<div class="flex-grow-1">
-												<h6 class="mb-1"><?php echo htmlspecialchars($org['org_name']); ?></h6>
-												<small class="text-muted">
-													사용자 <?php echo $org['user_count']; ?>명 |
-													권한 <?php
-													if ($org['level'] >= 10) echo '최고관리자';
-													elseif ($org['level'] >= 9) echo '관리자';
-													else echo '일반';
-													?>
-												</small>
-											</div>
-										</div>
-									</a>
-								<?php endforeach; ?>
-							<?php else: ?>
-								<p class="text-muted p-3">접근 가능한 조직이 없습니다.</p>
-							<?php endif; ?>
-						</div>
-					</div>
-				</div>
-			</div>
+
 		</div>
 	<?php else: ?>
 		<div class="alert alert-warning">

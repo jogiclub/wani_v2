@@ -5,7 +5,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * 파일 위치: application/controllers/Member.php
  * 역할: 회원 관리 페이지 및 API 처리 (그룹별 회원 관리)
  */
-class Member extends CI_Controller
+class Member extends Base_Controller
 {
 	public function __construct()
 	{
@@ -17,6 +17,54 @@ class Member extends CI_Controller
 		$this->load->model('Member_area_model');
 		$this->load->model('User_model');
 	}
+
+	/**
+	 * 회원 관리 메인 페이지
+	 */
+	public function index()
+	{
+		// 로그인 체크
+		if (!$this->session->userdata('user_id')) {
+			redirect('login');
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+
+		// 헤더 데이터 준비
+		$header_data = $this->prepare_header_data();
+		if (empty($header_data['user_orgs'])) {
+			redirect('mypage');
+			return;
+		}
+
+		$data = $header_data;
+
+		// POST로 조직 변경 요청 처리
+		$this->handle_org_change($data);
+
+		$currentOrgId = $data['current_org']['org_id'];
+
+		// 사용자의 조직 접근 권한 및 관리 권한 확인
+		if (!$this->check_org_access($currentOrgId)) {
+			$this->handle_access_denied('해당 조직의 회원을 관리할 권한이 없습니다.');
+			return;
+		}
+
+		// 사용자의 권한 레벨 확인 - 회원 관리는 최소 레벨 5 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $currentOrgId);
+		if ($user_level < 5 && $this->session->userdata('master_yn') !== 'Y') {
+			$this->handle_access_denied('회원을 관리할 권한이 없습니다.');
+			return;
+		}
+
+		// 현재 조직 정보를 JavaScript로 전달하기 위해 orgs 배열에 추가
+		$data['orgs'] = array($data['current_org']);
+
+		$this->load->view('member', $data);
+	}
+
+	// 기존의 get_org_tree, get_members 등의 다른 메소드들은 그대로 유지...
 
 	/**
 	 * 헤더에서 사용할 조직 데이터 준비
@@ -66,54 +114,6 @@ class Member extends CI_Controller
 		);
 	}
 
-	/**
-	 * 회원 관리 메인 페이지
-	 */
-	public function index()
-	{
-		// 로그인 체크
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-		}
-
-		$user_id = $this->session->userdata('user_id');
-
-		// 헤더 데이터 준비
-		$header_data = $this->prepare_header_data();
-		if (empty($header_data['user_orgs'])) {
-			redirect('mypage');
-			return;
-		}
-
-		$data = $header_data;
-		$currentOrgId = $data['current_org']['org_id'];
-
-		// POST로 조직 변경 요청이 있는 경우 처리
-		$postOrgId = $this->input->post('org_id');
-		if ($postOrgId) {
-			// 사용자가 해당 조직에 접근 권한이 있는지 확인
-			$has_access = false;
-			foreach ($data['user_orgs'] as $org) {
-				if ($org['org_id'] == $postOrgId) {
-					$has_access = true;
-					$data['current_org'] = $org;
-					$currentOrgId = $postOrgId;
-					$this->input->set_cookie('activeOrg', $postOrgId, 86400);
-					break;
-				}
-			}
-
-			if (!$has_access) {
-				show_error('접근 권한이 없는 조직입니다.', 403);
-				return;
-			}
-		}
-
-		// 현재 조직 정보를 JavaScript로 전달하기 위해 orgs 배열에 추가
-		$data['orgs'] = array($data['current_org']);
-
-		$this->load->view('member', $data);
-	}
 
 
 

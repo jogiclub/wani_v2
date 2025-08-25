@@ -36,52 +36,55 @@
 <?php if ($this->session->userdata('user_id')): ?>
     <header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start shadow bg-white">
         <div class="header-start col-xl-6 col-10">
-            <a class="navbar-brand col-6 col-xl-1 me-0 px-3 fs-6 logo pe-0" href="#">
-                <img src="/assets/images/logo.png">
-            </a>
+			<a class="navbar-brand col-6 col-xl-1 me-0 px-3 fs-6 logo pe-0" href="#">
+				<img src="/assets/images/logo.png">
+			</a>
 
-            <div class="btn-group col-xl-4 col-8">
-                <?php if (isset($current_org) && $current_org): ?>
-                    <button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
-                        <?php echo htmlspecialchars($current_org['org_name']); ?>
-                    </button>
-                <?php else: ?>
-                    <button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
-                        조직을 선택하세요
-                    </button>
-                <?php endif; ?>
+			<div class="btn-group col-xl-4 col-8">
+				<?php if (isset($current_org) && $current_org): ?>
+					<button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
+						<?php echo htmlspecialchars($current_org['org_name']); ?>
+					</button>
+				<?php else: ?>
+					<button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
+						조직을 선택하세요
+					</button>
+				<?php endif; ?>
 
-                <button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                    <span class="visually-hidden">Toggle Dropdown</span>
-                </button>
+				<button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"
+						aria-expanded="false">
+					<span class="visually-hidden">Toggle Dropdown</span>
+				</button>
 
-                <ul class="dropdown-menu" id="org-dropdown-menu">
-                    <?php if (isset($user_orgs) && !empty($user_orgs)): ?>
-                        <?php foreach ($user_orgs as $org): ?>
-                            <li>
-                                <a class="dropdown-item org-selector"
-                                   href="#"
-                                   data-org-id="<?php echo $org['org_id']; ?>"
-                                   data-org-name="<?php echo htmlspecialchars($org['org_name']); ?>">
-                                    <?php echo htmlspecialchars($org['org_name']); ?>
-                                    <?php if (isset($current_org) && $current_org['org_id'] == $org['org_id']): ?>
-                                        <i class="bi bi-check-circle-fill text-primary ms-2"></i>
-                                    <?php endif; ?>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                    <?php endif; ?>
-                    <li>
-                        <a class="dropdown-item" href="<?php echo base_url('org'); ?>">
-                            <i class="bi bi-plus-square"></i> 조직 추가
-                        </a>
-                    </li>
-                </ul>
-            </div>
+				<ul class="dropdown-menu" id="org-dropdown-menu">
+					<?php if (isset($user_orgs) && !empty($user_orgs)): ?>
+						<?php foreach ($user_orgs as $org): ?>
+							<li>
+								<a class="dropdown-item org-selector"
+								   href="#"
+								   data-org-id="<?php echo $org['org_id']; ?>"
+								   data-org-name="<?php echo htmlspecialchars($org['org_name']); ?>"
+									<?php if (isset($current_org) && $current_org['org_id'] == $org['org_id']): ?>
+										data-current="true"
+									<?php endif; ?>>
+									<?php echo htmlspecialchars($org['org_name']); ?>
+									<?php if (isset($current_org) && $current_org['org_id'] == $org['org_id']): ?>
+										<i class="bi bi-check-circle-fill text-primary ms-2"></i>
+									<?php endif; ?>
+								</a>
+							</li>
+						<?php endforeach; ?>
+						<li>
+							<hr class="dropdown-divider">
+						</li>
+					<?php endif; ?>
+					<li>
+						<a class="dropdown-item" href="<?php echo base_url('org'); ?>">
+							<i class="bi bi-gear me-2"></i>조직 관리
+						</a>
+					</li>
+				</ul>
+			</div>
         </div>
         <div class="header-end col-xl-6 col-2 d-flex justify-content-end px-3 gap-3 align-items-center">
             <ul class="navbar-nav flex-row d-xl-none fs-1">

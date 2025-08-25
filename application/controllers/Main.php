@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Main extends CI_Controller
+class Main extends Base_Controller
 {
 	public function __construct()
 	{
@@ -12,10 +12,53 @@ class Main extends CI_Controller
 		$this->load->model('Org_model');
 	}
 
+	public function index()
+	{
+		// 사용자가 로그인되어 있는지 확인
+		if (!$this->session->userdata('user_id')) {
+			redirect('login/index');
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+
+		// 헤더 데이터 준비
+		$header_data = $this->prepare_header_data();
+		if (empty($header_data['user_orgs'])) {
+			redirect('mypage');
+			return;
+		}
+
+		$data = $header_data;
+
+		// POST로 조직 변경 요청 처리 (Base_Controller의 메소드 사용)
+		$this->handle_org_change($data);
+
+		$currentOrgId = $data['current_org']['org_id'];
+
+		// 해당 그룹의 area_name 목록 가져오기
+		$this->load->model('Member_area_model');
+		$data['member_areas'] = $this->Member_area_model->get_member_areas($currentOrgId);
+
+		// 활성화된 그룹의 출석타입 정보 가져오기
+		$this->load->model('Attendance_model');
+		$data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentOrgId);
+
+		// 선택된 모드 설정 (기본값: mode-1)
+		$data['mode'] = $this->input->post('mode') ?? 'mode-1';
+
+		// 사용자의 그룹 레벨 가져오기
+		$user_group = $this->User_model->get_org_user($user_id, $currentOrgId);
+		$user_level = $user_group ? $user_group['level'] : 1;
+		$data['user_level'] = $user_level;
+
+		$this->load->view('main', $data);
+	}
+
 	/**
 	 * 헤더에서 사용할 조직 데이터 준비
 	 */
-	private function prepare_header_data()
+	public function prepare_header_data()
 	{
 		if (!$this->session->userdata('user_id')) {
 			return array();
@@ -60,66 +103,6 @@ class Main extends CI_Controller
 		);
 	}
 
-	public function index()
-	{
-		// 사용자가 로그인되어 있는지 확인
-		if (!$this->session->userdata('user_id')) {
-			redirect('login/index');
-			return;
-		}
-
-		$user_id = $this->session->userdata('user_id');
-
-		// 헤더 데이터 준비
-		$header_data = $this->prepare_header_data();
-		if (empty($header_data['user_orgs'])) {
-			redirect('mypage');
-			return;
-		}
-
-		$data = $header_data;
-		$currentOrgId = $data['current_org']['org_id'];
-
-		// POST로 조직 변경 요청이 있는 경우 처리
-		$postOrgId = $this->input->post('org_id');
-		if ($postOrgId) {
-			// 사용자가 해당 조직에 접근 권한이 있는지 확인
-			$has_access = false;
-			foreach ($data['user_orgs'] as $org) {
-				if ($org['org_id'] == $postOrgId) {
-					$has_access = true;
-					$data['current_org'] = $org;
-					$currentOrgId = $postOrgId;
-					$this->input->set_cookie('activeOrg', $postOrgId, 86400);
-					break;
-				}
-			}
-
-			if (!$has_access) {
-				show_error('접근 권한이 없는 조직입니다.', 403);
-				return;
-			}
-		}
-
-		// 해당 그룹의 area_name 목록 가져오기
-		$this->load->model('Member_area_model');
-		$data['member_areas'] = $this->Member_area_model->get_member_areas($currentOrgId);
-
-		// 활성화된 그룹의 출석타입 정보 가져오기
-		$this->load->model('Attendance_model');
-		$data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentOrgId);
-
-		// 선택된 모드 설정 (기본값: mode-1)
-		$data['mode'] = $this->input->post('mode') ?? 'mode-1';
-
-		// 사용자의 그룹 레벨 가져오기
-		$user_group = $this->User_model->get_org_user($user_id, $currentOrgId);
-		$user_level = $user_group ? $user_group['level'] : 0;
-		$data['user_level'] = $user_level;
-
-		// main 뷰 로드
-		$this->load->view('main', $data);
-	}
 
 
 	public function save_single_attendance()

@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Org extends CI_Controller
+class Org extends Base_Controller
 {
 	public function __construct()
 	{
@@ -13,49 +13,6 @@ class Org extends CI_Controller
 		$this->load->helper('file');
 		$this->load->library('upload');
 		$this->load->library('email');
-	}
-
-	/**
-	 * 헤더에서 사용할 조직 데이터 준비
-	 */
-	private function prepare_header_data() {
-		if (!$this->session->userdata('user_id')) {
-			return array();
-		}
-
-		$user_id = $this->session->userdata('user_id');
-		$master_yn = $this->session->userdata('master_yn');
-
-		$user_data = $this->User_model->get_user_by_id($user_id);
-
-		if ($master_yn === "N") {
-			$user_orgs = $this->Org_model->get_user_orgs($user_id);
-		} else {
-			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
-		}
-
-		$active_org_id = $this->input->cookie('activeOrg');
-		$current_org = null;
-
-		if ($active_org_id) {
-			foreach ($user_orgs as $org) {
-				if ($org['org_id'] == $active_org_id) {
-					$current_org = $org;
-					break;
-				}
-			}
-		}
-
-		if (!$current_org && !empty($user_orgs)) {
-			$current_org = $user_orgs[0];
-			$this->input->set_cookie('activeOrg', $current_org['org_id'], 86400);
-		}
-
-		return array(
-			'user' => $user_data,
-			'user_orgs' => $user_orgs,
-			'current_org' => $current_org
-		);
 	}
 
 	public function index() {
@@ -74,49 +31,23 @@ class Org extends CI_Controller
 		}
 
 		$data = $header_data;
+
+		// POST로 조직 변경 요청 처리 (Base_Controller의 메소드 사용)
+		$this->handle_org_change($data);
+
 		$currentOrgId = $data['current_org']['org_id'];
 
-		// POST로 조직 변경 요청이 있는 경우 처리
-		$postOrgId = $this->input->post('org_id');
-		if ($postOrgId) {
-			$has_access = false;
-			foreach ($data['user_orgs'] as $org) {
-				if ($org['org_id'] == $postOrgId) {
-					$has_access = true;
-					$data['current_org'] = $org;
-					$currentOrgId = $postOrgId;
-					$this->input->set_cookie('activeOrg', $postOrgId, 86400);
-					break;
-				}
-			}
-
-			if (!$has_access) {
-				show_error('접근 권한이 없는 조직입니다.', 403);
-				return;
-			}
+		// 조직 관리 권한 확인 - 최소 레벨 8 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $currentOrgId);
+		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
+			$this->handle_access_denied('조직 설정을 관리할 권한이 없습니다.');
+			return;
 		}
 
-		$master_yn = $this->session->userdata('master_yn');
-
-		// 사용자가 접근 가능한 모든 조직 목록
-		if ($master_yn === "N") {
-			$orgs = $this->Org_model->get_user_orgs($user_id);
-		} else {
-			$orgs = $this->Org_model->get_user_orgs_master($user_id);
-		}
-
-		foreach ($orgs as &$org) {
-			$org['user_count'] = $this->User_model->get_org_user_count($org['org_id']);
-			$org['user_level'] = $this->User_model->get_org_user_level($user_id, $org['org_id']);
-			$org['user_master_yn'] = $this->session->userdata('master_yn');
-		}
-
-		$data['orgs'] = $orgs;
-
-		// 현재 선택된 조직의 상세 정보 가져오기
+		// 선택된 조직의 상세 정보 가져오기
 		$data['selected_org_detail'] = $this->Org_model->get_org_detail_by_id($currentOrgId);
 
-		// 현재 선택된 조직의 최고관리자 정보 가져오기
+		// 조직의 최고관리자 정보 가져오기
 		$data['org_admin'] = $this->Org_model->get_org_admin($currentOrgId);
 
 		$this->load->view('org_setting', $data);
@@ -226,7 +157,7 @@ class Org extends CI_Controller
 				echo json_encode(array(
 					'success' => true,
 					'message' => '조직 아이콘이 업로드되었습니다.',
-					'file_path' => $file_path
+					'icon_url' => $file_path
 				));
 			} else {
 				echo json_encode(array('success' => false, 'message' => '아이콘 정보 저장에 실패했습니다.'));
