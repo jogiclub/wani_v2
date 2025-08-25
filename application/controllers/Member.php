@@ -119,7 +119,8 @@ class Member extends CI_Controller
 
 
 	/**
-	 * 그룹 트리 데이터 가져오기 (Fancytree용) - 계층적 구조 및 회원 수 표시
+	 * 파일 위치: application/controllers/Member.php - get_org_tree() 함수
+	 * 역할: 사용자 권한에 따라 관리 가능한 그룹만 표시하도록 필터링
 	 */
 	public function get_org_tree()
 	{
@@ -173,13 +174,59 @@ class Member extends CI_Controller
 			return;
 		}
 
+		// 사용자의 권한 레벨과 관리 가능한 그룹 정보 가져오기
+		$user_level = $this->User_model->get_org_user_level($user_id, $active_org_id);
+		$accessible_areas = array();
+
+		// 최고관리자(레벨 10)이거나 마스터가 아닌 경우 관리 그룹 권한 확인
+		if ($user_level < 10 && $master_yn !== 'Y') {
+			// 사용자의 관리 그룹과 모든 하위 그룹 정보 가져오기 (1학년 권한이 있으면 1반, 2반, 3반도 포함)
+			$this->load->model('User_management_model');
+			$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $active_org_id);
+		}
+
 		// 현재 선택된 조직의 소그룹(area) 트리 구조로 가져오기
 		$areas_tree = $this->Member_area_model->get_member_areas_tree($active_org_id);
 
-		/**
-		 * 파일 위치: application/controllers/Member.php - get_org_tree() 함수
-		 * 역할: 트리 노드 생성 시 모든 노드를 기본 펼침 상태로 설정
-		 */
+		// 권한에 따른 그룹 필터링 함수
+		$filter_areas_by_permission = function($areas) use (&$filter_areas_by_permission, $user_level, $master_yn, $accessible_areas) {
+			// 최고관리자이거나 마스터인 경우 모든 그룹 표시
+			if ($user_level >= 10 || $master_yn === 'Y') {
+				return $areas;
+			}
+
+			// 관리 권한이 없는 경우 빈 배열 반환
+			if (empty($accessible_areas)) {
+				return array();
+			}
+
+			$filtered_areas = array();
+
+			foreach ($areas as $area) {
+				// 현재 그룹이 접근 가능한 그룹에 포함되어 있는지 확인 (부모 그룹 권한 포함)
+				if (in_array($area['area_idx'], $accessible_areas)) {
+					// 하위 그룹도 재귀적으로 필터링
+					if (!empty($area['children'])) {
+						$area['children'] = $filter_areas_by_permission($area['children']);
+					}
+					$filtered_areas[] = $area;
+				} else {
+					// 현재 그룹은 직접 권한이 없지만 하위 그룹 중 접근 가능한 것이 있는지 확인
+					if (!empty($area['children'])) {
+						$filtered_children = $filter_areas_by_permission($area['children']);
+						if (!empty($filtered_children)) {
+							$area['children'] = $filtered_children;
+							$filtered_areas[] = $area;
+						}
+					}
+				}
+			}
+
+			return $filtered_areas;
+		};
+
+		// 권한에 따라 그룹 필터링 적용
+		$filtered_areas_tree = $filter_areas_by_permission($areas_tree);
 
 		$build_fancytree_nodes = function($areas) use (&$build_fancytree_nodes, $active_org_id) {
 			$nodes = array();
@@ -208,7 +255,7 @@ class Member extends CI_Controller
 				// 자식 노드가 있으면 재귀적으로 처리
 				if (!empty($area['children'])) {
 					$node['children'] = $build_fancytree_nodes($area['children']);
-					$node['expanded'] = true; // 모든 노드를 기본 펼침 상태로 변경
+					$node['expanded'] = true;
 				}
 
 				$nodes[] = $node;
@@ -217,11 +264,25 @@ class Member extends CI_Controller
 			return $nodes;
 		};
 
-		// Fancytree 형식의 자식 노드들 생성
-		$children = $build_fancytree_nodes($areas_tree);
+		// Fancytree 형식의 자식 노드들 생성 (필터링된 그룹만)
+		$children = $build_fancytree_nodes($filtered_areas_tree);
 
-		// 조직 전체 회원 수 계산
-		$org_total_members = $this->Member_model->get_org_member_count($active_org_id);
+		// 조직 전체 회원 수 계산 (권한이 있는 그룹의 회원들만)
+		if ($user_level >= 10 || $master_yn === 'Y') {
+			// 최고관리자인 경우 전체 회원 수
+			$org_total_members = $this->Member_model->get_org_member_count($active_org_id);
+		} else {
+			// 일반 관리자인 경우 접근 가능한 그룹의 회원 수만 (하위 그룹 포함)
+			$org_total_members = 0;
+			if (!empty($accessible_areas)) {
+				// 중복 계산 방지를 위해 실제 관리 권한이 있는 최상위 그룹들만 계산
+				$managed_areas = $this->User_management_model->get_user_managed_areas($user_id);
+				foreach ($managed_areas as $area_idx) {
+					$org_total_members += $this->Member_model->get_area_members_count_with_children($active_org_id, $area_idx);
+				}
+			}
+		}
+
 		$org_title = $current_org['org_name'];
 		if ($org_total_members > 0) {
 			$org_title .= ' (' . $org_total_members . '명)';
@@ -236,29 +297,30 @@ class Member extends CI_Controller
 				'org_id' => $current_org['org_id'],
 				'member_count' => $org_total_members
 			),
-			'expanded' => true, // 기본적으로 펼쳐진 상태
+			'expanded' => true,
 			'children' => $children
 		);
 
 		// 트리 데이터 배열 초기화
 		$tree_data = array($org_node);
 
-		// 소속 그룹이 없는 회원 수 확인
-		$unassigned_members_count = $this->Member_model->get_unassigned_members_count($active_org_id);
+		// 미분류 그룹 처리 (최고관리자만 표시)
+		if ($user_level >= 10 || $master_yn === 'Y') {
+			$unassigned_members_count = $this->Member_model->get_unassigned_members_count($active_org_id);
 
-		// 미분류 그룹이 있는 경우 root 레벨에 추가 (조직과 동일한 depth)
-		if ($unassigned_members_count > 0) {
-			$unassigned_node = array(
-				'key' => 'unassigned_' . $active_org_id,
-				'title' => '미분류 (' . $unassigned_members_count . '명)',
-				'data' => array(
-					'type' => 'unassigned',
-					'org_id' => $active_org_id,
-					'area_idx' => null,
-					'member_count' => $unassigned_members_count
-				)
-			);
-			$tree_data[] = $unassigned_node;
+			if ($unassigned_members_count > 0) {
+				$unassigned_node = array(
+					'key' => 'unassigned_' . $active_org_id,
+					'title' => '미분류 (' . $unassigned_members_count . '명)',
+					'data' => array(
+						'type' => 'unassigned',
+						'org_id' => $active_org_id,
+						'area_idx' => null,
+						'member_count' => $unassigned_members_count
+					)
+				);
+				$tree_data[] = $unassigned_node;
+			}
 		}
 
 		header('Content-Type: application/json');
@@ -266,9 +328,9 @@ class Member extends CI_Controller
 	}
 
 
-
 	/**
-	 * 회원 목록 조회 (ParamQuery Grid용) - 계층적 구조 지원
+	 * 파일 위치: application/controllers/Member.php - get_members() 함수
+	 * 역할: 사용자 권한에 따라 관리 가능한 그룹의 회원만 조회
 	 */
 	public function get_members()
 	{
@@ -308,59 +370,141 @@ class Member extends CI_Controller
 			return;
 		}
 
-		// 타입에 따라 회원 데이터 가져오기
-		if ($type === 'unassigned') {
-			// 소속 그룹이 없는 회원들
-			$members = $this->Member_model->get_unassigned_members($org_id);
-		} else if ($type === 'area' && $area_idx) {
-			// 특정 소그룹과 그 하위 그룹들의 회원들 (계층적 조회)
-			$members = $this->Member_model->get_area_members_with_children($org_id, $area_idx);
-		} else if ($type === 'org') {
-			// 조직의 모든 회원 가져오기
-			$members = $this->Member_model->get_org_members($org_id);
-		} else {
-			// 기본적으로 그룹의 모든 회원 가져오기
-			$members = $this->Member_model->get_org_members($org_id);
+		// 사용자의 권한 레벨과 관리 가능한 그룹 정보 가져오기
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+		$accessible_areas = array();
+
+		// 최고관리자(레벨 10)이거나 마스터가 아닌 경우 관리 그룹 권한 확인
+		if ($user_level < 10 && $master_yn !== 'Y') {
+			$this->load->model('User_management_model');
+			$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+
+			// 관리 권한이 없는 경우
+			if (empty($accessible_areas)) {
+				echo json_encode(array('success' => false, 'message' => '회원을 조회할 권한이 없습니다.'));
+				return;
+			}
 		}
 
-		// ParamQuery 형식으로 데이터 가공 - 안전한 배열 접근
+		// 타입에 따라 회원 데이터 가져오기
+		if ($type === 'unassigned') {
+			// 미분류 그룹은 최고관리자만 접근 가능
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				echo json_encode(array('success' => false, 'message' => '미분류 그룹을 조회할 권한이 없습니다.'));
+				return;
+			}
+			$members = $this->Member_model->get_unassigned_members($org_id);
+		} else if ($type === 'area' && $area_idx) {
+			// 특정 소그룹 접근 권한 확인 (부모 그룹 권한 포함)
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				if (!in_array($area_idx, $accessible_areas)) {
+					echo json_encode(array('success' => false, 'message' => '해당 그룹을 조회할 권한이 없습니다.'));
+					return;
+				}
+			}
+			$members = $this->Member_model->get_area_members_with_children($org_id, $area_idx);
+		} else if ($type === 'org') {
+			// 조직 전체 회원 조회
+			if ($user_level >= 10 || $master_yn === 'Y') {
+				// 최고관리자인 경우 전체 회원
+				$members = $this->Member_model->get_org_members($org_id);
+			} else {
+				// 일반 관리자인 경우 접근 가능한 그룹의 회원들만 (하위 그룹 포함)
+				$members = array();
+				$managed_areas = $this->User_management_model->get_user_managed_areas($user_id);
+				foreach ($managed_areas as $managed_area_idx) {
+					$area_members = $this->Member_model->get_area_members_with_children($org_id, $managed_area_idx);
+					$members = array_merge($members, $area_members);
+				}
+
+				// 중복 제거 (같은 회원이 여러 그룹에 속할 수 있음)
+				$unique_members = array();
+				$member_ids = array();
+				foreach ($members as $member) {
+					if (!in_array($member['member_idx'], $member_ids)) {
+						$unique_members[] = $member;
+						$member_ids[] = $member['member_idx'];
+					}
+				}
+				$members = $unique_members;
+			}
+		} else {
+			// 기본적으로 권한이 있는 그룹의 회원들만 (하위 그룹 포함)
+			if ($user_level >= 10 || $master_yn === 'Y') {
+				$members = $this->Member_model->get_org_members($org_id);
+			} else {
+				$members = array();
+				$managed_areas = $this->User_management_model->get_user_managed_areas($user_id);
+				foreach ($managed_areas as $managed_area_idx) {
+					$area_members = $this->Member_model->get_area_members_with_children($org_id, $managed_area_idx);
+					$members = array_merge($members, $area_members);
+				}
+
+				// 중복 제거
+				$unique_members = array();
+				$member_ids = array();
+				foreach ($members as $member) {
+					if (!in_array($member['member_idx'], $member_ids)) {
+						$unique_members[] = $member;
+						$member_ids[] = $member['member_idx'];
+					}
+				}
+				$members = $unique_members;
+			}
+		}
+
+		// ParamQuery 형식으로 데이터 가공
 		$formatted_members = array();
 		foreach ($members as $member) {
 			// 사진 URL 처리
 			$photo_url = '/assets/images/photo_no.png'; // 기본 이미지
 			if (isset($member['photo']) && $member['photo']) {
-				// photo 필드에 파일명만 있는 경우 전체 경로 구성
 				if (strpos($member['photo'], '/uploads/') === false) {
 					$photo_url = '/uploads/member_photos/' . $org_id . '/' . $member['photo'];
 				} else {
-					// 이미 전체 경로가 있는 경우 그대로 사용
 					$photo_url = $member['photo'];
 				}
 			}
 
-			$formatted_members[] = array(
+			// 생년월일 처리 (YYYY-MM-DD 또는 YYYYMMDD 형식을 YYYY-MM-DD로 변환)
+			$formatted_birth = '';
+			if (isset($member['member_birth']) && $member['member_birth']) {
+				$birth_date = $member['member_birth'];
+				if (strlen($birth_date) == 8) {
+					// YYYYMMDD 형식인 경우 YYYY-MM-DD로 변환
+					$formatted_birth = substr($birth_date, 0, 4) . '-' . substr($birth_date, 4, 2) . '-' . substr($birth_date, 6, 2);
+				} else {
+					$formatted_birth = $birth_date;
+				}
+			}
+
+			$formatted_member = array(
 				'member_idx' => isset($member['member_idx']) ? $member['member_idx'] : '',
 				'member_name' => isset($member['member_name']) ? $member['member_name'] : '',
 				'photo' => $photo_url,
 				'member_phone' => isset($member['member_phone']) ? $member['member_phone'] : '',
 				'member_address' => isset($member['member_address']) ? $member['member_address'] : '',
+				'member_birth' => $formatted_birth,
 				'leader_yn' => isset($member['leader_yn']) ? $member['leader_yn'] : 'N',
 				'new_yn' => isset($member['new_yn']) ? $member['new_yn'] : 'N',
-				'member_birth' => isset($member['member_birth']) ? $member['member_birth'] : '',
-				'grade' => isset($member['grade']) ? $member['grade'] : '',
-				'area_name' => isset($member['area_name']) ? $member['area_name'] : '',
-				'area_idx' => isset($member['area_idx']) ? $member['area_idx'] : '',
+				'grade' => isset($member['grade']) ? $member['grade'] : 0,
+				'area_name' => isset($member['area_name']) ? $member['area_name'] : '미분류',
+				'area_idx' => isset($member['area_idx']) ? $member['area_idx'] : null,
 				'regi_date' => isset($member['regi_date']) ? $member['regi_date'] : '',
 				'modi_date' => isset($member['modi_date']) ? $member['modi_date'] : ''
 			);
+
+			$formatted_members[] = $formatted_member;
 		}
 
 		echo json_encode(array(
 			'success' => true,
 			'data' => $formatted_members,
-			'totalRecords' => count($formatted_members)
+			'total' => count($formatted_members)
 		));
 	}
+
+
 
 
 	/**
@@ -578,6 +722,7 @@ class Member extends CI_Controller
 			echo json_encode(array('success' => false, 'message' => '회원 삭제에 실패했습니다.'));
 		}
 	}
+
 
 
 

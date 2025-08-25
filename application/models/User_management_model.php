@@ -291,4 +291,105 @@ class User_management_model extends CI_Model
 		return array();
 	}
 
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 사용자 권한에 따라 필터링된 조직 그룹 목록 조회
+	 */
+	public function get_user_accessible_areas($user_id, $org_id)
+	{
+		// 사용자 권한 레벨 확인
+		$user_level = $this->get_org_user_level($user_id, $org_id);
+
+		// 최고관리자(레벨 10) 또는 마스터인 경우 모든 그룹 반환
+		if ($user_level >= 10) {
+			return $this->get_org_areas($org_id);
+		}
+
+		// 일반 관리자인 경우 관리 권한이 있는 그룹만 반환
+		$managed_areas = $this->get_user_managed_areas($user_id);
+
+		if (empty($managed_areas)) {
+			return array();
+		}
+
+		// 관리 권한이 있는 그룹만 필터링
+		$this->db->select('area_idx, area_name');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where_in('area_idx', $managed_areas);
+		$this->db->order_by('area_order', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 사용자가 특정 그룹에 대한 권한이 있는지 확인
+	 */
+	public function check_user_area_permission($user_id, $org_id, $area_idx)
+	{
+		// 사용자 권한 레벨 확인
+		$user_level = $this->get_org_user_level($user_id, $org_id);
+
+		// 최고관리자(레벨 10)인 경우 모든 권한
+		if ($user_level >= 10) {
+			return true;
+		}
+
+		// 일반 관리자인 경우 관리 권한이 있는 그룹인지 확인
+		$managed_areas = $this->get_user_managed_areas($user_id);
+
+		return in_array($area_idx, $managed_areas);
+	}
+
+
+
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 사용자의 관리 그룹과 모든 하위 그룹 ID 조회 (1학년 권한이 있으면 1반, 2반, 3반도 포함)
+	 */
+	public function get_user_managed_areas_with_children($user_id, $org_id)
+	{
+		// 사용자의 직접 관리 그룹 가져오기
+		$managed_areas = $this->get_user_managed_areas($user_id);
+
+		if (empty($managed_areas)) {
+			return array();
+		}
+
+		$all_accessible_areas = $managed_areas;
+
+		// 각 관리 그룹의 모든 하위 그룹도 포함
+		foreach ($managed_areas as $area_idx) {
+			$child_areas = $this->get_all_child_area_ids($area_idx, $org_id);
+			$all_accessible_areas = array_merge($all_accessible_areas, $child_areas);
+		}
+
+		// 중복 제거
+		return array_unique($all_accessible_areas);
+	}
+
+
+
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 사용자가 특정 그룹에 대한 권한이 있는지 확인 (부모 그룹 권한 포함)
+	 */
+	public function check_user_area_permission_with_parents($user_id, $org_id, $area_idx)
+	{
+		// 사용자 권한 레벨 확인
+		$user_level = $this->get_org_user_level($user_id, $org_id);
+
+		// 최고관리자(레벨 10)인 경우 모든 권한
+		if ($user_level >= 10) {
+			return true;
+		}
+
+		// 사용자의 관리 가능한 모든 그룹 (하위 그룹 포함)
+		$accessible_areas = $this->get_user_managed_areas_with_children($user_id, $org_id);
+
+		return in_array($area_idx, $accessible_areas);
+	}
+
+
 }

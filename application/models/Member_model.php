@@ -214,8 +214,28 @@ class Member_model extends CI_Model
 		return $query->result_array();
 	}
 
+
 	/**
-	 * 특정 영역의 모든 하위 영역 ID들을 재귀적으로 가져오기
+	 * 특정 영역과 그 하위 영역들의 회원 수 조회
+	 */
+	public function get_area_members_count_with_children($org_id, $area_idx)
+	{
+		// 해당 영역과 모든 하위 영역들의 area_idx 수집
+		$area_ids = $this->get_all_child_area_ids($area_idx, $org_id);
+		$area_ids[] = $area_idx; // 자기 자신도 포함
+
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where_in('area_idx', $area_ids);
+		$this->db->where('del_yn', 'N');
+
+		return $this->db->count_all_results();
+	}
+
+
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 특정 그룹의 모든 하위 그룹 ID를 재귀적으로 가져오기
 	 */
 	private function get_all_child_area_ids($parent_area_idx, $org_id)
 	{
@@ -241,23 +261,10 @@ class Member_model extends CI_Model
 		return $area_ids;
 	}
 
-	/**
-	 * 특정 영역과 그 하위 영역들의 회원 수 조회
-	 */
-	public function get_area_members_count_with_children($org_id, $area_idx)
-	{
-		// 해당 영역과 모든 하위 영역들의 area_idx 수집
-		$area_ids = $this->get_all_child_area_ids($area_idx, $org_id);
-		$area_ids[] = $area_idx; // 자기 자신도 포함
 
-		$this->db->from('wb_member');
-		$this->db->where('org_id', $org_id);
-		$this->db->where_in('area_idx', $area_ids);
-		$this->db->where('del_yn', 'N');
-
-		return $this->db->count_all_results();
-	}
 
 }
+
+
 
 
