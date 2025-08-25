@@ -1,11 +1,16 @@
 <?php $this->load->view('header'); ?>
+
+<!-- Member CSS -->
+<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
+
+<!-- ParamQuery CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
+
 <!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 <link rel="stylesheet"
 	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
-<!-- ParamQuery CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
-<!-- Member CSS -->
-<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
+
+
 
 
 <div class="container-fluid pt-2 pb-2">

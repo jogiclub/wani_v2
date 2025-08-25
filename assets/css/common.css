@@ -253,7 +253,7 @@ footer .btn-add-org i{font-size:30px}
 .profile-area .profile-img{}
 .profile-area .profile-name{}
 
-@media screen and (max-width: 768px){
+@media screen and (max-width: 1200px){
 	.gnb-menu .sidebar{position: initial}
 }
 
@@ -267,4 +267,10 @@ footer .btn-add-org i{font-size:30px}
 .page-title{font-weight: 700;letter-spacing: -1px;}
 
 
+/*select2*/
+.select2-container--default .select2-selection--multiple .select2-selection__choice__display{padding-left: 10px!important;}
+.select2-container--default .select2-search--inline .select2-search__field{min-height: 26px;}
 
+
+/*fancytree-container*/
+ul.fancytree-container{border: 0!important;}

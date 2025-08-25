@@ -92,14 +92,15 @@ $this->load->view('header'); ?>
 												</span>
 											</td>
 											<td>
-												<button type="button"
-														class="btn btn-sm btn-outline-primary edit-user-btn"
-														data-user-id="<?php echo $user['user_id']; ?>"
-														data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
-														data-user-hp="<?php echo htmlspecialchars($user['user_hp']); ?>"
-														data-user-level="<?php echo $user['level']; ?>">
-													<i class="bi bi-pencil"></i>
-												</button>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary edit-user-btn"
+                                                        data-user-id="<?php echo $user['user_id']; ?>"
+                                                        data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
+                                                        data-user-hp="<?php echo htmlspecialchars($user['user_hp']); ?>"
+                                                        data-user-level="<?php echo $user['level']; ?>"
+                                                        data-org-id="<?php echo $selected_org_detail['org_id']; ?>">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
 												<?php if ($user['user_id'] !== $this->session->userdata('user_id')): ?>
 													<button type="button"
 															class="btn btn-sm btn-outline-danger delete-user-btn"

@@ -176,7 +176,11 @@ class Member extends CI_Controller
 		// 현재 선택된 조직의 소그룹(area) 트리 구조로 가져오기
 		$areas_tree = $this->Member_area_model->get_member_areas_tree($active_org_id);
 
-		// 트리 구조를 Fancytree 형식으로 변환하는 재귀 함수 (회원 수 포함)
+		/**
+		 * 파일 위치: application/controllers/Member.php - get_org_tree() 함수
+		 * 역할: 트리 노드 생성 시 모든 노드를 기본 펼침 상태로 설정
+		 */
+
 		$build_fancytree_nodes = function($areas) use (&$build_fancytree_nodes, $active_org_id) {
 			$nodes = array();
 
@@ -204,7 +208,7 @@ class Member extends CI_Controller
 				// 자식 노드가 있으면 재귀적으로 처리
 				if (!empty($area['children'])) {
 					$node['children'] = $build_fancytree_nodes($area['children']);
-					$node['expanded'] = false; // 하위 노드는 기본적으로 접힌 상태
+					$node['expanded'] = true; // 모든 노드를 기본 펼침 상태로 변경
 				}
 
 				$nodes[] = $node;
