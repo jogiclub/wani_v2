@@ -55,53 +55,6 @@ class Main extends Base_Controller
 		$this->load->view('main', $data);
 	}
 
-	/**
-	 * 헤더에서 사용할 조직 데이터 준비
-	 */
-	public function prepare_header_data()
-	{
-		if (!$this->session->userdata('user_id')) {
-			return array();
-		}
-
-		$user_id = $this->session->userdata('user_id');
-		$master_yn = $this->session->userdata('master_yn');
-
-		// 사용자 정보 가져오기
-		$user_data = $this->User_model->get_user_by_id($user_id);
-
-		// 사용자가 접근 가능한 조직 목록 가져오기
-		if ($master_yn === "N") {
-			$user_orgs = $this->Org_model->get_user_orgs($user_id);
-		} else {
-			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
-		}
-
-		// 현재 활성화된 조직 정보
-		$active_org_id = $this->input->cookie('activeOrg');
-		$current_org = null;
-
-		if ($active_org_id) {
-			foreach ($user_orgs as $org) {
-				if ($org['org_id'] == $active_org_id) {
-					$current_org = $org;
-					break;
-				}
-			}
-		}
-
-		// 활성화된 조직이 없거나 유효하지 않으면 첫 번째 조직을 기본값으로 설정
-		if (!$current_org && !empty($user_orgs)) {
-			$current_org = $user_orgs[0];
-			$this->input->set_cookie('activeOrg', $current_org['org_id'], 86400);
-		}
-
-		return array(
-			'user' => $user_data,
-			'user_orgs' => $user_orgs,
-			'current_org' => $current_org
-		);
-	}
 
 
 
@@ -110,30 +63,17 @@ class Main extends Base_Controller
 		if ($this->input->is_ajax_request()) {
 			$member_idx = $this->input->post('member_idx');
 			$att_type_idx = $this->input->post('att_type_idx');
-			$att_type_category_idx = $this->input->post('att_type_category_idx');
-			$org_id = $this->input->post('org_id');
 			$att_date = $this->input->post('att_date');
+			$org_id = $this->input->post('org_id');
 
-			// 기존 출석 정보 삭제
 			$this->load->model('Attendance_model');
-			$this->Attendance_model->delete_attendance_by_category($member_idx, $att_type_category_idx, $att_date);
-
-			// 새로운 출석 정보 저장
-			$data = array(
-				'att_date' => $att_date,
-				'att_type_idx' => $att_type_idx,
-				'member_idx' => $member_idx,
-				'org_id' => $org_id
-			);
-			$result = $this->Attendance_model->save_single_attendance($data);
+			$result = $this->Attendance_model->save_single_attendance($member_idx, $att_type_idx, $att_date, $org_id);
 
 			if ($result) {
-				$response = array('status' => 'success');
+				echo json_encode(array('status' => 'success', 'message' => '출석이 저장되었습니다.'));
 			} else {
-				$response = array('status' => 'error');
+				echo json_encode(array('status' => 'error', 'message' => '출석 저장에 실패했습니다.'));
 			}
-
-			echo json_encode($response);
 		}
 	}
 
@@ -603,21 +543,7 @@ class Main extends Base_Controller
 
 	public function logout()
 	{
-		// 쿠키 헬퍼 로드
-		$this->load->helper('cookie');
-
-		// 모든 세션 데이터 삭제
-		$this->session->unset_userdata('user_id');
-		$this->session->unset_userdata('user_name');
-		$this->session->unset_userdata('user_email');
-		$this->session->unset_userdata('user_grade');
-		$this->session->unset_userdata('user_hp');
-		$this->session->unset_userdata('master_yn');
-		$this->session->unset_userdata('access_token');
-		$this->session->unset_userdata('refresh_token');
-		$this->session->unset_userdata('picture');
-
-		// 세션 완전 파괴
+		// 세션 삭제
 		$this->session->sess_destroy();
 
 		// 브라우저 캐시 방지 헤더
@@ -630,7 +556,6 @@ class Main extends Base_Controller
 
 		redirect('login');
 	}
-
 
 	public function get_same_members()
 	{
@@ -669,40 +594,26 @@ class Main extends Base_Controller
 
 			// 멤버별 출석 정보 그룹화
 			$member_attendance_data = array();
-			foreach ($attendance_data as $data) {
-				$member_idx = $data['member_idx'];
-				$att_type_idx = $data['att_type_idx'];
+			foreach ($attendance_data as $item) {
+				$member_idx = $item['member_idx'];
+				$att_date = $item['att_date'];
+				$att_type_idx = $item['att_type_idx'];
 
 				if (!isset($member_attendance_data[$member_idx])) {
 					$member_attendance_data[$member_idx] = array();
 				}
-				$member_attendance_data[$member_idx][] = $att_type_idx;
+
+				$member_attendance_data[$member_idx][$att_date] = $att_type_idx;
 			}
 
 			$this->load->model('Attendance_model');
+			$result = $this->Attendance_model->save_batch_attendance($member_attendance_data, $org_id, $start_date, $end_date);
 
-			// 각 멤버의 출석 정보 저장
-			foreach ($member_attendance_data as $member_idx => $att_type_idxs) {
-				// 기존 출석 정보 삭제
-				$this->Attendance_model->delete_attendance_by_date_range($member_idx, $start_date, $end_date);
-
-				// 새로운 출석 정보가 있는 경우에만 저장
-				if (!empty($att_type_idxs)) {
-					$att_data = array();
-					foreach ($att_type_idxs as $att_type_idx) {
-						$att_data[] = array(
-							'att_date' => $start_date,
-							'att_type_idx' => $att_type_idx,
-							'member_idx' => $member_idx,
-							'org_id' => $org_id
-						);
-					}
-					$this->Attendance_model->save_attendance_data($att_data, $org_id, $start_date, $end_date);
-				}
+			if ($result) {
+				echo json_encode(array('status' => 'success', 'message' => '출석이 저장되었습니다.'));
+			} else {
+				echo json_encode(array('status' => 'error', 'message' => '출석 저장에 실패했습니다.'));
 			}
-
-			$response = array('status' => 'success');
-			echo json_encode($response);
 		}
 	}
 
