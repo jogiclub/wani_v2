@@ -24,6 +24,60 @@ class Attendance_model extends CI_Model {
 
 
 
+
+
+
+	// Attendance_model에 save_batch_attendance 메소드 추가 (기존 클래스 끝에 추가)
+
+	/**
+	 * 일괄 출석 정보 저장
+	 */
+	public function save_batch_attendance($member_attendance_data, $org_id, $start_date, $end_date)
+	{
+		$this->db->trans_start();
+
+		try {
+			// 멤버별로 그룹화된 데이터에서 멤버 인덱스 추출
+			$member_indices = array_keys($member_attendance_data);
+
+			if (!empty($member_indices)) {
+				// 해당 멤버들의 해당 기간 출석 정보 삭제
+				$this->db->where_in('member_idx', $member_indices);
+				$this->db->where('org_id', $org_id);
+				$this->db->where('att_date >=', $start_date);
+				$this->db->where('att_date <=', $end_date);
+				$this->db->delete('wb_member_att');
+			}
+
+			// 새로운 출석 정보 삽입
+			foreach ($member_attendance_data as $member_idx => $attendance_dates) {
+				foreach ($attendance_dates as $att_date => $att_type_idx) {
+					if (!empty($att_type_idx)) {
+						$data = array(
+							'member_idx' => $member_idx,
+							'att_date' => $att_date,
+							'att_type_idx' => $att_type_idx,
+							'org_id' => $org_id
+						);
+						$this->db->insert('wb_member_att', $data);
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return false;
+			}
+
+			return true;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			return false;
+		}
+	}
+
     public function save_attendance($member_idx, $attendance_data) {
         $att_date = date('Y-m-d');
         $org_id = $this->session->userdata('org_id');

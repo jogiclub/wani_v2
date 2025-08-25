@@ -1760,57 +1760,122 @@ function updateInputSearchState() {
 
 
 $('#saveAttendanceBtn').on('click', function() {
-    var attendanceData = [];
+	var attendanceData = [];
+	var memberDataMap = {}; // 멤버별로 데이터를 그룹화하기 위한 맵
 
-    $('.att-type-select').each(function() {
-        var memberIdx = $(this).data('member-idx');
-        var attTypeIdx = $(this).val();
+	// 모든 selectbox를 순회하면서 데이터 수집
+	$('.att-type-select').each(function() {
+		var memberIdx = $(this).data('member-idx');
+		var attTypeIdx = $(this).val();
+		var attTypeCategoryIdx = $(this).data('att-type-category-idx');
 
-        attendanceData.push({
-            member_idx: memberIdx,
-            att_type_idx: attTypeIdx ? attTypeIdx : ''
-        });
-    });
+		console.log('Member:', memberIdx, 'AttType:', attTypeIdx, 'Category:', attTypeCategoryIdx);
 
-    saveAttendanceData(attendanceData);
+		// 빈 값이 아닌 경우에만 처리
+		if (attTypeIdx && attTypeIdx.trim() !== '') {
+			// memberDataMap에 멤버별로 그룹화
+			if (!memberDataMap[memberIdx]) {
+				memberDataMap[memberIdx] = {};
+			}
+
+			// 카테고리별로 출석 타입 저장 (같은 카테고리에서는 마지막 선택값만 유지)
+			memberDataMap[memberIdx][attTypeCategoryIdx] = attTypeIdx;
+		}
+	});
+
+	// memberDataMap을 attendanceData 배열로 변환
+	for (var memberIdx in memberDataMap) {
+		for (var categoryIdx in memberDataMap[memberIdx]) {
+			var attTypeIdx = memberDataMap[memberIdx][categoryIdx];
+			attendanceData.push({
+				member_idx: memberIdx,
+				att_type_idx: attTypeIdx
+			});
+		}
+	}
+
+	console.log('Final attendance data:', attendanceData);
+
+	if (attendanceData.length === 0) {
+		heyToast('선택된 출석 정보가 없습니다.', '출석 정보 없음');
+		return;
+	}
+
+	saveAttendanceData(attendanceData);
 });
 
+// 출석모드에서 그룹 출석 정보를 저장하는 함수 수정
+
 function saveAttendanceData(attendanceData) {
-    var currentWeekRange = $('.current-week').text();
-    var currentDate = getDateFromWeekRange(currentWeekRange);
-    var startDate = getWeekStartDate(currentDate);
-    var endDate = getWeekEndDate(currentDate);
-    var activeOrgId = getCookie('activeOrg');
+	var currentWeekRange = $('.current-week').text();
+	var currentDate = getDateFromWeekRange(currentWeekRange);
+	var startDate = getWeekStartDate(currentDate);
+	var endDate = getWeekEndDate(currentDate);
+	var activeOrgId = getCookie('activeOrg');
 
-    $.ajax({
-        url: '/main/save_attendance_data',
-        method: 'POST',
-        data: {
-            attendance_data: JSON.stringify(attendanceData),
-            org_id: activeOrgId,
-            start_date: startDate,
-            end_date: endDate
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                $('#attendanceOffcanvas').offcanvas('hide');
-                updateAttStamps(activeOrgId, startDate, endDate);
-                var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 멤버 이름 추출
-                alert(memberName + ' 목장의 출석체크를 완료하였습니다.');
-            } else {
-                alert('출석 정보 저장에 실패했습니다.');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.log(xhr.responseText);
-            alert('출석 정보 저장 중 오류가 발생했습니다.');
-        }
-    });
+	// 오늘 날짜가 현재 주차에 속하는지 확인하여 출석 날짜 결정
+	var today = new Date();
+	var formattedToday = formatDate(today);
+	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
+
+	// 멤버별로 출석 데이터 정리 (중복 제거 및 빈 값 필터링)
+	var memberAttendanceMap = {};
+
+	attendanceData.forEach(function(item) {
+		var memberIdx = item.member_idx;
+		var attTypeIdx = item.att_type_idx;
+
+		// 빈 값이 아닌 경우만 처리
+		if (attTypeIdx && attTypeIdx.trim() !== '') {
+			if (!memberAttendanceMap[memberIdx]) {
+				memberAttendanceMap[memberIdx] = [];
+			}
+
+			// 중복 체크 후 추가
+			if (memberAttendanceMap[memberIdx].indexOf(attTypeIdx) === -1) {
+				memberAttendanceMap[memberIdx].push(attTypeIdx);
+			}
+		}
+	});
+
+	// 정리된 데이터를 배열로 변환
+	var processedAttendanceData = [];
+	for (var memberIdx in memberAttendanceMap) {
+		memberAttendanceMap[memberIdx].forEach(function(attTypeIdx) {
+			processedAttendanceData.push({
+				member_idx: memberIdx,
+				att_type_idx: attTypeIdx,
+				att_date: attDate
+			});
+		});
+	}
+
+	$.ajax({
+		url: '/main/save_attendance_data',
+		method: 'POST',
+		data: {
+			attendance_data: JSON.stringify(processedAttendanceData),
+			org_id: activeOrgId,
+			start_date: startDate,
+			end_date: endDate
+		},
+		dataType: 'json',
+		success: function(response) {
+			if (response.status === 'success') {
+				$('#attendanceOffcanvas').offcanvas('hide');
+				updateAttStamps(activeOrgId, startDate, endDate);
+				var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0];
+				heyToast(memberName + ' 목장의 출석체크를 완료하였습니다.', '출석체크 완료');
+			} else {
+				heyToast('출석 정보 저장에 실패했습니다.', '저장 실패');
+			}
+		},
+		error: function(xhr, status, error) {
+			console.log(xhr.responseText);
+			heyToast('출석 정보 저장 중 오류가 발생했습니다.', '저장 오류');
+		}
+	});
 }
-
-
-
 
 var attendanceTypes = [];
 

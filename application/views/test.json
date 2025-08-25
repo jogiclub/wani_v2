@@ -1,0 +1,52 @@
+[
+	{
+		"member_idx": "1010",
+		"att_type_idx": "40",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1010",
+		"att_type_idx": "444",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1015",
+		"att_type_idx": "40",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1015",
+		"att_type_idx": "444",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1015",
+		"att_type_idx": "446",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1017",
+		"att_type_idx": "40",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1017",
+		"att_type_idx": "444",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1017",
+		"att_type_idx": "446",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1018",
+		"att_type_idx": "40",
+		"att_date": "2025.08.25"
+	},
+	{
+		"member_idx": "1018",
+		"att_type_idx": "444",
+		"att_date": "2025.08.25"
+	}
+]

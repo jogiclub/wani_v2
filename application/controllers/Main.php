@@ -584,6 +584,9 @@ class Main extends My_Controller
 	}
 
 
+
+
+
 	public function save_attendance_data()
 	{
 		if ($this->input->is_ajax_request()) {
@@ -592,24 +595,43 @@ class Main extends My_Controller
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
-			// 멤버별 출석 정보 그룹화
-			$member_attendance_data = array();
+			$this->load->model('Attendance_model');
+
+			// 해당 기간의 모든 멤버 출석 정보를 먼저 삭제
+			$member_indices = array_unique(array_column($attendance_data, 'member_idx'));
+
+			if (!empty($member_indices)) {
+				$this->db->where_in('member_idx', $member_indices);
+				$this->db->where('org_id', $org_id);
+				$this->db->where('att_date >=', $start_date);
+				$this->db->where('att_date <=', $end_date);
+				$this->db->delete('wb_member_att');
+			}
+
+			// 새로운 출석 정보를 직접 삽입
+			$insert_success = true;
 			foreach ($attendance_data as $item) {
 				$member_idx = $item['member_idx'];
 				$att_date = $item['att_date'];
 				$att_type_idx = $item['att_type_idx'];
 
-				if (!isset($member_attendance_data[$member_idx])) {
-					$member_attendance_data[$member_idx] = array();
-				}
+				if (!empty($att_type_idx)) {
+					$data = array(
+						'member_idx' => $member_idx,
+						'att_date' => $att_date,
+						'att_type_idx' => $att_type_idx,
+						'org_id' => $org_id
+					);
 
-				$member_attendance_data[$member_idx][$att_date] = $att_type_idx;
+					$result = $this->db->insert('wb_member_att', $data);
+					if (!$result) {
+						$insert_success = false;
+						break;
+					}
+				}
 			}
 
-			$this->load->model('Attendance_model');
-			$result = $this->Attendance_model->save_batch_attendance($member_attendance_data, $org_id, $start_date, $end_date);
-
-			if ($result) {
+			if ($insert_success) {
 				echo json_encode(array('status' => 'success', 'message' => '출석이 저장되었습니다.'));
 			} else {
 				echo json_encode(array('status' => 'error', 'message' => '출석 저장에 실패했습니다.'));
@@ -617,7 +639,7 @@ class Main extends My_Controller
 		}
 	}
 
-// Main.php
+
 	public function get_last_week_attendance()
 	{
 		if ($this->input->is_ajax_request()) {
