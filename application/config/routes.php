@@ -121,3 +121,12 @@ $route['detail_field/update_field'] = 'detail_field/update_field';
 $route['detail_field/delete_field'] = 'detail_field/delete_field';
 $route['detail_field/toggle_field'] = 'detail_field/toggle_field';
 $route['detail_field/update_orders'] = 'detail_field/update_orders';
+
+
+// Attendance_setting 컨트롤러 관련 라우팅 추가
+$route['attendance_setting'] = 'attendance_setting/index';
+$route['attendance_setting/index'] = 'attendance_setting/index';
+$route['attendance_setting/add_attendance_type'] = 'attendance_setting/add_attendance_type';
+$route['attendance_setting/update_attendance_type'] = 'attendance_setting/update_attendance_type';
+$route['attendance_setting/delete_attendance_type'] = 'attendance_setting/delete_attendance_type';
+$route['attendance_setting/update_orders'] = 'attendance_setting/update_orders';
