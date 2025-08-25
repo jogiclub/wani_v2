@@ -5,7 +5,7 @@
  */
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Detail_field extends Base_Controller
+class Detail_field extends My_Controller
 {
 
 	public function __construct()
@@ -37,7 +37,7 @@ class Detail_field extends Base_Controller
 
 		$data = $header_data;
 
-		// POST로 조직 변경 요청 처리 (Base_Controller의 메소드 사용)
+		// POST로 조직 변경 요청 처리 (My_Controller의 메소드 사용)
 		$this->handle_org_change($data);
 
 		$currentOrgId = $data['current_org']['org_id'];
@@ -59,9 +59,7 @@ class Detail_field extends Base_Controller
 	}
 
 
-	/**
-	 * 새로운 상세필드 추가
-	 */
+
 	/**
 	 * 새로운 상세필드 추가
 	 */

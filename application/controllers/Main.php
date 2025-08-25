@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Main extends Base_Controller
+class Main extends My_Controller
 {
 	public function __construct()
 	{
@@ -31,7 +31,7 @@ class Main extends Base_Controller
 
 		$data = $header_data;
 
-		// POST로 조직 변경 요청 처리 (Base_Controller의 메소드 사용)
+		// POST로 조직 변경 요청 처리 (My_Controller의 메소드 사용)
 		$this->handle_org_change($data);
 
 		$currentOrgId = $data['current_org']['org_id'];

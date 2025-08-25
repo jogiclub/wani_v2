@@ -5,7 +5,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * 파일 위치: application/controllers/Member.php
  * 역할: 회원 관리 페이지 및 API 처리 (그룹별 회원 관리)
  */
-class Member extends CI_Controller
+
+class Member extends My_Controller
 {
 	public function __construct()
 	{
