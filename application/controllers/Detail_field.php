@@ -17,6 +17,7 @@ class Detail_field extends My_Controller
 		$this->load->model('User_model');
 	}
 
+
 	/**
 	 * 상세필드 설정 메인 페이지
 	 */
@@ -49,15 +50,18 @@ class Detail_field extends My_Controller
 			return;
 		}
 
-		// 선택된 조직의 상세필드 목록 가져오기
-		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields($currentOrgId);
+		// 선택된 조직의 상세 정보 가져오기 - 뷰에서 필요한 변수 추가
+		$this->load->model('Org_model');
+		$data['selected_org_detail'] = $this->Org_model->get_org_detail_by_id($currentOrgId);
+
+		// 선택된 조직의 상세필드 목록 가져오기 - 메서드명 수정
+		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields_by_org($currentOrgId);
 
 		// 현재 조직 정보를 JavaScript로 전달하기 위해 orgs 배열에 추가
 		$data['orgs'] = array($data['current_org']);
 
 		$this->load->view('detail_field_setting', $data);
 	}
-
 
 
 	/**
