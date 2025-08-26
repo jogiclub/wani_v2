@@ -176,7 +176,8 @@ class Detail_field extends My_Controller
 	}
 
 	/**
-	 * 상세필드 삭제
+	 * 파일 위치: application/controllers/Detail_field.php
+	 * 역할: 상세필드 삭제 처리 (org_id 처리 개선)
 	 */
 	public function delete_field()
 	{
@@ -185,10 +186,20 @@ class Detail_field extends My_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
-		$org_id = $this->session->userdata('current_org_id');
 
-		// 권한 검증
-		$user_level = $this->Detail_field_model->get_org_user_level($user_id, $org_id);
+		// org_id 가져오기 - 우선순위: 쿠키 > 세션
+		$org_id = $this->input->cookie('activeOrg');
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 검증 - 삭제는 레벨 9 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
 		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
 			echo json_encode(array('success' => false, 'message' => '상세필드를 삭제할 권한이 없습니다.'));
 			return;
@@ -198,6 +209,18 @@ class Detail_field extends My_Controller
 
 		if (!$field_idx) {
 			echo json_encode(array('success' => false, 'message' => '필드 ID가 필요합니다.'));
+			return;
+		}
+
+		// 해당 필드가 현재 조직에 속한지 확인
+		$field_info = $this->Detail_field_model->get_detail_field_by_id($field_idx);
+		if (!$field_info) {
+			echo json_encode(array('success' => false, 'message' => '존재하지 않는 필드입니다.'));
+			return;
+		}
+
+		if ($field_info['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '해당 필드를 삭제할 권한이 없습니다.'));
 			return;
 		}
 
@@ -211,7 +234,8 @@ class Detail_field extends My_Controller
 	}
 
 	/**
-	 * 필드 활성화/비활성화 토글
+	 * 파일 위치: application/controllers/Detail_field.php
+	 * 역할: 필드 활성화/비활성화 토글 처리 (org_id 처리 개선)
 	 */
 	public function toggle_field()
 	{
@@ -220,11 +244,21 @@ class Detail_field extends My_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
-		$org_id = $this->session->userdata('current_org_id');
 
-		// 권한 검증
-		$user_level = $this->Detail_field_model->get_org_user_level($user_id, $org_id);
-		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+		// org_id 가져오기 - 우선순위: 쿠키 > 세션
+		$org_id = $this->input->cookie('activeOrg');
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 검증 - 상태 변경은 레벨 8 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
 			echo json_encode(array('success' => false, 'message' => '상세필드를 관리할 권한이 없습니다.'));
 			return;
 		}
@@ -236,17 +270,33 @@ class Detail_field extends My_Controller
 			return;
 		}
 
+		// 해당 필드가 현재 조직에 속한지 확인
+		$field_info = $this->Detail_field_model->get_detail_field_by_id($field_idx);
+		if (!$field_info) {
+			echo json_encode(array('success' => false, 'message' => '존재하지 않는 필드입니다.'));
+			return;
+		}
+
+		if ($field_info['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '해당 필드를 관리할 권한이 없습니다.'));
+			return;
+		}
+
 		$result = $this->Detail_field_model->toggle_field_active($field_idx);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '필드 상태가 변경되었습니다.'));
+			// 변경된 상태 확인
+			$updated_field = $this->Detail_field_model->get_detail_field_by_id($field_idx);
+			$status_message = ($updated_field['is_active'] === 'Y') ? '활성화' : '비활성화';
+			echo json_encode(array('success' => true, 'message' => '필드가 ' . $status_message . '되었습니다.'));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '필드 상태 변경에 실패했습니다.'));
 		}
 	}
 
 	/**
-	 * 필드 순서 업데이트
+	 * 파일 위치: application/controllers/Detail_field.php
+	 * 역할: 필드 순서 업데이트 처리
 	 */
 	public function update_orders()
 	{
@@ -255,28 +305,64 @@ class Detail_field extends My_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
-		$org_id = $this->session->userdata('current_org_id');
 
-		// 권한 검증
-		$user_level = $this->Detail_field_model->get_org_user_level($user_id, $org_id);
-		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+		// org_id 가져오기 - 우선순위: 쿠키 > 세션
+		$org_id = $this->input->cookie('activeOrg');
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 검증 - 상세필드 관리는 최소 레벨 8 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
 			echo json_encode(array('success' => false, 'message' => '필드 순서를 변경할 권한이 없습니다.'));
 			return;
 		}
 
 		$orders = $this->input->post('orders');
 
-		if (!$orders) {
-			echo json_encode(array('success' => false, 'message' => '순서 정보가 필요합니다.'));
+		if (!$orders || !is_array($orders)) {
+			echo json_encode(array('success' => false, 'message' => '순서 정보가 올바르지 않습니다.'));
 			return;
 		}
 
-		$result = $this->Detail_field_model->update_display_orders($orders);
+		// 트랜잭션 시작
+		$this->db->trans_start();
 
-		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '필드 순서가 변경되었습니다.'));
-		} else {
-			echo json_encode(array('success' => false, 'message' => '필드 순서 변경에 실패했습니다.'));
+		try {
+			foreach ($orders as $order_data) {
+				if (!isset($order_data['field_idx']) || !isset($order_data['display_order'])) {
+					continue;
+				}
+
+				// 해당 필드가 현재 조직에 속한지 확인
+				$field_info = $this->Detail_field_model->get_detail_field_by_id($order_data['field_idx']);
+				if (!$field_info || $field_info['org_id'] != $org_id) {
+					continue;
+				}
+
+				// 순서 업데이트
+				$this->Detail_field_model->update_detail_field($order_data['field_idx'], array(
+					'display_order' => $order_data['display_order']
+				));
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				echo json_encode(array('success' => false, 'message' => '순서 저장 중 오류가 발생했습니다.'));
+			} else {
+				echo json_encode(array('success' => true, 'message' => '순서가 저장되었습니다.'));
+			}
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			echo json_encode(array('success' => false, 'message' => '순서 저장에 실패했습니다.'));
 		}
 	}
 }

@@ -210,7 +210,8 @@ class Attendance_setting extends My_Controller
 	}
 
 	/**
-	 * 출석타입 삭제
+	 * 파일 위치: application/controllers/Attendance_setting.php
+	 * 역할: 출석타입 삭제 처리 (org_id 처리 개선)
 	 */
 	public function delete_attendance_type()
 	{
@@ -219,23 +220,41 @@ class Attendance_setting extends My_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
+
+		// org_id 가져오기 - 우선순위: 쿠키 > 세션
+		$org_id = $this->input->cookie('activeOrg');
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 검증 - 삭제는 레벨 9 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '출석타입을 삭제할 권한이 없습니다.'));
+			return;
+		}
+
 		$att_type_idx = $this->input->post('att_type_idx');
 
 		if (!$att_type_idx) {
-			echo json_encode(array('success' => false, 'message' => '출석타입 정보를 찾을 수 없습니다.'));
+			echo json_encode(array('success' => false, 'message' => '출석타입 ID가 필요합니다.'));
 			return;
 		}
 
-		// 권한 검증
-		$att_type = $this->Attendance_setting_model->get_attendance_type_by_id($att_type_idx);
-		if (!$att_type) {
-			echo json_encode(array('success' => false, 'message' => '출석타입을 찾을 수 없습니다.'));
+		// 해당 출석타입이 현재 조직에 속한지 확인
+		$att_type_info = $this->Attendance_setting_model->get_attendance_type_by_id($att_type_idx);
+		if (!$att_type_info) {
+			echo json_encode(array('success' => false, 'message' => '존재하지 않는 출석타입입니다.'));
 			return;
 		}
 
-		$user_level = $this->User_model->get_org_user_level($user_id, $att_type['org_id']);
-		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
-			echo json_encode(array('success' => false, 'message' => '출석타입을 삭제할 권한이 없습니다.'));
+		if ($att_type_info['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '해당 출석타입을 삭제할 권한이 없습니다.'));
 			return;
 		}
 
@@ -245,7 +264,9 @@ class Attendance_setting extends My_Controller
 			return;
 		}
 
-		if ($this->Attendance_setting_model->delete_attendance_type($att_type_idx)) {
+		$result = $this->Attendance_setting_model->delete_attendance_type($att_type_idx);
+
+		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '출석타입이 삭제되었습니다.'));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '출석타입 삭제에 실패했습니다.'));
@@ -253,7 +274,8 @@ class Attendance_setting extends My_Controller
 	}
 
 	/**
-	 * 출석타입 순서 변경
+	 * 파일 위치: application/controllers/Attendance_setting.php
+	 * 역할: 출석타입 순서 업데이트 처리 (수정 버전)
 	 */
 	public function update_orders()
 	{
@@ -262,30 +284,64 @@ class Attendance_setting extends My_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
+
+		// org_id 가져오기 - 우선순위: 쿠키 > 세션
+		$org_id = $this->input->cookie('activeOrg');
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 검증 - 출석설정 관리는 최소 레벨 9 이상 필요
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '출석타입 순서를 변경할 권한이 없습니다.'));
+			return;
+		}
+
 		$orders = $this->input->post('orders');
 
-		if (empty($orders) || !is_array($orders)) {
+		if (!$orders || !is_array($orders)) {
 			echo json_encode(array('success' => false, 'message' => '순서 정보가 올바르지 않습니다.'));
 			return;
 		}
 
-		// 첫 번째 출석타입의 조직 ID로 권한 확인
-		$first_att_type = $this->Attendance_setting_model->get_attendance_type_by_id($orders[0]);
-		if (!$first_att_type) {
-			echo json_encode(array('success' => false, 'message' => '출석타입을 찾을 수 없습니다.'));
-			return;
-		}
+		// 트랜잭션 시작
+		$this->db->trans_start();
 
-		$user_level = $this->User_model->get_org_user_level($user_id, $first_att_type['org_id']);
-		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
-			echo json_encode(array('success' => false, 'message' => '순서를 변경할 권한이 없습니다.'));
-			return;
-		}
+		try {
+			foreach ($orders as $order_data) {
+				if (!isset($order_data['att_type_idx']) || !isset($order_data['att_type_order'])) {
+					continue;
+				}
 
-		if ($this->Attendance_setting_model->update_attendance_type_orders($orders)) {
-			echo json_encode(array('success' => true, 'message' => '순서가 변경되었습니다.'));
-		} else {
-			echo json_encode(array('success' => false, 'message' => '순서 변경에 실패했습니다.'));
+				// 해당 출석타입이 현재 조직에 속한지 확인
+				$att_type_info = $this->Attendance_setting_model->get_attendance_type_by_id($order_data['att_type_idx']);
+				if (!$att_type_info || $att_type_info['org_id'] != $org_id) {
+					continue;
+				}
+
+				// 순서 업데이트
+				$this->Attendance_setting_model->update_attendance_type($order_data['att_type_idx'], array(
+					'att_type_order' => $order_data['att_type_order']
+				));
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				echo json_encode(array('success' => false, 'message' => '순서 저장 중 오류가 발생했습니다.'));
+			} else {
+				echo json_encode(array('success' => true, 'message' => '순서가 저장되었습니다.'));
+			}
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			echo json_encode(array('success' => false, 'message' => '순서 저장에 실패했습니다.'));
 		}
 	}
 }

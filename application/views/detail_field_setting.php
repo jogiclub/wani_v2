@@ -15,6 +15,9 @@
 				<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFieldModal">
 					<i class="bi bi-plus-circle"></i> 필드 추가
 				</button>
+				<button type="button" class="btn btn-primary ms-2" id="saveOrderBtn" style="display: none;">
+					<i class="bi bi-save"></i> 순서 저장
+				</button>
 			</div>
 		</div>
 	</div>
@@ -36,26 +39,31 @@
 							<div class="table-responsive">
 								<table class="table align-middle">
 									<thead>
-									<tr>
-										<th style="width: 50px;">순서</th>
+									<tr><th style="width: 50px;">순서</th>
+										<th style="width: 50px;">번호</th>
 										<th>필드명</th>
+										<th>옵션</th>
 										<th style="width: 100px;">타입</th>
 										<th style="width: 80px;">상태</th>
 										<th style="width: 120px;">관리</th>
 									</tr>
 									</thead>
-									<tbody id="fieldTableBody" class="sortable">
-									<?php foreach ($detail_fields as $field): ?>
-										<tr data-field-idx="<?php echo $field['field_idx']; ?>">
+									<tbody id="fieldTableBody" class="sortable-tbody">
+									<?php foreach ($detail_fields as $index => $field): ?>
+										<tr class="sortable-row ui-sortable-handle" data-field-idx="<?php echo $field['field_idx']; ?>">
 											<td class="text-center">
-												<i class="bi bi-grip-vertical text-muted handle"
-												   style="cursor: move;"></i>
-												<span class="order-number"><?php echo $field['display_order']; ?></span>
+												<i class="bi bi-grip-vertical text-muted handle" style="cursor: move; font-size: 1.2em;"></i>
+											</td>
+											<td class="text-center">
+												<span class="order-number ms-2"><?php echo $field['display_order']; ?></span>
 											</td>
 											<td>
 												<strong><?php echo htmlspecialchars($field['field_name']); ?></strong>
+
+											</td>
+											<td>
 												<?php if ($field['field_settings'] && $field['field_settings'] !== '{}'): ?>
-													<br><small class="text-muted">
+													<small class="text-muted">
 														<?php
 														$settings = json_decode($field['field_settings'], true);
 														if ($field['field_type'] === 'select' && isset($settings['options'])) {
@@ -66,18 +74,18 @@
 												<?php endif; ?>
 											</td>
 											<td>
-													<span class="badge bg-secondary">
-														<?php
-														$type_names = array(
-															'text' => '텍스트',
-															'select' => '선택박스',
-															'textarea' => '긴텍스트',
-															'checkbox' => '체크박스',
-															'date' => '날짜'
-														);
-														echo $type_names[$field['field_type']] ?? $field['field_type'];
-														?>
-													</span>
+						<span class="badge bg-secondary">
+							<?php
+							$type_names = array(
+								'text' => '텍스트',
+								'select' => '선택박스',
+								'textarea' => '긴텍스트',
+								'checkbox' => '체크박스',
+								'date' => '날짜'
+							);
+							echo $type_names[$field['field_type']] ?? $field['field_type'];
+							?>
+						</span>
 											</td>
 											<td>
 												<div class="form-check form-switch">
@@ -234,3 +242,5 @@
 
 <?php $this->load->view('footer'); ?>
 <script src="/assets/js/detail_field.js?<?php echo date('Ymdhis'); ?>"></script>
+
+

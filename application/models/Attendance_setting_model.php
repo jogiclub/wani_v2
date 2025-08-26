@@ -92,7 +92,7 @@ class Attendance_setting_model extends CI_Model
 	}
 
 	/**
-	 * 다음 순서 번호 가져오기
+	 * 다음 순서 번호 가져오기 (수정된 버전)
 	 */
 	public function get_next_order($org_id)
 	{
@@ -121,12 +121,12 @@ class Attendance_setting_model extends CI_Model
 	}
 
 	/**
-	 * 출석타입 사용 여부 확인
+	 * 해당 출석타입을 사용하는 출석 기록이 있는지 확인
 	 */
 	public function has_attendance_records($att_type_idx)
 	{
 		$this->db->where('att_type_idx', $att_type_idx);
-		$this->db->from('wb_member_att');
+		$this->db->from('wb_attendance');
 		return $this->db->count_all_results() > 0;
 	}
 
