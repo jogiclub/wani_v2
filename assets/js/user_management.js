@@ -56,41 +56,86 @@ function loadManagedMenus() {
 }
 
 /**
- * 관리 그룹 데이터 로드
+ * 파일 위치: assets/js/user_management.js
+ * 역할: 관리 그룹 데이터 로드 함수 (전체 트리 구조 지원)
  */
 function loadManagedAreas(orgId) {
-    // 현재 선택된 조직 ID가 없으면 쿠키에서 가져오기
-    if (!orgId) {
-        orgId = getCookie('activeOrg');
-    }
+	// 현재 선택된 조직 ID가 없으면 쿠키에서 가져오기
+	if (!orgId) {
+		orgId = getCookie('activeOrg');
+	}
 
-    if (!orgId) {
-        showToast('조직 정보를 찾을 수 없습니다.');
-        return;
-    }
+	if (!orgId) {
+		showToast('조직 정보를 찾을 수 없습니다.');
+		return;
+	}
 
-    $.ajax({
-        url: 'user_management/get_managed_areas',
-        type: 'POST',
-        data: { org_id: orgId },
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                var options = '';
-                response.areas.forEach(function(area) {
-                    options += '<option value="' + area.area_idx + '">' + area.area_name + '</option>';
-                });
-                $('#edit_managed_areas').html(options);
-            } else {
-                showToast('관리 그룹 데이터를 불러오는데 실패했습니다.');
-            }
-        },
-        error: function() {
-            showToast('관리 그룹 데이터를 불러오는데 실패했습니다.');
-        }
-    });
+	$.ajax({
+		url: 'user_management/get_managed_areas_tree',
+		type: 'POST',
+		data: { org_id: orgId },
+		dataType: 'json',
+		success: function(response) {
+			if (response.success) {
+				var options = '';
+
+				// 트리 구조의 데이터를 재귀적으로 처리하는 함수
+				function buildOptionsRecursively(areas, depth = 0) {
+					areas.forEach(function(area) {
+						// depth에 따라 들여쓰기 표시
+						const indent = '　'.repeat(depth); // 전각 공백으로 들여쓰기
+						options += '<option value="' + area.area_idx + '">' + indent + area.area_name + '</option>';
+
+						// 하위 그룹이 있으면 재귀적으로 처리
+						if (area.children && area.children.length > 0) {
+							buildOptionsRecursively(area.children, depth + 1);
+						}
+					});
+				}
+
+				// 플랫 구조라면 일반적으로 처리, 트리 구조라면 재귀적으로 처리
+				if (response.areas && response.areas.length > 0) {
+					if (response.areas[0].children !== undefined) {
+						// 트리 구조인 경우
+						buildOptionsRecursively(response.areas);
+					} else {
+						// 플랫 구조인 경우 (기존 방식)
+						response.areas.forEach(function(area) {
+							options += '<option value="' + area.area_idx + '">' + area.area_name + '</option>';
+						});
+					}
+				}
+
+				$('#edit_managed_areas').html(options);
+			} else {
+				showToast('관리 그룹 데이터를 불러오는데 실패했습니다.');
+			}
+		},
+		error: function() {
+			// 트리 구조 API가 없는 경우 기존 API 사용
+			$.ajax({
+				url: 'user_management/get_managed_areas',
+				type: 'POST',
+				data: { org_id: orgId },
+				dataType: 'json',
+				success: function(response) {
+					if (response.success) {
+						var options = '';
+						response.areas.forEach(function(area) {
+							options += '<option value="' + area.area_idx + '">' + area.area_name + '</option>';
+						});
+						$('#edit_managed_areas').html(options);
+					} else {
+						showToast('관리 그룹 데이터를 불러오는데 실패했습니다.');
+					}
+				},
+				error: function() {
+					showToast('관리 그룹 데이터를 불러오는데 실패했습니다.');
+				}
+			});
+		}
+	});
 }
-
 /**
  * 쿠키 값 가져오기
  */

@@ -67,119 +67,144 @@
 		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">
+
+
 		<form id="memberForm" enctype="multipart/form-data">
 			<input type="hidden" id="member_idx" name="member_idx">
 			<input type="hidden" id="org_id" name="org_id">
 
-			<div class="row mb-3">
-				<div class="d-flex justify-content-end text-end">
-					<div class="form-check form-switch me-3">
-						<input type="checkbox" class="form-check-input" id="leader_yn" name="leader_yn">
-						<label class="form-check-label" for="leader_yn">리더</label>
-					</div>
-					<div class="form-check form-switch">
-						<input type="checkbox" class="form-check-input" id="new_yn" name="new_yn">
-						<label class="form-check-label" for="new_yn">새가족</label>
-					</div>
-				</div>
-			</div>
 
-			<!-- 사진 업로드 영역 -->
-			<div class="row mb-4">
-				<div class="col-12 text-center">
-					<!-- 사진 업로드 버튼 -->
-					<div id="photoUpload">
-						<label for="member_photo" class="d-inline-block">
-							<div class="border border-2 border-dashed rounded-circle d-flex align-items-center justify-content-center" style="width: 120px; height: 120px; cursor: pointer;">
-								<i class="bi bi-person-plus fs-1 text-muted"></i>
+			<ul class="nav nav-tabs" id="memberTab" role="tablist">
+
+				<li class="nav-item" role="presentation">
+					<button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">회원정보</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">상세정보</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button class="nav-link" id="memo-tab" data-bs-toggle="tab" data-bs-target="#memo-tab-pane" type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">회원메모</button>
+				</li>
+
+			</ul>
+
+			<div class="tab-content" id="memberTabContent">
+				<div class="tab-pane fade show active" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+					<div class="row mb-3">
+						<div class="d-flex justify-content-end text-end">
+							<div class="form-check form-switch me-3">
+								<input type="checkbox" class="form-check-input" id="leader_yn" name="leader_yn">
+								<label class="form-check-label" for="leader_yn">리더</label>
 							</div>
-						</label>
-						<input type="file" id="member_photo" name="member_photo" accept="image/*" class="d-none">
-						<div class="mt-2 text-muted small">사진을 선택하세요</div>
-					</div>
-
-					<!-- 사진 미리보기 -->
-					<div id="photoPreview" style="display: none;">
-						<img id="previewImage" src="" alt="미리보기" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
-						<div class="mt-2">
-							<button type="button" class="btn btn-sm btn-outline-primary" id="cropPhoto">
-								<i class="bi bi-crop"></i> 크롭
-							</button>
-							<button type="button" class="btn btn-sm btn-outline-danger" id="removePhoto">
-								<i class="bi bi-trash"></i> 삭제
-							</button>
+							<div class="form-check form-switch">
+								<input type="checkbox" class="form-check-input" id="new_yn" name="new_yn">
+								<label class="form-check-label" for="new_yn">새가족</label>
+							</div>
 						</div>
 					</div>
 
-					<!-- Croppie 영역 -->
-					<div id="cropContainer" style="display: none;">
-						<div id="cropBox" style="width: 300px; height: 300px; margin: 0 auto;"></div>
-						<div class="mt-3">
-							<button type="button" class="btn btn-sm btn-success" id="saveCrop">
-								<i class="bi bi-check"></i> 적용
-							</button>
-							<button type="button" class="btn btn-sm btn-secondary" id="cancelCrop">
-								<i class="bi bi-x"></i> 취소
-							</button>
+					<!-- 사진 업로드 영역 -->
+					<div class="row mb-4">
+						<div class="col-12 text-center">
+							<!-- 사진 업로드 버튼 -->
+							<div id="photoUpload">
+								<label for="member_photo" class="d-inline-block">
+									<div class="border border-2 border-dashed rounded-circle d-flex align-items-center justify-content-center" style="width: 120px; height: 120px; cursor: pointer;">
+										<i class="bi bi-person-plus fs-1 text-muted"></i>
+									</div>
+								</label>
+								<input type="file" id="member_photo" name="member_photo" accept="image/*" class="d-none">
+								<div class="mt-2 text-muted small">사진을 선택하세요</div>
+							</div>
+
+							<!-- 사진 미리보기 -->
+							<div id="photoPreview" style="display: none;">
+								<img id="previewImage" src="" alt="미리보기" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+								<div class="mt-2">
+									<button type="button" class="btn btn-sm btn-outline-primary" id="cropPhoto">
+										<i class="bi bi-crop"></i> 크롭
+									</button>
+									<button type="button" class="btn btn-sm btn-outline-danger" id="removePhoto">
+										<i class="bi bi-trash"></i> 삭제
+									</button>
+								</div>
+							</div>
+
+							<!-- Croppie 영역 -->
+							<div id="cropContainer" style="display: none;">
+								<div id="cropBox" style="width: 300px; height: 300px; margin: 0 auto;"></div>
+								<div class="mt-3">
+									<button type="button" class="btn btn-sm btn-success" id="saveCrop">
+										<i class="bi bi-check"></i> 적용
+									</button>
+									<button type="button" class="btn btn-sm btn-secondary" id="cancelCrop">
+										<i class="bi bi-x"></i> 취소
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="row">
+						<!-- 개인정보 입력 필드들 -->
+						<div class="col-6 mb-3">
+							<label for="member_name" class="form-label">이름 <span class="text-danger">*</span></label>
+							<input type="text" class="form-control" id="member_name" name="member_name" required>
+						</div>
+
+						<div class="col-6 mb-3">
+							<label for="member_nick" class="form-label">별명</label>
+							<input type="text" class="form-control" id="member_nick" name="member_nick">
+						</div>
+
+						<div class="col-6 mb-3">
+							<label for="member_phone" class="form-label">연락처</label>
+							<input type="tel" class="form-control" id="member_phone" name="member_phone">
+						</div>
+
+						<div class="col-6 mb-3">
+							<label for="member_birth" class="form-label">생년월일</label>
+							<input type="date" class="form-control" id="member_birth" name="member_birth">
+						</div>
+
+						<div class="col-12 mb-3">
+							<label for="member_address" class="form-label">주소</label>
+							<input type="text" class="form-control" id="member_address" name="member_address">
+						</div>
+
+						<div class="col-12 mb-3">
+							<label for="member_address_detail" class="form-label">상세주소</label>
+							<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
+						</div>
+
+
+
+						<div class="col-6 mb-3">
+							<label for="area_idx" class="form-label">소그룹</label>
+							<select class="form-select" id="area_idx" name="area_idx">
+								<option value="">소그룹 선택</option>
+							</select>
+						</div>
+
+						<div class="col-12 mb-3">
+							<label for="member_etc" class="form-label">메모</label>
+							<textarea class="form-control" id="member_etc" name="member_etc" rows="3"></textarea>
 						</div>
 					</div>
 				</div>
-			</div>
-
-			<div class="row">
-				<!-- 개인정보 입력 필드들 -->
-				<div class="col-6 mb-3">
-					<label for="member_name" class="form-label">이름 <span class="text-danger">*</span></label>
-					<input type="text" class="form-control" id="member_name" name="member_name" required>
+				<div class="tab-pane fade" id="detail-tab-pane" role="tabpanel" aria-labelledby="detail-tab" tabindex="0">
+					bbbbbbb
 				</div>
-
-				<div class="col-6 mb-3">
-					<label for="member_nick" class="form-label">별명</label>
-					<input type="text" class="form-control" id="member_nick" name="member_nick">
-				</div>
-
-				<div class="col-6 mb-3">
-					<label for="member_phone" class="form-label">연락처</label>
-					<input type="tel" class="form-control" id="member_phone" name="member_phone">
-				</div>
-
-				<div class="col-6 mb-3">
-					<label for="member_birth" class="form-label">생년월일</label>
-					<input type="date" class="form-control" id="member_birth" name="member_birth">
-				</div>
-
-				<div class="col-12 mb-3">
-					<label for="member_address" class="form-label">주소</label>
-					<input type="text" class="form-control" id="member_address" name="member_address">
-				</div>
-
-				<div class="col-12 mb-3">
-					<label for="member_address_detail" class="form-label">상세주소</label>
-					<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
-				</div>
-
-				<div class="col-6 mb-3">
-					<label for="grade" class="form-label">등급</label>
-					<select class="form-select" id="grade" name="grade">
-						<option value="0">일반회원</option>
-						<option value="1">1등급</option>
-						<option value="2">2등급</option>
-						<option value="3">3등급</option>
-					</select>
-				</div>
-
-				<div class="col-6 mb-3">
-					<label for="area_idx" class="form-label">소그룹</label>
-					<select class="form-select" id="area_idx" name="area_idx">
-						<option value="">소그룹 선택</option>
-					</select>
-				</div>
-
-				<div class="col-12 mb-3">
-					<label for="member_etc" class="form-label">메모</label>
-					<textarea class="form-control" id="member_etc" name="member_etc" rows="3"></textarea>
+				<div class="tab-pane fade" id="memo-tab-pane" role="tabpanel" aria-labelledby="memo-tab" tabindex="0">
+					ccccccc
 				</div>
 			</div>
+
+
+
+
+
+
 		</form>
 
 

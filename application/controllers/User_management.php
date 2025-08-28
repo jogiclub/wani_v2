@@ -341,4 +341,39 @@ class User_management extends My_Controller
             echo json_encode(array('success' => false, 'message' => '초대 메일 발송에 실패했습니다.'));
         }
     }
+
+
+	/**
+	 * 관리 그룹 트리 구조 목록 조회 API
+	 */
+	public function get_managed_areas_tree() {
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		// POST와 GET 모두 처리
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			$org_id = $this->input->get('org_id');
+		}
+
+		// 쿠키에서 현재 조직 정보 가져오기
+		if (!$org_id) {
+			$org_id = $this->input->cookie('activeOrg');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		// Member_area_model 로드 (트리 구조 조회를 위해)
+		$this->load->model('Member_area_model');
+
+		// 트리 구조로 그룹 목록 조회
+		$areas_tree = $this->Member_area_model->get_member_areas_tree($org_id);
+
+		echo json_encode(array('success' => true, 'areas' => $areas_tree));
+	}
+
 }

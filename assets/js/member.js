@@ -758,10 +758,9 @@ $(document).ready(function () {
 		orgNameElement.text(displayText);
 	}
 
-	// ===== CROPPIE 관련 함수들 =====
-
 	/**
-	 * 회원 offcanvas 열기 (Croppie 적용 버전)
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 회원 offcanvas 열기 함수 수정 (소그룹 선택 문제 해결)
 	 */
 	function openMemberOffcanvas(mode, memberData = null) {
 		const offcanvas = $('#memberOffcanvas');
@@ -772,11 +771,14 @@ $(document).ready(function () {
 		// 폼 및 UI 초기화
 		resetOffcanvasForm();
 
-		// 소그룹 옵션 로드
-		loadAreaOptions(selectedOrgId);
-
 		if (mode === 'edit' && memberData) {
-			populateFormData(memberData);
+			// 소그룹 옵션 로드 완료 후 폼 데이터 채우기
+			loadAreaOptionsWithCallback(selectedOrgId, function() {
+				populateFormData(memberData);
+			});
+		} else {
+			// 추가 모드일 때는 그냥 소그룹 옵션만 로드
+			loadAreaOptions(selectedOrgId);
 		}
 
 		// 사진 이벤트 바인딩
@@ -784,6 +786,64 @@ $(document).ready(function () {
 
 		// offcanvas 표시 및 정리 이벤트 설정
 		showOffcanvasWithCleanup(offcanvas);
+	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 콜백을 지원하는 소그룹 옵션 로드 함수
+	 */
+	function loadAreaOptionsWithCallback(orgId, callback) {
+		const areaSelect = $('#area_idx');
+		areaSelect.html('<option value="">소그룹 선택</option>');
+
+		try {
+			const tree = $("#groupTree").fancytree("getTree");
+			const groupNode = tree.getNodeByKey('org_' + orgId);
+
+			if (groupNode && groupNode.children) {
+				// 재귀적으로 모든 하위 노드를 처리하는 함수
+				function addAreaOptionsRecursively(nodes, depth = 0) {
+					nodes.forEach(function(node) {
+						const areaData = node.data;
+						// 미분류 그룹은 제외하고 일반 소그룹만 추가
+						if (areaData.type === 'area') {
+							// depth에 따라 들여쓰기 표시
+							const indent = '　'.repeat(depth); // 전각 공백으로 들여쓰기
+							const optionText = indent + node.title.replace(/\s*\(\d+명\)$/, ''); // 회원 수 표시 제거
+
+							areaSelect.append(`<option value="${areaData.area_idx}">${optionText}</option>`);
+
+							// 하위 노드가 있으면 재귀적으로 처리
+							if (node.children && node.children.length > 0) {
+								addAreaOptionsRecursively(node.children, depth + 1);
+							}
+						}
+					});
+				}
+
+				// 재귀적으로 모든 소그룹 옵션 추가
+				addAreaOptionsRecursively(groupNode.children);
+			}
+
+			// 콜백 함수가 있으면 실행
+			if (typeof callback === 'function') {
+				callback();
+			}
+		} catch (error) {
+			console.error('소그룹 옵션 로드 오류:', error);
+			// 에러가 있어도 콜백 실행
+			if (typeof callback === 'function') {
+				callback();
+			}
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 기존 소그룹 옵션 로드 함수 (기존 호환성 유지)
+	 */
+	function loadAreaOptions(orgId) {
+		loadAreaOptionsWithCallback(orgId, null);
 	}
 
 	/**
@@ -1122,7 +1182,8 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 소그룹 옵션 로드
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 소그룹 옵션 로드 함수 (전체 depth의 소그룹을 재귀적으로 처리)
 	 */
 	function loadAreaOptions(orgId) {
 		const areaSelect = $('#area_idx');
@@ -1133,13 +1194,28 @@ $(document).ready(function () {
 			const groupNode = tree.getNodeByKey('org_' + orgId);
 
 			if (groupNode && groupNode.children) {
-				groupNode.children.forEach(function (child) {
-					const areaData = child.data;
-					// 미분류 그룹은 제외하고 일반 소그룹만 추가
-					if (areaData.type === 'area') {
-						areaSelect.append(`<option value="${areaData.area_idx}">${child.title}</option>`);
-					}
-				});
+				// 재귀적으로 모든 하위 노드를 처리하는 함수
+				function addAreaOptionsRecursively(nodes, depth = 0) {
+					nodes.forEach(function(node) {
+						const areaData = node.data;
+						// 미분류 그룹은 제외하고 일반 소그룹만 추가
+						if (areaData.type === 'area') {
+							// depth에 따라 들여쓰기 표시
+							const indent = '　'.repeat(depth); // 전각 공백으로 들여쓰기
+							const optionText = indent + node.title.replace(/\s*\(\d+명\)$/, ''); // 회원 수 표시 제거
+
+							areaSelect.append(`<option value="${areaData.area_idx}">${optionText}</option>`);
+
+							// 하위 노드가 있으면 재귀적으로 처리
+							if (node.children && node.children.length > 0) {
+								addAreaOptionsRecursively(node.children, depth + 1);
+							}
+						}
+					});
+				}
+
+				// 재귀적으로 모든 소그룹 옵션 추가
+				addAreaOptionsRecursively(groupNode.children);
 			}
 		} catch (error) {
 			console.error('소그룹 옵션 로드 오류:', error);
