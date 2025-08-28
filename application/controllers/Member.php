@@ -255,7 +255,7 @@ class Member extends My_Controller
 		if ($user_level >= 10 || $master_yn === 'Y') {
 			$unassigned_members_count = $this->Member_model->get_unassigned_members_count($active_org_id);
 
-			if ($unassigned_members_count > 0) {
+
 				$unassigned_node = array(
 					'key' => 'unassigned_' . $active_org_id,
 					'title' => '미분류 (' . $unassigned_members_count . '명)',
@@ -267,7 +267,7 @@ class Member extends My_Controller
 					)
 				);
 				$tree_data[] = $unassigned_node;
-			}
+
 		}
 
 		header('Content-Type: application/json');

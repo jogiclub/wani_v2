@@ -998,8 +998,8 @@ $(document).ready(function () {
 				type: 'circle'  // 원형 크롭
 			},
 			boundary: {
-				width: 300,
-				height: 300
+				width: 250,
+				height: 250
 			},
 			showZoomer: true,
 			enableResize: false,
@@ -1050,7 +1050,7 @@ $(document).ready(function () {
 			$('#photoPreview').show();
 
 			destroyCroppie();
-			showToast('이미지 크롭이 완료되었습니다.', 'success');
+
 
 		}).catch(function(error) {
 			console.error('크롭 처리 오류:', error);
