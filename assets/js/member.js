@@ -869,6 +869,10 @@ $(document).ready(function () {
 		$('#photoPreview').hide();
 		$('#photoUpload').show();
 		$('#cropContainer').hide();
+
+		// 사진 삭제 플래그 초기화
+		$('#delete_photo').remove();
+
 		destroyCroppie();
 	}
 
@@ -941,7 +945,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 사진 파일 선택 처리
+	 * 사진 파일 선택 처리 (삭제 플래그 해제 추가)
 	 */
 	function handlePhotoFileSelect(e) {
 		const file = e.target.files[0];
@@ -950,6 +954,9 @@ $(document).ready(function () {
 		if (!validateImageFile(file)) {
 			return;
 		}
+
+		// 새 파일이 선택되면 삭제 플래그 해제
+		$('#delete_photo').remove();
 
 		const reader = new FileReader();
 		reader.onload = function(e) {
@@ -978,6 +985,14 @@ $(document).ready(function () {
 		$('#photoPreview').hide();
 		$('#photoUpload').show();
 		destroyCroppie();
+
+		// 기존 사진 삭제를 위한 hidden 필드 추가/업데이트
+		let deletePhotoField = $('#delete_photo');
+		if (deletePhotoField.length === 0) {
+			$('#memberForm').append('<input type="hidden" id="delete_photo" name="delete_photo" value="">');
+			deletePhotoField = $('#delete_photo');
+		}
+		deletePhotoField.val('Y');
 	}
 
 	/**
@@ -1017,8 +1032,9 @@ $(document).ready(function () {
 		});
 	}
 
+
 	/**
-	 * 크롭된 이미지 저장
+	 * 크롭된 이미지 저장 (삭제 플래그 해제 추가)
 	 */
 	function saveCroppedImage() {
 		if (!croppieInstance) {
@@ -1043,6 +1059,9 @@ $(document).ready(function () {
 				const dt = new DataTransfer();
 				dt.items.add(file);
 				document.getElementById('member_photo').files = dt.files;
+
+				// 새 이미지가 설정되었으므로 삭제 플래그 해제
+				$('#delete_photo').remove();
 			});
 
 			// UI 상태 변경
@@ -1050,7 +1069,6 @@ $(document).ready(function () {
 			$('#photoPreview').show();
 
 			destroyCroppie();
-
 
 		}).catch(function(error) {
 			console.error('크롭 처리 오류:', error);

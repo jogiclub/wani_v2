@@ -677,7 +677,7 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 회원 정보 수정 (Croppie 적용)
+	 * 회원 정보 수정 (사진 삭제 기능 추가)
 	 */
 	public function update_member()
 	{
@@ -706,9 +706,24 @@ class Member extends My_Controller
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		// 이미지 업로드 처리
-		if (!empty($_FILES['member_photo']['name'])) {
-			$org_id = $this->input->post('org_id');
+		$org_id = $this->input->post('org_id');
+
+		// 사진 삭제 처리
+		$delete_photo = $this->input->post('delete_photo');
+		if ($delete_photo === 'Y') {
+			// 기존 사진 파일 삭제
+			$existing_member = $this->Member_model->get_member_by_idx($member_idx);
+			if (!empty($existing_member['photo'])) {
+				$existing_file = './uploads/member_photos/' . $org_id . '/' . $existing_member['photo'];
+				if (file_exists($existing_file)) {
+					unlink($existing_file);
+				}
+			}
+			// 데이터베이스에서 사진 정보 제거
+			$update_data['photo'] = null;
+		}
+		// 새 이미지 업로드 처리
+		else if (!empty($_FILES['member_photo']['name'])) {
 			$upload_result = $this->handleCroppedImageUpload($member_idx, $org_id);
 
 			if ($upload_result['success']) {
