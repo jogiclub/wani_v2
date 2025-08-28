@@ -249,6 +249,12 @@ $(document).ready(function () {
 				hidden: true
 			},
 			{
+				title: "닉네임",
+				dataIndx: "member_nick",
+				width: 100,
+				align: "center"
+			},
+			{
 				title: "휴대폰번호",
 				dataIndx: "member_phone",
 				width: 140,
@@ -263,6 +269,12 @@ $(document).ready(function () {
 			{
 				title: "주소",
 				dataIndx: "member_address",
+				width: 250,
+				align: "left"
+			},
+			{
+				title: "상세주소",
+				dataIndx: "member_address_detail",
 				width: 250,
 				align: "left"
 			},

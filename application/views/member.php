@@ -29,9 +29,6 @@
 		<!-- 왼쪽: 그룹 트리 -->
 		<div class="col-md-3 col-lg-2">
 			<div class="card">
-				<div class="card-header">
-					<h5 class="mb-0">조직 구조</h5>
-				</div>
 				<div class="card-body p-0">
 					<div id="groupTree" class="tree-container"></div>
 				</div>
@@ -109,56 +106,40 @@
 				</div>
 
 				<!-- 개인정보 입력 필드들 -->
-				<div class="col-12 mb-3">
+				<div class="col-6 mb-3">
 					<label for="member_name" class="form-label">이름 <span class="text-danger">*</span></label>
 					<input type="text" class="form-control" id="member_name" name="member_name" required>
 				</div>
 
-				<div class="col-12 mb-3">
-					<label for="member_phone" class="form-label">연락처</label>
+				<div class="col-6 mb-3">
+					<label for="member_nick" class="form-label">별명 </label>
+					<input type="text" class="form-control" id="member_nick" name="member_nick">
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="member_phone" class="form-label">휴대폰번호 <span class="text-danger">*</span></label>
 					<input type="tel" class="form-control" id="member_phone" name="member_phone">
 				</div>
 
-				<div class="col-12 mb-3">
+				<div class="col-6 mb-3">
 					<label for="member_birth" class="form-label">생년월일</label>
 					<input type="date" class="form-control" id="member_birth" name="member_birth">
 				</div>
 
-				<div class="col-12 mb-3">
+				<div class="col-6 mb-3">
 					<label for="member_address" class="form-label">주소</label>
 					<input type="text" class="form-control" id="member_address" name="member_address">
 				</div>
-
 				<div class="col-6 mb-3">
-					<label for="grade" class="form-label">학년</label>
-					<select class="form-select" id="grade" name="grade">
-						<option value="">학년 선택</option>
-						<option value="1">1학년</option>
-						<option value="2">2학년</option>
-						<option value="3">3학년</option>
-						<option value="4">4학년</option>
-						<option value="5">5학년</option>
-						<option value="6">6학년</option>
-						<option value="중1">중1</option>
-						<option value="중2">중2</option>
-						<option value="중3">중3</option>
-						<option value="고1">고1</option>
-						<option value="고2">고2</option>
-						<option value="고3">고3</option>
-						<option value="대1">대1</option>
-						<option value="대2">대2</option>
-						<option value="대3">대3</option>
-						<option value="대4">대4</option>
-						<option value="성인">성인</option>
-					</select>
+					<label for="member_address_detail" class="form-label">상세주소</label>
+					<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
+				</div>
+				<div class="col-12">
+					<label for="member_etc" class="form-label">메모</label>
+					<input type="text" class="form-control" id="member_etc" name="member_etc">
 				</div>
 
-				<div class="col-6 mb-3">
-					<label for="area_idx" class="form-label">소그룹</label>
-					<select class="form-select" id="area_idx" name="area_idx">
-						<option value="">소그룹 선택</option>
-					</select>
-				</div>
+
 			</div>
 		</form>
 

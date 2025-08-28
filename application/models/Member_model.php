@@ -20,7 +20,7 @@ class Member_model extends CI_Model
 	{
 		$user_id = $this->session->userdata('user_id');
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.photo, m.member_phone, m.member_address, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name,m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
@@ -200,7 +200,7 @@ class Member_model extends CI_Model
 		$area_ids[] = $area_idx; // 자기 자신도 포함
 
 		// 회원 조회
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.photo, m.member_phone, m.member_address, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address,m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where('m.org_id', $org_id);

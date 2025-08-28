@@ -269,9 +269,7 @@
 	}
 </style>
 
-<!-- jQuery UI 라이브러리 추가 -->
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/ui-lightness/jquery-ui.css">
-<script src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"></script>
+
 
 <?php $this->load->view('footer'); ?>
 <script src="/assets/js/attendance_setting.js?<?php echo date('Ymdhis'); ?>"></script>

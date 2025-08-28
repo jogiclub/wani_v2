@@ -431,15 +431,15 @@ class Member extends My_Controller
 			$formatted_member = array(
 				'member_idx' => isset($member['member_idx']) ? $member['member_idx'] : '',
 				'member_name' => isset($member['member_name']) ? $member['member_name'] : '',
+				'member_nick' => isset($member['member_nick']) ? $member['member_nick'] : '',
 				'photo' => $photo_url,
 				'member_phone' => isset($member['member_phone']) ? $member['member_phone'] : '',
 				'member_address' => isset($member['member_address']) ? $member['member_address'] : '',
+				'member_address_detail' => isset($member['member_address_detail']) ? $member['member_address_detail'] : '',
+				'member_etc' => isset($member['member_etc']) ? $member['member_etc'] : '',
 				'member_birth' => $formatted_birth,
 				'leader_yn' => isset($member['leader_yn']) ? $member['leader_yn'] : 'N',
 				'new_yn' => isset($member['new_yn']) ? $member['new_yn'] : 'N',
-				'grade' => isset($member['grade']) ? $member['grade'] : 0,
-				'area_name' => isset($member['area_name']) ? $member['area_name'] : '미분류',
-				'area_idx' => isset($member['area_idx']) ? $member['area_idx'] : null,
 				'regi_date' => isset($member['regi_date']) ? $member['regi_date'] : '',
 				'modi_date' => isset($member['modi_date']) ? $member['modi_date'] : ''
 			);
@@ -592,11 +592,12 @@ class Member extends My_Controller
 
 		$member_idx = $this->input->post('member_idx');
 		$member_name = $this->input->post('member_name');
+		$member_nick = $this->input->post('member_nick');
 		$member_phone = $this->input->post('member_phone');
 		$member_birth = $this->input->post('member_birth');
 		$member_address = $this->input->post('member_address');
-		$grade = $this->input->post('grade');
-		$area_idx = $this->input->post('area_idx');
+		$member_address_detail = $this->input->post('member_address_detail');
+		$member_etc = $this->input->post('member_etc');
 		$leader_yn = $this->input->post('leader_yn');
 		$new_yn = $this->input->post('new_yn');
 
@@ -607,11 +608,12 @@ class Member extends My_Controller
 
 		$update_data = array(
 			'member_name' => $member_name,
+			'member_nick' => $member_nick,
 			'member_phone' => $member_phone ? $member_phone : null,
 			'member_birth' => $member_birth ? $member_birth : null,
 			'member_address' => $member_address ? $member_address : null,
-			'grade' => $grade ? $grade : null,
-			'area_idx' => $area_idx ? $area_idx : null,
+			'member_address_detail' => $member_address_detail ? $member_address_detail : null,
+			'member_etc' => $member_etc ? $member_etc : null,
 			'leader_yn' => $leader_yn ? $leader_yn : 'N',
 			'new_yn' => $new_yn ? $new_yn : 'N',
 			'modi_date' => date('Y-m-d H:i:s')
