@@ -694,12 +694,18 @@ $(document).ready(function () {
 		});
 	}
 
+
 	/**
-	 * 회원 offcanvas 열기
+	 * 회원 offcanvas 열기 (수정된 버전)
 	 */
 	function openMemberOffcanvas(mode, memberData = null) {
 		const offcanvas = $('#memberOffcanvas');
-		const title = mode === 'add' ? '회원 추가' : '회원 정보 수정';
+		let title = mode === 'add' ? '회원 추가' : '회원 정보 수정';
+
+		// 수정 모드일 때 회원명이 있으면 타이틀에 포함
+		if (mode === 'edit' && memberData && memberData.member_name) {
+			title = memberData.member_name + ' 회원 정보 수정';
+		}
 
 		$('#memberOffcanvasLabel').text(title);
 
@@ -712,14 +718,17 @@ $(document).ready(function () {
 		loadAreaOptions(selectedOrgId);
 
 		if (mode === 'edit' && memberData) {
-			// 수정 모드일 때 기존 데이터 채우기
+			// 수정 모드일 때 기존 데이터 채우기 (필드명 수정)
 			$('#member_idx').val(memberData.member_idx);
 			$('#member_name').val(memberData.member_name);
-			$('#member_phone').val(memberData.member_phone);
-			$('#member_birth').val(memberData.member_birth);
-			$('#member_address').val(memberData.member_address);
-			$('#grade').val(memberData.grade);
-			$('#area_idx').val(memberData.area_idx);
+			$('#member_nick').val(memberData.member_nick || ''); // 별명 추가
+			$('#member_phone').val(memberData.member_phone || '');
+			$('#member_birth').val(memberData.member_birth || '');
+			$('#member_address').val(memberData.member_address || '');
+			$('#member_address_detail').val(memberData.member_address_detail || ''); // 상세주소 추가
+			$('#member_etc').val(memberData.member_etc || ''); // 메모 추가
+			$('#grade').val(memberData.grade || '0');
+			$('#area_idx').val(memberData.area_idx || '');
 			$('#org_id').val(memberData.org_id);
 			$('#leader_yn').prop('checked', memberData.leader_yn === 'Y');
 			$('#new_yn').prop('checked', memberData.new_yn === 'Y');
