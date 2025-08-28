@@ -5,7 +5,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * 파일 위치: application/controllers/Member.php
  * 역할: 회원 관리 페이지 및 API 처리 (그룹별 회원 관리)
  */
-
 class Member extends My_Controller
 {
 	public function __construct()
@@ -64,8 +63,6 @@ class Member extends My_Controller
 
 		$this->load->view('member', $data);
 	}
-
-
 
 
 	/**
@@ -139,7 +136,7 @@ class Member extends My_Controller
 		$areas_tree = $this->Member_area_model->get_member_areas_tree($active_org_id);
 
 		// 권한에 따른 그룹 필터링 함수
-		$filter_areas_by_permission = function($areas) use (&$filter_areas_by_permission, $user_level, $master_yn, $accessible_areas) {
+		$filter_areas_by_permission = function ($areas) use (&$filter_areas_by_permission, $user_level, $master_yn, $accessible_areas) {
 			// 최고관리자이거나 마스터인 경우 모든 그룹 표시
 			if ($user_level >= 10 || $master_yn === 'Y') {
 				return $areas;
@@ -178,7 +175,7 @@ class Member extends My_Controller
 		// 권한에 따라 그룹 필터링 적용
 		$filtered_areas_tree = $filter_areas_by_permission($areas_tree);
 
-		$build_fancytree_nodes = function($areas) use (&$build_fancytree_nodes, $active_org_id) {
+		$build_fancytree_nodes = function ($areas) use (&$build_fancytree_nodes, $active_org_id) {
 			$nodes = array();
 
 			foreach ($areas as $area) {
@@ -455,7 +452,96 @@ class Member extends My_Controller
 	}
 
 
+	/**
+	 * 크롭된 이미지 업로드 처리
+	 */
+	private function handleCroppedImageUpload($member_idx, $org_id)
+	{
+		try {
+			// 업로드 디렉토리 설정
+			$upload_path = './uploads/member_photos/' . $org_id . '/';
 
+			// 디렉토리가 없으면 생성
+			if (!is_dir($upload_path)) {
+				if (!mkdir($upload_path, 0755, true)) {
+					return array('success' => false, 'message' => '업로드 디렉토리 생성에 실패했습니다.');
+				}
+			}
+
+			// 기존 파일 삭제
+			$existing_member = $this->Member_model->get_member_by_idx($member_idx);
+			if (!empty($existing_member['photo'])) {
+				$existing_file = $upload_path . $existing_member['photo'];
+				if (file_exists($existing_file)) {
+					unlink($existing_file);
+				}
+			}
+
+			// 업로드 설정
+			$config['upload_path'] = $upload_path;
+			$config['allowed_types'] = 'gif|jpg|jpeg|png';
+			$config['max_size'] = 5120; // 5MB
+			$config['file_name'] = 'member_' . $member_idx . '_' . time();
+			$config['overwrite'] = true;
+
+			$this->load->library('upload', $config);
+
+			if ($this->upload->do_upload('member_photo')) {
+				$upload_data = $this->upload->data();
+
+				// 크롭된 이미지는 이미 최적화되어 있으므로 추가 리사이즈는 선택적으로 적용
+				$this->optimizeCroppedImage($upload_data['full_path']);
+
+				return array(
+					'success' => true,
+					'file_name' => $upload_data['file_name'],
+					'photo_url' => base_url('uploads/member_photos/' . $org_id . '/' . $upload_data['file_name'])
+				);
+			} else {
+				$upload_error = $this->upload->display_errors();
+				return array('success' => false, 'message' => '이미지 업로드에 실패했습니다: ' . strip_tags($upload_error));
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '이미지 업로드 오류: ' . $e->getMessage());
+			return array('success' => false, 'message' => '이미지 업로드 중 오류가 발생했습니다.');
+		}
+	}
+
+	/**
+	 * 크롭된 이미지 최적화 (선택적 적용)
+	 */
+	private function optimizeCroppedImage($image_path)
+	{
+		try {
+			$this->load->library('image_lib');
+
+			// 이미지 정보 가져오기
+			$image_info = getimagesize($image_path);
+
+			// 이미지가 200x200보다 크면 리사이즈 (크롭된 이미지는 보통 이미 최적 크기)
+			if ($image_info && ($image_info[0] > 200 || $image_info[1] > 200)) {
+				$image_config = array(
+					'image_library' => 'gd2',
+					'source_image' => $image_path,
+					'maintain_ratio' => FALSE,  // 크롭된 이미지는 이미 정사각형이므로 비율 유지 안함
+					'width' => 200,
+					'height' => 200,
+					'quality' => 90
+				);
+
+				$this->image_lib->clear();
+				$this->image_lib->initialize($image_config);
+
+				if (!$this->image_lib->resize()) {
+					log_message('error', '이미지 리사이즈 실패: ' . $this->image_lib->display_errors());
+				}
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '이미지 최적화 오류: ' . $e->getMessage());
+		}
+	}
 
 	/**
 	 * 회원 사진 업로드
@@ -582,7 +668,7 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 회원 정보 수정
+	 * 회원 정보 수정 (Croppie 적용)
 	 */
 	public function update_member()
 	{
@@ -591,36 +677,40 @@ class Member extends My_Controller
 		}
 
 		$member_idx = $this->input->post('member_idx');
-		$member_name = $this->input->post('member_name');
-		$member_nick = $this->input->post('member_nick');
-		$member_phone = $this->input->post('member_phone');
-		$member_birth = $this->input->post('member_birth');
-		$member_address = $this->input->post('member_address');
-		$member_address_detail = $this->input->post('member_address_detail');
-		$member_etc = $this->input->post('member_etc');
-		$leader_yn = $this->input->post('leader_yn');
-		$new_yn = $this->input->post('new_yn');
-
 		if (!$member_idx) {
 			echo json_encode(array('success' => false, 'message' => '회원 정보가 없습니다.'));
 			return;
 		}
 
 		$update_data = array(
-			'member_name' => $member_name,
-			'member_nick' => $member_nick,
-			'member_phone' => $member_phone ? $member_phone : null,
-			'member_birth' => $member_birth ? $member_birth : null,
-			'member_address' => $member_address ? $member_address : null,
-			'member_address_detail' => $member_address_detail ? $member_address_detail : null,
-			'member_etc' => $member_etc ? $member_etc : null,
-			'leader_yn' => $leader_yn ? $leader_yn : 'N',
-			'new_yn' => $new_yn ? $new_yn : 'N',
+			'member_name' => $this->input->post('member_name'),
+			'member_nick' => $this->input->post('member_nick'),
+			'member_phone' => $this->input->post('member_phone'),
+			'member_birth' => $this->input->post('member_birth'),
+			'member_address' => $this->input->post('member_address'),
+			'member_address_detail' => $this->input->post('member_address_detail'),
+			'member_etc' => $this->input->post('member_etc'),
+			'grade' => $this->input->post('grade') ?: 0,
+			'area_idx' => $this->input->post('area_idx'),
+			'leader_yn' => $this->input->post('leader_yn') ? 'Y' : 'N',
+			'new_yn' => $this->input->post('new_yn') ? 'Y' : 'N',
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		$this->db->where('member_idx', $member_idx);
-		$result = $this->db->update('wb_member', $update_data);
+		// 이미지 업로드 처리
+		if (!empty($_FILES['member_photo']['name'])) {
+			$org_id = $this->input->post('org_id');
+			$upload_result = $this->handleCroppedImageUpload($member_idx, $org_id);
+
+			if ($upload_result['success']) {
+				$update_data['photo'] = $upload_result['file_name'];
+			} else {
+				echo json_encode(array('success' => false, 'message' => $upload_result['message']));
+				return;
+			}
+		}
+
+		$result = $this->Member_model->update_member($member_idx, $update_data);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '회원 정보가 수정되었습니다.'));
@@ -674,8 +764,6 @@ class Member extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '회원 삭제에 실패했습니다.'));
 		}
 	}
-
-
 
 
 }

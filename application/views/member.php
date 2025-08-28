@@ -10,8 +10,8 @@
 <link rel="stylesheet"
 	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
 
-
-
+<!-- Croppie CSS -->
+<link href="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.css" rel="stylesheet">
 
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -102,8 +102,24 @@
 					<div id="photoPreview" style="display: none;">
 						<img id="previewImage" src="" alt="미리보기" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
 						<div class="mt-2">
+							<button type="button" class="btn btn-sm btn-outline-primary" id="cropPhoto">
+								<i class="bi bi-crop"></i> 크롭
+							</button>
 							<button type="button" class="btn btn-sm btn-outline-danger" id="removePhoto">
 								<i class="bi bi-trash"></i> 삭제
+							</button>
+						</div>
+					</div>
+
+					<!-- Croppie 영역 -->
+					<div id="cropContainer" style="display: none;">
+						<div id="cropBox" style="width: 300px; height: 300px; margin: 0 auto;"></div>
+						<div class="mt-3">
+							<button type="button" class="btn btn-sm btn-success" id="saveCrop">
+								<i class="bi bi-check"></i> 적용
+							</button>
+							<button type="button" class="btn btn-sm btn-secondary" id="cancelCrop">
+								<i class="bi bi-x"></i> 취소
 							</button>
 						</div>
 					</div>
@@ -123,7 +139,7 @@
 				</div>
 
 				<div class="col-6 mb-3">
-					<label for="member_phone" class="form-label">휴대폰번호 <span class="text-danger">*</span></label>
+					<label for="member_phone" class="form-label">연락처</label>
 					<input type="tel" class="form-control" id="member_phone" name="member_phone">
 				</div>
 
@@ -132,12 +148,12 @@
 					<input type="date" class="form-control" id="member_birth" name="member_birth">
 				</div>
 
-				<div class="col-6 mb-3">
+				<div class="col-12 mb-3">
 					<label for="member_address" class="form-label">주소</label>
 					<input type="text" class="form-control" id="member_address" name="member_address">
 				</div>
 
-				<div class="col-6 mb-3">
+				<div class="col-12 mb-3">
 					<label for="member_address_detail" class="form-label">상세주소</label>
 					<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
 				</div>
@@ -145,9 +161,10 @@
 				<div class="col-6 mb-3">
 					<label for="grade" class="form-label">등급</label>
 					<select class="form-select" id="grade" name="grade">
-						<option value="0">일반</option>
-						<option value="1">리더</option>
-						<option value="2">부리더</option>
+						<option value="0">일반회원</option>
+						<option value="1">1등급</option>
+						<option value="2">2등급</option>
+						<option value="3">3등급</option>
 					</select>
 				</div>
 
@@ -160,10 +177,12 @@
 
 				<div class="col-12 mb-3">
 					<label for="member_etc" class="form-label">메모</label>
-					<textarea class="form-control" id="member_etc" name="member_etc" rows="3" placeholder="추가 메모사항을 입력하세요"></textarea>
+					<textarea class="form-control" id="member_etc" name="member_etc" rows="3"></textarea>
 				</div>
 			</div>
 		</form>
+
+
 	</div>
 
 	<!-- 하단 고정 버튼 영역 -->
@@ -194,7 +213,6 @@
 	</div>
 </div>
 
-
 <!-- Toast 메시지 -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
 	<div id="memberToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -211,6 +229,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
 <!-- ParamQuery Grid JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
+<!-- Croppie JS -->
+<script src="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.js"></script>
 <!-- Member JS -->
 <script>
 	window.memberPageData = {

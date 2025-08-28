@@ -49,6 +49,18 @@ $(document).ready(function () {
 			console.error('초기화 중 오류:', error);
 			showToast('페이지 초기화 중 오류가 발생했습니다.');
 		}
+
+		$(window).on('beforeunload', function() {
+			destroyCroppie();
+		});
+
+		// offcanvas 닫힐 때 Croppie 정리
+		$('#memberOffcanvas').on('hidden.bs.offcanvas', function() {
+			destroyCroppie();
+		});
+
+
+
 	}
 
 	/**
@@ -695,8 +707,9 @@ $(document).ready(function () {
 	}
 
 
+
 	/**
-	 * 회원 offcanvas 열기 (수정된 버전)
+	 * 회원 offcanvas 열기 (Croppie 적용 버전)
 	 */
 	function openMemberOffcanvas(mode, memberData = null) {
 		const offcanvas = $('#memberOffcanvas');
@@ -713,20 +726,24 @@ $(document).ready(function () {
 		$('#memberForm')[0].reset();
 		$('#photoPreview').hide();
 		$('#photoUpload').show();
+		$('#cropContainer').hide();
+
+		// 기존 croppie 인스턴스 제거
+		destroyCroppie();
 
 		// 소그룹 옵션 로드
 		loadAreaOptions(selectedOrgId);
 
 		if (mode === 'edit' && memberData) {
-			// 수정 모드일 때 기존 데이터 채우기 (필드명 수정)
+			// 수정 모드일 때 기존 데이터 채우기
 			$('#member_idx').val(memberData.member_idx);
 			$('#member_name').val(memberData.member_name);
-			$('#member_nick').val(memberData.member_nick || ''); // 별명 추가
+			$('#member_nick').val(memberData.member_nick || '');
 			$('#member_phone').val(memberData.member_phone || '');
 			$('#member_birth').val(memberData.member_birth || '');
 			$('#member_address').val(memberData.member_address || '');
-			$('#member_address_detail').val(memberData.member_address_detail || ''); // 상세주소 추가
-			$('#member_etc').val(memberData.member_etc || ''); // 메모 추가
+			$('#member_address_detail').val(memberData.member_address_detail || '');
+			$('#member_etc').val(memberData.member_etc || '');
 			$('#grade').val(memberData.grade || '0');
 			$('#area_idx').val(memberData.area_idx || '');
 			$('#org_id').val(memberData.org_id);
@@ -747,10 +764,15 @@ $(document).ready(function () {
 		// offcanvas 표시
 		const offcanvasInstance = new bootstrap.Offcanvas(offcanvas[0]);
 		offcanvasInstance.show();
+
+		// offcanvas가 닫힐 때 croppie 인스턴스 정리
+		offcanvas.off('hidden.bs.offcanvas.croppie').on('hidden.bs.offcanvas.croppie', function() {
+			destroyCroppie();
+		});
 	}
 
 	/**
-	 * 사진 관련 이벤트 바인딩
+	 * 사진 관련 이벤트 바인딩 (Croppie 적용)
 	 */
 	function bindPhotoEvents() {
 		// 파일 선택 이벤트
@@ -759,6 +781,12 @@ $(document).ready(function () {
 			if (file) {
 				if (!file.type.startsWith('image/')) {
 					showToast('이미지 파일만 선택 가능합니다.');
+					return;
+				}
+
+				// 파일 크기 체크 (5MB)
+				if (file.size > 5 * 1024 * 1024) {
+					showToast('파일 크기는 5MB 이하만 가능합니다.');
 					return;
 				}
 
@@ -772,16 +800,160 @@ $(document).ready(function () {
 			}
 		});
 
+		// 크롭 버튼 클릭 이벤트
+		$('#cropPhoto').off('click').on('click', function() {
+			const imageSrc = $('#previewImage').attr('src');
+			if (imageSrc) {
+				initCroppie(imageSrc);
+			}
+		});
+
 		// 사진 삭제 버튼
 		$('#removePhoto').off('click').on('click', function() {
 			$('#member_photo').val('');
 			$('#photoPreview').hide();
 			$('#photoUpload').show();
+			destroyCroppie();
+		});
+
+		// 크롭 저장 버튼
+		$('#saveCrop').off('click').on('click', function() {
+			saveCroppedImage();
+		});
+
+		// 크롭 취소 버튼
+		$('#cancelCrop').off('click').on('click', function() {
+			cancelCrop();
+		});
+	}
+
+
+
+	/**
+	 * Croppie 초기화
+	 */
+	let croppieInstance = null;
+
+	function initCroppie(imageSrc) {
+		// 기존 croppie 인스턴스가 있다면 제거
+		destroyCroppie();
+
+		$('#photoPreview').hide();
+		$('#cropContainer').show();
+
+		// Croppie 인스턴스 생성
+		croppieInstance = new Croppie(document.getElementById('cropBox'), {
+			viewport: {
+				width: 150,
+				height: 150,
+				type: 'circle'  // 원형 크롭
+			},
+			boundary: {
+				width: 300,
+				height: 300
+			},
+			showZoomer: true,
+			enableResize: false,
+			enableOrientation: true,
+			mouseWheelZoom: 'ctrl'
+		});
+
+		// 이미지 바인딩
+		croppieInstance.bind({
+			url: imageSrc
+		}).catch(function(error) {
+			console.error('Croppie 바인딩 오류:', error);
+			showToast('이미지 로드에 실패했습니다.');
+			cancelCrop();
 		});
 	}
 
 	/**
-	 * 회원 저장
+	 * 크롭된 이미지 저장
+	 */
+	function saveCroppedImage() {
+		if (!croppieInstance) {
+			showToast('크롭 인스턴스가 없습니다.');
+			return;
+		}
+
+		// 크롭된 결과 가져오기
+		croppieInstance.result({
+			type: 'canvas',
+			size: { width: 200, height: 200 },
+			format: 'jpeg',
+			quality: 0.9,
+			circle: true  // 원형 결과
+		}).then(function(croppedImage) {
+			// 미리보기 이미지 업데이트
+			$('#previewImage').attr('src', croppedImage);
+
+			// Base64를 File 객체로 변환하여 폼에 설정
+			dataURLtoFile(croppedImage, 'cropped_image.jpg').then(function(file) {
+				// 파일 입력 필드에 새 파일 설정
+				const dt = new DataTransfer();
+				dt.items.add(file);
+				document.getElementById('member_photo').files = dt.files;
+			});
+
+			// UI 상태 변경
+			$('#cropContainer').hide();
+			$('#photoPreview').show();
+
+			destroyCroppie();
+			showToast('이미지 크롭이 완료되었습니다.');
+
+		}).catch(function(error) {
+			console.error('크롭 처리 오류:', error);
+			showToast('이미지 크롭에 실패했습니다.');
+		});
+	}
+
+	/**
+	 * 크롭 취소
+	 */
+	function cancelCrop() {
+		$('#cropContainer').hide();
+		$('#photoPreview').show();
+		destroyCroppie();
+	}
+
+	/**
+	 * Croppie 인스턴스 제거
+	 */
+	function destroyCroppie() {
+		if (croppieInstance) {
+			try {
+				croppieInstance.destroy();
+			} catch (error) {
+				console.warn('Croppie 인스턴스 제거 중 오류:', error);
+			}
+			croppieInstance = null;
+		}
+	}
+
+	/**
+	 * Base64 DataURL을 File 객체로 변환
+	 */
+	function dataURLtoFile(dataURL, filename) {
+		return new Promise(function(resolve) {
+			const arr = dataURL.split(',');
+			const mime = arr[0].match(/:(.*?);/)[1];
+			const bstr = atob(arr[1]);
+			let n = bstr.length;
+			const u8arr = new Uint8Array(n);
+
+			while (n--) {
+				u8arr[n] = bstr.charCodeAt(n);
+			}
+
+			const file = new File([u8arr], filename, { type: mime });
+			resolve(file);
+		});
+	}
+
+	/**
+	 * 회원 저장 (Croppie 적용)
 	 */
 	function saveMember() {
 		const form = $('#memberForm')[0];
@@ -795,8 +967,19 @@ $(document).ready(function () {
 			return;
 		}
 
+		// 크롭 진행 중인 경우 저장 방지
+		if ($('#cropContainer').is(':visible')) {
+			showToast('이미지 크롭을 완료하거나 취소해주세요.');
+			return;
+		}
+
 		// 조직 ID 설정
 		formData.append('org_id', selectedOrgId);
+
+		// 로딩 상태 표시
+		const saveBtn = $('#btnSaveMember');
+		const originalText = saveBtn.html();
+		saveBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 저장 중...');
 
 		const url = formData.get('member_idx') ?
 			window.memberPageData.baseUrl + 'member/update_member' :
@@ -828,10 +1011,13 @@ $(document).ready(function () {
 			error: function(xhr, status, error) {
 				console.error('회원 저장 실패:', error);
 				showToast('회원 정보 저장에 실패했습니다.');
+			},
+			complete: function() {
+				// 로딩 상태 해제
+				saveBtn.prop('disabled', false).html(originalText);
 			}
 		});
 	}
-
 	/**
 	 * 소그룹 옵션 로드
 	 */
@@ -858,22 +1044,7 @@ $(document).ready(function () {
 		}
 	}
 
-	/**
-	 * Toast 메시지 표시
-	 */
-	function showToast(message) {
-		const toastElement = $('#memberToast');
-		const toastBody = toastElement.find('.toast-body');
 
-		toastBody.text(message);
-
-		const toast = new bootstrap.Toast(toastElement[0], {
-			autohide: true,
-			delay: 3000
-		});
-
-		toast.show();
-	}
 
 	/**
 	 * 트리 초기화 (계층적 구조 지원)
@@ -1006,5 +1177,73 @@ $(document).ready(function () {
 
 		$('#selectedOrgName').html(icon + ' ' + title);
 	}
+
+
+
+	/**
+	 * 이미지 파일 유효성 검사 공통 함수
+	 */
+	function validateImageFile(file) {
+		// 파일 타입 검사
+		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+		if (!allowedTypes.includes(file.type)) {
+			showToast('지원하지 않는 이미지 형식입니다. (JPG, PNG, GIF만 가능)');
+			return false;
+		}
+
+		// 파일 크기 검사 (5MB)
+		const maxSize = 5 * 1024 * 1024;
+		if (file.size > maxSize) {
+			showToast('파일 크기는 5MB 이하만 가능합니다.');
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * 이미지 로드 에러 처리
+	 */
+	function handleImageLoadError() {
+		showToast('이미지를 불러올 수 없습니다.');
+		$('#photoPreview').hide();
+		$('#photoUpload').show();
+		$('#member_photo').val('');
+		destroyCroppie();
+	}
+
+	/**
+	 * Toast 메시지 개선 (아이콘 추가)
+	 */
+	function showToast(message, type = 'info') {
+		const toastElement = $('#memberToast');
+		const toastBody = toastElement.find('.toast-body');
+
+		// 타입별 아이콘 설정
+		let icon = '';
+		switch(type) {
+			case 'success':
+				icon = '<i class="bi bi-check-circle text-success me-2"></i>';
+				break;
+			case 'error':
+				icon = '<i class="bi bi-exclamation-triangle text-danger me-2"></i>';
+				break;
+			case 'warning':
+				icon = '<i class="bi bi-exclamation-circle text-warning me-2"></i>';
+				break;
+			default:
+				icon = '<i class="bi bi-info-circle text-primary me-2"></i>';
+		}
+
+		toastBody.html(icon + message);
+
+		const toast = new bootstrap.Toast(toastElement[0], {
+			autohide: true,
+			delay: type === 'error' ? 5000 : 3000  // 에러 메시지는 더 길게 표시
+		});
+
+		toast.show();
+	}
+
 
 });
