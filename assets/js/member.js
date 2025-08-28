@@ -10,11 +10,13 @@ $(document).ready(function () {
 	let selectedAreaIdx = null;        // 선택된 소그룹 ID
 	let selectedType = null;           // 선택된 타입 ('org', 'area', 'unassigned')
 	let croppieInstance = null;        // Croppie 인스턴스 (전역으로 이동)
+	let splitInstance = null;          // Split.js 인스턴스
 
 	// ===== 디버깅 및 초기화 =====
 	console.log('jQuery:', typeof $);
 	console.log('Fancytree:', typeof $.fn.fancytree);
 	console.log('ParamQuery pqGrid:', typeof $.fn.pqGrid);
+	console.log('Split:', typeof Split);
 
 	// 초기화 시도 (지연 로딩)
 	setTimeout(function () {
@@ -40,7 +42,14 @@ $(document).ready(function () {
 			return;
 		}
 
+		if (typeof Split === 'undefined') {
+			console.error('Split.js 라이브러리가 로드되지 않았습니다.');
+			showToast('Split.js 라이브러리 로드 실패', 'error');
+			return;
+		}
+
 		try {
+			initializeSplitJS();       // Split.js 초기화 추가
 			initializeFancytree();
 			initializeParamQuery();
 			bindGlobalEvents();
@@ -49,6 +58,55 @@ $(document).ready(function () {
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
 			showToast('페이지 초기화 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+
+	/**
+	 * Split.js 초기화
+	 */
+	function initializeSplitJS() {
+		console.log('Split.js 초기화 시작');
+
+		try {
+			splitInstance = Split(['#left-pane', '#right-pane'], {
+				sizes: [25, 75],              // 초기 크기 비율 (왼쪽 25%, 오른쪽 75%)
+				minSize: [200, 400],          // 최소 크기 (px)
+				gutterSize: 10,                // divider 두께
+				cursor: 'col-resize',         // 커서 스타일
+				direction: 'horizontal',      // 수평 분할
+				onDragEnd: function(sizes) {
+					// 크기 조정 완료 시 그리드 리프레시
+					setTimeout(function() {
+						if (memberGrid) {
+							try {
+								memberGrid.pqGrid("refresh");
+							} catch (error) {
+								console.error('그리드 리프레시 실패:', error);
+							}
+						}
+					}, 100);
+
+					// 로컬스토리지에 크기 저장 (선택사항)
+					localStorage.setItem('member-split-sizes', JSON.stringify(sizes));
+				}
+			});
+
+			// 이전에 저장된 크기가 있다면 복원
+			const savedSizes = localStorage.getItem('member-split-sizes');
+			if (savedSizes) {
+				try {
+					const sizes = JSON.parse(savedSizes);
+					splitInstance.setSizes(sizes);
+				} catch (error) {
+					console.error('저장된 크기 복원 실패:', error);
+				}
+			}
+
+			console.log('Split.js 초기화 완료');
+		} catch (error) {
+			console.error('Split.js 초기화 실패:', error);
+			showToast('화면 분할 기능 초기화에 실패했습니다.', 'error');
 		}
 	}
 
@@ -86,6 +144,17 @@ $(document).ready(function () {
 			e.preventDefault();
 			handleAddMemberClick();
 		});
+
+		// 윈도우 리사이즈 이벤트
+		$(window).on('resize', debounce(function() {
+			if (memberGrid) {
+				try {
+					memberGrid.pqGrid("refresh");
+				} catch (error) {
+					console.error('윈도우 리사이즈 시 그리드 리프레시 실패:', error);
+				}
+			}
+		}, 250));
 	}
 
 	/**
@@ -95,6 +164,7 @@ $(document).ready(function () {
 		// 페이지 떠날 때 정리
 		$(window).on('beforeunload', function() {
 			destroyCroppie();
+			destroySplitJS();
 		});
 
 		// offcanvas 닫힐 때 정리
@@ -102,6 +172,9 @@ $(document).ready(function () {
 			destroyCroppie();
 		});
 	}
+
+
+
 
 	// ===== FANCYTREE 관련 함수들 =====
 
@@ -1334,6 +1407,22 @@ $(document).ready(function () {
 	}
 
 	/**
+	 * Split.js 인스턴스 정리
+	 */
+	function destroySplitJS() {
+		if (splitInstance) {
+			try {
+				splitInstance.destroy();
+				splitInstance = null;
+				console.log('Split.js 인스턴스 정리 완료');
+			} catch (error) {
+				console.error('Split.js 정리 실패:', error);
+			}
+		}
+	}
+
+
+	/**
 	 * Croppie 인스턴스 제거
 	 */
 	function destroyCroppie() {
@@ -1345,6 +1434,21 @@ $(document).ready(function () {
 			}
 			croppieInstance = null;
 		}
+	}
+
+	/**
+	 * 디바운스 함수
+	 */
+	function debounce(func, wait) {
+		let timeout;
+		return function executedFunction(...args) {
+			const later = () => {
+				clearTimeout(timeout);
+				func(...args);
+			};
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+		};
 	}
 
 	/**
@@ -1524,29 +1628,42 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * Toast 메시지 표시 (개선된 버전)
+	 * Toast 메시지 표시
 	 */
 	function showToast(message, type = 'info') {
-		const toastElement = $('#memberToast');
-		const toastBody = toastElement.find('.toast-body');
+		const toast = $('#memberToast');
+		const toastBody = toast.find('.toast-body');
 
-		// 타입별 아이콘 설정
-		const iconMap = {
-			'success': '<i class="bi bi-check-circle text-success me-2"></i>',
-			'error': '<i class="bi bi-exclamation-triangle text-danger me-2"></i>',
-			'warning': '<i class="bi bi-exclamation-circle text-warning me-2"></i>',
-			'info': '<i class="bi bi-info-circle text-primary me-2"></i>'
-		};
+		// 타입별 아이콘 및 스타일 설정
+		let icon = '';
+		let bgClass = '';
 
-		const icon = iconMap[type] || iconMap['info'];
+		switch (type) {
+			case 'success':
+				icon = '<i class="bi bi-check-circle-fill text-success me-2"></i>';
+				bgClass = 'bg-success text-white';
+				break;
+			case 'error':
+				icon = '<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>';
+				bgClass = 'bg-danger text-white';
+				break;
+			case 'warning':
+				icon = '<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>';
+				bgClass = 'bg-warning text-dark';
+				break;
+			default:
+				icon = '<i class="bi bi-info-circle-fill text-primary me-2"></i>';
+				bgClass = 'bg-primary text-white';
+		}
+
+		toast.removeClass('bg-success bg-danger bg-warning bg-primary text-white text-dark')
+			.addClass(bgClass);
 		toastBody.html(icon + message);
 
-		const toast = new bootstrap.Toast(toastElement[0], {
-			autohide: true,
-			delay: type === 'error' ? 5000 : 3000  // 에러 메시지는 더 길게 표시
+		const bsToast = new bootstrap.Toast(toast[0], {
+			delay: type === 'error' ? 5000 : 3000
 		});
-
-		toast.show();
+		bsToast.show();
 	}
 
 });

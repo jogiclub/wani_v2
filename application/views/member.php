@@ -1,3 +1,6 @@
+<!-- 파일 위치: application/views/member.php -->
+<!-- 역할: Split.js 라이브러리를 적용한 회원관리 화면 레이아웃 -->
+
 <?php $this->load->view('header'); ?>
 
 <!-- Member CSS -->
@@ -13,6 +16,36 @@
 <!-- Croppie CSS -->
 <link href="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.css" rel="stylesheet">
 
+<!-- Split.js CSS -->
+<style>
+	.split-container {
+		display: flex;
+		height: calc(100vh - 200px); /* 헤더, breadcrumb 등 제외한 높이 */
+	}
+
+	.split-pane {
+		overflow: auto;
+	}
+
+	.gutter {
+		background-color: #f8f9fa;
+		background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+YMAzYwilZHq6PV0epo9f///wNA7z5dAz0AALsRFgYAAAAASUVORK5CYII=');
+		background-repeat: no-repeat;
+		background-position: 50%;
+		border-left: 1px solid #dee2e6;
+		border-right: 1px solid #dee2e6;
+	}
+
+	.gutter:hover {
+		background-color: #e9ecef;
+		cursor: col-resize;
+	}
+
+	.gutter.gutter-horizontal {
+		cursor: col-resize;
+	}
+</style>
+
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
@@ -21,14 +54,15 @@
 			<li class="breadcrumb-item active">회원관리</li>
 		</ol>
 	</nav>
-	<div class="row align-items-center justify-content-between g-3 mb-4">
+	<div class="row align-items-center justify-content-between g-3 mb-3">
 		<h3 class="page-title col-12 my-1">회원관리</h3>
 	</div>
 
-	<div class="row">
+	<!-- Split.js를 위한 단일 컨테이너로 변경 -->
+	<div class="split-container">
 		<!-- 왼쪽: 그룹 트리 -->
-		<div class="col-md-3 col-lg-2">
-			<div class="card">
+		<div class="split-pane" id="left-pane">
+			<div class="card h-100">
 				<div class="card-body p-0">
 					<div id="groupTree" class="tree-container"></div>
 				</div>
@@ -36,8 +70,8 @@
 		</div>
 
 		<!-- 오른쪽: 회원 목록 -->
-		<div class="col-md-9 col-lg-10">
-			<div class="card">
+		<div class="split-pane" id="right-pane">
+			<div class="card h-100">
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<h5 class="mb-0" id="selectedOrgName">
 						<i class="bi bi-people"></i> 조직을 선택해주세요
@@ -266,6 +300,7 @@
 	</div>
 </div>
 
+
 <!-- Toast 메시지 -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
 	<div id="memberToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
@@ -278,13 +313,13 @@
 </div>
 
 <?php $this->load->view('footer'); ?>
-<!-- Fancytree JS -->
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.2/split.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
-<!-- ParamQuery Grid JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
-<!-- Croppie JS -->
 <script src="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.js"></script>
-<!-- Member JS -->
+
 <script>
 	window.memberPageData = {
 		baseUrl: '<?php echo base_url(); ?>'
