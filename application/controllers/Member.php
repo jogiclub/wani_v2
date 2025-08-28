@@ -425,16 +425,25 @@ class Member extends My_Controller
 				}
 			}
 
+			$area_name = '미분류';
+			if (!empty($member['area_name']) && $member['area_name'] !== '') {
+				$area_name = $member['area_name'];
+			}
+
 			$formatted_member = array(
-				'member_idx' => isset($member['member_idx']) ? $member['member_idx'] : '',
-				'member_name' => isset($member['member_name']) ? $member['member_name'] : '',
-				'member_nick' => isset($member['member_nick']) ? $member['member_nick'] : '',
+				'member_idx' => $member['member_idx'],
+				'org_id' => $member['org_id'],
+				'area_idx' => isset($member['area_idx']) ? $member['area_idx'] : null,
+				'area_name' => $area_name,
+				'member_name' => $member['member_name'],
+				'member_nick' => $member['member_nick'],
 				'photo' => $photo_url,
 				'member_phone' => isset($member['member_phone']) ? $member['member_phone'] : '',
+				'member_birth' => isset($member['member_birth']) ? $member['member_birth'] : '',
 				'member_address' => isset($member['member_address']) ? $member['member_address'] : '',
 				'member_address_detail' => isset($member['member_address_detail']) ? $member['member_address_detail'] : '',
 				'member_etc' => isset($member['member_etc']) ? $member['member_etc'] : '',
-				'member_birth' => $formatted_birth,
+				'grade' => isset($member['grade']) ? $member['grade'] : 0,
 				'leader_yn' => isset($member['leader_yn']) ? $member['leader_yn'] : 'N',
 				'new_yn' => isset($member['new_yn']) ? $member['new_yn'] : 'N',
 				'regi_date' => isset($member['regi_date']) ? $member['regi_date'] : '',
