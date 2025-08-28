@@ -114,6 +114,7 @@ class Member_model extends CI_Model
 		}
 	*/
 
+
 	public function get_active_members($org_id, $five_weeks_ago)
 	{
 		$this->db->select('member_idx');

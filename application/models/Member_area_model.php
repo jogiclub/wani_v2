@@ -123,4 +123,18 @@ class Member_area_model extends CI_Model {
 		$this->db->where('area_idx', $area_idx);
 		return $this->db->delete('wb_member_area');
 	}
+
+	/**
+	 * 특정 area_idx로 소그룹 정보 조회
+	 */
+	public function get_area_by_idx($area_idx)
+	{
+		$this->db->select('area_idx, area_name, parent_idx, area_order, org_id');
+		$this->db->from('wb_member_area');
+		$this->db->where('area_idx', $area_idx);
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 }

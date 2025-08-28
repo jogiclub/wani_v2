@@ -46,6 +46,9 @@
 						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember">
 							<i class="bi bi-person-plus"></i> 회원 추가
 						</button>
+						<button type="button" class="btn btn-sm btn-outline-info" id="btnMoveMember" disabled>
+							<i class="bi bi-arrow-right-square"></i> 이동
+						</button>
 						<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled>
 							<i class="bi bi-trash"></i> 삭제
 						</button>
@@ -90,7 +93,7 @@
 
 			<div class="tab-content" id="memberTabContent">
 				<div class="tab-pane fade show active" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-					<div class="row mb-3">
+					<div class="row mt-3">
 						<div class="d-flex justify-content-end text-end">
 							<div class="form-check form-switch me-3">
 								<input type="checkbox" class="form-check-input" id="leader_yn" name="leader_yn">
@@ -167,12 +170,12 @@
 							<input type="date" class="form-control" id="member_birth" name="member_birth">
 						</div>
 
-						<div class="col-12 mb-3">
+						<div class="col-6 mb-3">
 							<label for="member_address" class="form-label">주소</label>
 							<input type="text" class="form-control" id="member_address" name="member_address">
 						</div>
 
-						<div class="col-12 mb-3">
+						<div class="col-6 mb-3">
 							<label for="member_address_detail" class="form-label">상세주소</label>
 							<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
 						</div>
@@ -233,6 +236,31 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
 				<button type="button" class="btn btn-danger" id="confirmDeleteBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 회원 이동 확인 모달 -->
+<div class="modal fade" id="moveMemberModal" tabindex="-1" aria-labelledby="moveMemberModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="moveMemberModalLabel">회원 이동</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p id="moveMessage"></p>
+				<div class="mb-3">
+					<label for="moveToAreaIdx" class="form-label">이동할 소그룹 선택</label>
+					<select class="form-select" id="moveToAreaIdx" name="moveToAreaIdx">
+						<option value="">소그룹 선택</option>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmMoveBtn">이동</button>
 			</div>
 		</div>
 	</div>

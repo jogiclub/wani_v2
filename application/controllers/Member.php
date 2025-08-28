@@ -789,5 +789,87 @@ class Member extends My_Controller
 		}
 	}
 
+	/**
+	 * 다중 회원 이동 (소그룹 변경)
+	 */
+	public function move_members()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_indices = $this->input->post('member_indices');
+		$move_to_area_idx = $this->input->post('move_to_area_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_indices || !is_array($member_indices)) {
+			echo json_encode(array('success' => false, 'message' => '이동할 회원 정보가 없습니다.'));
+			return;
+		}
+
+		if (!$move_to_area_idx) {
+			echo json_encode(array('success' => false, 'message' => '이동할 소그룹을 선택해주세요.'));
+			return;
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		// 사용자 권한 확인
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 조직 접근 권한 확인
+		if ($master_yn === "N") {
+			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+		} else {
+			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+		}
+
+		$has_access = false;
+		foreach ($user_orgs as $org) {
+			if ($org['org_id'] == $org_id) {
+				$has_access = true;
+				break;
+			}
+		}
+
+		if (!$has_access) {
+			echo json_encode(array('success' => false, 'message' => '접근 권한이 없습니다.'));
+			return;
+		}
+
+		// 대상 소그룹이 해당 조직에 속하는지 확인
+		$this->load->model('Member_area_model');
+		$target_area = $this->Member_area_model->get_area_by_idx($move_to_area_idx);
+		if (!$target_area || $target_area['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 소그룹입니다.'));
+			return;
+		}
+
+		// 회원 이동 처리
+		$update_data = array(
+			'area_idx' => $move_to_area_idx,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where_in('member_idx', $member_indices);
+		$this->db->where('org_id', $org_id); // 추가 보안 체크
+		$result = $this->db->update('wb_member', $update_data);
+
+		if ($result) {
+			$count = count($member_indices);
+			$target_area_name = $target_area['area_name'];
+			echo json_encode(array(
+				'success' => true,
+				'message' => "{$count}명의 회원이 '{$target_area_name}' 소그룹으로 이동되었습니다."
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '회원 이동에 실패했습니다.'));
+		}
+	}
+
 
 }

@@ -66,6 +66,16 @@ $(document).ready(function () {
 			deleteSelectedMembers(selectedMembers);
 		});
 
+		// 회원 이동 버튼
+		$('#btnMoveMember').on('click', function () {
+			const selectedMembers = getSelectedMembers();
+			if (selectedMembers.length === 0) {
+				showToast('이동할 회원을 선택해주세요.', 'warning');
+				return;
+			}
+			moveSelectedMembers(selectedMembers);
+		});
+
 		// 회원 저장 버튼
 		$('#btnSaveMember').on('click', function () {
 			saveMember();
@@ -542,6 +552,143 @@ $(document).ready(function () {
 	function updateSelectedMemberButtons() {
 		const checkedCheckboxes = $('.member-checkbox:checked').length;
 		$('#btnDeleteMember').prop('disabled', checkedCheckboxes === 0);
+		$('#btnMoveMember').prop('disabled', checkedCheckboxes === 0);
+	}
+	/**
+	 * 선택된 회원들 이동
+	 */
+	function moveSelectedMembers(selectedMembers) {
+		const memberCount = selectedMembers.length;
+		const tree = $("#groupTree").fancytree("getTree");
+		const activeNode = tree.getActiveNode();
+
+		if (!activeNode) {
+			showToast('그룹을 선택해주세요.', 'warning');
+			return;
+		}
+
+		const nodeData = activeNode.data;
+
+		// 미분류 그룹에서는 이동만 가능 (삭제 불가)
+		const currentGroupName = activeNode.title.replace(/\s*\(\d+명\)$/, '');
+
+		// 이동 확인 메시지
+		const message = `선택한 ${memberCount}명의 회원을 다른 소그룹으로 이동하시겠습니까?`;
+
+		// 모달에 메시지 설정 및 소그룹 옵션 로드
+		$('#moveMessage').text(message);
+		loadMoveAreaOptions(selectedOrgId, function() {
+			setupMoveConfirmButton(selectedMembers);
+			$('#moveMemberModal').modal('show');
+		});
+	}
+
+
+	/**
+	 * 이동 모달용 소그룹 옵션 로드
+	 */
+	function loadMoveAreaOptions(orgId, callback) {
+		const areaSelect = $('#moveToAreaIdx');
+		areaSelect.html('<option value="">소그룹 선택</option>');
+
+		try {
+			const tree = $("#groupTree").fancytree("getTree");
+			const groupNode = tree.getNodeByKey('org_' + orgId);
+
+			if (groupNode && groupNode.children) {
+				// 재귀적으로 모든 하위 노드를 처리하는 함수
+				function addAreaOptionsRecursively(nodes, depth = 0) {
+					nodes.forEach(function(node) {
+						const areaData = node.data;
+						// 미분류 그룹은 제외하고 일반 소그룹만 추가
+						if (areaData.type === 'area') {
+							// depth에 따라 들여쓰기 표시
+							const indent = '　'.repeat(depth); // 전각 공백으로 들여쓰기
+							const optionText = indent + node.title.replace(/\s*\(\d+명\)$/, ''); // 회원 수 표시 제거
+
+							areaSelect.append(`<option value="${areaData.area_idx}">${optionText}</option>`);
+
+							// 하위 노드가 있으면 재귀적으로 처리
+							if (node.children && node.children.length > 0) {
+								addAreaOptionsRecursively(node.children, depth + 1);
+							}
+						}
+					});
+				}
+
+				// 재귀적으로 모든 소그룹 옵션 추가
+				addAreaOptionsRecursively(groupNode.children);
+			}
+
+			// 콜백 함수가 있으면 실행
+			if (typeof callback === 'function') {
+				callback();
+			}
+		} catch (error) {
+			console.error('이동용 소그룹 옵션 로드 오류:', error);
+			// 에러가 있어도 콜백 실행
+			if (typeof callback === 'function') {
+				callback();
+			}
+		}
+	}
+
+	/**
+	 * 이동 확인 버튼 설정
+	 */
+	function setupMoveConfirmButton(selectedMembers) {
+		$('#confirmMoveBtn').off('click').on('click', function() {
+			const moveToAreaIdx = $('#moveToAreaIdx').val();
+
+			if (!moveToAreaIdx) {
+				showToast('이동할 소그룹을 선택해주세요.', 'warning');
+				return;
+			}
+
+			executeMemberMove(selectedMembers, moveToAreaIdx);
+			$('#moveMemberModal').modal('hide');
+		});
+	}
+
+	/**
+	 * 실제 회원 이동 실행
+	 */
+	function executeMemberMove(selectedMembers, moveToAreaIdx) {
+		const memberIndices = selectedMembers.map(member => member.member_idx);
+
+		// 로딩 상태 표시
+		$('#confirmMoveBtn').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 이동 중...');
+
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/move_members',
+			method: 'POST',
+			data: {
+				member_indices: memberIndices,
+				move_to_area_idx: moveToAreaIdx,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function (response) {
+				const toastType = response.success ? 'success' : 'error';
+				showToast(response.message, toastType);
+				if (response.success) {
+					loadMemberData();
+					refreshGroupTree(); // 트리 새로고침 추가
+					// 체크박스 해제
+					$('.member-checkbox').prop('checked', false);
+					updateSelectAllCheckbox();
+					updateSelectedMemberButtons();
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error('회원 이동 실패:', error);
+				showToast('회원 이동에 실패했습니다.', 'error');
+			},
+			complete: function() {
+				// 로딩 상태 해제
+				$('#confirmMoveBtn').prop('disabled', false).html('이동');
+			}
+		});
 	}
 
 	/**
@@ -604,6 +751,7 @@ $(document).ready(function () {
 				if (response.success) {
 					showToast('회원이 추가되었습니다: ' + response.member_name, 'success');
 					loadMemberData();
+					refreshGroupTree(); // 트리 새로고침 추가
 				} else {
 					showToast(response.message || '회원 추가에 실패했습니다.', 'error');
 				}
@@ -672,6 +820,7 @@ $(document).ready(function () {
 				showToast(response.message, toastType);
 				if (response.success) {
 					loadMemberData();
+					refreshGroupTree(); // 트리 새로고침 추가
 				}
 			},
 			error: function (xhr, status, error) {
@@ -680,6 +829,105 @@ $(document).ready(function () {
 			}
 		});
 	}
+
+
+	/**
+	 * 그룹 트리 새로고침 (현재 선택 상태 유지)
+	 */
+	function refreshGroupTree() {
+		console.log('그룹 트리 새로고침 시작');
+
+		// 현재 선택된 노드 정보 저장
+		const tree = $("#groupTree").fancytree("getTree");
+		const activeNode = tree.getActiveNode();
+		let currentSelection = null;
+
+		if (activeNode) {
+			currentSelection = {
+				key: activeNode.key,
+				type: activeNode.data.type,
+				org_id: activeNode.data.org_id,
+				area_idx: activeNode.data.area_idx || null
+			};
+		}
+
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/get_org_tree',
+			method: 'POST',
+			dataType: 'json',
+			success: function (treeData) {
+				console.log('트리 새로고침 데이터:', treeData);
+
+				if (!treeData || treeData.length === 0) {
+					showToast('조직 데이터가 없습니다.', 'warning');
+					return;
+				}
+
+				// 기존 트리 제거
+				$("#groupTree").fancytree("destroy");
+
+				// 새 트리 생성
+				setupFancytreeInstance(treeData);
+
+				// 이전 선택 상태 복원
+				if (currentSelection) {
+					restoreTreeSelection(currentSelection);
+				}
+
+				console.log('그룹 트리 새로고침 완료');
+			},
+			error: function (xhr, status, error) {
+				console.error('그룹 트리 새로고침 실패:', error);
+				showToast('그룹 정보 새로고침에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 트리 선택 상태 복원
+	 */
+	function restoreTreeSelection(selection) {
+		try {
+			const tree = $("#groupTree").fancytree("getTree");
+			let nodeToSelect = null;
+
+			// 저장된 키로 노드 찾기
+			if (selection.key) {
+				nodeToSelect = tree.getNodeByKey(selection.key);
+			}
+
+			// 키로 찾지 못했을 경우 타입과 ID로 찾기
+			if (!nodeToSelect) {
+				if (selection.type === 'unassigned' && selection.org_id) {
+					nodeToSelect = tree.getNodeByKey('unassigned_' + selection.org_id);
+				} else if (selection.type === 'area' && selection.area_idx) {
+					nodeToSelect = tree.getNodeByKey('area_' + selection.area_idx);
+				} else if (selection.type === 'org' && selection.org_id) {
+					nodeToSelect = tree.getNodeByKey('org_' + selection.org_id);
+				}
+			}
+
+			if (nodeToSelect) {
+				nodeToSelect.setActive(true);
+				nodeToSelect.setFocus(true);
+
+				// 부모 노드가 있으면 확장
+				if (nodeToSelect.parent && !nodeToSelect.parent.isRootNode()) {
+					nodeToSelect.parent.setExpanded(true);
+				}
+
+				console.log('트리 선택 상태 복원됨:', selection);
+			} else {
+				console.log('복원할 노드를 찾을 수 없음, 첫 번째 조직 선택');
+				selectFirstOrganization();
+			}
+		} catch (error) {
+			console.error('트리 선택 상태 복원 실패:', error);
+			selectFirstOrganization();
+		}
+	}
+
+
 
 	/**
 	 * 회원 데이터 로드
@@ -1196,6 +1444,7 @@ $(document).ready(function () {
 			}
 			// 그리드 새로고침
 			loadMemberData();
+			refreshGroupTree(); // 트리 새로고침 추가
 		}
 	}
 
