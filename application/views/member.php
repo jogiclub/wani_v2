@@ -71,40 +71,46 @@
 			<input type="hidden" id="member_idx" name="member_idx">
 			<input type="hidden" id="org_id" name="org_id">
 
-			<div class="row">
-				<!-- 스위치 버튼들 -->
-				<div class="d-flex justify-content-end text-end mb-4">
-					<div class="form-check form-switch">
+			<div class="row mb-3">
+				<div class="d-flex justify-content-end text-end">
+					<div class="form-check form-switch me-3">
 						<input type="checkbox" class="form-check-input" id="leader_yn" name="leader_yn">
 						<label class="form-check-label" for="leader_yn">리더</label>
 					</div>
-					<div class="form-check form-switch ms-3">
+					<div class="form-check form-switch">
 						<input type="checkbox" class="form-check-input" id="new_yn" name="new_yn">
 						<label class="form-check-label" for="new_yn">새가족</label>
 					</div>
 				</div>
+			</div>
 
-				<!-- 사진 영역 -->
-				<div class="col-12 mb-3 text-center">
-					<div id="photoPreview" style="display: none;">
-						<img id="previewImage" src="" alt="미리보기" style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%;">
-						<div class="mt-2">
-							<button type="button" class="btn btn-sm btn-danger" id="removePhoto">사진 삭제</button>
-						</div>
-					</div>
+			<!-- 사진 업로드 영역 -->
+			<div class="row mb-4">
+				<div class="col-12 text-center">
+					<!-- 사진 업로드 버튼 -->
 					<div id="photoUpload">
-						<label for="member_photo" class="form-label">
-							<div style="width: 150px; height: 150px; border: 2px dashed #ccc; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; cursor: pointer;">
-								<i class="bi bi-camera" style="font-size: 2rem; color: #ccc;"></i>
+						<label for="member_photo" class="d-inline-block">
+							<div class="border border-2 border-dashed rounded-circle d-flex align-items-center justify-content-center" style="width: 120px; height: 120px; cursor: pointer;">
+								<i class="bi bi-person-plus fs-1 text-muted"></i>
 							</div>
 						</label>
-						<input type="file" class="form-control d-none" id="member_photo" name="member_photo" accept="image/*">
+						<input type="file" id="member_photo" name="member_photo" accept="image/*" class="d-none">
+						<div class="mt-2 text-muted small">사진을 선택하세요</div>
+					</div>
+
+					<!-- 사진 미리보기 -->
+					<div id="photoPreview" style="display: none;">
+						<img id="previewImage" src="" alt="미리보기" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
 						<div class="mt-2">
-							<small class="text-muted">클릭하여 사진 선택</small>
+							<button type="button" class="btn btn-sm btn-outline-danger" id="removePhoto">
+								<i class="bi bi-trash"></i> 삭제
+							</button>
 						</div>
 					</div>
 				</div>
+			</div>
 
+			<div class="row">
 				<!-- 개인정보 입력 필드들 -->
 				<div class="col-6 mb-3">
 					<label for="member_name" class="form-label">이름 <span class="text-danger">*</span></label>
@@ -112,7 +118,7 @@
 				</div>
 
 				<div class="col-6 mb-3">
-					<label for="member_nick" class="form-label">별명 </label>
+					<label for="member_nick" class="form-label">별명</label>
 					<input type="text" class="form-control" id="member_nick" name="member_nick">
 				</div>
 
@@ -130,23 +136,41 @@
 					<label for="member_address" class="form-label">주소</label>
 					<input type="text" class="form-control" id="member_address" name="member_address">
 				</div>
+
 				<div class="col-6 mb-3">
 					<label for="member_address_detail" class="form-label">상세주소</label>
 					<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
 				</div>
-				<div class="col-12">
-					<label for="member_etc" class="form-label">메모</label>
-					<input type="text" class="form-control" id="member_etc" name="member_etc">
+
+				<div class="col-6 mb-3">
+					<label for="grade" class="form-label">등급</label>
+					<select class="form-select" id="grade" name="grade">
+						<option value="0">일반</option>
+						<option value="1">리더</option>
+						<option value="2">부리더</option>
+					</select>
 				</div>
 
+				<div class="col-6 mb-3">
+					<label for="area_idx" class="form-label">소그룹</label>
+					<select class="form-select" id="area_idx" name="area_idx">
+						<option value="">소그룹 선택</option>
+					</select>
+				</div>
 
+				<div class="col-12 mb-3">
+					<label for="member_etc" class="form-label">메모</label>
+					<textarea class="form-control" id="member_etc" name="member_etc" rows="3" placeholder="추가 메모사항을 입력하세요"></textarea>
+				</div>
 			</div>
 		</form>
+	</div>
 
-		<!-- 버튼 영역 -->
-		<div class="d-flex gap-2 mt-4">
-			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="flex: 1">취소</button>
-			<button type="button" class="btn btn-primary" id="btnSaveMember" style="flex: 1">저장</button>
+	<!-- 하단 고정 버튼 영역 -->
+	<div class="offcanvas-footer">
+		<div class="d-flex gap-2 p-3 border-top bg-light">
+			<button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="offcanvas">취소</button>
+			<button type="button" class="btn btn-primary flex-fill" id="btnSaveMember">저장</button>
 		</div>
 	</div>
 </div>
