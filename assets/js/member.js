@@ -1100,33 +1100,36 @@ $(document).ready(function () {
 		});
 	}
 
+
+
 	/**
-	 * 그룹 트리 새로고침 (현재 선택 상태 유지)
+	 * 그룹 트리 새로고침
 	 */
 	function refreshGroupTree() {
 		console.log('그룹 트리 새로고침 시작');
 
+		// 현재 선택된 트리 정보 저장
 		const tree = $("#groupTree").fancytree("getTree");
-		const activeNode = tree.getActiveNode();
-		let currentSelection = null;
+		const activeNode = tree ? tree.getActiveNode() : null;
+		const currentSelection = activeNode ? {
+			key: activeNode.key,
+			type: activeNode.data.type,
+			org_id: activeNode.data.org_id,
+			area_idx: activeNode.data.area_idx
+		} : null;
 
-		if (activeNode) {
-			currentSelection = {
-				key: activeNode.key,
-				type: activeNode.data.type,
-				org_id: activeNode.data.org_id,
-				area_idx: activeNode.data.area_idx || null
-			};
-		}
+		// 트리 새로고침 시 스피너 표시
+		showTreeSpinner();
 
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/get_org_tree',
 			method: 'POST',
 			dataType: 'json',
 			success: function (treeData) {
-				console.log('트리 새로고침 데이터:', treeData);
+				console.log('새로고침된 트리 데이터:', treeData);
 
 				if (!treeData || treeData.length === 0) {
+					hideTreeSpinner();
 					showToast('조직 데이터가 없습니다.', 'warning');
 					return;
 				}
@@ -1138,10 +1141,15 @@ $(document).ready(function () {
 					restoreTreeSelection(currentSelection);
 				}
 
+				// 트리 새로고침 완료 후 스피너 숨김
+				hideTreeSpinner();
 				console.log('그룹 트리 새로고침 완료');
 			},
 			error: function (xhr, status, error) {
 				console.error('그룹 트리 새로고침 실패:', error);
+
+				// 에러 발생 시 트리 스피너 숨김
+				hideTreeSpinner();
 				showToast('그룹 정보 새로고침에 실패했습니다.', 'error');
 			}
 		});
