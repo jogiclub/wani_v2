@@ -42,28 +42,31 @@
 		<!-- 오른쪽: 회원 목록 -->
 		<div class="split-pane" id="right-pane">
 			<div class="card h-100">
-				<div class="card-header d-flex justify-content-between align-items-center">
-					<h5 class="mb-0" id="selectedOrgName">
-						<i class="bi bi-people"></i> 조직을 선택해주세요
-					</h5>
+				<div class="card-header">
+					<div class="row">
+
+						<div class="col-6 d-flex align-items-center">
+							<h5 class="mb-0" id="selectedOrgName">
+								<i class="bi bi-people"></i> 조직을 선택해주세요
+							</h5>
+						</div>
 
 
-					<div class="input-group input-group-sm" style="width: 300px;">
-						<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
-						<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
-					</div>
+						<div class="col-3  d-flex justify-content-end">
+							<div class="input-group input-group-sm">
+								<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
+								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
+							</div>
+						</div>
 
+						<div class="col-3 d-flex justify-content-end">
+							<div class="btn-group" role="group">
+								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
+								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
+								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled><i class="bi bi-trash"></i> 선택삭제</button>
+							</div>
+						</div>
 
-					<div class="btn-group" role="group">
-						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember">
-							<i class="bi bi-person-plus"></i> 회원 추가
-						</button>
-						<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled>
-							<i class="bi bi-arrow-right-square"></i> 이동
-						</button>
-						<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled>
-							<i class="bi bi-trash"></i> 삭제
-						</button>
 					</div>
 				</div>
 				<div class="card-body p-0">
