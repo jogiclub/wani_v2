@@ -1035,4 +1035,177 @@ class Member extends My_Controller
 	}
 
 
+
+
+
+	public function save_memo()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$memo_type = $this->input->post('memo_type');
+		$memo_content = $this->input->post('memo_content');
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$member_idx || !$memo_content) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 회원이 해당 조직에 속하는지 확인
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원입니다.'));
+			return;
+		}
+
+		$data = array(
+			'memo_type' => $memo_type ?: 1,
+			'memo_content' => $memo_content,
+			'regi_date' => date('Y-m-d H:i:s'),
+			'user_id' => $this->session->userdata('user_email'),
+			'member_idx' => $member_idx
+		);
+
+		$this->load->model('Memo_model');
+		$result = $this->Memo_model->save_memo($data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '메모가 저장되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '메모 저장에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 회원 메모 목록 조회 기능
+	 */
+	public function get_memo_list()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$page = $this->input->post('page') ?: 1;
+		$limit = $this->input->post('limit') ?: 10;
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 회원이 해당 조직에 속하는지 확인
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원입니다.'));
+			return;
+		}
+
+		$offset = ($page - 1) * $limit;
+
+		$this->load->model('Memo_model');
+		$memo_list = $this->Memo_model->get_memo_list($member_idx, $limit, $offset);
+
+		if ($memo_list !== false) {
+			echo json_encode(array('success' => true, 'data' => $memo_list));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '메모 목록을 불러오는데 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 회원 메모 삭제 기능
+	 */
+	public function delete_memo()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$idx = $this->input->post('idx');
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Memo_model');
+		$result = $this->Memo_model->delete_memo($idx);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '메모가 삭제되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '메모 삭제에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 회원 메모 수정 기능
+	 */
+	public function update_memo()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$idx = $this->input->post('idx');
+		$memo_content = $this->input->post('memo_content');
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$idx || !$memo_content || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$update_data = array(
+			'memo_content' => $memo_content,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->load->model('Memo_model');
+		$result = $this->Memo_model->update_memo($idx, $update_data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '메모가 수정되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '메모 수정에 실패했습니다.'));
+		}
+	}
+
 }

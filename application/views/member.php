@@ -213,7 +213,30 @@
 					</div>
 				</div>
 				<div class="tab-pane fade" id="memo-tab-pane" role="tabpanel" aria-labelledby="memo-tab" tabindex="0">
-					ccccccc
+					<div class="row mt-3">
+						<div class="col-12">
+							<!-- 새 메모 입력 영역 -->
+							<div class="memo-input-section pb-3 mb-3">
+								<div class="row">
+									<div class="col-9">
+										<textarea class="form-control" id="newMemoContent" rows="2" placeholder="새로운 메모를 입력하세요."></textarea>
+									</div>
+									<div class="col-3 d-flex align-items-center justify-content-end">
+										<button type="button" class="btn btn-sm btn-outline-primary" id="addMemoBtn"><i class="bi bi-plus-lg"></i> 메모추가</button>
+									</div>
+								</div>
+							</div>
+
+							<!-- 기존 메모 목록 영역 -->
+							<div class="memo-list-section">
+								<div id="memoList">
+									<div class="text-center text-muted py-3" id="emptyMemoMessage">
+										메모를 불러오고 있습니다...
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 

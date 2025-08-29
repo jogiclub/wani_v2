@@ -54,4 +54,29 @@ class Memo_model extends CI_Model {
     }
 
 
+
+	/**
+	 * 파일 위치: application/models/Memo_model.php
+	 * 역할: 메모 수정 기능 추가
+	 */
+	public function update_memo($idx, $data)
+	{
+		$this->db->where('idx', $idx);
+		$this->db->update('wb_memo', $data);
+		return $this->db->affected_rows() > 0;
+	}
+
+	/**
+	 * 역할: 특정 메모 정보 가져오기
+	 */
+	public function get_memo_by_idx($idx)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_memo');
+		$this->db->where('idx', $idx);
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 }
