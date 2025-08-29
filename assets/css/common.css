@@ -299,3 +299,185 @@ ul.fancytree-container{border: 0!important;}
 	background-color: #fff;
 
 }
+
+
+
+
+/* Split.js 관련 스타일 */
+.split-container {
+	display: flex;
+	height: calc(100vh - 200px); /* 헤더, breadcrumb 등 제외한 높이 */
+	gap: 0;
+}
+
+.split-pane {
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+}
+
+.split-pane .card {
+	flex: 1;
+	min-height: 0;
+	border: 1px solid #dee2e6;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Split.js gutter(구분선) 스타일 */
+.gutter {
+	transition: background-color 0.2s ease;
+}
+
+.gutter:hover {
+	background-color: #e9ecef;
+}
+
+.gutter.gutter-horizontal {
+	cursor: col-resize;
+}
+
+.gutter.gutter-horizontal:hover {
+	background-color: #007bff;
+}
+
+/* Fancytree 커스텀 스타일 */
+.ui-fancytree {
+	border: none;
+	font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.fancytree-container {
+	border: none;
+}
+
+.fancytree-node {
+	border: none;
+	padding: 2px 0;
+}
+
+
+/* root 레벨의 미분류 그룹은 조직과 동일한 스타일 적용 */
+.fancytree-node[data-type="unassigned"] {
+	border-bottom: 1px solid #e9ecef;
+	margin-bottom: 8px;
+	padding-bottom: 4px;
+}
+
+
+/* Fancytree 아이콘 및 들여쓰기 */
+.fancytree-icon {
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+}
+
+.fancytree-indent {
+	width: 24px;
+}
+
+.fancytree-expander {
+	width: 16px;
+	height: 16px;
+}
+
+
+
+span.fancytree-icon{margin-left: 0; margin-right: 0;background-image:none!important; }
+span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font-size: 15px; color: #e09529;}
+
+/* ParamQuery Grid 커스텀 스타일 */
+.pq-grid {
+	font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.pq-grid-header {
+	background-color: #f8f9fa;
+	border-bottom: 2px solid #dee2e6;
+}
+
+.pq-grid-header .pq-grid-col {
+	height: 40px !important;
+	line-height: 40px !important;
+}
+
+.pq-grid-cell {
+	padding: 5px;
+}
+
+.pq-grid .pq-grid-top{display: none;}
+.pq-grid .pq-grid-top .pq-slider-icon{display: none;}
+
+
+
+.form-control, .form-select {
+	border: 1px solid #ced4da;
+	border-radius: 4px;
+	padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+	border-color: #007bff;
+	box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-check-input:checked {
+	background-color: #007bff;
+	border-color: #007bff;
+}
+
+/* 스크롤바 스타일 */
+.tree-container::-webkit-scrollbar {
+	width: 6px;
+}
+
+.tree-container::-webkit-scrollbar-track {
+	background: #f1f1f1;
+	border-radius: 6px;
+}
+
+.tree-container::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 6px;
+}
+
+.tree-container::-webkit-scrollbar-thumb:hover {
+	background: #a8a8a8;
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+	.tree-container {
+		height: 300px;
+	}
+
+	.pq-grid {
+		height: 400px;
+	}
+}
+
+/* Toast 컨테이너 z-index */
+#toastContainer {
+	z-index: 9999;
+}
+
+.toast-body i {
+	font-size: 1.1em;
+	vertical-align: middle;
+}
+
+/* 로딩 스피너 */
+.loading-spinner {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #007bff;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}

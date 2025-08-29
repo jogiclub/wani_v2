@@ -198,7 +198,7 @@
                         <?php endif; ?>
                         <?php if (can_access_menu('ATTENDANCE_MANAGEMENT', $user_managed_menus, $is_master)): ?>
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center gap-1" href="#">
+                                <a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('attendance'); ?>">
                                     <i class="bi bi-clipboard-check"></i> 출석관리
                                 </a>
                             </li>

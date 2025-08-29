@@ -264,6 +264,30 @@ class Member_model extends CI_Model
 
 
 
+	/**
+	 * 회원 인덱스 배열로 회원 정보 가져오기
+	 */
+	public function get_members_by_indices($member_indices)
+	{
+		if (empty($member_indices)) {
+			return array();
+		}
+
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where_in('m.member_idx', $member_indices);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->order_by('a.area_order', 'ASC');
+		$this->db->order_by('m.leader_yn', 'ASC');
+		$this->db->order_by('m.member_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+
 }
 
 
