@@ -160,13 +160,16 @@ $(document).ready(function() {
 		});
 	});
 
-	// 기존 필드 수정 버튼 클릭 이벤트
+// 기존 필드 수정 버튼 클릭 이벤트
 	$(document).on('click', '.edit-field-btn', function() {
 		var fieldIdx = $(this).data('field-idx');
 		var fieldName = $(this).data('field-name');
 		var fieldType = $(this).data('field-type');
 		var fieldSize = $(this).data('field-size');
-		var fieldSettings = $(this).data('field-settings');
+		var fieldSettings = $(this).attr('data-field-settings'); // .data() 대신 .attr() 사용
+
+		console.log('fieldSettings:', fieldSettings); // 디버깅용
+		console.log('fieldType:', fieldType); // 디버깅용
 
 		$('#edit_field_idx').val(fieldIdx);
 		$('#edit_field_name').val(fieldName);
@@ -180,11 +183,16 @@ $(document).ready(function() {
 			if (fieldSettings) {
 				try {
 					var settings = JSON.parse(fieldSettings);
-					if (settings.options) {
+					console.log('Parsed settings:', settings); // 디버깅용
+
+					if (settings.options && Array.isArray(settings.options)) {
 						$('#edit_select_options').val(settings.options.join('\n'));
+						console.log('Options set:', settings.options.join('\n')); // 디버깅용
 					}
 				} catch (e) {
 					console.error('Failed to parse field settings:', e);
+					console.error('fieldSettings:', fieldSettings);
+					$('#edit_select_options').val('');
 				}
 			}
 		} else {
