@@ -30,29 +30,35 @@ $(document).ready(function () {
 	function initializePage() {
 		console.log('페이지 초기화 시작');
 
+		// 페이지 초기 로딩 시 모든 스피너 표시
+		showAllSpinners();
+
 		// 라이브러리 검증
 		if (typeof $.fn.pqGrid === 'undefined') {
 			console.error('ParamQuery 라이브러리가 로드되지 않았습니다.');
+			hideAllSpinners();
 			showToast('ParamQuery 라이브러리 로드 실패', 'error');
 			return;
 		}
 
 		if (typeof $.fn.fancytree === 'undefined') {
 			console.error('Fancytree 라이브러리가 로드되지 않았습니다.');
+			hideAllSpinners();
 			showToast('Fancytree 라이브러리 로드 실패', 'error');
 			return;
 		}
 
 		if (typeof Split === 'undefined') {
 			console.error('Split.js 라이브러리가 로드되지 않았습니다.');
+			hideAllSpinners();
 			showToast('Split.js 라이브러리 로드 실패', 'error');
 			return;
 		}
 
 		try {
 			initializeSplitJS();       // Split.js 초기화 추가
-			initializeFancytree();
-			initializeParamQuery();
+			initializeFancytree();     // 트리 초기화 (내부에서 트리 스피너 제어)
+			initializeParamQuery();    // 그리드 초기화 (내부에서 그리드 스피너 제어)
 			bindGlobalEvents();
 			setupCleanupEvents();
 			initDetailTab();           // 상세정보 탭 초기화
@@ -60,6 +66,7 @@ $(document).ready(function () {
 			console.log('페이지 초기화 완료');
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
+			hideAllSpinners();
 			showToast('페이지 초기화 중 오류가 발생했습니다.', 'error');
 		}
 	}
@@ -335,13 +342,16 @@ $(document).ready(function () {
 		});
 	}
 
-	// ===== FANCYTREE 관련 함수들 =====
+
 
 	/**
 	 * Fancytree 초기화
 	 */
 	function initializeFancytree() {
 		console.log('Fancytree 초기화 시작');
+
+		// 트리 스피너 표시
+		showTreeSpinner();
 
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/get_org_tree',
@@ -351,17 +361,24 @@ $(document).ready(function () {
 				console.log('트리 데이터:', treeData);
 
 				if (!treeData || treeData.length === 0) {
+					hideTreeSpinner();
 					showToast('조직 데이터가 없습니다.', 'warning');
 					return;
 				}
 
 				setupFancytreeInstance(treeData);
 				restoreSelectedGroupFromStorage(treeData);
+
+				// 트리 로딩 완료 후 스피너 숨김
+				hideTreeSpinner();
 				console.log('Fancytree 초기화 완료');
 			},
 			error: function (xhr, status, error) {
 				console.error('그룹 트리 로드 실패:', error);
 				console.error('Response:', xhr.responseText);
+
+				// 에러 발생 시 스피너 숨김
+				hideTreeSpinner();
 				showToast('그룹 정보를 불러오는데 실패했습니다.', 'error');
 			}
 		});
@@ -532,15 +549,24 @@ $(document).ready(function () {
 	function initializeParamQuery() {
 		console.log('ParamQuery 초기화 시작');
 
+		// 그리드 스피너 표시
+		showGridSpinner();
+
 		const gridOptions = createGridOptions();
 
 		try {
 			memberGrid = $("#memberGrid").pqGrid(gridOptions);
 			console.log('ParamQuery 초기화 완료');
 			bindCheckboxEvents();
+
+			// Grid 초기화 완료 후 스피너 숨김
+			hideGridSpinner();
 		} catch (error) {
 			console.error('ParamQuery Grid 초기화 실패:', error);
-			showToast('그리드 초기화에 실패했습니다.', 'error');
+
+			// 에러 발생 시 스피너 숨김
+			hideGridSpinner();
+			showToast('그리드 초기화에 실패했습니다.', 'warning');
 		}
 	}
 
@@ -1162,6 +1188,8 @@ $(document).ready(function () {
 		}
 	}
 
+
+
 	/**
 	 * 회원 데이터 로드
 	 */
@@ -1173,6 +1201,9 @@ $(document).ready(function () {
 			org_id: selectedOrgId,
 			area_idx: selectedAreaIdx
 		});
+
+		// 회원 데이터 로딩 시 그리드 스피너 표시
+		showGridSpinner();
 
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/get_members',
@@ -1190,6 +1221,9 @@ $(document).ready(function () {
 			error: function (xhr, status, error) {
 				console.error('회원 데이터 로드 실패:', error);
 				console.error('Response:', xhr.responseText);
+
+				// 에러 발생 시 그리드 스피너 숨김
+				hideGridSpinner();
 				showToast('회원 데이터를 불러오는데 실패했습니다.', 'error');
 			}
 		});
@@ -1204,21 +1238,22 @@ $(document).ready(function () {
 				try {
 					memberGrid.pqGrid("option", "dataModel.data", response.data || []);
 					memberGrid.pqGrid("refreshDataAndView");
-
-					// 원본 데이터 초기화 (새로운 데이터 로드 시)
-					window.originalGridData = null;
-
 				} catch (error) {
 					console.error('그리드 데이터 업데이트 실패:', error);
 				}
 			}
 			$('#btnDeleteMember').prop('disabled', true);
+
+			// 데이터 로딩 완료 후 그리드 스피너 숨김
+			hideGridSpinner();
 		} else {
 			console.error('회원 데이터 로드 실패:', response.message);
+
+			// 실패 시 그리드 스피너 숨김
+			hideGridSpinner();
 			showToast('회원 데이터를 불러오는데 실패했습니다.', 'error');
 		}
 	}
-
 	/**
 	 * 선택된 조직명 업데이트
 	 */
@@ -2348,5 +2383,59 @@ $(document).ready(function () {
 			}
 		});
 	});
+
+
+	// 파일 위치: assets/js/member.js
+// 역할: 페이지 로딩 시 스피너 표시/숨김 관련 함수들
+
+	/**
+	 * 트리 스피너 표시
+	 */
+	function showTreeSpinner() {
+		$('#treeSpinner').removeClass('d-none').addClass('d-flex');
+		console.log('트리 스피너 표시');
+	}
+
+	/**
+	 * 트리 스피너 숨김
+	 */
+	function hideTreeSpinner() {
+		$('#treeSpinner').removeClass('d-flex').addClass('d-none');
+		console.log('트리 스피너 숨김');
+	}
+
+	/**
+	 * 그리드 스피너 표시
+	 */
+	function showGridSpinner() {
+		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
+		console.log('그리드 스피너 표시');
+	}
+
+	/**
+	 * 그리드 스피너 숨김
+	 */
+	function hideGridSpinner() {
+		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
+		console.log('그리드 스피너 숨김');
+	}
+
+	/**
+	 * 모든 스피너 표시 (초기 로딩 시)
+	 */
+	function showAllSpinners() {
+		showTreeSpinner();
+		showGridSpinner();
+		console.log('모든 스피너 표시');
+	}
+
+	/**
+	 * 모든 스피너 숨김
+	 */
+	function hideAllSpinners() {
+		hideTreeSpinner();
+		hideGridSpinner();
+		console.log('모든 스피너 숨김');
+	}
 
 });

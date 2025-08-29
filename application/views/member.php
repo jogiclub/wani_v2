@@ -28,12 +28,23 @@
 		<h3 class="page-title col-12 my-1">회원관리</h3>
 	</div>
 
+
+
 	<!-- Split.js를 위한 단일 컨테이너로 변경 -->
 	<div class="split-container">
 		<!-- 왼쪽: 그룹 트리 -->
 		<div class="split-pane" id="left-pane">
 			<div class="card h-100">
-				<div class="card-body p-0">
+				<div class="card-body p-0 position-relative">
+					<!-- 트리 스피너 -->
+					<div id="treeSpinner" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
+						<div class="text-center">
+							<div class="spinner-border text-primary mb-2" role="status">
+								<span class="visually-hidden">로딩 중...</span>
+							</div>
+							<div class="small text-muted">그룹 정보 로딩 중...</div>
+						</div>
+					</div>
 					<div id="groupTree" class="tree-container"></div>
 				</div>
 			</div>
@@ -44,32 +55,38 @@
 			<div class="card h-100">
 				<div class="card-header">
 					<div class="row">
-
-						<div class="col-6 col-xs-12 d-flex align-items-center">
+						<div class="col-6 d-flex align-items-center">
 							<h5 class="mb-0" id="selectedOrgName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
 						</div>
 
-
-						<div class="col-3 col-xs-12 d-flex justify-content-end">
+						<div class="col-3  d-flex justify-content-end">
 							<div class="input-group input-group-sm">
 								<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
 							</div>
 						</div>
 
-						<div class="col-3 col-xs-12 d-flex justify-content-end">
+						<div class="col-3 d-flex justify-content-end">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
 								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled><i class="bi bi-trash"></i> 선택삭제</button>
 							</div>
 						</div>
-
 					</div>
 				</div>
-				<div class="card-body p-0">
+				<div class="card-body p-0 position-relative">
+					<!-- 그리드 스피너 -->
+					<div id="gridSpinner" class="d-none justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
+						<div class="text-center">
+							<div class="spinner-border text-primary mb-2" role="status">
+								<span class="visually-hidden">로딩 중...</span>
+							</div>
+							<div class="small text-muted">회원 정보 로딩 중...</div>
+						</div>
+					</div>
 					<!-- ParamQuery Grid가 여기에 렌더링됩니다 -->
 					<div id="memberGrid"></div>
 				</div>
