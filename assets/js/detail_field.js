@@ -173,15 +173,19 @@ $(document).ready(function() {
 		$('#edit_field_type').val(fieldType);
 		$('#edit_field_size').val(fieldSize);
 
-		if (fieldType === 'select' && fieldSettings) {
-			try {
-				var settings = JSON.parse(fieldSettings);
-				if (settings.options) {
-					$('#edit_select_options').val(settings.options.join('\n'));
-					$('#editSelectOptionsDiv').show();
+		// select type 필드인 경우 옵션 영역을 먼저 보여주고 값을 설정
+		if (fieldType === 'select') {
+			$('#editSelectOptionsDiv').show();
+
+			if (fieldSettings) {
+				try {
+					var settings = JSON.parse(fieldSettings);
+					if (settings.options) {
+						$('#edit_select_options').val(settings.options.join('\n'));
+					}
+				} catch (e) {
+					console.error('Failed to parse field settings:', e);
 				}
-			} catch (e) {
-				console.error('Failed to parse field settings:', e);
 			}
 		} else {
 			$('#editSelectOptionsDiv').hide();
