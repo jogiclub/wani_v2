@@ -614,7 +614,8 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 회원 추가
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 회원 추가 (상세정보 포함)
 	 */
 	public function add_member()
 	{
@@ -625,50 +626,59 @@ class Member extends My_Controller
 		$org_id = $this->input->post('org_id');
 		$area_idx = $this->input->post('area_idx');
 
-		// 유효성 검증
 		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
 			return;
 		}
 
-		// 가장 상위 그룹에서는 추가 불가 (area_idx가 없거나 빈 값인 경우)
-		if (!$area_idx) {
-			echo json_encode(array('success' => false, 'message' => '가장 상위 그룹에서는 회원을 추가할 수 없습니다.\n하위 그룹을 선택해주세요.'));
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
 			return;
 		}
 
-		// 조직 정보 가져오기 (신규 회원 호칭 확인)
-		$org_info = $this->Org_model->get_org_detail_by_id($org_id);
-		if (!$org_info) {
-			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
-			return;
-		}
+		// 기본 회원명 생성
+		$member_name = '새회원_' . date('md_His');
 
-		$new_name = $org_info['new_name'] ? $org_info['new_name'] : '새가족';
-
-		// 다음 회원 번호 생성
-		$next_member_idx = $this->Member_model->get_next_member_idx($org_id);
-		$member_name = $new_name . $next_member_idx;
-
-		$insert_data = array(
-			'member_name' => $member_name,
-			'member_nick' => $member_name,
+		$data = array(
 			'org_id' => $org_id,
-			'area_idx' => $area_idx,
+			'area_idx' => $area_idx ?: null,
+			'member_name' => $member_name,
+			'member_nick' => '',
+			'member_phone' => '',
+			'member_birth' => '',
+			'member_address' => '',
+			'member_address_detail' => '',
+			'member_etc' => '',
 			'grade' => 0,
 			'leader_yn' => 'N',
-			'new_yn' => 'Y',
+			'new_yn' => 'N',
 			'del_yn' => 'N',
 			'regi_date' => date('Y-m-d H:i:s'),
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		$result = $this->Member_model->add_member($insert_data);
+		// 상세정보 처리
+		$detail_data = $this->input->post('detail_field');
+		if ($detail_data && is_array($detail_data)) {
+			// 빈 값들을 제거하고 JSON으로 저장
+			$filtered_detail = array();
+			foreach ($detail_data as $field_idx => $value) {
+				if ($value !== '' && $value !== null) {
+					$filtered_detail[$field_idx] = $value;
+				}
+			}
+			if (!empty($filtered_detail)) {
+				$data['member_detail'] = json_encode($filtered_detail, JSON_UNESCAPED_UNICODE);
+			}
+		}
+
+		$result = $this->Member_model->add_member($data);
 
 		if ($result) {
 			echo json_encode(array(
 				'success' => true,
-				'message' => '회원이 추가되었습니다.',
+				'message' => '회원이 추가되었습니다: ' . $member_name,
 				'member_name' => $member_name
 			));
 		} else {
@@ -677,7 +687,8 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 회원 정보 수정 (사진 삭제 기능 추가)
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 회원 정보 수정 (상세정보 포함, 사진 삭제 기능 추가)
 	 */
 	public function update_member()
 	{
@@ -707,6 +718,19 @@ class Member extends My_Controller
 		);
 
 		$org_id = $this->input->post('org_id');
+
+		// 상세정보 처리
+		$detail_data = $this->input->post('detail_field');
+		if ($detail_data && is_array($detail_data)) {
+			// 빈 값들을 제거하고 JSON으로 저장
+			$filtered_detail = array();
+			foreach ($detail_data as $field_idx => $value) {
+				if ($value !== '' && $value !== null) {
+					$filtered_detail[$field_idx] = $value;
+				}
+			}
+			$update_data['member_detail'] = json_encode($filtered_detail, JSON_UNESCAPED_UNICODE);
+		}
 
 		// 사진 삭제 처리
 		$delete_photo = $this->input->post('delete_photo');
@@ -869,6 +893,145 @@ class Member extends My_Controller
 		} else {
 			echo json_encode(array('success' => false, 'message' => '회원 이동에 실패했습니다.'));
 		}
+	}
+
+
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 회원 상세정보 관련 AJAX 처리 메서드들 추가
+	 */
+
+	/**
+	 * 조직의 활성화된 상세필드 목록 가져오기
+	 */
+	public function get_detail_fields()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Detail_field_model');
+		$fields = $this->Detail_field_model->get_detail_fields_by_org($org_id);
+
+		// 활성화된 필드만 필터링
+		$active_fields = array();
+		foreach ($fields as $field) {
+			if ($field['is_active'] === 'Y') {
+				// field_settings JSON 디코딩
+				$field['field_settings'] = json_decode($field['field_settings'], true);
+				$active_fields[] = $field;
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $active_fields
+		));
+	}
+
+	/**
+	 * 회원 상세정보 저장
+	 */
+	public function save_member_detail()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$detail_data = $this->input->post('detail_data');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 회원이 해당 조직에 속하는지 확인
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원입니다.'));
+			return;
+		}
+
+		// 상세정보 JSON 형태로 저장
+		$member_detail_json = json_encode($detail_data, JSON_UNESCAPED_UNICODE);
+
+		$update_data = array(
+			'member_detail' => $member_detail_json,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$result = $this->Member_model->update_member($member_idx, $update_data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '회원 상세정보가 저장되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '회원 상세정보 저장에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 회원 상세정보 가져오기
+	 */
+	public function get_member_detail()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 회원 정보 가져오기
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원입니다.'));
+			return;
+		}
+
+		// 상세정보 JSON 디코딩
+		$member_detail = array();
+		if (!empty($member['member_detail'])) {
+			$member_detail = json_decode($member['member_detail'], true);
+			if (!$member_detail) {
+				$member_detail = array(); // JSON 파싱 실패시 빈 배열
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $member_detail
+		));
 	}
 
 

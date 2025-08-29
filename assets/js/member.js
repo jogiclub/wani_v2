@@ -1077,8 +1077,8 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 파일 위치: assets/js/member.js
-	 * 역할: 회원 offcanvas 열기 함수 수정 (소그룹 선택 문제 해결)
+	 * 파일 위치: assets/js/member.js 내 openMemberOffcanvas 함수 수정
+	 * 역할: 회원 정보 수정 모달 열 때 항상 첫 번째 탭(회원정보)을 활성화
 	 */
 	function openMemberOffcanvas(mode, memberData = null) {
 		const offcanvas = $('#memberOffcanvas');
@@ -1088,6 +1088,9 @@ $(document).ready(function () {
 
 		// 폼 및 UI 초기화
 		resetOffcanvasForm();
+
+		// 탭 초기화 - 항상 첫 번째 탭(회원정보)을 활성화
+		resetTabsToFirst();
 
 		if (mode === 'edit' && memberData) {
 			// 소그룹 옵션 로드 완료 후 폼 데이터 채우기
@@ -1104,6 +1107,24 @@ $(document).ready(function () {
 
 		// offcanvas 표시 및 정리 이벤트 설정
 		showOffcanvasWithCleanup(offcanvas);
+	}
+
+	/**
+	 * 탭을 첫 번째 탭(회원정보)으로 초기화
+	 */
+	function resetTabsToFirst() {
+		// 모든 탭 버튼에서 active 클래스 제거
+		$('#memberTab .nav-link').removeClass('active');
+
+		// 모든 탭 패널에서 show active 클래스 제거
+		$('#memberTabContent .tab-pane').removeClass('show active');
+
+		// 첫 번째 탭(회원정보) 활성화
+		$('#profile-tab').addClass('active').attr('aria-selected', 'true');
+		$('#profile-tab-pane').addClass('show active');
+
+		// 다른 탭들의 aria-selected 속성 비활성화
+		$('#detail-tab, #memo-tab').attr('aria-selected', 'false');
 	}
 
 	/**
@@ -1195,7 +1216,8 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 폼 데이터 채우기
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 폼 데이터 채우기 (기존 함수에 상세정보 처리 로직 추가)
 	 */
 	function populateFormData(memberData) {
 		const fieldMappings = {
@@ -1207,26 +1229,31 @@ $(document).ready(function () {
 			'member_address': memberData.member_address || '',
 			'member_address_detail': memberData.member_address_detail || '',
 			'member_etc': memberData.member_etc || '',
-			'grade': memberData.grade || '0',
+			'grade': memberData.grade || 0,
 			'area_idx': memberData.area_idx || '',
 			'org_id': memberData.org_id
 		};
 
-		// 일반 필드 채우기
-		Object.keys(fieldMappings).forEach(fieldName => {
-			$('#' + fieldName).val(fieldMappings[fieldName]);
+		// 기본 필드 채우기
+		Object.keys(fieldMappings).forEach(function(fieldName) {
+			const element = $('#' + fieldName);
+			if (element.length) {
+				element.val(fieldMappings[fieldName]);
+			}
 		});
 
-		// 체크박스 필드 설정
+		// 체크박스 처리
 		$('#leader_yn').prop('checked', memberData.leader_yn === 'Y');
 		$('#new_yn').prop('checked', memberData.new_yn === 'Y');
 
-		// 기존 사진이 있으면 미리보기 표시
+// 기존 사진이 있으면 미리보기 표시
 		if (memberData.photo && memberData.photo !== '/assets/images/photo_no.png') {
 			$('#previewImage').attr('src', memberData.photo);
 			$('#photoPreview').show();
 			$('#photoUpload').hide();
 		}
+
+
 	}
 
 	/**
@@ -1662,5 +1689,278 @@ $(document).ready(function () {
 		});
 		bsToast.show();
 	}
+
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 회원 상세정보 탭 관련 JavaScript 함수들
+	 */
+
+	/**
+	 * 상세정보 탭 초기화
+	 */
+	function initDetailTab() {
+		// 상세정보 탭 클릭 이벤트
+		$('#detail-tab').on('click', function() {
+			const orgId = $('#org_id').val();
+			const memberIdx = $('#member_idx').val();
+
+			if (orgId && memberIdx) {
+				loadDetailFields(orgId, memberIdx);
+			} else if (orgId) {
+				// 새 회원 추가 시에는 빈 폼만 로드
+				loadDetailFields(orgId, null);
+			}
+		});
+	}
+
+
+	/**
+	 * 상세필드 로드 및 폼 생성
+	 */
+	function loadDetailFields(orgId, memberIdx = null) {
+		const container = $('#detailFieldsContainer');
+		const loading = $('#detailFieldsLoading');
+		const empty = $('#detailFieldsEmpty');
+
+		// 로딩 표시
+		loading.show();
+		empty.hide();
+		container.empty();
+
+		// 상세필드 목록 가져오기
+		$.ajax({
+			url: '/member/get_detail_fields',
+			type: 'POST',
+			data: { org_id: orgId },
+			dataType: 'json',
+			success: function(response) {
+				loading.hide();
+
+				if (response.success && response.data.length > 0) {
+					// 회원 상세정보 가져오기 (수정 모드인 경우)
+					if (memberIdx) {
+						getMemberDetailData(orgId, memberIdx, response.data);
+					} else {
+						// 새 회원 추가 시에는 빈 데이터로 폼 생성
+						generateDetailForm(response.data, {});
+					}
+				} else {
+					empty.show();
+				}
+			},
+			error: function() {
+				loading.hide();
+				showToast('상세필드를 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+	/**
+	 * 회원 상세정보 데이터 가져오기
+	 */
+	function getMemberDetailData(orgId, memberIdx, fields) {
+		$.ajax({
+			url: '/member/get_member_detail',
+			type: 'POST',
+			data: {
+				org_id: orgId,
+				member_idx: memberIdx
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					generateDetailForm(fields, response.data);
+				} else {
+					generateDetailForm(fields, {});
+				}
+			},
+			error: function() {
+				generateDetailForm(fields, {});
+			}
+		});
+	}
+
+	/**
+	 * 상세정보 폼 생성
+	 */
+	function generateDetailForm(fields, memberDetail) {
+		const container = $('#detailFieldsContainer');
+		container.empty();
+
+		fields.forEach(function(field) {
+			const fieldValue = memberDetail[field.field_idx] || '';
+			const fieldHtml = generateFieldHtml(field, fieldValue);
+			container.append(fieldHtml);
+		});
+	}
+
+	/**
+	 * 필드별 HTML 생성
+	 */
+	function generateFieldHtml(field, value) {
+		const fieldId = 'detail_field_' + field.field_idx;
+		const fieldName = 'detail_field[' + field.field_idx + ']';
+		const colClass = field.field_size == 1 ? 'col-6' : 'col-12';
+
+		let inputHtml = '';
+
+		switch (field.field_type) {
+			case 'text':
+				inputHtml = `<input type="text" class="form-control" id="${fieldId}" name="${fieldName}" value="${escapeHtml(value)}">`;
+				break;
+
+			case 'select':
+				inputHtml = generateSelectHtml(field, value, fieldId, fieldName);
+				break;
+
+			case 'textarea':
+				inputHtml = `<textarea class="form-control" id="${fieldId}" name="${fieldName}" rows="3">${escapeHtml(value)}</textarea>`;
+				break;
+
+			case 'checkbox':
+				const checked = value === 'Y' ? 'checked' : '';
+				inputHtml = `
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" id="${fieldId}" name="${fieldName}" value="Y" ${checked}>
+					<label class="form-check-label" for="${fieldId}">${escapeHtml(field.field_name)}</label>
+				</div>
+			`;
+				break;
+
+			case 'date':
+				inputHtml = `<input type="date" class="form-control" id="${fieldId}" name="${fieldName}" value="${value}">`;
+				break;
+
+			default:
+				inputHtml = `<input type="text" class="form-control" id="${fieldId}" name="${fieldName}" value="${escapeHtml(value)}">`;
+		}
+
+		// 체크박스 타입은 라벨을 따로 표시하지 않음
+		const labelHtml = field.field_type === 'checkbox' ? '' : `<label for="${fieldId}" class="form-label">${escapeHtml(field.field_name)}</label>`;
+
+		return `
+		<div class="${colClass} mb-3">
+			${labelHtml}
+			${inputHtml}
+		</div>
+	`;
+	}
+
+	/**
+	 * 선택박스 HTML 생성
+	 */
+	function generateSelectHtml(field, value, fieldId, fieldName) {
+		let options = '<option value="">선택하세요</option>';
+
+		if (field.field_settings && field.field_settings.options) {
+			field.field_settings.options.forEach(function(option) {
+				const selected = value === option ? 'selected' : '';
+				options += `<option value="${escapeHtml(option)}" ${selected}>${escapeHtml(option)}</option>`;
+			});
+		}
+
+		return `<select class="form-select" id="${fieldId}" name="${fieldName}">${options}</select>`;
+	}
+
+	/**
+	 * 상세정보 저장
+	 */
+	function saveDetailData() {
+		const orgId = $('#org_id').val();
+		const memberIdx = $('#member_idx').val();
+
+		if (!orgId || !memberIdx) {
+			return true; // 기본 저장 프로세스 계속 진행
+		}
+
+		// 상세정보 데이터 수집
+		const detailData = {};
+		$('#detailFieldsContainer input, #detailFieldsContainer select, #detailFieldsContainer textarea').each(function() {
+			const name = $(this).attr('name');
+			if (name && name.startsWith('detail_field[')) {
+				const fieldIdx = name.match(/detail_field\[(\d+)\]/)[1];
+
+				if ($(this).is(':checkbox')) {
+					detailData[fieldIdx] = $(this).is(':checked') ? 'Y' : 'N';
+				} else {
+					detailData[fieldIdx] = $(this).val() || '';
+				}
+			}
+		});
+
+		// 상세정보 저장 AJAX
+		$.ajax({
+			url: '/member/save_member_detail',
+			type: 'POST',
+			data: {
+				org_id: orgId,
+				member_idx: memberIdx,
+				detail_data: detailData
+			},
+			dataType: 'json',
+			async: false, // 동기 처리로 기본 저장과 순서 맞춤
+			success: function(response) {
+				if (!response.success) {
+					showToast(response.message || '상세정보 저장에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('상세정보 저장 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * HTML 이스케이프 함수
+	 */
+	function escapeHtml(text) {
+		if (!text) return '';
+		const map = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;'
+		};
+		return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+	}
+
+	/**
+	 * 기존 회원 저장 버튼 클릭 이벤트 수정
+	 */
+	$(document).on('click', '#btnSaveMember', function() {
+		// 기본 회원정보 저장
+		const form = $('#memberForm')[0];
+		const formData = new FormData(form);
+
+		// 상세정보 저장
+		saveDetailData();
+
+		// 기존 저장 로직 계속 진행...
+		$.ajax({
+			url: '/member/update_member',
+			type: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			dataType: 'json',
+			success: function(response) {
+				const toastType = response.success ? 'success' : 'error';
+				showToast(response.message, toastType);
+				if (response.success) {
+					loadMemberData();
+					$('#memberOffcanvas').offcanvas('hide');
+				}
+			},
+			error: function() {
+				showToast('회원 정보 저장 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	});
+
+	// 페이지 로드 시 상세정보 탭 초기화
+	$(document).ready(function() {
+		initDetailTab();
+	});
 
 });

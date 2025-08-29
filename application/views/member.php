@@ -200,7 +200,17 @@
 					</div>
 				</div>
 				<div class="tab-pane fade" id="detail-tab-pane" role="tabpanel" aria-labelledby="detail-tab" tabindex="0">
-					bbbbbbb
+					<div class="row mt-3" id="detailFieldsContainer">
+						<!-- 동적으로 생성될 상세필드들 -->
+					</div>
+					<div class="text-center mt-3">
+						<div class="spinner-border text-primary" role="status" id="detailFieldsLoading" style="display: none;">
+							<span class="visually-hidden">로딩중...</span>
+						</div>
+						<div class="text-muted" id="detailFieldsEmpty" style="display: none;">
+							<i class="bi bi-info-circle me-2"></i>설정된 상세필드가 없습니다.
+						</div>
+					</div>
 				</div>
 				<div class="tab-pane fade" id="memo-tab-pane" role="tabpanel" aria-labelledby="memo-tab" tabindex="0">
 					ccccccc
