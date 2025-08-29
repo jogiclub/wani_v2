@@ -46,11 +46,19 @@
 					<h5 class="mb-0" id="selectedOrgName">
 						<i class="bi bi-people"></i> 조직을 선택해주세요
 					</h5>
+
+
+					<div class="input-group input-group-sm" style="width: 300px;">
+						<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
+						<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
+					</div>
+
+
 					<div class="btn-group" role="group">
 						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember">
 							<i class="bi bi-person-plus"></i> 회원 추가
 						</button>
-						<button type="button" class="btn btn-sm btn-outline-info" id="btnMoveMember" disabled>
+						<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled>
 							<i class="bi bi-arrow-right-square"></i> 이동
 						</button>
 						<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled>
