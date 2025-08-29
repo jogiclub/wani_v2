@@ -112,6 +112,7 @@ $(document).ready(function () {
 		}
 	}
 
+
 	/**
 	 * 전역 이벤트 바인딩
 	 */
@@ -147,6 +148,9 @@ $(document).ready(function () {
 			handleAddMemberClick();
 		});
 
+		// 회원 검색 기능 바인딩
+		bindMemberSearchEvents();
+
 		// 윈도우 리사이즈 이벤트
 		$(window).on('resize', debounce(function() {
 			if (memberGrid) {
@@ -157,6 +161,158 @@ $(document).ready(function () {
 				}
 			}
 		}, 250));
+	}
+
+
+
+
+	/**
+	 * 회원 검색 이벤트 바인딩
+	 */
+	function bindMemberSearchEvents() {
+		const searchInput = $('.card-header input[type="text"]');
+		const searchButton = $('#button-search');
+
+		// 검색 버튼 클릭 이벤트만 활성화
+		searchButton.on('click', function() {
+			const searchText = searchInput.val().trim();
+			if (searchText) {
+				filterMemberGrid(searchText);
+			} else {
+				clearMemberGridFilter();
+			}
+		});
+
+		// Enter 키 이벤트
+		searchInput.on('keypress', function(e) {
+			if (e.which === 13) {
+				e.preventDefault();
+				const searchText = $(this).val().trim();
+				if (searchText) {
+					filterMemberGrid(searchText);
+				} else {
+					clearMemberGridFilter();
+				}
+			}
+		});
+
+		// 입력 필드 초기화 시 필터 해제
+		searchInput.on('input', function() {
+			const searchText = $(this).val().trim();
+			if (searchText === '') {
+				clearMemberGridFilter();
+			}
+		});
+	}
+
+	/**
+	 * 회원 그리드 필터링 (간단한 클라이언트 필터링)
+	 */
+	function filterMemberGrid(searchText) {
+		if (!memberGrid) {
+			return;
+		}
+
+		try {
+			if (!searchText) {
+				clearMemberGridFilter();
+				return;
+			}
+
+			console.log('검색어:', searchText);
+
+			// 그리드 데이터 직접 필터링 방식 사용
+			const allData = memberGrid.pqGrid("option", "dataModel.data");
+
+			if (!allData || allData.length === 0) {
+				showToast('검색할 데이터가 없습니다.', 'info');
+				return;
+			}
+
+			// 원본 데이터 저장 (첫 검색 시에만)
+			if (!window.originalGridData) {
+				window.originalGridData = JSON.parse(JSON.stringify(allData));
+			}
+
+			// 이름과 휴대폰번호에서 검색
+			const filteredData = window.originalGridData.filter(function(member) {
+				const memberName = (member.member_name || '').toLowerCase();
+				const memberPhone = (member.member_phone || '').toLowerCase();
+				const searchLower = searchText.toLowerCase();
+
+				return memberName.includes(searchLower) || memberPhone.includes(searchLower);
+			});
+
+			// 필터링된 데이터로 그리드 업데이트
+			memberGrid.pqGrid("option", "dataModel.data", filteredData);
+			memberGrid.pqGrid("refreshDataAndView");
+
+			console.log(`검색결과: ${filteredData.length}명`);
+
+			// 검색 결과에 따른 toast 메시지 표시
+			if (filteredData.length === 0) {
+				showToast(`'${searchText}'에 대한 검색 결과가 없습니다.`, 'info');
+			} else {
+				showToast(`'${searchText}' 검색결과: ${filteredData.length}명`, 'info');
+			}
+
+		} catch (error) {
+			console.error('그리드 필터링 중 오류:', error);
+			showToast('검색 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+	/**
+	 * 회원 그리드 필터 해제
+	 */
+	function clearMemberGridFilter() {
+		if (!memberGrid) {
+			return;
+		}
+
+		try {
+			// 원본 데이터가 있으면 복원
+			if (window.originalGridData) {
+				memberGrid.pqGrid("option", "dataModel.data", window.originalGridData);
+				memberGrid.pqGrid("refreshDataAndView");
+
+				console.log(`전체 회원: ${window.originalGridData.length}명`);
+			}
+
+		} catch (error) {
+			console.error('그리드 필터 해제 중 오류:', error);
+		}
+	}
+
+	/**
+	 * 검색 상태 초기화
+	 */
+	function resetMemberSearch() {
+		const searchInput = $('.card-header input[type="text"]');
+		searchInput.val('');
+		clearMemberGridFilter();
+
+		// 검색 타임아웃 초기화
+		if (window.searchTimeout) {
+			clearTimeout(window.searchTimeout);
+		}
+
+		// 원본 데이터 초기화
+		window.originalGridData = null;
+	}
+
+	/**
+	 * 검색 상태 초기화
+	 */
+	function resetMemberSearch() {
+		const searchInput = $('.card-header input[type="text"]');
+		searchInput.val('');
+		clearMemberGridFilter();
+
+		// 검색 타임아웃 초기화
+		if (window.searchTimeout) {
+			clearTimeout(window.searchTimeout);
+		}
 	}
 
 	/**
@@ -211,20 +367,42 @@ $(document).ready(function () {
 		});
 	}
 
+
 	/**
 	 * Fancytree 인스턴스 설정
 	 */
 	function setupFancytreeInstance(treeData) {
 		$("#groupTree").fancytree({
 			source: treeData,
-			activate: function (event, data) {
-				handleTreeNodeActivate(data.node);
+			activate: function(event, data) {
+				const node = data.node;
+				const nodeKey = node.key;
+				const nodeTitle = node.title;
+
+				console.log('노드 활성화:', {
+					key: nodeKey,
+					title: nodeTitle,
+					data: node.data
+				});
+
+				// 검색 상태 초기화
+				resetMemberSearch();
+
+				// 기존 노드 활성화 처리 함수 호출
+				handleTreeNodeActivate(node);
+			},
+			expand: function(event, data) {
+				console.log('노드 확장:', data.node.title);
+			},
+			collapse: function(event, data) {
+				console.log('노드 축소:', data.node.title);
 			},
 			autoScroll: true,
 			keyboard: true,
 			focusOnSelect: true
 		});
 	}
+
 
 	/**
 	 * 트리 노드 활성화 처리
@@ -387,6 +565,12 @@ $(document).ready(function () {
 				horizontal: true,
 				vertical: true
 			},
+			// 필터 설정 추가
+			// filterModel: {
+			// 	on: true,
+			// 	mode: "AND",
+			// 	header: false
+			// },
 			freezeCols: 4,
 			numberCell: { show: false },
 			title: false,
@@ -1020,6 +1204,10 @@ $(document).ready(function () {
 				try {
 					memberGrid.pqGrid("option", "dataModel.data", response.data || []);
 					memberGrid.pqGrid("refreshDataAndView");
+
+					// 원본 데이터 초기화 (새로운 데이터 로드 시)
+					window.originalGridData = null;
+
 				} catch (error) {
 					console.error('그리드 데이터 업데이트 실패:', error);
 				}
@@ -2094,33 +2282,39 @@ $(document).ready(function () {
 		const toast = $('#memberToast');
 		const toastBody = toast.find('.toast-body');
 
+		// 타입별 아이콘 설정
 		let icon = '';
 		let bgClass = '';
 
-		switch (type) {
+		switch(type) {
 			case 'success':
 				icon = '<i class="bi bi-check-circle-fill text-success me-2"></i>';
-				bgClass = 'bg-success text-white';
+				bgClass = 'bg-success-subtle';
 				break;
 			case 'error':
 				icon = '<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>';
-				bgClass = 'bg-danger text-white';
+				bgClass = 'bg-danger-subtle';
 				break;
 			case 'warning':
 				icon = '<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>';
-				bgClass = 'bg-warning text-dark';
+				bgClass = 'bg-warning-subtle';
 				break;
+			case 'info':
 			default:
-				icon = '<i class="bi bi-info-circle-fill text-primary me-2"></i>';
-				bgClass = 'bg-primary text-white';
+				icon = '<i class="bi bi-info-circle-fill text-info me-2"></i>';
+				bgClass = 'bg-info-subtle';
+				break;
 		}
 
-		toast.removeClass('bg-success bg-danger bg-warning bg-primary text-white text-dark')
-			.addClass(bgClass);
-		toastBody.html(icon + message);
+		// Toast 내용 설정
+		toastBody.removeClass('bg-success-subtle bg-danger-subtle bg-warning-subtle bg-info-subtle')
+			.addClass(bgClass)
+			.html(icon + message);
 
+		// Toast 표시
 		const bsToast = new bootstrap.Toast(toast[0], {
-			delay: type === 'error' ? 5000 : 3000
+			autohide: true,
+			delay: 3000
 		});
 		bsToast.show();
 	}

@@ -135,8 +135,12 @@ header {
 .fancytree-expander {
 	width: 16px;
 	height: 16px;
-	margin-right: 8px;
 }
+
+
+
+span.fancytree-icon{margin-left: 0; margin-right: 0;background-image:none!important; }
+span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font-size: 15px; color: #e09529;}
 
 /* ParamQuery Grid 커스텀 스타일 */
 .pq-grid {
@@ -156,6 +160,9 @@ header {
 .pq-grid-cell {
 	padding: 5px;
 }
+
+.pq-grid .pq-grid-top{display: none;}
+.pq-grid .pq-grid-top .pq-slider-icon{display: none;}
 
 
 

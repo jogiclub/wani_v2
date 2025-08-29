@@ -45,21 +45,21 @@
 				<div class="card-header">
 					<div class="row">
 
-						<div class="col-6 d-flex align-items-center">
+						<div class="col-6 col-xs-12 d-flex align-items-center">
 							<h5 class="mb-0" id="selectedOrgName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
 						</div>
 
 
-						<div class="col-3  d-flex justify-content-end">
+						<div class="col-3 col-xs-12 d-flex justify-content-end">
 							<div class="input-group input-group-sm">
 								<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
 							</div>
 						</div>
 
-						<div class="col-3 d-flex justify-content-end">
+						<div class="col-3 col-xs-12 d-flex justify-content-end">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
 								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
@@ -195,7 +195,10 @@
 							<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
 						</div>
 
-
+						<div class="col-12 mb-3">
+							<label for="member_etc" class="form-label">특이사항</label>
+							<textarea class="form-control" id="member_etc" name="member_etc" rows="3"></textarea>
+						</div>
 
 						<div class="col-6 mb-3">
 							<label for="area_idx" class="form-label">소그룹</label>
@@ -204,10 +207,6 @@
 							</select>
 						</div>
 
-						<div class="col-12 mb-3">
-							<label for="member_etc" class="form-label">메모</label>
-							<textarea class="form-control" id="member_etc" name="member_etc" rows="3"></textarea>
-						</div>
 					</div>
 				</div>
 				<div class="tab-pane fade" id="detail-tab-pane" role="tabpanel" aria-labelledby="detail-tab" tabindex="0">
