@@ -14,7 +14,7 @@ class Detail_field_model extends CI_Model {
 	 * 조직의 상세필드 목록 가져오기
 	 */
 	public function get_detail_fields_by_org($org_id) {
-		$this->db->select('field_idx, field_name, field_type, display_order, is_active, field_settings, regi_date, modi_date');
+		$this->db->select('field_idx, field_name, field_type, field_size, display_order, is_active, field_settings, regi_date, modi_date');
 		$this->db->from('wb_detail_field');
 		$this->db->where('org_id', $org_id);
 		$this->db->order_by('display_order', 'ASC');
@@ -26,7 +26,7 @@ class Detail_field_model extends CI_Model {
 	 * 상세필드 상세 정보 가져오기
 	 */
 	public function get_detail_field_by_id($field_idx) {
-		$this->db->select('field_idx, field_name, org_id, display_order, field_type, field_settings, is_active, regi_date, modi_date');
+		$this->db->select('field_idx, field_name, org_id, display_order, field_type, field_size, field_settings, is_active, regi_date, modi_date');
 		$this->db->from('wb_detail_field');
 		$this->db->where('field_idx', $field_idx);
 		$query = $this->db->get();

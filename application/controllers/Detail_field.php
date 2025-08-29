@@ -108,6 +108,7 @@ class Detail_field extends My_Controller
 			'field_name' => $field_name,
 			'org_id' => $org_id,
 			'field_type' => $field_type,
+			'field_size' => $field_size,
 			'field_settings' => $field_settings ? json_encode($field_settings, JSON_UNESCAPED_UNICODE) : '{}',
 			'display_order' => $this->Detail_field_model->get_next_display_order($org_id),
 			'is_active' => 'Y'
@@ -153,9 +154,10 @@ class Detail_field extends My_Controller
 		$field_idx = $this->input->post('field_idx');
 		$field_name = $this->input->post('field_name');
 		$field_type = $this->input->post('field_type');
+		$field_size = $this->input->post('field_size');
 		$field_settings = $this->input->post('field_settings');
 
-		if (!$field_idx || empty($field_name) || empty($field_type)) {
+		if (!$field_idx || empty($field_name) || empty($field_type) || empty($field_size)) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
@@ -163,6 +165,7 @@ class Detail_field extends My_Controller
 		$update_data = array(
 			'field_name' => $field_name,
 			'field_type' => $field_type,
+			'field_size' => $field_size,
 			'field_settings' => $field_settings ? json_encode($field_settings, JSON_UNESCAPED_UNICODE) : '{}'
 		);
 

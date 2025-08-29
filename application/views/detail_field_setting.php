@@ -39,39 +39,31 @@
 							<div class="table-responsive">
 								<table class="table align-middle">
 									<thead>
-									<tr><th style="width: 50px;">순서</th>
+									<tr>
+										<th style="width: 50px;">순서</th>
 										<th style="width: 50px;">번호</th>
-										<th>필드명</th>
-										<th>옵션</th>
+										<th style="width: 150px;">필드명</th>
 										<th style="width: 100px;">타입</th>
-										<th style="width: 80px;">상태</th>
+										<th>옵션</th>
+										<th style="width: 70px;">사이즈</th>
+										<th style="width: 50px;">상태</th>
 										<th style="width: 120px;">관리</th>
 									</tr>
 									</thead>
 									<tbody id="fieldTableBody" class="sortable-tbody">
 									<?php foreach ($detail_fields as $index => $field): ?>
-										<tr class="sortable-row ui-sortable-handle" data-field-idx="<?php echo $field['field_idx']; ?>">
+										<tr class="sortable-row ui-sortable-handle"
+											data-field-idx="<?php echo $field['field_idx']; ?>">
 											<td class="text-center">
-												<i class="bi bi-grip-vertical text-muted handle" style="cursor: move; font-size: 1.2em;"></i>
+												<i class="bi bi-grip-vertical text-muted handle"
+												   style="cursor: move; font-size: 1.2em;"></i>
 											</td>
 											<td class="text-center">
-												<span class="order-number ms-2"><?php echo $field['display_order']; ?></span>
+												<span
+													class="order-number ms-2"><?php echo $field['display_order']; ?></span>
 											</td>
 											<td>
 												<strong><?php echo htmlspecialchars($field['field_name']); ?></strong>
-
-											</td>
-											<td>
-												<?php if ($field['field_settings'] && $field['field_settings'] !== '{}'): ?>
-													<small class="text-muted">
-														<?php
-														$settings = json_decode($field['field_settings'], true);
-														if ($field['field_type'] === 'select' && isset($settings['options'])) {
-															echo '옵션: ' . implode(', ', $settings['options']);
-														}
-														?>
-													</small>
-												<?php endif; ?>
 											</td>
 											<td>
 						<span class="badge bg-secondary">
@@ -88,6 +80,21 @@
 						</span>
 											</td>
 											<td>
+												<?php if ($field['field_settings'] && $field['field_settings'] !== '{}'): ?>
+													<small class="text-muted">
+														<?php
+														$settings = json_decode($field['field_settings'], true);
+														if ($field['field_type'] === 'select' && isset($settings['options'])) {
+															echo '옵션: ' . implode(', ', $settings['options']);
+														}
+														?>
+													</small>
+												<?php endif; ?>
+											</td>
+											<td>
+												<?php echo $field['field_size']; ?>
+											</td>
+											<td>
 												<div class="form-check form-switch">
 													<input class="form-check-input toggle-field" type="checkbox"
 														   data-field-idx="<?php echo $field['field_idx']; ?>"
@@ -100,6 +107,7 @@
 														data-field-idx="<?php echo $field['field_idx']; ?>"
 														data-field-name="<?php echo htmlspecialchars($field['field_name']); ?>"
 														data-field-type="<?php echo $field['field_type']; ?>"
+														data-field-size="<?php echo $field['field_size']; ?>"
 														data-field-settings="<?php echo htmlspecialchars($field['field_settings']); ?>">
 													<i class="bi bi-pencil"></i>
 												</button>
@@ -124,8 +132,6 @@
 					</div>
 				</div>
 			</div>
-
-
 
 
 		</div>
@@ -161,10 +167,19 @@
 							<option value="date">날짜</option>
 						</select>
 					</div>
+
 					<div class="mb-3" id="selectOptionsDiv" style="display: none;">
 						<label for="select_options" class="form-label">선택 옵션 (한 줄에 하나씩)</label>
 						<textarea class="form-control" id="select_options" name="select_options" rows="4"
 								  placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+					</div>
+					<div class="mb-3">
+						<label for="field_size" class="form-label">필드 사이즈 <span class="text-danger">*</span></label>
+						<select class="form-select" id="field_size" name="field_size" required>
+							<option value="">필드 사이즈를 선택하세요!</option>
+							<option value="1">1</option>
+							<option value="2">2</option>
+						</select>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -202,10 +217,19 @@
 							<option value="date">날짜</option>
 						</select>
 					</div>
+
 					<div class="mb-3" id="editSelectOptionsDiv" style="display: none;">
 						<label for="edit_select_options" class="form-label">선택 옵션 (한 줄에 하나씩)</label>
 						<textarea class="form-control" id="edit_select_options" name="select_options" rows="4"
 								  placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+					</div>
+					<div class="mb-3">
+						<label for="edit_field_size" class="form-label">필드 사이즈 <span class="text-danger">*</span></label>
+						<select class="form-select" id="edit_field_size" name="field_size" required>
+							<option value="">필드 사이즈를 선택하세요!</option>
+							<option value="1">1</option>
+							<option value="2">2</option>
+						</select>
 					</div>
 				</div>
 				<div class="modal-footer">

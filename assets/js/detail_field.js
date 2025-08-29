@@ -33,6 +33,7 @@ $(document).ready(function() {
 		var formData = {
 			field_name: $('#field_name').val().trim(),
 			field_type: $('#field_type').val(),
+			field_size: $('#field_size').val(),
 			field_settings: {}
 		};
 
@@ -45,6 +46,12 @@ $(document).ready(function() {
 		if (!formData.field_type) {
 			showToast('필드 타입을 선택해주세요.');
 			$('#field_type').focus();
+			return;
+		}
+
+		if (!formData.field_size) {
+			showToast('필드 타입을 선택해주세요.');
+			$('#field_size').focus();
 			return;
 		}
 
@@ -94,6 +101,7 @@ $(document).ready(function() {
 			field_idx: $('#edit_field_idx').val(),
 			field_name: $('#edit_field_name').val().trim(),
 			field_type: $('#edit_field_type').val(),
+			field_size: $('#edit_field_size').val(),
 			field_settings: {}
 		};
 
@@ -106,6 +114,11 @@ $(document).ready(function() {
 		if (!formData.field_type) {
 			showToast('필드 타입을 선택해주세요.');
 			$('#edit_field_type').focus();
+			return;
+		}
+		if (!formData.field_size) {
+			showToast('필드 사이즈를 선택해주세요.');
+			$('#edit_field_size').focus();
 			return;
 		}
 
@@ -152,11 +165,13 @@ $(document).ready(function() {
 		var fieldIdx = $(this).data('field-idx');
 		var fieldName = $(this).data('field-name');
 		var fieldType = $(this).data('field-type');
+		var fieldSize = $(this).data('field-size');
 		var fieldSettings = $(this).data('field-settings');
 
 		$('#edit_field_idx').val(fieldIdx);
 		$('#edit_field_name').val(fieldName);
 		$('#edit_field_type').val(fieldType);
+		$('#edit_field_size').val(fieldSize);
 
 		if (fieldType === 'select' && fieldSettings) {
 			try {
