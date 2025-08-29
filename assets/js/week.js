@@ -1,37 +1,5 @@
 'use strict'
 
-
-
-
-
-
-
-// 현재 선택된 주차 범위 가져오기 함수 추가
-/*
-function getCurrentWeekRange() {
-
-    var currentDate = new Date();
-    var startDate = getWeekStartDate(currentDate);
-    var endDate = getWeekEndDate(currentDate);
-    var weekNumber = getWeekNumber(currentDate);
-    return `${startDate}~${endDate} (${weekNumber}주차)`;
-}
-*/
-
-
-
-
-
-
-// 쿠키에 저장된 att-type-idx 값 가져오기
-// var attTypeIdxCookie = getCookie('att-type-idx');
-
-// if (attTypeIdxCookie) {
-// 쿠키 값이 있으면 해당 값으로 dropdown-toggle-att-type 설정
-// var attTypeName = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdxCookie + '"]').text();
-// $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdxCookie);
-// } else {
-// 쿠키 값이 없으면 첫 번째 출석 유형으로 설정
 var firstAttType = $('.dropdown-att-type .dropdown-item:first');
 var attTypeName = firstAttType.text();
 var attTypeIdx = firstAttType.data('att-type-idx');

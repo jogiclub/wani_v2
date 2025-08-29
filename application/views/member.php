@@ -16,36 +16,6 @@
 <!-- Croppie CSS -->
 <link href="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.css" rel="stylesheet">
 
-<!-- Split.js CSS -->
-<style>
-	.split-container {
-		display: flex;
-		height: calc(100vh - 200px); /* 헤더, breadcrumb 등 제외한 높이 */
-	}
-
-	.split-pane {
-		overflow: auto;
-	}
-
-	.gutter {
-		background-color: #f8f9fa;
-		background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+YMAzYwilZHq6PV0epo9f///wNA7z5dAz0AALsRFgYAAAAASUVORK5CYII=');
-		background-repeat: no-repeat;
-		background-position: 50%;
-		border-left: 1px solid #dee2e6;
-		border-right: 1px solid #dee2e6;
-	}
-
-	.gutter:hover {
-		background-color: #e9ecef;
-		cursor: col-resize;
-	}
-
-	.gutter.gutter-horizontal {
-		cursor: col-resize;
-	}
-</style>
-
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">

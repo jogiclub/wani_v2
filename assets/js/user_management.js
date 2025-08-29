@@ -1,6 +1,5 @@
 /**
- * 파일 위치: assets/js/user_management.js
- * 역할: 사용자 관리 페이지의 JavaScript 기능 (관리 메뉴/그룹 포함)
+ * 사용자 관리 페이지의 JavaScript 기능 (관리 메뉴/그룹 포함)
  */
 
 $(document).ready(function() {

@@ -1,7 +1,4 @@
-/**
- * 파일 위치: assets/js/member.js
- * 역할: 회원 관리 페이지 JavaScript - 전역/지역 변수 정리된 버전
- */
+'use strict'
 
 $(document).ready(function () {
 	// ===== 전역 변수 영역 =====
@@ -71,8 +68,8 @@ $(document).ready(function () {
 		try {
 			splitInstance = Split(['#left-pane', '#right-pane'], {
 				sizes: [25, 75],              // 초기 크기 비율 (왼쪽 25%, 오른쪽 75%)
-				minSize: [200, 400],          // 최소 크기 (px)
-				gutterSize: 10,                // divider 두께
+				minSize: [250, 400],          // 최소 크기 (px)
+				gutterSize: 7,                // divider 두께
 				cursor: 'col-resize',         // 커서 스타일
 				direction: 'horizontal',      // 수평 분할
 				onDragEnd: function(sizes) {
