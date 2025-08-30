@@ -55,7 +55,7 @@
 			<div class="card h-100">
 				<div class="card-header">
 					<div class="row">
-						<div class="col-6 d-flex align-items-center">
+						<div class="col-4 d-flex align-items-center">
 							<h5 class="mb-0" id="selectedOrgName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
@@ -68,7 +68,7 @@
 							</div>
 						</div>
 
-						<div class="col-3 d-flex justify-content-end">
+						<div class="col-5 d-flex justify-content-end">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
 								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>

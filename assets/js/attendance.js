@@ -385,7 +385,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * ParamQuery Grid 초기화 - 셀 클릭 개선 적용
+	 * ParamQuery Grid 초기화 - 세로 hover 적용
 	 */
 	function initializeParamQuery() {
 		console.log('ParamQuery Grid 초기화');
@@ -397,14 +397,14 @@ $(document).ready(function () {
 				height: "100%",
 				dataModel: {data: []},
 				colModel: getInitialColumns(),
-				selectionModel: {type: 'row', mode: 'single'},
+				selectionModel: {type: '', mode: 'single'},
 				scrollModel: {autoFit: false, horizontal: true, vertical: true},
 				freezeCols: 3,
 				numberCell: {show: false},
 				title: false,
 				resizable: true,
 				sortable: false,
-				hoverMode: 'row',
+				hoverMode: 'cell',  // 'row' → 'column'으로 변경
 				wrap: false,
 				columnBorders: true,
 				cellClick: function (event, ui) {
