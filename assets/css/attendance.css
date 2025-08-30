@@ -1,5 +1,5 @@
 .attendance-detail{}
-
+#attendanceDetailContent{overflow: auto;}
 #attendanceOffcanvas table{width: 100%; table-layout: fixed;}
 #attendanceOffcanvas table th .att-point{font-size: 12px !important;color: #ff6400 !important;}
 #attendanceOffcanvas table th, #attendanceOffcanvas table td{vertical-align: middle}

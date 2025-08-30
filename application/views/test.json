@@ -5,12 +5,12 @@
 		"attendance_types": [
 			{
 				"att_type_idx": 1,
-				"att_value": 10,
+				"att_value": 1,
 				"input_type": "check"
 			},
 			{
 				"att_type_idx": 467,
-				"att_value": 3,
+				"att_value": 6,
 				"input_type": "text"
 			}
 		]
@@ -21,7 +21,7 @@
 		"attendance_types": [
 			{
 				"att_type_idx": 1,
-				"att_value": 10,
+				"att_value": 1,
 				"input_type": "check"
 			}
 		]
@@ -32,7 +32,7 @@
 		"attendance_types": [
 			{
 				"att_type_idx": 1,
-				"att_value": 10,
+				"att_value": 1,
 				"input_type": "check"
 			}
 		]
@@ -43,7 +43,7 @@
 		"attendance_types": [
 			{
 				"att_type_idx": 1,
-				"att_value": 10,
+				"att_value": 1,
 				"input_type": "check"
 			}
 		]

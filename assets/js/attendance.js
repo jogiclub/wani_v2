@@ -118,7 +118,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 전역 이벤트 바인딩
+	 * 전역 이벤트 바인딩 함수에서 저장 버튼 이벤트 수정
 	 */
 	function bindGlobalEvents() {
 		// 연도 변경 버튼
@@ -140,9 +140,9 @@ $(document).ready(function () {
 			showToast('출석 등록 기능은 추후 구현 예정입니다.', 'info');
 		});
 
-		// 출석 저장 버튼
+		// 출석 저장 버튼 - saveAttendanceDetail 함수로 수정
 		$('#btnSaveAttendance').off('click').on('click', function () {
-			saveAttendanceChanges();
+			saveAttendanceDetail();
 		});
 
 		// 검색 기능
@@ -793,14 +793,16 @@ $(document).ready(function () {
 
 
 	$(document).off('click', '#btnSaveAttendance').on('click', '#btnSaveAttendance', function() {
+		console.log('저장 버튼 클릭됨 - saveAttendanceDetail 호출');
 		saveAttendanceDetail();
 	});
 
+
 	/**
-	 * 역할: 출석 정보 저장 - 메모 정보도 함께 저장
+	 * 역할: 출석 정보 저장 - 메모 정보도 함께 저장 (수정된 버전)
 	 */
 	function saveAttendanceDetail() {
-		console.log('출석 및 메모 저장 시작');
+		console.log('출석 및 메모 저장 시작 - saveAttendanceDetail 함수 실행됨');
 
 		// 제목에서 날짜 추출
 		const titleText = $('#attendanceOffcanvasLabel').text();
@@ -827,6 +829,12 @@ $(document).ready(function () {
 			const row = $(this);
 			const memberIdx = row.data('member-idx');
 			console.log('처리 중인 회원 IDX:', memberIdx);
+
+			// 회원 인덱스가 없으면 스킵
+			if (!memberIdx) {
+				console.log('회원 인덱스가 없어서 스킵');
+				return;
+			}
 
 			// 회원 인덱스 찾기 (현재 회원목록에서)
 			const member = currentMembers.find(m => m.member_idx == memberIdx);
@@ -876,7 +884,7 @@ $(document).ready(function () {
 
 			// 메모 데이터 수집 - 디버깅 강화
 			const memoInput = row.find('.attendance-memo');
-			console.log('메모 입력 필드 찾음:', memoInput.length);
+			console.log('메모 입력 필드 찾음:', memoInput.length, memberIdx);
 
 			if (memoInput.length > 0) {
 				const memoContent = memoInput.val() ? memoInput.val().trim() : '';
@@ -891,14 +899,13 @@ $(document).ready(function () {
 				});
 
 				// 메모가 변경되었거나 내용이 있는 경우 저장 대상에 추가
-				if (isChanged || memoContent) {
-					memoData.push({
-						member_idx: memberIdx,
-						memo_content: memoContent,
-						att_idx: attIdx
-					});
-					console.log('메모 데이터에 추가됨');
-				}
+				// 빈 메모도 처리하도록 수정
+				memoData.push({
+					member_idx: memberIdx,
+					memo_content: memoContent,
+					att_idx: attIdx
+				});
+				console.log('메모 데이터에 추가됨');
 			}
 		});
 
@@ -910,7 +917,9 @@ $(document).ready(function () {
 		const originalText = $saveBtn.text();
 		$saveBtn.prop('disabled', true).text('저장중...');
 
-		// AJAX 요청
+		console.log('AJAX 요청 URL:', window.attendancePageData.baseUrl + 'attendance/save_attendance_with_memo');
+
+		// AJAX 요청 - save_attendance_with_memo 호출
 		$.ajax({
 			url: window.attendancePageData.baseUrl + 'attendance/save_attendance_with_memo',
 			method: 'POST',
@@ -923,7 +932,7 @@ $(document).ready(function () {
 			},
 			dataType: 'json',
 			beforeSend: function() {
-				console.log('AJAX 요청 시작');
+				console.log('AJAX 요청 시작 - save_attendance_with_memo');
 			},
 			success: function(response) {
 				console.log('서버 응답:', response);
@@ -970,12 +979,11 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 역할: 출석상세 정보 렌더링 - text형 데이터의 실제 값 표시 및 포인트 표시 수정
+	 * 역할: text 타입 출석유형도 헤더에 포인트 표시하도록 수정
 	 */
+
 	function renderAttendanceDetail(data, sunday) {
 		const {attendance_types, attendance_records, members_info, memo_records = {}} = data;
-		const date = new Date(sunday);
-		let currentAttIdx = null; // 현재 출석 IDX 저장
 
 		let html = `
 <div class="attendance-detail simple-table">
@@ -983,25 +991,26 @@ $(document).ready(function () {
 		<thead class="table-light">
 			<tr>
 				<th style="width: 80px;">이름</th>
-				<th style="width: 100px;">메모</th>
+				<th style="width: 140px;">한줄메모</th>
 				<th style="width: 60px;">소계</th>
 `;
 
-		// 출석유형 헤더 추가 (입력타입에 따라 다른 표시)
+		// 출석유형 헤더 추가 - text 타입도 포인트 표시하도록 수정
 		attendance_types.forEach(function (type) {
 			const typeName = type.att_type_nickname || type.att_type_name;
 			const inputType = type.att_type_input || 'check';
-			const typePoint = Number(type.att_type_point) || 10; // 숫자로 강제 변환
-			const displayScore = inputType === 'text' ? '' : `(${typePoint})`;
+			const typePoint = Number(type.att_type_point) || 10;
 
-			html += `<th class="text-center" style="width: 80px;">${typeName}${displayScore}</th>`;
+
+
+			html += `<th class="text-center" style="width: 80px;">${typeName}<br/><span class='att-point'>(${typePoint})</span></th>`;
 		});
 
 		html += `
-				</tr>
-			</thead>
-			<tbody>
-	`;
+			</tr>
+		</thead>
+		<tbody>
+`;
 
 		// 회원별 데이터 처리
 		members_info.forEach(function (member) {
@@ -1020,7 +1029,7 @@ $(document).ready(function () {
 
 			// 출석 유형별 그룹핑
 			const attendanceByType = {};
-			let weekTotalScore = 0; // 주간 총점 계산
+			let weekTotalScore = 0;
 
 			memberAttendanceRecords.forEach(function (record) {
 				const typeIdx = record.att_type_idx;
@@ -1030,7 +1039,7 @@ $(document).ready(function () {
 				attendanceByType[typeIdx].push(record);
 
 				// att_value가 있으면 그 값을 사용, 없으면 att_type_point 사용
-				const scoreValue = record.att_value || Number(record.att_type_point) || 10;
+				const scoreValue = Number(record.att_value) || Number(record.att_type_point) || 10;
 				weekTotalScore += scoreValue;
 			});
 
@@ -1039,16 +1048,16 @@ $(document).ready(function () {
 
 			// 메모 입력 필드 추가
 			html += `
-			<td>
-				<input type="text" class="form-control form-control-sm attendance-memo" 
-					   value="${escapeHtml(memoContent)}" 
-					   data-member-idx="${memberIdx}"
-					   data-att-idx="${attIdx || ''}"
-					   placeholder="메모 입력"
-					   style="font-size: 11px;">
-			</td>
-		`;
+		<td>
+			<input type="text" class="form-control form-control-sm attendance-memo" 
+				   value="${escapeHtml(memoContent)}" 
+				   data-member-idx="${memberIdx}"
+				   data-att-idx="${attIdx || ''}"
+				   placeholder="메모 입력">
+		</td>
+	`;
 
+			// 소계
 			html += `<td class="text-center week-total">${weekTotalScore}</td>`;
 
 			// 각 출석유형별 체크박스/입력박스 생성
@@ -1061,23 +1070,26 @@ $(document).ready(function () {
 
 				if (inputType === 'text') {
 					// 텍스트박스인 경우 실제 값 표시
-					const currentValue = typeRecords.length > 0 ? (typeRecords[0].att_value || 0) : 0;
+					const currentValue = typeRecords.length > 0 ? (Number(typeRecords[0].att_value) || 0) : 0;
+					const defaultPoint = Number(type.att_type_point) || 10;
 					html += `<input type="number" class="form-control form-control-sm attendance-textbox text-center" 
-						 value="${currentValue}" min="0" max="999" 
-						 data-att-type-idx="${typeIdx}" 
-						 data-member-idx="${memberIdx}"
-						 style="width: 60px; font-size: 11px;">`;
+					 value="${currentValue}" min="0" max="999" 
+					 data-att-type-idx="${typeIdx}" 
+					 data-att-type-default-point="${defaultPoint}"
+					 data-member-idx="${memberIdx}"
+					 placeholder="${defaultPoint}"
+					 style="width: 60px;">`;
 				} else {
 					// 체크박스인 경우
 					const isChecked = typeRecords.length > 0;
 					const typeScore = Number(type.att_type_point) || 10;
 					html += `<div class="form-check d-flex justify-content-center">
-						<input class="form-check-input attendance-checkbox" type="checkbox" 
-							   ${isChecked ? 'checked' : ''} 
-							   data-att-type-idx="${typeIdx}"
-							   data-att-type-score="${typeScore}"
-							   data-member-idx="${memberIdx}">
-						</div>`;
+					<input class="form-check-input attendance-checkbox" type="checkbox" 
+						   ${isChecked ? 'checked' : ''} 
+						   data-att-type-idx="${typeIdx}"
+						   data-att-type-score="${typeScore}"
+						   data-member-idx="${memberIdx}">
+					</div>`;
 				}
 
 				html += '</td>';
@@ -1087,15 +1099,15 @@ $(document).ready(function () {
 		});
 
 		html += `
-			</tbody>
-		</table>
-	</div>
-	`;
+		</tbody>
+	</table>
+</div>
+`;
 
 		// 콘텐츠 업데이트
 		$('#attendanceDetailContent').html(html);
 
-		// 출석 상태 변경 시 소계 재계산 이벤트 바인딩
+		// 출석상태 변경 시 소계 재계산 이벤트 바인딩
 		bindAttendanceChangeEvents();
 
 		// 메모 입력 이벤트 바인딩
@@ -1106,9 +1118,26 @@ $(document).ready(function () {
 	 * 역할: 메모 관련 이벤트 바인딩
 	 */
 	function bindMemoEvents() {
-		// 메모 입력 필드 변경 이벤트
-		$(document).off('input', '.attendance-memo').on('input', '.attendance-memo', function() {
+		// 메모 입력 필드 변경 이벤트 - 더 정확한 이벤트 감지
+		$(document).off('input change keyup paste', '.attendance-memo').on('input change keyup paste', '.attendance-memo', function() {
 			$(this).data('changed', true);
+			console.log('메모 변경됨:', $(this).data('member-idx'));
+		});
+
+		// 포커스 시 원본 값 저장
+		$(document).off('focus', '.attendance-memo').on('focus', '.attendance-memo', function() {
+			$(this).data('original-value', $(this).val());
+		});
+
+		// 포커스 아웃 시 변경 여부 확인
+		$(document).off('blur', '.attendance-memo').on('blur', '.attendance-memo', function() {
+			const originalValue = $(this).data('original-value') || '';
+			const currentValue = $(this).val() || '';
+
+			if (originalValue !== currentValue) {
+				$(this).data('changed', true);
+				console.log('메모 변경 확인됨:', $(this).data('member-idx'), originalValue, '->', currentValue);
+			}
 		});
 	}
 
@@ -1165,145 +1194,33 @@ $(document).ready(function () {
 	 */
 	function updateMemberScoreFromInputs($input) {
 		const row = $input.closest('tr');
-		const scoreCell = row.find('td:nth-child(2)');
+		const scoreCell = row.find('.week-total');
 
-		let totalScore = 0; // 초기값을 숫자 0으로 설정
+		let totalScore = 0; // 숫자 0으로 초기화
 
-		// 체크박스 점수 계산 - 숫자 강제 변환
+		// 체크박스 점수 계산 - Number() 강제 변환
 		row.find('.attendance-checkbox:checked').each(function () {
-			const score = Number($(this).data('att-type-score')) || 10;
+			const score = Number($(this).data('att-type-score')) || 0;
+			console.log('체크박스 점수:', score, typeof score);
 			totalScore += score;
 		});
 
-		// 텍스트박스 점수 계산 - 숫자 강제 변환
+		// 텍스트박스 점수 계산 - Number() 강제 변환
 		row.find('.attendance-textbox').each(function () {
 			const value = Number($(this).val()) || 0;
+			console.log('텍스트박스 값:', value, typeof value);
 			if (value > 0) {
 				totalScore += value;
 			}
 		});
 
+		console.log('최종 계산된 점수:', totalScore, typeof totalScore);
+
 		// 점수 표시 업데이트 - Number()로 확실히 숫자 보장
-		scoreCell.html(`${Number(totalScore)}점`);
+		scoreCell.text(totalScore);
 	}
 
 
-	/**
-	 * 출석변경사항 저장
-	 */
-	function saveAttendanceChanges() {
-		const offcanvasTitle = $('#attendanceOffcanvasLabel').text();
-		const dateMatch = offcanvasTitle.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
-
-		if (!dateMatch) {
-			showToast('날짜 정보를 찾을 수 없습니다.', 'error');
-			return;
-		}
-
-		const year = dateMatch[1];
-		const month = dateMatch[2].padStart(2, '0');
-		const day = dateMatch[3].padStart(2, '0');
-		const attendanceDate = `${year}-${month}-${day}`;
-
-		// 출석 데이터 수집
-		const attendanceData = [];
-
-		// 각 회원별로 출석 정보 수집
-		$('#attendanceDetailContent table tbody tr').each(function() {
-			const row = $(this);
-			const memberName = row.find('td:first').text().trim();
-
-			// 회원 인덱스 찾기 (현재 회원목록에서)
-			const member = currentMembers.find(m => m.member_name === memberName);
-			if (!member) return;
-
-			const memberIdx = member.member_idx;
-			const memberAttendanceTypes = [];
-
-			// 체크박스 처리
-			row.find('.attendance-checkbox:checked').each(function() {
-				const attTypeIdx = $(this).data('att-type-idx');
-				const attTypeScore = $(this).data('att-type-score');
-
-				memberAttendanceTypes.push({
-					att_type_idx: attTypeIdx,
-					att_value: attTypeScore || 10,  // 기본값 10점
-					input_type: 'check'
-				});
-			});
-
-			// 텍스트박스 처리
-			row.find('.attendance-textbox').each(function() {
-				const value = parseInt($(this).val()) || 0;
-				if (value > 0) {
-					const attTypeIdx = $(this).data('att-type-idx');
-
-					memberAttendanceTypes.push({
-						att_type_idx: attTypeIdx,
-						att_value: value,
-						input_type: 'text'
-					});
-				}
-			});
-
-			if (memberAttendanceTypes.length > 0) {
-				attendanceData.push({
-					member_idx: memberIdx,
-					att_date: attendanceDate,
-					attendance_types: memberAttendanceTypes
-				});
-			}
-		});
-
-		if (attendanceData.length === 0) {
-			showToast('저장할 출석 데이터가 없습니다.', 'warning');
-			return;
-		}
-
-		// 저장 버튼 비활성화
-		const $saveBtn = $('#btnSaveAttendance');
-		const originalText = $saveBtn.text();
-		$saveBtn.prop('disabled', true).text('저장중...');
-
-		// AJAX 요청
-		$.ajax({
-			url: window.attendancePageData.baseUrl + 'attendance/save_attendance_with_values',
-			method: 'POST',
-			data: {
-				org_id: selectedOrgId,
-				attendance_data: JSON.stringify(attendanceData),
-				att_date: attendanceDate,
-				year: currentYear
-			},
-			dataType: 'json',
-			success: function(response) {
-				if (response.success) {
-					showToast('출석이 저장되었습니다.', 'success');
-
-					// offcanvas 닫기
-					const offcanvas = bootstrap.Offcanvas.getInstance($('#attendanceOffcanvas')[0]);
-					if (offcanvas) {
-						offcanvas.hide();
-					}
-
-					// 그리드 데이터 새로고침
-					setTimeout(function() {
-						loadAttendanceData();
-					}, 1000);
-
-				} else {
-					showToast(response.message || '출석 저장에 실패했습니다.', 'error');
-				}
-			},
-			error: function(xhr, status, error) {
-				console.error('출석 저장 실패:', error);
-				showToast('출석 저장 중 오류가 발생했습니다.', 'error');
-			},
-			complete: function() {
-				$saveBtn.prop('disabled', false).text(originalText);
-			}
-		});
-	}
 
 	/**
 	 * 그리드 필터링
@@ -1442,7 +1359,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 역할: 출석 상태 변경 이벤트 바인딩
+	 * 출석상태 변경 이벤트 바인딩 - 숫자 처리 확실히 하기
 	 */
 	function bindAttendanceChangeEvents() {
 		// 체크박스 변경 이벤트
@@ -1465,17 +1382,21 @@ $(document).ready(function () {
 	function recalculateWeekTotal(row) {
 		let weekTotal = 0;
 
-		// 체크된 체크박스들의 점수 합산
+		// 체크된 체크박스들의 점수 합산 - Number() 사용
 		row.find('.attendance-checkbox:checked').each(function() {
-			const score = parseInt($(this).data('att-type-score')) || 10;
+			const score = Number($(this).data('att-type-score')) || 0;
+			console.log('체크박스 점수:', score, typeof score);
 			weekTotal += score;
 		});
 
-		// 텍스트박스 값들의 합산
+		// 텍스트박스 값들의 합산 - Number() 사용
 		row.find('.attendance-textbox').each(function() {
-			const value = parseInt($(this).val()) || 0;
+			const value = Number($(this).val()) || 0;
+			console.log('텍스트박스 값:', value, typeof value);
 			weekTotal += value;
 		});
+
+		console.log('계산된 주간 총합:', weekTotal, typeof weekTotal);
 
 		// 소계 업데이트 - 숫자만 표시
 		row.find('.week-total').text(weekTotal);
