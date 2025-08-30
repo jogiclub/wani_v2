@@ -791,125 +791,328 @@ $(document).ready(function () {
 		});
 	}
 
+
+	$(document).off('click', '#btnSaveAttendance').on('click', '#btnSaveAttendance', function() {
+		saveAttendanceDetail();
+	});
+
 	/**
-	 * 파일 위치: assets/js/attendance.js
+	 * 역할: 출석 정보 저장 - 메모 정보도 함께 저장
+	 */
+	function saveAttendanceDetail() {
+		console.log('출석 및 메모 저장 시작');
+
+		// 제목에서 날짜 추출
+		const titleText = $('#attendanceOffcanvasLabel').text();
+		const dateMatch = titleText.match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+
+		if (!dateMatch) {
+			showToast('날짜 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		const year = dateMatch[1];
+		const month = dateMatch[2].padStart(2, '0');
+		const day = dateMatch[3].padStart(2, '0');
+		const attendanceDate = `${year}-${month}-${day}`;
+
+		console.log('출석 날짜:', attendanceDate);
+
+		// 출석 데이터 수집
+		const attendanceData = [];
+		const memoData = []; // 메모 데이터 수집용
+
+		// 각 회원별로 출석 정보 및 메모 수집
+		$('#attendanceDetailContent table tbody tr').each(function() {
+			const row = $(this);
+			const memberIdx = row.data('member-idx');
+			console.log('처리 중인 회원 IDX:', memberIdx);
+
+			// 회원 인덱스 찾기 (현재 회원목록에서)
+			const member = currentMembers.find(m => m.member_idx == memberIdx);
+			if (!member) {
+				console.log('회원을 찾을 수 없음:', memberIdx);
+				return;
+			}
+
+			const memberAttendanceTypes = [];
+
+			// 체크박스 처리
+			row.find('.attendance-checkbox:checked').each(function() {
+				const attTypeIdx = $(this).data('att-type-idx');
+				const attTypeScore = $(this).data('att-type-score');
+				console.log('체크박스 발견:', attTypeIdx, attTypeScore);
+
+				memberAttendanceTypes.push({
+					att_type_idx: attTypeIdx,
+					att_value: attTypeScore || 10,
+					input_type: 'check'
+				});
+			});
+
+			// 텍스트박스 처리
+			row.find('.attendance-textbox').each(function() {
+				const value = parseInt($(this).val()) || 0;
+				if (value > 0) {
+					const attTypeIdx = $(this).data('att-type-idx');
+					console.log('텍스트박스 값:', attTypeIdx, value);
+
+					memberAttendanceTypes.push({
+						att_type_idx: attTypeIdx,
+						att_value: value,
+						input_type: 'text'
+					});
+				}
+			});
+
+			// 출석 데이터 추가
+			if (memberAttendanceTypes.length > 0) {
+				attendanceData.push({
+					member_idx: memberIdx,
+					att_date: attendanceDate,
+					attendance_types: memberAttendanceTypes
+				});
+			}
+
+			// 메모 데이터 수집 - 디버깅 강화
+			const memoInput = row.find('.attendance-memo');
+			console.log('메모 입력 필드 찾음:', memoInput.length);
+
+			if (memoInput.length > 0) {
+				const memoContent = memoInput.val() ? memoInput.val().trim() : '';
+				const attIdx = memoInput.data('att-idx') || null;
+				const isChanged = memoInput.data('changed') || false;
+
+				console.log('메모 정보:', {
+					memberIdx: memberIdx,
+					memoContent: memoContent,
+					attIdx: attIdx,
+					isChanged: isChanged
+				});
+
+				// 메모가 변경되었거나 내용이 있는 경우 저장 대상에 추가
+				if (isChanged || memoContent) {
+					memoData.push({
+						member_idx: memberIdx,
+						memo_content: memoContent,
+						att_idx: attIdx
+					});
+					console.log('메모 데이터에 추가됨');
+				}
+			}
+		});
+
+		console.log('수집된 출석 데이터:', attendanceData);
+		console.log('수집된 메모 데이터:', memoData);
+
+		// 저장 버튼 비활성화
+		const $saveBtn = $('#btnSaveAttendance');
+		const originalText = $saveBtn.text();
+		$saveBtn.prop('disabled', true).text('저장중...');
+
+		// AJAX 요청
+		$.ajax({
+			url: window.attendancePageData.baseUrl + 'attendance/save_attendance_with_memo',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				attendance_data: JSON.stringify(attendanceData),
+				memo_data: JSON.stringify(memoData),
+				att_date: attendanceDate,
+				year: currentYear
+			},
+			dataType: 'json',
+			beforeSend: function() {
+				console.log('AJAX 요청 시작');
+			},
+			success: function(response) {
+				console.log('서버 응답:', response);
+
+				if (response.success) {
+					showToast('출석 및 메모가 저장되었습니다.', 'success');
+
+					// offcanvas 닫기
+					const offcanvas = bootstrap.Offcanvas.getInstance($('#attendanceOffcanvas')[0]);
+					if (offcanvas) {
+						offcanvas.hide();
+					}
+
+					// 그리드 데이터 새로고침
+					setTimeout(function() {
+						loadAttendanceData();
+					}, 1000);
+
+				} else {
+					showToast(response.message || '출석 및 메모 저장에 실패했습니다.', 'error');
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('AJAX 오류:', xhr.responseText);
+				console.error('상태:', status);
+				console.error('오류:', error);
+
+				showToast('출석 및 메모 저장 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				// 저장 버튼 복원
+				$saveBtn.prop('disabled', false).text(originalText);
+			}
+		});
+	}
+
+	/**
+	 * 역할: HTML 이스케이프 처리 함수
+	 */
+	function escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	/**
 	 * 역할: 출석상세 정보 렌더링 - text형 데이터의 실제 값 표시 및 포인트 표시 수정
 	 */
 	function renderAttendanceDetail(data, sunday) {
-		const {attendance_types, attendance_records, members_info} = data;
+		const {attendance_types, attendance_records, members_info, memo_records = {}} = data;
 		const date = new Date(sunday);
+		let currentAttIdx = null; // 현재 출석 IDX 저장
 
 		let html = `
-	<div class="attendance-detail simple-table">
-		<table class="table table-sm table-bordered">
-			<thead class="table-light">
-				<tr>
-					<th style="width: 80px;">이름</th>
-					<th style="width: 60px;">소계</th>
-	`;
+<div class="attendance-detail simple-table">
+	<table class="table table-sm table-bordered">
+		<thead class="table-light">
+			<tr>
+				<th style="width: 80px;">이름</th>
+				<th style="width: 100px;">메모</th>
+				<th style="width: 60px;">소계</th>
+`;
 
 		// 출석유형 헤더 추가 (입력타입에 따라 다른 표시)
 		attendance_types.forEach(function (type) {
 			const typeName = type.att_type_nickname || type.att_type_name;
 			const inputType = type.att_type_input || 'check';
 			const typePoint = Number(type.att_type_point) || 10; // 숫자로 강제 변환
-			const displayScore = inputType === 'text' ? `(${typePoint})` : `(${typePoint})`;
-			html += `<th style="width: 60px; text-align: center;">${typeName}<br/><span class="att-point">${displayScore}</span></th>`;
+			const displayScore = inputType === 'text' ? '' : `(${typePoint})`;
+
+			html += `<th class="text-center" style="width: 80px;">${typeName}${displayScore}</th>`;
 		});
 
-		html += '</tr></thead><tbody>';
+		html += `
+				</tr>
+			</thead>
+			<tbody>
+	`;
 
-		// 회원별 출석정보 렌더링
+		// 회원별 데이터 처리
 		members_info.forEach(function (member) {
-			const memberAttendance = attendance_records.filter(record => record.member_idx == member.member_idx);
+			const memberIdx = member.member_idx;
+			const memberName = member.member_name;
 
-			// 먼저 회원별 총 점수를 정확히 계산 - 숫자 타입 보장
-			let totalMemberScore = 0; // 초기값을 숫자 0으로 설정
+			// 해당 회원의 메모 조회
+			const memberMemo = memo_records[memberIdx] || {};
+			const memoContent = memberMemo.memo_content || '';
+			const attIdx = memberMemo.att_idx || null;
 
-			// 각 출석유형에 대해 점수 계산
-			attendance_types.forEach(function (type) {
-				const inputType = type.att_type_input || 'check';
-				const typeScore = Number(type.att_type_point) || 10; // 숫자로 강제 변환
+			// 해당 회원의 출석기록 필터링
+			const memberAttendanceRecords = attendance_records.filter(record =>
+				record.member_idx == memberIdx
+			);
 
-				// 해당 출석유형의 기존 출석기록 확인
-				const existingRecord = memberAttendance.find(record => record.att_type_idx == type.att_type_idx);
+			// 출석 유형별 그룹핑
+			const attendanceByType = {};
+			let weekTotalScore = 0; // 주간 총점 계산
 
-				if (existingRecord) {
-					if (inputType === 'text') {
-						// textbox의 경우 실제 저장된 att_value 사용 - 숫자로 강제 변환
-						const actualValue = Number(existingRecord.att_value) || 0;
-						totalMemberScore += actualValue;
-					} else {
-						// checkbox의 경우 출석유형의 기본 점수 사용 - 숫자로 강제 변환
-						totalMemberScore += Number(typeScore) || 10;
-					}
+			memberAttendanceRecords.forEach(function (record) {
+				const typeIdx = record.att_type_idx;
+				if (!attendanceByType[typeIdx]) {
+					attendanceByType[typeIdx] = [];
 				}
+				attendanceByType[typeIdx].push(record);
+
+				// att_value가 있으면 그 값을 사용, 없으면 att_type_point 사용
+				const scoreValue = record.att_value || Number(record.att_type_point) || 10;
+				weekTotalScore += scoreValue;
 			});
 
-			// 행 시작 및 회원이름, 소계 추가 - Number()로 확실히 숫자 보장
-			html += `<tr>
-		<td class="fw-medium">${member.member_name}</td>
-		<td class="fw-bold text-primary">${Number(totalMemberScore)}점</td>`;
+			html += `<tr data-member-idx="${memberIdx}">`;
+			html += `<td class="member-name">${memberName}</td>`;
 
-			// 각 출석유형별 입력 컨트롤 생성
+			// 메모 입력 필드 추가
+			html += `
+			<td>
+				<input type="text" class="form-control form-control-sm attendance-memo" 
+					   value="${escapeHtml(memoContent)}" 
+					   data-member-idx="${memberIdx}"
+					   data-att-idx="${attIdx || ''}"
+					   placeholder="메모 입력"
+					   style="font-size: 11px;">
+			</td>
+		`;
+
+			html += `<td class="text-center week-total">${weekTotalScore}</td>`;
+
+			// 각 출석유형별 체크박스/입력박스 생성
 			attendance_types.forEach(function (type) {
+				const typeIdx = type.att_type_idx;
 				const inputType = type.att_type_input || 'check';
-				const typeScore = Number(type.att_type_point) || 10; // 숫자로 강제 변환
-				const existingRecord = memberAttendance.find(record => record.att_type_idx == type.att_type_idx);
-				const hasAttendance = !!existingRecord;
+				const typeRecords = attendanceByType[typeIdx] || [];
+
+				html += '<td class="text-center">';
 
 				if (inputType === 'text') {
-					// 텍스트박스 입력 - 실제 att_value 값 사용
-					const currentValue = hasAttendance ? (Number(existingRecord.att_value) || 0) : 0;
-					const textboxId = `att_${member.member_idx}_${type.att_type_idx}`;
-
-					html += `
-				<td style="text-align: center;">
-					<input type="number" class="form-control form-control-sm attendance-textbox" 
-						   id="${textboxId}" 
-						   data-member-idx="${member.member_idx}" 
-						   data-att-type-idx="${type.att_type_idx}"
-						   data-att-type-score="${Number(typeScore)}"
-						   value="${Number(currentValue)}"
-						   min="0">
-				</td>
-			`;
+					// 텍스트박스인 경우 실제 값 표시
+					const currentValue = typeRecords.length > 0 ? (typeRecords[0].att_value || 0) : 0;
+					html += `<input type="number" class="form-control form-control-sm attendance-textbox text-center" 
+						 value="${currentValue}" min="0" max="999" 
+						 data-att-type-idx="${typeIdx}" 
+						 data-member-idx="${memberIdx}"
+						 style="width: 60px; font-size: 11px;">`;
 				} else {
-					// 체크박스 입력
-					const checkboxId = `att_${member.member_idx}_${type.att_type_idx}`;
-
-					html += `
-				<td style="text-align: center;">
-					<input type="checkbox" class="form-check-input attendance-checkbox" 
-						   id="${checkboxId}" 
-						   data-member-idx="${member.member_idx}" 
-						   data-att-type-idx="${type.att_type_idx}"
-						   data-att-type-score="${Number(typeScore)}"
-						   ${hasAttendance ? 'checked' : ''}>
-				</td>
-			`;
+					// 체크박스인 경우
+					const isChecked = typeRecords.length > 0;
+					const typeScore = Number(type.att_type_point) || 10;
+					html += `<div class="form-check d-flex justify-content-center">
+						<input class="form-check-input attendance-checkbox" type="checkbox" 
+							   ${isChecked ? 'checked' : ''} 
+							   data-att-type-idx="${typeIdx}"
+							   data-att-type-score="${typeScore}"
+							   data-member-idx="${memberIdx}">
+						</div>`;
 				}
+
+				html += '</td>';
 			});
 
 			html += '</tr>';
 		});
 
-		html += `</tbody></table>
-
+		html += `
+			</tbody>
+		</table>
 	</div>
 	`;
 
+		// 콘텐츠 업데이트
 		$('#attendanceDetailContent').html(html);
 
+		// 출석 상태 변경 시 소계 재계산 이벤트 바인딩
+		bindAttendanceChangeEvents();
 
-		// 입력 변경 시 소계 실시간 업데이트
-		$('.attendance-checkbox, .attendance-textbox').on('change', function() {
-			updateDetailTotalScores();
+		// 메모 입력 이벤트 바인딩
+		bindMemoEvents();
+	}
+
+	/**
+	 * 역할: 메모 관련 이벤트 바인딩
+	 */
+	function bindMemoEvents() {
+		// 메모 입력 필드 변경 이벤트
+		$(document).off('input', '.attendance-memo').on('input', '.attendance-memo', function() {
+			$(this).data('changed', true);
 		});
 	}
 
 	/**
-	 * 파일 위치: assets/js/attendance.js
 	 * 역할: 출석상세 모달에서 입력 변경 시 소계 실시간 업데이트
 	 */
 	function updateDetailTotalScores() {
@@ -1239,47 +1442,78 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * Toast 메시지 표시
+	 * 역할: 출석 상태 변경 이벤트 바인딩
+	 */
+	function bindAttendanceChangeEvents() {
+		// 체크박스 변경 이벤트
+		$(document).off('change', '.attendance-checkbox').on('change', '.attendance-checkbox', function() {
+			const row = $(this).closest('tr');
+			recalculateWeekTotal(row);
+		});
+
+		// 텍스트박스 변경 이벤트
+		$(document).off('input', '.attendance-textbox').on('input', '.attendance-textbox', function() {
+			const row = $(this).closest('tr');
+			recalculateWeekTotal(row);
+		});
+	}
+
+
+	/**
+	 * 역할: recalculateWeekTotal 함수 수정 - 숫자로 정확히 표시
+	 */
+	function recalculateWeekTotal(row) {
+		let weekTotal = 0;
+
+		// 체크된 체크박스들의 점수 합산
+		row.find('.attendance-checkbox:checked').each(function() {
+			const score = parseInt($(this).data('att-type-score')) || 10;
+			weekTotal += score;
+		});
+
+		// 텍스트박스 값들의 합산
+		row.find('.attendance-textbox').each(function() {
+			const value = parseInt($(this).val()) || 0;
+			weekTotal += value;
+		});
+
+		// 소계 업데이트 - 숫자만 표시
+		row.find('.week-total').text(weekTotal);
+	}
+
+	/**
+	 * 역할: Toast 메시지 표시 함수
 	 */
 	function showToast(message, type = 'info') {
 		const toast = $('#attendanceToast');
 		const toastBody = toast.find('.toast-body');
 
-		// 타입별 아이콘 설정
-		let icon = '';
-		let bgClass = '';
+		// Toast 메시지 설정
+		toastBody.text(message);
 
+		// 타입별 스타일 적용
+		toast.removeClass('bg-success bg-danger bg-warning bg-info');
 		switch(type) {
 			case 'success':
-				icon = '<i class="bi bi-check-circle-fill text-success me-2"></i>';
-				bgClass = 'bg-success-subtle';
+				toast.addClass('bg-success text-white');
 				break;
 			case 'error':
-				icon = '<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>';
-				bgClass = 'bg-danger-subtle';
+				toast.addClass('bg-danger text-white');
 				break;
 			case 'warning':
-				icon = '<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>';
-				bgClass = 'bg-warning-subtle';
+				toast.addClass('bg-warning text-dark');
 				break;
-			case 'info':
 			default:
-				icon = '<i class="bi bi-info-circle-fill text-info me-2"></i>';
-				bgClass = 'bg-info-subtle';
+				toast.addClass('bg-info text-white');
 				break;
 		}
 
-		// Toast 내용 설정
-		toastBody.removeClass('bg-success-subtle bg-danger-subtle bg-warning-subtle bg-info-subtle')
-			.addClass(bgClass)
-			.html(icon + message);
-
 		// Toast 표시
-		const bsToast = new bootstrap.Toast(toast[0], {
+		const toastInstance = new bootstrap.Toast(toast[0], {
 			autohide: true,
 			delay: 3000
 		});
-		bsToast.show();
+		toastInstance.show();
 	}
 
 	// ===== 스피너 관련 함수들 =====

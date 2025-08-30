@@ -364,7 +364,7 @@ class Attendance extends My_Controller
 	}
 
 	/**
-	 * 특정 주의 출석상세 데이터 가져오기 - 연도 조건 추가
+	 * 주별 출석 상세 정보 조회 - 메모 정보 포함
 	 */
 	public function get_week_attendance_detail()
 	{
@@ -405,15 +405,178 @@ class Attendance extends My_Controller
 		// 회원 정보 가져오기
 		$members_info = $this->Member_model->get_members_by_indices($member_indices);
 
+		// 메모 정보 가져오기 (att_idx 기준)
+		$this->load->model('Memo_model');
+		$memo_records = $this->Memo_model->get_attendance_memo_by_week($member_indices, $sunday_date);
+
 		echo json_encode(array(
 			'success' => true,
 			'data' => array(
 				'attendance_types' => $attendance_types,
 				'attendance_records' => $attendance_records,
 				'members_info' => $members_info,
-				'week_dates' => $week_dates
+				'week_dates' => $week_dates,
+				'memo_records' => $memo_records
 			)
 		));
+	}
+
+	/**
+	 * 출석 및 메모 데이터 통합 저장
+	 */
+	public function save_attendance_with_memo()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$attendance_data_json = $this->input->post('attendance_data');
+		$memo_data_json = $this->input->post('memo_data');
+		$att_date = $this->input->post('att_date');
+		$year = $this->input->post('year') ?: date('Y');
+
+		// 로깅 추가
+		log_message('debug', 'Save attendance with memo - Org ID: ' . $org_id);
+		log_message('debug', 'Attendance data: ' . $attendance_data_json);
+		log_message('debug', 'Memo data: ' . $memo_data_json);
+
+		if (!$org_id || !$att_date) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$this->db->trans_start();
+
+		try {
+			$result = true;
+
+			// 출석 데이터 저장
+			if ($attendance_data_json) {
+				$attendance_data = json_decode($attendance_data_json, true);
+				if ($attendance_data) {
+					$result = $this->Attendance_model->save_attendance_with_values($org_id, $attendance_data, $att_date, $year);
+					log_message('debug', 'Attendance save result: ' . ($result ? 'success' : 'failed'));
+				}
+			}
+
+			// 메모 데이터 저장
+			if ($result && $memo_data_json) {
+				$memo_data = json_decode($memo_data_json, true);
+				log_message('debug', 'Decoded memo data: ' . print_r($memo_data, true));
+
+				if ($memo_data && is_array($memo_data)) {
+					$this->load->model('Memo_model');
+					$user_id = $this->session->userdata('user_id');
+
+					foreach ($memo_data as $memo_item) {
+						$member_idx = $memo_item['member_idx'];
+						$memo_content = trim($memo_item['memo_content']);
+						$att_idx = $memo_item['att_idx'];
+
+						log_message('debug', "Processing memo for member {$member_idx}: '{$memo_content}', att_idx: {$att_idx}");
+
+						// att_idx를 위한 출석 레코드 조회 (해당 회원의 해당 날짜 출석 기록)
+						if (!$att_idx && $memo_content) {
+							$att_idx = $this->get_or_create_attendance_idx($org_id, $member_idx, $att_date, $year);
+							log_message('debug', "Created/found att_idx: {$att_idx}");
+						}
+
+						if ($memo_content && $att_idx) {
+							// 기존 메모가 있는지 확인
+							$existing_memo = $this->Memo_model->get_memo_by_att_idx($att_idx);
+
+							if ($existing_memo) {
+								// 기존 메모 수정
+								$update_data = array(
+									'memo_content' => $memo_content,
+									'modi_date' => date('Y-m-d H:i:s')
+								);
+								$update_result = $this->Memo_model->update_memo($existing_memo['idx'], $update_data);
+								log_message('debug', "Updated existing memo: " . ($update_result ? 'success' : 'failed'));
+							} else {
+								// 새 메모 추가
+								$insert_data = array(
+									'memo_type' => 1,
+									'memo_content' => $memo_content,
+									'regi_date' => date('Y-m-d H:i:s'),
+									'user_id' => $user_id,
+									'member_idx' => $member_idx,
+									'att_idx' => $att_idx
+								);
+								$insert_result = $this->Memo_model->save_memo($insert_data);
+								log_message('debug', "Inserted new memo: " . ($insert_result ? 'success' : 'failed'));
+							}
+						} elseif (!$memo_content && $att_idx) {
+							// 메모 내용이 비어있으면 기존 메모 삭제
+							$existing_memo = $this->Memo_model->get_memo_by_att_idx($att_idx);
+							if ($existing_memo) {
+								$delete_result = $this->Memo_model->delete_memo($existing_memo['idx']);
+								log_message('debug', "Deleted memo: " . ($delete_result ? 'success' : 'failed'));
+							}
+						}
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				log_message('error', 'Transaction failed');
+				echo json_encode(array('success' => false, 'message' => '저장에 실패했습니다.'));
+				return;
+			}
+
+			log_message('debug', 'Save completed successfully');
+			echo json_encode(array('success' => true, 'message' => '출석 및 메모가 저장되었습니다.'));
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Attendance with memo save error: ' . $e->getMessage());
+			echo json_encode(array('success' => false, 'message' => '저장 중 오류가 발생했습니다.'));
+		}
+	}
+
+
+
+	/**
+	 * 출석 IDX 조회 또는 생성
+	 */
+	private function get_or_create_attendance_idx($org_id, $member_idx, $att_date, $year)
+	{
+		// 해당 회원의 해당 날짜 출석 기록 조회
+		$this->db->select('idx');
+		$this->db->from('wb_member_att');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('att_date', $att_date);
+		$this->db->where('att_year', $year);
+		$this->db->limit(1);
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		if ($result) {
+			return $result['idx'];
+		}
+
+		// 출석 기록이 없으면 더미 레코드 생성 (메모용)
+		$insert_data = array(
+			'member_idx' => $member_idx,
+			'att_date' => $att_date,
+			'att_type_idx' => 0, // 메모 전용 더미 타입
+			'att_value' => 0,
+			'org_id' => $org_id,
+			'att_year' => $year
+		);
+
+		$this->db->insert('wb_member_att', $insert_data);
+		return $this->db->insert_id();
 	}
 
 	/**
