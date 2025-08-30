@@ -37,16 +37,19 @@ $this->load->view('header'); ?>
 						</h5>
 					</div>
 					<div class="card-body">
+
 						<?php if (isset($org_users) && !empty($org_users)): ?>
 							<div class="table-responsive">
 								<table class="table align-middle">
 									<thead>
 									<tr>
 										<th style="width: 60px;">프로필</th>
-										<th style="width: 180px;">이름</th>
-										<th>이메일</th>
-										<th style="width: 180px;">연락처</th>
+										<th style="width: 120px;">이름</th>
+										<th style="width: 180px;">이메일</th>
+										<th style="width: 120px;">연락처</th>
 										<th style="width: 80px;">권한</th>
+										<th style="width: 200px;">관리메뉴</th>
+										<th style="width: 200px;">관리그룹</th>
 										<th style="width: 120px;">관리</th>
 									</tr>
 									</thead>
@@ -79,34 +82,72 @@ $this->load->view('header'); ?>
 												<span><?php echo htmlspecialchars($user['user_hp']); ?></span>
 											</td>
 											<td>
-												<span class="badge bg-<?php
-												if ($user['level'] >= 10) echo 'danger';
-												elseif ($user['level'] >= 9) echo 'warning';
-												else echo 'secondary';
-												?>">
-													<?php
-													if ($user['level'] >= 10) echo '최고관리자';
-													elseif ($user['level'] >= 9) echo '관리자';
-													else echo '일반(' . $user['level'] . ')';
-													?>
-												</span>
+                        <span class="badge bg-<?php
+						if ($user['level'] >= 10) echo 'danger';
+						elseif ($user['level'] >= 9) echo 'warning';
+						else echo 'secondary';
+						?>">
+                            <?php
+							if ($user['level'] >= 10) echo '최고관리자';
+							elseif ($user['level'] >= 9) echo '관리자';
+							else echo '일반(' . $user['level'] . ')';
+							?>
+                        </span>
 											</td>
 											<td>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-outline-primary edit-user-btn"
-                                                        data-user-id="<?php echo $user['user_id']; ?>"
-                                                        data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
-                                                        data-user-hp="<?php echo htmlspecialchars($user['user_hp']); ?>"
-                                                        data-user-level="<?php echo $user['level']; ?>"
-                                                        data-org-id="<?php echo $selected_org_detail['org_id']; ?>">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
+												<?php if ($user['level'] >= 10): ?>
+													<small class="text-muted">모든 메뉴</small>
+												<?php else: ?>
+													<?php if (!empty($user['managed_menus_display'])): ?>
+														<?php foreach ($user['managed_menus_display'] as $menu): ?>
+															<span class="badge bg-info text-dark me-1 mb-1"><?php echo htmlspecialchars($menu); ?></span>
+														<?php endforeach; ?>
+													<?php else: ?>
+														<small class="text-muted">설정 없음</small>
+													<?php endif; ?>
+												<?php endif; ?>
+											</td>
+											<td>
+												<?php if ($user['level'] >= 10): ?>
+													<small class="text-muted">모든 그룹</small>
+												<?php else: ?>
+													<?php if (!empty($user['managed_areas_display'])): ?>
+														<?php foreach ($user['managed_areas_display'] as $area): ?>
+															<span class="badge bg-success me-1 mb-1"><?php echo htmlspecialchars($area); ?></span>
+														<?php endforeach; ?>
+													<?php else: ?>
+														<small class="text-muted">설정 없음</small>
+													<?php endif; ?>
+												<?php endif; ?>
+											</td>
+											<td>
+												<button type="button"
+														class="btn btn-sm btn-outline-primary edit-user-btn"
+														data-user-id="<?php echo $user['user_id']; ?>"
+														data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
+														data-user-hp="<?php echo htmlspecialchars($user['user_hp']); ?>"
+														data-user-level="<?php echo $user['level']; ?>"
+														data-org-id="<?php echo $selected_org_detail['org_id']; ?>">
+													<i class="bi bi-pencil"></i>
+												</button>
 												<?php if ($user['user_id'] !== $this->session->userdata('user_id')): ?>
 													<button type="button"
 															class="btn btn-sm btn-outline-danger delete-user-btn"
 															data-user-id="<?php echo $user['user_id']; ?>"
-															data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>">
+															data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
+															data-org-id="<?php echo $selected_org_detail['org_id']; ?>">
 														<i class="bi bi-trash"></i>
+													</button>
+												<?php endif; ?>
+
+												<!-- 시스템 관리자만 로그인 버튼 표시 -->
+												<?php if ($this->session->userdata('master_yn') === 'Y' && $user['user_id'] !== $this->session->userdata('user_id')): ?>
+													<button type="button"
+															class="btn btn-sm btn-outline-info login-as-user-btn"
+															data-user-id="<?php echo $user['user_id']; ?>"
+															data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
+															title="<?php echo htmlspecialchars($user['user_name']); ?>님으로 로그인">
+														<i class="bi bi-box-arrow-in-right"></i>
 													</button>
 												<?php endif; ?>
 											</td>
@@ -121,6 +162,7 @@ $this->load->view('header'); ?>
 								<p class="text-muted mt-3">등록된 사용자가 없습니다.</p>
 							</div>
 						<?php endif; ?>
+
 					</div>
 				</div>
 			</div>

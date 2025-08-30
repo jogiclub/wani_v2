@@ -106,6 +106,7 @@
                 } else {
                     echo '/assets/images/photo_no.png?3';
                 } ?>" class="rounded-circle profile-img" width="40" height="40">
+
                 <div class="profile-name">
 				<span><a class="dropdown-item" href="#"><?php if ($user['user_name']) {
                             echo $user['user_name'];
@@ -114,7 +115,24 @@
                                 echo $user['user_mail'];
                             } ?></a></span>
                 </div>
+
+
+
             </div>
+
+			<!-- 기존 헤더 내용 중 사용자 정보 드롭다운 부분에 추가 -->
+			<?php if ($this->session->userdata('is_admin_login')): ?>
+				<div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+					<i class="bi bi-exclamation-triangle-fill"></i>
+					<strong><?php echo $this->session->userdata('user_name'); ?></strong>님으로 로그인 중입니다.
+					<button type="button" class="btn btn-sm btn-outline-dark ms-2" onclick="returnToAdmin()">
+						<i class="bi bi-arrow-return-left"></i> 관리자 계정으로 돌아가기
+					</button>
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			<?php endif; ?>
+
+
         </div>
     </header>
 
@@ -304,3 +322,26 @@
     </div>
     <main class="ms-sm-auto col-xl-10">
 <?php endif; ?>
+
+
+		<script>
+			function returnToAdmin() {
+				if (confirm('관리자 계정으로 돌아가시겠습니까?')) {
+					$.ajax({
+						url: '/user_management/return_to_admin',
+						type: 'POST',
+						dataType: 'json',
+						success: function(response) {
+							if (response.success) {
+								location.reload();
+							} else {
+								alert('오류가 발생했습니다.');
+							}
+						},
+						error: function() {
+							alert('오류가 발생했습니다.');
+						}
+					});
+				}
+			}
+		</script>

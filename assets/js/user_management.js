@@ -362,36 +362,53 @@ $(document).on('submit', '#editUserForm', function(e) {
 
 // 사용자 삭제 버튼 클릭 이벤트
 $(document).on('click', '.delete-user-btn', function() {
-    var userId = $(this).data('user-id');
-    var userName = $(this).data('user-name');
-    var orgId = $(this).data('org-id');
+	var userId = $(this).data('user-id');
+	var userName = $(this).data('user-name');
+	var orgId = $(this).data('org-id');
 
-    showConfirm(
-        userName + ' 사용자를 조직에서 제외하시겠습니까?<br><br>이 작업은 되돌릴 수 없습니다.',
-        function() {
-            $.ajax({
-                url: 'user_management/delete_user',
-                type: 'POST',
-                data: {
-                    target_user_id: userId,
-                    org_id: orgId
-                },
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        showToast(response.message);
-                        location.reload();
-                    } else {
-                        showToast(response.message);
-                    }
-                },
-                error: function() {
-                    showToast('사용자 삭제 중 오류가 발생했습니다.');
-                }
-            });
-        },
-        '사용자 삭제 확인'
-    );
+	console.log('삭제 시도:', {userId, userName, orgId}); // 디버깅용
+
+	showConfirm(
+		userName + ' 사용자를 조직에서 제외하시겠습니까?<br><br>이 작업은 되돌릴 수 없습니다.',
+		function() {
+			$.ajax({
+				url: 'user_management/delete_user',
+				type: 'POST',
+				data: {
+					target_user_id: userId,
+					org_id: orgId
+				},
+				dataType: 'json',
+				success: function(response) {
+					console.log('서버 응답:', response); // 디버깅용
+
+					// 응답이 객체가 아닌 문자열인 경우 파싱 시도
+					if (typeof response === 'string') {
+						try {
+							response = JSON.parse(response);
+						} catch (e) {
+							console.error('JSON 파싱 실패:', e);
+							showToast('서버 응답을 처리할 수 없습니다.');
+							return;
+						}
+					}
+
+					if (response && response.success) {
+						showToast(response.message);
+						location.reload();
+					} else {
+						showToast(response ? response.message : '사용자 삭제에 실패했습니다.');
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('AJAX 에러:', {xhr, status, error}); // 디버깅용
+					console.log('응답 텍스트:', xhr.responseText); // 서버에서 실제 반환된 내용
+					showToast('사용자 삭제 중 오류가 발생했습니다.');
+				}
+			});
+		},
+		'사용자 삭제 확인'
+	);
 });
 
 // 사용자 초대 폼 제출
@@ -427,4 +444,40 @@ $(document).on('submit', '#inviteUserForm', function(e) {
             showToast('초대 메일 발송 중 오류가 발생했습니다.');
         }
     });
+});
+
+
+// 사용자로 로그인 버튼 클릭 이벤트
+$(document).on('click', '.login-as-user-btn', function() {
+	var userId = $(this).data('user-id');
+	var userName = $(this).data('user-name');
+
+	showConfirm(
+		userName + ' 사용자로 로그인하시겠습니까?<br><br>현재 세션이 종료되고 해당 사용자로 로그인됩니다.',
+		function() {
+			$.ajax({
+				url: 'user_management/login_as_user',
+				type: 'POST',
+				data: {
+					target_user_id: userId
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.success) {
+						showToast(response.message);
+						// 잠시 후 메인 페이지로 이동
+						setTimeout(function() {
+							window.location.href = '/';
+						}, 1000);
+					} else {
+						showToast(response.message);
+					}
+				},
+				error: function() {
+					showToast('사용자 로그인 중 오류가 발생했습니다.');
+				}
+			});
+		},
+		'사용자 로그인 확인'
+	);
 });

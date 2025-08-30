@@ -259,40 +259,71 @@ class User_management extends My_Controller
         }
     }
 
-    /**
-     * 사용자 삭제 (조직에서 제외)
-     */
-    public function delete_user()
-    {
-        if (!$this->input->is_ajax_request()) {
-            show_404();
-        }
+	/**
+	 * 사용자 삭제 (조직에서 제외) - 응답 개선 버전
+	 */
+	public function delete_user()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
 
-        $user_id = $this->session->userdata('user_id');
-        $target_user_id = $this->input->post('target_user_id');
-        $org_id = $this->input->post('org_id');
+		// Content-Type 헤더 설정
+		header('Content-Type: application/json; charset=utf-8');
 
-        // 권한 검증
-        $user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
-        if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
-            echo json_encode(array('success' => false, 'message' => '사용자를 삭제할 권한이 없습니다.'));
-            return;
-        }
+		$user_id = $this->session->userdata('user_id');
+		$target_user_id = $this->input->post('target_user_id');
+		$org_id = $this->input->post('org_id');
 
-        // 자기 자신 삭제 방지
-        if ($user_id === $target_user_id) {
-            echo json_encode(array('success' => false, 'message' => '본인 계정은 삭제할 수 없습니다.'));
-            return;
-        }
+		log_message('debug', "Delete request received - target: {$target_user_id}, org: {$org_id}, by: {$user_id}");
 
-        $result = $this->User_management_model->delete_org_user($target_user_id, $org_id);
+		// 입력값 검증
+		if (empty($target_user_id) || empty($org_id)) {
+			$response = array('success' => false, 'message' => '삭제할 사용자 정보를 찾을 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
 
-        if ($result) {
-            echo json_encode(array('success' => true, 'message' => '사용자가 조직에서 제외되었습니다.'));
-        } else {
-            echo json_encode(array('success' => false, 'message' => '사용자 삭제에 실패했습니다.'));
-        }
-    }
+		// 권한 검증
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			log_message('error', "Delete user permission denied: User {$user_id} (level {$user_level}) trying to delete {$target_user_id} in org {$org_id}");
+			$response = array('success' => false, 'message' => '사용자를 삭제할 권한이 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 자기 자신 삭제 방지
+		if ($user_id === $target_user_id) {
+			$response = array('success' => false, 'message' => '본인 계정은 삭제할 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 삭제 대상 사용자 정보 확인
+		$target_user_info = $this->User_management_model->get_org_user_info($target_user_id, $org_id);
+		if (!$target_user_info) {
+			log_message('error', "Delete user failed: Target user {$target_user_id} not found in org {$org_id}");
+			$response = array('success' => false, 'message' => '삭제할 사용자 정보를 찾을 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		log_message('debug', "Attempting to delete user: {$target_user_id} from org: {$org_id} by user: {$user_id}");
+
+		// 사용자 삭제 실행
+		$result = $this->User_management_model->delete_org_user($target_user_id, $org_id);
+
+		if ($result) {
+			log_message('info', "User deleted successfully: {$target_user_id} from org: {$org_id} by user: {$user_id}");
+			$response = array('success' => true, 'message' => '사용자가 조직에서 제외되었습니다.');
+		} else {
+			log_message('error', "User deletion failed: {$target_user_id} from org: {$org_id} by user: {$user_id}");
+			$response = array('success' => false, 'message' => '사용자 삭제에 실패했습니다.');
+		}
+
+		echo json_encode($response);
+	}
 
     /**
      * 사용자 초대 메일 발송
@@ -374,6 +405,119 @@ class User_management extends My_Controller
 		$areas_tree = $this->Member_area_model->get_member_areas_tree($org_id);
 
 		echo json_encode(array('success' => true, 'areas' => $areas_tree));
+	}
+
+	/**
+	 * 사용자로 로그인 (시스템 관리자 전용)
+	 */
+	public function login_as_user()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		// Content-Type 헤더 설정
+		header('Content-Type: application/json; charset=utf-8');
+
+		// 시스템 관리자 권한 확인
+		if ($this->session->userdata('master_yn') !== 'Y') {
+			$response = array('success' => false, 'message' => '권한이 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		$current_user_id = $this->session->userdata('user_id');
+		$target_user_id = $this->input->post('target_user_id');
+
+		// 입력값 검증
+		if (empty($target_user_id)) {
+			$response = array('success' => false, 'message' => '사용자 정보가 누락되었습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 자기 자신으로 로그인 방지
+		if ($current_user_id === $target_user_id) {
+			$response = array('success' => false, 'message' => '본인 계정으로는 로그인할 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 대상 사용자 정보 확인
+		$target_user = $this->User_management_model->get_user_info($target_user_id);
+		if (!$target_user) {
+			$response = array('success' => false, 'message' => '사용자 정보를 찾을 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 로그 기록
+		log_message('info', "Admin login as user: {$current_user_id} -> {$target_user_id}");
+
+		// 세션 데이터 업데이트 (원래 관리자 정보는 별도로 저장)
+		$session_data = array(
+			'user_id' => $target_user['user_id'],
+			'user_name' => $target_user['user_name'],
+			'user_mail' => $target_user['user_mail'],
+			'user_hp' => $target_user['user_hp'],
+			'master_yn' => 'N', // 로그인한 사용자는 일반 사용자로 설정
+			'original_admin_id' => $current_user_id, // 원래 관리자 ID 저장
+			'is_admin_login' => true // 관리자 로그인 플래그
+		);
+
+		$this->session->set_userdata($session_data);
+
+		$response = array(
+			'success' => true,
+			'message' => $target_user['user_name'] . '님으로 로그인되었습니다.'
+		);
+		echo json_encode($response);
+	}
+
+	/**
+	 * 관리자 계정으로 돌아가기
+	 */
+	public function return_to_admin()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		// Content-Type 헤더 설정
+		header('Content-Type: application/json; charset=utf-8');
+
+		$original_admin_id = $this->session->userdata('original_admin_id');
+		$is_admin_login = $this->session->userdata('is_admin_login');
+
+		if (!$original_admin_id || !$is_admin_login) {
+			$response = array('success' => false, 'message' => '관리자 로그인 상태가 아닙니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 원래 관리자 정보 복원
+		$admin_user = $this->User_management_model->get_user_info($original_admin_id);
+		if (!$admin_user) {
+			$response = array('success' => false, 'message' => '관리자 정보를 찾을 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 세션 데이터 복원
+		$session_data = array(
+			'user_id' => $admin_user['user_id'],
+			'user_name' => $admin_user['user_name'],
+			'user_mail' => $admin_user['user_mail'],
+			'user_hp' => $admin_user['user_hp'],
+			'master_yn' => 'Y',
+			'original_admin_id' => null,
+			'is_admin_login' => false
+		);
+
+		$this->session->set_userdata($session_data);
+
+		$response = array('success' => true, 'message' => '관리자 계정으로 돌아왔습니다.');
+		echo json_encode($response);
 	}
 
 }

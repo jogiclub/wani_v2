@@ -80,12 +80,13 @@ class User_management_model extends CI_Model
 		return $this->db->count_all_results();
 	}
 
+
 	/**
-	 * 조직의 사용자 목록 가져오기
+	 * 조직의 사용자 목록 가져오기 (관리메뉴/그룹 정보 포함)
 	 */
 	public function get_org_users($org_id)
 	{
-		$this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_user.user_mail, wb_user.user_hp, wb_user.user_profile_image, wb_user.regi_date, wb_user.master_yn, wb_org_user.level');
+		$this->db->select('wb_user.idx, wb_user.user_id, wb_user.user_name, wb_user.user_mail, wb_user.user_hp, wb_user.user_profile_image, wb_user.regi_date, wb_user.master_yn, wb_user.managed_menus, wb_user.managed_areas, wb_org_user.level');
 		$this->db->from('wb_user');
 		$this->db->join('wb_org_user', 'wb_user.user_id = wb_org_user.user_id');
 		$this->db->where('wb_org_user.org_id', $org_id);
@@ -93,9 +94,85 @@ class User_management_model extends CI_Model
 		$this->db->order_by('wb_org_user.level', 'DESC');
 		$this->db->order_by('wb_user.user_name', 'ASC');
 		$query = $this->db->get();
-		return $query->result_array();
+		$users = $query->result_array();
+
+		// 각 사용자의 관리메뉴와 관리그룹 표시 정보 처리
+		foreach ($users as &$user) {
+			// 관리메뉴 표시 정보 생성
+			$user['managed_menus_display'] = $this->get_managed_menus_display($user['managed_menus']);
+
+			// 관리그룹 표시 정보 생성
+			$user['managed_areas_display'] = $this->get_managed_areas_display($user['managed_areas'], $org_id);
+		}
+
+		return $users;
 	}
 
+
+	/**
+	 * 관리메뉴 표시 정보 생성
+	 */
+	private function get_managed_menus_display($managed_menus_json)
+	{
+		if (empty($managed_menus_json)) {
+			return array();
+		}
+
+		$managed_menus = json_decode($managed_menus_json, true);
+		if (!is_array($managed_menus)) {
+			return array();
+		}
+
+		// 메뉴 헬퍼 로드
+		$this->load->helper('menu');
+		$system_menus = get_system_menus();
+
+		$display_menus = array();
+		foreach ($managed_menus as $menu_key) {
+			if (isset($system_menus[$menu_key]['name'])) {
+				$display_menus[] = $system_menus[$menu_key]['name'];
+			} else {
+				$display_menus[] = $menu_key; // 메뉴 정보가 없으면 키 값 자체를 표시
+			}
+		}
+
+		return $display_menus;
+	}
+
+	/**
+	 * 관리그룹 표시 정보 생성
+	 */
+	private function get_managed_areas_display($managed_areas_json, $org_id)
+	{
+		if (empty($managed_areas_json)) {
+			return array();
+		}
+
+		$managed_areas = json_decode($managed_areas_json, true);
+		if (!is_array($managed_areas)) {
+			return array();
+		}
+
+		// 관리그룹 이름 조회
+		if (!empty($managed_areas)) {
+			$this->db->select('area_idx, area_name');
+			$this->db->from('wb_member_area');
+			$this->db->where('org_id', $org_id);
+			$this->db->where_in('area_idx', $managed_areas);
+			$this->db->order_by('area_order', 'ASC');
+			$query = $this->db->get();
+			$areas = $query->result_array();
+
+			$display_areas = array();
+			foreach ($areas as $area) {
+				$display_areas[] = $area['area_name'];
+			}
+
+			return $display_areas;
+		}
+
+		return array();
+	}
 
 	/**
 	 * 파일 위치: application/models/User_management_model.php
@@ -138,14 +215,46 @@ class User_management_model extends CI_Model
 	}
 
 	/**
-	 * 조직에서 사용자 제외
+	 * 조직에서 사용자 제외 (안전한 버전)
 	 */
 	public function delete_org_user($target_user_id, $org_id)
 	{
+		// 삭제 전 사용자 존재 여부 확인 (별도 쿼리로)
+		$this->db->select('user_id');
 		$this->db->where('user_id', $target_user_id);
 		$this->db->where('org_id', $org_id);
-		return $this->db->delete('wb_org_user');
+		$exists_query = $this->db->get('wb_org_user');
+
+		if ($exists_query->num_rows() == 0) {
+			log_message('error', "Delete user failed: User {$target_user_id} not found in org {$org_id}");
+			return false;
+		}
+
+		// 트랜잭션 시작
+		$this->db->trans_start();
+
+		// wb_org_user 테이블에서 해당 사용자 삭제
+		$this->db->where('user_id', $target_user_id);
+		$this->db->where('org_id', $org_id);
+		$delete_result = $this->db->delete('wb_org_user');
+
+		// 트랜잭션 완료
+		$this->db->trans_complete();
+
+		// 트랜잭션 상태 확인
+		if ($this->db->trans_status() === FALSE) {
+			log_message('error', "Delete user transaction failed: User {$target_user_id} in org {$org_id}");
+			return false;
+		}
+
+		// 실제 삭제된 행 수 확인
+		$affected_rows = $this->db->affected_rows();
+		log_message('debug', "Delete user result: User {$target_user_id} in org {$org_id}, affected rows: {$affected_rows}");
+
+		return $affected_rows > 0;
 	}
+
+
 
 	/**
 	 * 사용자가 조직에 속해있는지 확인
@@ -391,5 +500,20 @@ class User_management_model extends CI_Model
 		return in_array($area_idx, $accessible_areas);
 	}
 
+
+	/**
+	 * 조직 내 특정 사용자 정보 가져오기
+	 */
+	public function get_org_user_info($user_id, $org_id)
+	{
+		$this->db->select('wb_user.user_id, wb_user.user_name, wb_user.user_mail, wb_org_user.level');
+		$this->db->from('wb_user');
+		$this->db->join('wb_org_user', 'wb_user.user_id = wb_org_user.user_id');
+		$this->db->where('wb_user.user_id', $user_id);
+		$this->db->where('wb_org_user.org_id', $org_id);
+		$this->db->where('wb_user.del_yn', 'N');
+		$query = $this->db->get();
+		return $query->row_array();
+	}
 
 }
