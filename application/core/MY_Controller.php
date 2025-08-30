@@ -1,9 +1,11 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class MY_Controller extends CI_Controller {
+class MY_Controller extends CI_Controller
+{
 
-	public function __construct() {
+	public function __construct()
+	{
 		parent::__construct();
 		$this->load->library('session');
 		$this->load->helper('url');
@@ -14,7 +16,8 @@ class MY_Controller extends CI_Controller {
 	/**
 	 * 헤더에서 사용할 조직 데이터 준비
 	 */
-	protected function prepare_header_data() {
+	protected function prepare_header_data()
+	{
 		if (!$this->session->userdata('user_id')) {
 			return array();
 		}
@@ -61,7 +64,8 @@ class MY_Controller extends CI_Controller {
 	/**
 	 * POST 조직 변경 요청 처리 및 권한 검증
 	 */
-	protected function handle_org_change(&$data) {
+	protected function handle_org_change(&$data)
+	{
 		$postOrgId = $this->input->post('org_id');
 
 		if (!$postOrgId) {
@@ -105,7 +109,8 @@ class MY_Controller extends CI_Controller {
 	/**
 	 * 사용자의 조직 접근 권한 확인
 	 */
-	protected function check_org_access($org_id, $required_level = 1) {
+	protected function check_org_access($org_id, $required_level = 1)
+	{
 		$user_id = $this->session->userdata('user_id');
 		$master_yn = $this->session->userdata('master_yn');
 
@@ -135,14 +140,24 @@ class MY_Controller extends CI_Controller {
 	}
 
 	/**
-	 * 권한 검증 실패 시 처리
+	 * 접근 권한 부족 시 처리
 	 */
-	protected function handle_access_denied($message = '접근 권한이 없습니다.') {
-		$user_id = $this->session->userdata('user_id');
-		$requested_uri = $this->uri->uri_string();
-
-		log_message('warning', "사용자 {$user_id}의 권한 없는 접근: {$requested_uri}");
-
-		show_error($message, 403);
+	protected function handle_access_denied($message = '접근 권한이 없습니다.')
+	{
+		if ($this->input->is_ajax_request()) {
+			// AJAX 요청인 경우 JSON 응답
+			echo json_encode(array(
+				'success' => false,
+				'message' => $message,
+				'redirect' => base_url('mypage')
+			));
+			exit;
+		} else {
+			// 일반 요청인 경우 mypage로 리디렉트
+			$this->session->set_flashdata('error_message', $message);
+			redirect('mypage');
+		}
 	}
+
+
 }

@@ -262,7 +262,7 @@
                         <?php endif; ?>
                         <?php if (can_access_menu('GROUP_SETTING', $user_managed_menus, $is_master)): ?>
                             <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('member_area'); ?>">
+                                <a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('group_setting'); ?>">
                                     <i class="bi bi-diagram-3"></i> 그룹설정
                                 </a>
                             </li>

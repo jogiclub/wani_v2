@@ -1,6 +1,3 @@
-<!-- 파일 위치: application/views/member.php -->
-<!-- 역할: Split.js 라이브러리를 적용한 회원관리 화면 레이아웃 -->
-
 <?php $this->load->view('header'); ?>
 
 <!-- Member CSS -->
