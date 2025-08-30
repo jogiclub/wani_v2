@@ -116,6 +116,11 @@ class Group_setting extends My_Controller
 			return;
 		}
 
+		// parent_idx 처리: 빈 문자열이나 '0'인 경우 null로 변경
+		if (empty($parent_idx) || $parent_idx === '0' || $parent_idx === 0) {
+			$parent_idx = null;
+		}
+
 		// 새로운 순서 계산
 		$area_order = $this->Group_setting_model->get_next_area_order($org_id, $parent_idx);
 
@@ -129,11 +134,18 @@ class Group_setting extends My_Controller
 		$result = $this->Group_setting_model->insert_group($data);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '새그룹이 생성되었습니다.'));
+			// 새로 생성된 그룹의 area_idx를 반환
+			$new_area_idx = $this->db->insert_id();
+			echo json_encode(array(
+				'success' => true,
+				'message' => '새그룹이 생성되었습니다.',
+				'new_area_idx' => $new_area_idx
+			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '그룹 생성에 실패했습니다.'));
 		}
 	}
+
 
 	/**
 	 * 그룹 삭제 (AJAX)
@@ -285,4 +297,63 @@ class Group_setting extends My_Controller
 		$target_groups = $this->Group_setting_model->get_move_target_groups($org_id, $current_area_idx);
 		echo json_encode(array('success' => true, 'data' => $target_groups));
 	}
+
+
+
+	/**
+	 * 그룹명 변경 (AJAX)
+	 */
+	public function rename_group()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$area_idx = $this->input->post('area_idx');
+		$org_id = $this->input->post('org_id');
+		$new_name = trim($this->input->post('new_name'));
+
+		if (!$area_idx || !$org_id || !$new_name) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 검증
+		$user_level = $this->Group_setting_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '그룹명을 변경할 권한이 없습니다.'));
+			return;
+		}
+
+		// 그룹명 길이 검증
+		if (strlen($new_name) > 50) {
+			echo json_encode(array('success' => false, 'message' => '그룹명은 50자 이내로 입력해주세요.'));
+			return;
+		}
+
+		// 동일한 조직 내에서 같은 레벨에 동일한 그룹명이 있는지 확인
+		$current_group = $this->Group_setting_model->get_group_info($area_idx);
+		if (!$current_group) {
+			echo json_encode(array('success' => false, 'message' => '그룹 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		$duplicate_check = $this->Group_setting_model->check_duplicate_group_name($org_id, $new_name, $current_group['parent_idx'], $area_idx);
+		if ($duplicate_check) {
+			echo json_encode(array('success' => false, 'message' => '동일한 위치에 같은 이름의 그룹이 이미 존재합니다.'));
+			return;
+		}
+
+		// 그룹명 변경 실행
+		$result = $this->Group_setting_model->update_group_name($area_idx, $new_name);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '그룹명이 변경되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '그룹명 변경에 실패했습니다.'));
+		}
+	}
+
+
 }

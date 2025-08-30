@@ -23,6 +23,35 @@ class Group_setting_model extends CI_Model {
 		return $result ? $result['level'] : 0;
 	}
 
+
+
+	/**
+	 * 특정 그룹과 하위 그룹들의 회원 수 합계 계산 (Member.php와 동일한 로직)
+	 */
+	public function get_area_members_count_with_children($org_id, $area_idx) {
+		// 현재 그룹의 직접 회원 수
+		$this->db->from('wb_member');
+		$this->db->where('area_idx', $area_idx);
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		$direct_count = $this->db->count_all_results();
+
+		// 하위 그룹들의 회원 수 (재귀적 계산)
+		$children_count = 0;
+		$this->db->select('area_idx');
+		$this->db->from('wb_member_area');
+		$this->db->where('parent_idx', $area_idx);
+		$this->db->where('org_id', $org_id);
+		$children_query = $this->db->get();
+		$children = $children_query->result_array();
+
+		foreach ($children as $child) {
+			$children_count += $this->get_area_members_count_with_children($org_id, $child['area_idx']);
+		}
+
+		return $direct_count + $children_count;
+	}
+
 	/**
 	 * 조직 그룹 트리 데이터 조회
 	 */
@@ -46,13 +75,10 @@ class Group_setting_model extends CI_Model {
 		$area_query = $this->db->get();
 		$areas = $area_query->result_array();
 
-		// 각 그룹의 회원 수 조회
+		// 각 그룹의 하위 그룹 포함 회원 수 조회 (Member.php 방식 적용)
 		$area_member_counts = array();
 		foreach ($areas as $area) {
-			$this->db->from('wb_member');
-			$this->db->where('area_idx', $area['area_idx']);
-			$this->db->where('del_yn', 'N');
-			$area_member_counts[$area['area_idx']] = $this->db->count_all_results();
+			$area_member_counts[$area['area_idx']] = $this->get_area_members_count_with_children($org_id, $area['area_idx']);
 		}
 
 		// 미분류 회원 수 조회
@@ -62,16 +88,29 @@ class Group_setting_model extends CI_Model {
 		$this->db->where('del_yn', 'N');
 		$unassigned_count = $this->db->count_all_results();
 
+		// 조직 전체 회원 수 계산
+		$org_total_members = 0;
+		foreach ($area_member_counts as $count) {
+			$org_total_members += $count;
+		}
+		$org_total_members += $unassigned_count; // 미분류 회원도 포함
+
+		$org_title = $org_data['org_name'];
+		if ($org_total_members > 0) {
+			$org_title .= ' (' . $org_total_members . '명)';
+		}
+
 		// 트리 구조 구성
 		$tree_data = array(
 			array(
 				'key' => 'org_' . $org_id,
-				'title' => $org_data['org_name'],
+				'title' => $org_title,
 				'folder' => true,
 				'data' => array(
 					'type' => 'org',
 					'org_id' => $org_id,
-					'area_idx' => null
+					'area_idx' => null,
+					'member_count' => $org_total_members
 				),
 				'children' => $this->build_group_tree($areas, $area_member_counts, null, $org_id, $unassigned_count)
 			)
@@ -81,7 +120,7 @@ class Group_setting_model extends CI_Model {
 	}
 
 	/**
-	 * 그룹 트리 구조 재귀적 구성
+	 * 그룹 트리 구조 재귀적 구성 (회원수 계산 방식 수정)
 	 */
 	private function build_group_tree($areas, $area_member_counts, $parent_idx, $org_id, $unassigned_count = 0) {
 		$children = array();
@@ -95,14 +134,22 @@ class Group_setting_model extends CI_Model {
 				'data' => array(
 					'type' => 'unassigned',
 					'org_id' => $org_id,
-					'area_idx' => null
+					'area_idx' => null,
+					'member_count' => $unassigned_count
 				)
 			);
 		}
 
 		// 해당 parent_idx를 가진 그룹들 찾기
 		foreach ($areas as $area) {
-			if ($area['parent_idx'] == $parent_idx) {
+			// parent_idx 비교 시 null, 0, 빈 문자열을 모두 같은 것으로 처리
+			$area_parent_idx = $area['parent_idx'];
+			if (empty($area_parent_idx) || $area_parent_idx === '0' || $area_parent_idx === 0) {
+				$area_parent_idx = null;
+			}
+
+			if ($area_parent_idx == $parent_idx) {
+				// 하위 그룹 포함 회원 수 사용
 				$member_count = isset($area_member_counts[$area['area_idx']]) ? $area_member_counts[$area['area_idx']] : 0;
 				$child_areas = $this->build_group_tree($areas, $area_member_counts, $area['area_idx'], $org_id);
 
@@ -130,6 +177,11 @@ class Group_setting_model extends CI_Model {
 	 * 새 그룹 삽입
 	 */
 	public function insert_group($data) {
+		// parent_idx가 빈 값이거나 0인 경우 null로 변경
+		if (isset($data['parent_idx']) && (empty($data['parent_idx']) || $data['parent_idx'] === '0' || $data['parent_idx'] === 0)) {
+			$data['parent_idx'] = null;
+		}
+
 		return $this->db->insert('wb_member_area', $data);
 	}
 
@@ -331,4 +383,107 @@ class Group_setting_model extends CI_Model {
 
 		return $result;
 	}
+
+
+	/**
+	 * 그룹명 변경 (AJAX)
+	 */
+	public function rename_group()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$area_idx = $this->input->post('area_idx');
+		$org_id = $this->input->post('org_id');
+		$new_name = trim($this->input->post('new_name'));
+
+		if (!$area_idx || !$org_id || !$new_name) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 검증
+		$user_level = $this->Group_setting_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '그룹명을 변경할 권한이 없습니다.'));
+			return;
+		}
+
+		// 그룹명 길이 검증
+		if (strlen($new_name) > 50) {
+			echo json_encode(array('success' => false, 'message' => '그룹명은 50자 이내로 입력해주세요.'));
+			return;
+		}
+
+		// 동일한 조직 내에서 같은 레벨에 동일한 그룹명이 있는지 확인
+		$current_group = $this->Group_setting_model->get_group_info($area_idx);
+		if (!$current_group) {
+			echo json_encode(array('success' => false, 'message' => '그룹 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		$duplicate_check = $this->Group_setting_model->check_duplicate_group_name($org_id, $new_name, $current_group['parent_idx'], $area_idx);
+		if ($duplicate_check) {
+			echo json_encode(array('success' => false, 'message' => '동일한 위치에 같은 이름의 그룹이 이미 존재합니다.'));
+			return;
+		}
+
+		// 그룹명 변경 실행
+		$result = $this->Group_setting_model->update_group_name($area_idx, $new_name);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '그룹명이 변경되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '그룹명 변경에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 그룹 정보 조회
+	 */
+	public function get_group_info($area_idx) {
+		$this->db->select('area_idx, area_name, parent_idx, org_id');
+		$this->db->from('wb_member_area');
+		$this->db->where('area_idx', $area_idx);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+	/**
+	 * 중복 그룹명 확인
+	 */
+	public function check_duplicate_group_name($org_id, $group_name, $parent_idx, $exclude_area_idx = null) {
+		$this->db->select('area_idx');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('area_name', $group_name);
+
+		if ($parent_idx === null) {
+			$this->db->where('parent_idx IS NULL');
+		} else {
+			$this->db->where('parent_idx', $parent_idx);
+		}
+
+		if ($exclude_area_idx !== null) {
+			$this->db->where('area_idx !=', $exclude_area_idx);
+		}
+
+		$query = $this->db->get();
+		return $query->num_rows() > 0;
+	}
+
+	/**
+	 * 그룹명 변경
+	 */
+	public function update_group_name($area_idx, $new_name) {
+		$data = array(
+			'area_name' => $new_name
+		);
+
+		$this->db->where('area_idx', $area_idx);
+		return $this->db->update('wb_member_area', $data);
+	}
+
 }

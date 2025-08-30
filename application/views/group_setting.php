@@ -6,7 +6,8 @@ $this->load->view('header');
 <link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
 
 <!-- Fancytree CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
+<link rel="stylesheet"
+	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
 
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -27,7 +28,9 @@ $this->load->view('header');
 			<div class="card h-100">
 				<div class="card-body p-0 position-relative">
 					<!-- 트리 스피너 -->
-					<div id="treeSpinner" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
+					<div id="treeSpinner"
+						 class="d-flex justify-content-center align-items-center position-absolute h-100"
+						 style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
 						<div class="text-center">
 							<div class="spinner-border text-primary mb-2" role="status">
 								<span class="visually-hidden">로딩 중...</span>
@@ -53,35 +56,25 @@ $this->load->view('header');
 					</div>
 				</div>
 				<div class="card-body d-flex flex-column justify-content-center align-items-center">
-					<div class="text-center" id="groupManagementButtons" style="display: none;">
-						<div class="row g-3">
-							<div class="col-6">
-								<button type="button" class="btn btn-primary btn-lg w-100" id="btnAddGroup">
-									<i class="bi bi-folder-plus"></i><br>
-									<span class="mt-1">그룹생성</span>
+
+						<div class="btn-group-vertical" role="group" aria-label="Vertical button group" id="groupManagementButtons" style="display: none;">
+							<div class="btn-group" role="group">
+								<button type="button" class="btn btn-primary " id="btnAddGroup">
+									<i class="bi bi-folder-plus"></i> 그룹생성
+								</button>
+
+								<button type="button" class="btn btn-warning " id="btnRenameGroup" disabled>
+									<i class="bi bi-pencil-square"></i> 그룹명변경
+								</button>
+								<button type="button" class="btn btn-danger " id="btnDeleteGroup" disabled>
+									<i class="bi bi-folder-minus"></i> 그룹삭제
+								</button>
+
+								<button type="button" class="btn btn-success " id="btnMoveGroup" disabled>
+									<i class="bi bi-arrow-right-square"></i> 그룹이동
 								</button>
 							</div>
-							<div class="col-6">
-								<button type="button" class="btn btn-danger btn-lg w-100" id="btnDeleteGroup" disabled>
-									<i class="bi bi-folder-minus"></i><br>
-									<span class="mt-1">그룹삭제</span>
-								</button>
-							</div>
-						</div>
-						<div class="row g-3 mt-2">
-							<div class="col-6">
-								<button type="button" class="btn btn-success btn-lg w-100" id="btnMoveGroup" disabled>
-									<i class="bi bi-arrow-right-square"></i><br>
-									<span class="mt-1">그룹이동</span>
-								</button>
-							</div>
-							<div class="col-6">
-								<button type="button" class="btn btn-info btn-lg w-100" id="btnMoveGroupToTop" disabled>
-									<i class="bi bi-arrow-up-square"></i><br>
-									<span class="mt-1">그룹이동(최상위)</span>
-								</button>
-							</div>
-						</div>
+
 					</div>
 
 					<div class="text-center text-muted" id="noSelectionMessage">
@@ -89,6 +82,32 @@ $this->load->view('header');
 						<p class="mt-3">왼쪽에서 그룹을 선택하면<br>관리 버튼이 나타납니다.</p>
 					</div>
 				</div>
+
+
+			</div>
+		</div>
+	</div>
+</div>
+</div>
+
+<!-- 그룹명 변경 모달 -->
+<div class="modal fade" id="renameGroupModal" tabindex="-1" aria-labelledby="renameGroupModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="renameGroupModalLabel">그룹명 변경</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="newGroupName" class="form-label">그룹명</label>
+					<input type="text" class="form-control" id="newGroupName" name="newGroupName" maxlength="50"
+						   required>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-warning" id="confirmRenameGroupBtn">저장</button>
 			</div>
 		</div>
 	</div>
