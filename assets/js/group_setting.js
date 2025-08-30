@@ -61,37 +61,21 @@ function loadGroupTree() {
 }
 
 /**
- * Fancytree 인스턴스 설정
+ * Fancytree 인스턴스 설정 - 회원관리와 동일한 스타일 적용
  */
 function setupFancytreeInstance(treeData) {
 	$("#groupTree").fancytree({
 		source: treeData,
 		extensions: ["wide"],
-		wide: {
-			iconWidth: "16px",
-			iconSpacing: "8px",
-			levelOfs: "24px"
-		},
 		activate: function(event, data) {
 			const node = data.node;
 			selectedGroupData = node.data;
 			updateSelectedGroupName(node.title, selectedGroupData.type);
 			updateManagementButtons(selectedGroupData);
 		},
-		renderNode: function(event, data) {
-			const node = data.node;
-			const nodeData = node.data;
-
-			// 노드 타입별 아이콘 설정
-			if (nodeData.type === 'org') {
-				node.span.style.fontWeight = 'bold';
-				node.span.style.borderBottom = '1px solid #e9ecef';
-				node.span.style.paddingBottom = '4px';
-				node.span.style.marginBottom = '8px';
-			} else if (nodeData.type === 'unassigned') {
-				node.span.style.color = '#6c757d';
-				node.span.style.fontStyle = 'italic';
-			}
+		init: function(event, data) {
+			// 트리 로딩 완료 후 모든 노드 확장
+			data.tree.expandAll();
 		}
 	});
 }
