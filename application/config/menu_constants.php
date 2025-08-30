@@ -31,7 +31,7 @@ $config['system_menus'] = array(
 		'level' => 1
 	),
 	'ATTENDANCE_BOARD' => array(
-		'name' => '판',
+		'name' => 'QR출석',
 		'key' => 'ATTENDANCE_BOARD',
 		'url' => 'main',
 		'icon' => 'bi bi-person-check',

@@ -206,7 +206,7 @@
                         <?php if (can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master)): ?>
                             <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center gap-1" href="<?php echo base_url('main'); ?>">
-                                    <i class="bi bi-person-check"></i> 판
+									<i class="bi bi-qr-code-scan"></i> QR출석
                                 </a>
                             </li>
                         <?php endif; ?>
