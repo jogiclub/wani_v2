@@ -792,22 +792,20 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 출석상세 정보 렌더링 - 숫자 타입 강제 변환
+	 * 파일 위치: assets/js/attendance.js
+	 * 역할: 출석상세 정보 렌더링 - text형 데이터의 실제 값 표시 및 포인트 표시 수정
 	 */
 	function renderAttendanceDetail(data, sunday) {
 		const {attendance_types, attendance_records, members_info} = data;
 		const date = new Date(sunday);
 
 		let html = `
-		<div class="attendance-detail simple-table">
-			
-			
-			
-				<table class="table table-sm table-bordered">
-					<thead class="table-light">
-						<tr>
-							<th style="width: 80px;">이름</th>
-							<th style="width: 60px;">소계</th>
+	<div class="attendance-detail simple-table">
+		<table class="table table-sm table-bordered">
+			<thead class="table-light">
+				<tr>
+					<th style="width: 80px;">이름</th>
+					<th style="width: 60px;">소계</th>
 	`;
 
 		// 출석유형 헤더 추가 (입력타입에 따라 다른 표시)
@@ -815,7 +813,7 @@ $(document).ready(function () {
 			const typeName = type.att_type_nickname || type.att_type_name;
 			const inputType = type.att_type_input || 'check';
 			const typePoint = Number(type.att_type_point) || 10; // 숫자로 강제 변환
-			const displayScore = inputType === 'text' ? '' : `(${typePoint})`;
+			const displayScore = inputType === 'text' ? `(${typePoint})` : `(${typePoint})`;
 			html += `<th style="width: 60px; text-align: center;">${typeName}<br/><span class="att-point">${displayScore}</span></th>`;
 		});
 
@@ -838,8 +836,8 @@ $(document).ready(function () {
 
 				if (existingRecord) {
 					if (inputType === 'text') {
-						// textbox의 경우 실제 저장된 값 사용 - 숫자로 강제 변환
-						const actualValue = Number(existingRecord.att_value) || Number(typeScore) || 0;
+						// textbox의 경우 실제 저장된 att_value 사용 - 숫자로 강제 변환
+						const actualValue = Number(existingRecord.att_value) || 0;
 						totalMemberScore += actualValue;
 					} else {
 						// checkbox의 경우 출석유형의 기본 점수 사용 - 숫자로 강제 변환
@@ -850,8 +848,8 @@ $(document).ready(function () {
 
 			// 행 시작 및 회원이름, 소계 추가 - Number()로 확실히 숫자 보장
 			html += `<tr>
-			<td class="fw-medium">${member.member_name}</td>
-			<td class="fw-bold text-primary">${Number(totalMemberScore)}점</td>`;
+		<td class="fw-medium">${member.member_name}</td>
+		<td class="fw-bold text-primary">${Number(totalMemberScore)}점</td>`;
 
 			// 각 출석유형별 입력 컨트롤 생성
 			attendance_types.forEach(function (type) {
@@ -861,47 +859,85 @@ $(document).ready(function () {
 				const hasAttendance = !!existingRecord;
 
 				if (inputType === 'text') {
-					// 텍스트박스 입력
-					const currentValue = hasAttendance ? (Number(existingRecord.att_value) || Number(typeScore) || 0) : 0;
+					// 텍스트박스 입력 - 실제 att_value 값 사용
+					const currentValue = hasAttendance ? (Number(existingRecord.att_value) || 0) : 0;
 					const textboxId = `att_${member.member_idx}_${type.att_type_idx}`;
 
 					html += `
-					<td style="text-align: center;">
-						<input type="number" class="form-control form-control-sm attendance-textbox" 
-							   id="${textboxId}" 
-							   data-member-idx="${member.member_idx}" 
-							   data-att-type-idx="${type.att_type_idx}"
-							   data-att-type-score="${Number(typeScore)}"
-							   value="${Number(currentValue)}"
-							   min="0">
-					</td>
-				`;
+				<td style="text-align: center;">
+					<input type="number" class="form-control form-control-sm attendance-textbox" 
+						   id="${textboxId}" 
+						   data-member-idx="${member.member_idx}" 
+						   data-att-type-idx="${type.att_type_idx}"
+						   data-att-type-score="${Number(typeScore)}"
+						   value="${Number(currentValue)}"
+						   min="0">
+				</td>
+			`;
 				} else {
 					// 체크박스 입력
 					const checkboxId = `att_${member.member_idx}_${type.att_type_idx}`;
 
 					html += `
-					<td style="text-align: center;">
-						<input type="checkbox" class="form-check-input attendance-checkbox" 
-							   id="${checkboxId}" 
-							   data-member-idx="${member.member_idx}" 
-							   data-att-type-idx="${type.att_type_idx}"
-							   data-att-type-score="${Number(typeScore)}"
-							   ${hasAttendance ? 'checked' : ''}>
-					</td>
-				`;
+				<td style="text-align: center;">
+					<input type="checkbox" class="form-check-input attendance-checkbox" 
+						   id="${checkboxId}" 
+						   data-member-idx="${member.member_idx}" 
+						   data-att-type-idx="${type.att_type_idx}"
+						   data-att-type-score="${Number(typeScore)}"
+						   ${hasAttendance ? 'checked' : ''}>
+				</td>
+			`;
 				}
 			});
 
 			html += '</tr>';
 		});
 
-		html += '</tbody></table></div>';
+		html += `</tbody></table>
+
+	</div>
+	`;
 
 		$('#attendanceDetailContent').html(html);
 
-		// 이벤트 바인딩
-		bindAttendanceInputEvents();
+
+		// 입력 변경 시 소계 실시간 업데이트
+		$('.attendance-checkbox, .attendance-textbox').on('change', function() {
+			updateDetailTotalScores();
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/attendance.js
+	 * 역할: 출석상세 모달에서 입력 변경 시 소계 실시간 업데이트
+	 */
+	function updateDetailTotalScores() {
+		// 각 회원별로 소계 계산
+		$('#attendanceDetailContent tbody tr').each(function() {
+			const $row = $(this);
+			let totalScore = 0;
+
+			// 해당 행의 모든 입력 요소 확인
+			$row.find('.attendance-checkbox, .attendance-textbox').each(function() {
+				const $input = $(this);
+				const typeScore = Number($input.data('att-type-score')) || 10;
+
+				if ($input.hasClass('attendance-checkbox')) {
+					// 체크박스인 경우
+					if ($input.is(':checked')) {
+						totalScore += typeScore;
+					}
+				} else if ($input.hasClass('attendance-textbox')) {
+					// 텍스트박스인 경우
+					const inputValue = Number($input.val()) || 0;
+					totalScore += inputValue;
+				}
+			});
+
+			// 소계 업데이트
+			$row.find('td:nth-child(2)').html(`${totalScore}점`).addClass('fw-bold text-primary');
+		});
 	}
 
 	/**

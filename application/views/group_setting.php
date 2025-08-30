@@ -9,7 +9,7 @@ $this->load->view('header');
 <link rel="stylesheet"
 	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
 
-<div class="container-fluid pt-2 pb-2">
+<div class="container pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>

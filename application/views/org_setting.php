@@ -148,8 +148,8 @@
 								<div class="row mb-3">
 									<div class="col-12">
 										<label class="form-label">최고관리자</label>
-										<div class="card border-light bg-light">
-											<div class="card-body py-2">
+										<div class="box border-light bg-light">
+											<div class="box-body p-3">
 												<div class="d-flex align-items-center justify-content-between">
 													<div class="d-flex align-items-center gap-3">
 														<img

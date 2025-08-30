@@ -385,11 +385,12 @@ class Attendance_model extends CI_Model {
 
 
 	/**
-	 * 특정 주간의 출석기록 가져오기 - att_year 조건 추가
+	 * 파일 위치: application/models/Attendance_model.php
+	 * 역할: 특정 주간의 출석기록 가져오기 - att_value 필드 추가하여 text형 데이터의 실제 값 조회
 	 */
 	public function get_week_attendance_records($org_id, $member_indices, $start_date, $end_date, $year)
 	{
-		$this->db->select('ma.member_idx, ma.att_date, ma.att_type_idx, at.att_type_name, at.att_type_nickname, at.att_type_color, at.att_type_order');
+		$this->db->select('ma.member_idx, ma.att_date, ma.att_type_idx, ma.att_value, at.att_type_name, at.att_type_nickname, at.att_type_color, at.att_type_order, at.att_type_input, at.att_type_point');
 		$this->db->from('wb_member_att ma');
 		$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
 		$this->db->where('ma.org_id', $org_id);

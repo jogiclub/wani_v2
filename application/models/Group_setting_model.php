@@ -52,8 +52,10 @@ class Group_setting_model extends CI_Model {
 		return $direct_count + $children_count;
 	}
 
+
 	/**
-	 * 조직 그룹 트리 데이터 조회
+	 * 파일 위치: application/models/Group_setting_model.php - get_org_group_tree() 함수
+	 * 역할: 조직 그룹 트리 데이터 조회 시 회원수 중복 계산 문제 해결
 	 */
 	public function get_org_group_tree($org_id) {
 		// 조직 정보 조회
@@ -88,12 +90,11 @@ class Group_setting_model extends CI_Model {
 		$this->db->where('del_yn', 'N');
 		$unassigned_count = $this->db->count_all_results();
 
-		// 조직 전체 회원 수 계산
-		$org_total_members = 0;
-		foreach ($area_member_counts as $count) {
-			$org_total_members += $count;
-		}
-		$org_total_members += $unassigned_count; // 미분류 회원도 포함
+		// 조직 전체 회원 수 계산 (중복 제거된 방식)
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		$org_total_members = $this->db->count_all_results();
 
 		$org_title = $org_data['org_name'];
 		if ($org_total_members > 0) {
