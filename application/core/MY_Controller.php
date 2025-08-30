@@ -1,4 +1,8 @@
 <?php
+/**
+ * 역할: 기본 컨트롤러 확장 - 헤더 데이터 처리 및 조직 관리 기능
+ */
+
 defined('BASEPATH') or exit('No direct script access allowed');
 
 class MY_Controller extends CI_Controller
@@ -35,10 +39,36 @@ class MY_Controller extends CI_Controller
 			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
 		}
 
-		// 현재 활성화된 조직 정보
-		$active_org_id = $this->input->cookie('activeOrg');
+		// 현재 활성화된 조직 정보 가져오기
+		$current_org = $this->get_current_organization($user_orgs);
+
+		return array(
+			'user' => $user_data,
+			'user_orgs' => $user_orgs,
+			'current_org' => $current_org
+		);
+	}
+
+	/**
+	 * 현재 활성화된 조직 정보 가져오기 (우선순위: 쿠키 > 세션 > 첫 번째 조직)
+	 */
+	private function get_current_organization($user_orgs)
+	{
+		if (empty($user_orgs)) {
+			return null;
+		}
+
 		$current_org = null;
 
+		// 1순위: 쿠키에서 활성 조직 ID 가져오기
+		$active_org_id = $this->input->cookie('activeOrg');
+
+		// 2순위: 세션에서 현재 조직 ID 가져오기
+		if (!$active_org_id) {
+			$active_org_id = $this->session->userdata('current_org_id');
+		}
+
+		// 활성 조직 ID가 있는 경우 해당 조직 정보 찾기
 		if ($active_org_id) {
 			foreach ($user_orgs as $org) {
 				if ($org['org_id'] == $active_org_id) {
@@ -49,16 +79,18 @@ class MY_Controller extends CI_Controller
 		}
 
 		// 활성화된 조직이 없거나 유효하지 않으면 첫 번째 조직을 기본값으로 설정
-		if (!$current_org && !empty($user_orgs)) {
+		if (!$current_org) {
 			$current_org = $user_orgs[0];
+
+			// 쿠키와 세션에 새로운 기본 조직 설정
 			$this->input->set_cookie('activeOrg', $current_org['org_id'], 86400);
+			$this->session->set_userdata('current_org_id', $current_org['org_id']);
+			$this->session->set_userdata('current_org_name', $current_org['org_name']);
+
+			log_message('info', "사용자 {$this->session->userdata('user_id')}의 현재 조직이 {$current_org['org_id']}로 설정되었습니다.");
 		}
 
-		return array(
-			'user' => $user_data,
-			'user_orgs' => $user_orgs,
-			'current_org' => $current_org
-		);
+		return $current_org;
 	}
 
 	/**
@@ -73,7 +105,6 @@ class MY_Controller extends CI_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
-		$master_yn = $this->session->userdata('master_yn');
 
 		// 사용자가 해당 조직에 접근 권한이 있는지 확인
 		$has_access = false;
@@ -97,11 +128,12 @@ class MY_Controller extends CI_Controller
 		$data['current_org'] = $selected_org;
 		$this->input->set_cookie('activeOrg', $postOrgId, 86400);
 
-		// 세션에도 현재 조직 정보 저장 (필요한 경우)
+		// 세션에도 현재 조직 정보 저장
 		$this->session->set_userdata('current_org_id', $postOrgId);
+		$this->session->set_userdata('current_org_name', $selected_org['org_name']);
 
 		// 로그 기록
-		log_message('info', "사용자 {$user_id}가 조직을 {$postOrgId}로 변경했습니다.");
+		log_message('info', "사용자 {$user_id}가 조직을 {$postOrgId}({$selected_org['org_name']})로 변경했습니다.");
 
 		return true;
 	}
@@ -136,28 +168,75 @@ class MY_Controller extends CI_Controller
 			}
 		}
 
-		return $has_access && ($user_level >= $required_level);
+		return $has_access && $user_level >= $required_level;
 	}
 
 	/**
-	 * 접근 권한 부족 시 처리
+	 * 접근 권한 없음 처리
 	 */
 	protected function handle_access_denied($message = '접근 권한이 없습니다.')
 	{
-		if ($this->input->is_ajax_request()) {
-			// AJAX 요청인 경우 JSON 응답
-			echo json_encode(array(
-				'success' => false,
-				'message' => $message,
-				'redirect' => base_url('mypage')
-			));
-			exit;
-		} else {
-			// 일반 요청인 경우 mypage로 리디렉트
-			$this->session->set_flashdata('error_message', $message);
-			redirect('mypage');
-		}
+		show_error($message, 403);
 	}
 
+	/**
+	 * 현재 활성 조직 ID 가져오기
+	 */
+	protected function get_active_org_id()
+	{
+		// 1순위: 쿠키에서 가져오기
+		$org_id = $this->input->cookie('activeOrg');
 
+		// 2순위: 세션에서 가져오기
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		// 3순위: 사용자의 첫 번째 조직 사용
+		if (!$org_id) {
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+
+			if ($user_id) {
+				if ($master_yn === "N") {
+					$user_orgs = $this->Org_model->get_user_orgs($user_id);
+				} else {
+					$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+				}
+
+				if (!empty($user_orgs)) {
+					$org_id = $user_orgs[0]['org_id'];
+					// 쿠키와 세션에 저장
+					$this->input->set_cookie('activeOrg', $org_id, 86400);
+					$this->session->set_userdata('current_org_id', $org_id);
+				}
+			}
+		}
+
+		return $org_id;
+	}
+
+	/**
+	 * 사용자 조직 존재 여부 확인
+	 */
+	protected function has_user_organizations($user_id = null)
+	{
+		if (!$user_id) {
+			$user_id = $this->session->userdata('user_id');
+		}
+
+		if (!$user_id) {
+			return false;
+		}
+
+		$master_yn = $this->session->userdata('master_yn');
+
+		if ($master_yn === "N") {
+			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+		} else {
+			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+		}
+
+		return !empty($user_orgs);
+	}
 }
