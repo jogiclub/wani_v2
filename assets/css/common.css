@@ -167,11 +167,11 @@ main{background: #fafafa; padding-top: 30px;}
 }
 
 
-#attendanceOffcanvas .offcanvas-body{padding: 0}
-#attendanceOffcanvas table{min-width: 650px}
-#attendanceOffcanvas table thead{vertical-align: middle; position: sticky; top: 0; z-index: 10;}
-#attendanceOffcanvas table tr th:first-child, #attendanceOffcanvas table tr td:first-child { position: sticky; left: 0; }
-#attendanceOffcanvas table tr td select{font-size: 16px}
+/*#attendanceOffcanvas .offcanvas-body{padding: 0}*/
+/*#attendanceOffcanvas table{min-width: 650px}*/
+/*#attendanceOffcanvas table thead{vertical-align: middle; position: sticky; top: 0; z-index: 10;}*/
+/*#attendanceOffcanvas table tr th:first-child, #attendanceOffcanvas table tr td:first-child { position: sticky; left: 0; }*/
+/*#attendanceOffcanvas table tr td select{font-size: 16px}*/
 
 /*푸터*/
 footer{position:relative;}

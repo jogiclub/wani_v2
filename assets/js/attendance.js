@@ -700,17 +700,15 @@ $(document).ready(function () {
 		const date = new Date(sunday);
 
 		let html = `
-		<div class="attendance-detail">
-			<div class="mb-4">
-				<h6 class="fw-bold">${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()} 출석상세</h6>
-			</div>
+		<div class="attendance-detail simple-table">
 			
-			<div class="table-responsive">
+			
+			
 				<table class="table table-sm table-bordered">
 					<thead class="table-light">
 						<tr>
-							<th style="width: 100px;">이름</th>
-							<th style="width: 80px;">소계</th>
+							<th style="width: 80px;">이름</th>
+							<th style="width: 60px;">소계</th>
 	`;
 
 		// 출석유형 헤더 추가 (입력타입에 따라 다른 표시)
@@ -719,7 +717,7 @@ $(document).ready(function () {
 			const inputType = type.att_type_input || 'check';
 			const typePoint = Number(type.att_type_point) || 10; // 숫자로 강제 변환
 			const displayScore = inputType === 'text' ? '' : `(${typePoint})`;
-			html += `<th style="width: 100px; text-align: center;">${typeName}${displayScore}</th>`;
+			html += `<th style="width: 60px; text-align: center;">${typeName}${displayScore}</th>`;
 		});
 
 		html += '</tr></thead><tbody>';
@@ -800,7 +798,7 @@ $(document).ready(function () {
 			html += '</tr>';
 		});
 
-		html += '</tbody></table></div></div>';
+		html += '</tbody></table></div>';
 
 		$('#attendanceDetailContent').html(html);
 
