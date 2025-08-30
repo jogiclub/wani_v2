@@ -79,8 +79,8 @@ $(document).ready(function () {
 
 		try {
 			splitInstance = Split(['#left-pane', '#right-pane'], {
-				sizes: [25, 75],              // 초기 크기 비율 (왼쪽 25%, 오른쪽 75%)
-				minSize: [250, 400],          // 최소 크기 (px)
+				sizes: [20, 80],              // 초기 크기 비율 (왼쪽 25%, 오른쪽 75%)
+				minSize: [50, 400],          // 최소 크기 (px)
 				gutterSize: 7,                // divider 두께
 				cursor: 'col-resize',         // 커서 스타일
 				direction: 'horizontal',      // 수평 분할
