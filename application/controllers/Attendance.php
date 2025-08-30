@@ -276,7 +276,7 @@ class Attendance extends My_Controller
 	}
 
 	/**
-	 * 출석 데이터 가져오기 (주별)
+	 * 출석 데이터 가져오기 (주별) - 수정된 함수 호출
 	 */
 	public function get_attendance_data()
 	{
@@ -299,7 +299,7 @@ class Attendance extends My_Controller
 			return;
 		}
 
-		// 권한에 따른 회원 목록 가져오기
+		// 권한에 따른 회원 목록 가져오기 (기존 코드와 동일)
 		$user_id = $this->session->userdata('user_id');
 		$master_yn = $this->session->userdata('master_yn');
 		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
@@ -349,8 +349,8 @@ class Attendance extends My_Controller
 		// 해당 연도의 일요일 날짜들 생성
 		$sunday_dates = $this->get_sunday_dates($year);
 
-		// 각 회원의 주별 출석 데이터 가져오기
-		$attendance_data = $this->get_weekly_attendance_data($members, $org_id, $sunday_dates);
+		// 각 회원의 주별 출석데이터 가져오기 (연도 추가)
+		$attendance_data = $this->get_weekly_attendance_data($members, $org_id, $sunday_dates, $year);
 
 		echo json_encode(array(
 			'success' => true,
@@ -364,7 +364,7 @@ class Attendance extends My_Controller
 	}
 
 	/**
-	 * 특정 주의 출석 상세 데이터 가져오기
+	 * 특정 주의 출석상세 데이터 가져오기 - 연도 조건 추가
 	 */
 	public function get_week_attendance_detail()
 	{
@@ -388,16 +388,18 @@ class Attendance extends My_Controller
 
 		// 해당 주의 날짜 범위 계산 (일요일부터 토요일까지)
 		$week_dates = $this->get_week_date_range($sunday_date);
+		$year = date('Y', strtotime($sunday_date));
 
-		// 출석 유형 가져오기
+		// 출석유형 가져오기
 		$attendance_types = $this->Attendance_model->get_attendance_types($org_id);
 
-		// 해당 주간의 출석 데이터 가져오기
+		// 해당 주간의 출석데이터 가져오기 (연도 조건 추가)
 		$attendance_records = $this->Attendance_model->get_week_attendance_records(
 			$org_id,
 			$member_indices,
 			$week_dates['start'],
-			$week_dates['end']
+			$week_dates['end'],
+			$year
 		);
 
 		// 회원 정보 가져오기
@@ -469,31 +471,83 @@ class Attendance extends My_Controller
 		return $sunday_dates;
 	}
 
-	/**
-	 * 주별 출석 데이터 가져오기
-	 */
-	private function get_weekly_attendance_data($members, $org_id, $sunday_dates)
-	{
-		$attendance_data = array();
 
-		foreach ($members as $member) {
-			$member_idx = $member['member_idx'];
-			$attendance_data[$member_idx] = array();
+
+	/**
+	 * 주별 출석데이터 가져오기 - 실제 포인트 계산 포함
+	 */
+	private function get_weekly_attendance_data($members, $org_id, $sunday_dates, $year)
+	{
+		$member_indices = array_column($members, 'member_idx');
+
+		if (empty($member_indices) || empty($sunday_dates)) {
+			return array();
+		}
+
+		// 출석유형별 포인트 정보 가져오기
+		$attendance_types = $this->Attendance_model->get_attendance_types($org_id);
+		$type_points = array();
+
+		foreach ($attendance_types as $type) {
+			$type_points[$type['att_type_idx']] = array(
+				'point' => intval($type['att_type_point']) ?: 10,
+				'input_type' => $type['att_type_input'] ?: 'check'
+			);
+		}
+
+		// 각 회원, 각 주별로 실제 포인트 계산
+		$stats = array();
+
+		foreach ($member_indices as $member_idx) {
+			$stats[$member_idx] = array();
 
 			foreach ($sunday_dates as $sunday) {
-				$week_range = $this->get_week_date_range($sunday);
-				$week_attendance = $this->Attendance_model->get_member_week_attendance(
-					$member_idx,
-					$org_id,
-					$week_range['start'],
-					$week_range['end']
-				);
+				// 해당 주의 날짜 범위 계산
+				$start_date = $sunday;
+				$end_date = date('Y-m-d', strtotime($sunday . ' +6 days'));
 
-				$attendance_data[$member_idx][$sunday] = $week_attendance;
+				// 해당 주간의 실제 출석 기록 가져오기
+				$this->db->select('att_type_idx, att_value');
+				$this->db->from('wb_member_att');
+				$this->db->where('member_idx', $member_idx);
+				$this->db->where('org_id', $org_id);
+				$this->db->where('att_date >=', $start_date);
+				$this->db->where('att_date <=', $end_date);
+				$this->db->where('att_year', $year);
+
+				$query = $this->db->get();
+				$records = $query->result_array();
+
+				// 실제 포인트 계산
+				$total_points = 0;
+				foreach ($records as $record) {
+					$att_type_idx = $record['att_type_idx'];
+					$att_value = $record['att_value'];
+
+					if (isset($type_points[$att_type_idx])) {
+						$type_info = $type_points[$att_type_idx];
+
+						if ($type_info['input_type'] === 'text' && !empty($att_value)) {
+							// 텍스트박스인 경우 실제 입력값 사용
+							$total_points += intval($att_value);
+						} else {
+							// 체크박스인 경우 출석유형의 기본 포인트 사용
+							$total_points += $type_info['point'];
+						}
+					} else {
+						// 출석유형 정보가 없으면 기본 10점
+						$total_points += 10;
+					}
+				}
+
+				$stats[$member_idx][$sunday] = array(
+					'total_score' => $total_points,
+					'attendance_count' => count($records)
+				);
 			}
 		}
 
-		return $attendance_data;
+		return $stats;
 	}
 
 	/**
@@ -510,4 +564,223 @@ class Attendance extends My_Controller
 			'end' => $end->format('Y-m-d')
 		);
 	}
+
+
+	/**
+	 * 통계 재계산 (선택된 그룹 대상) - 디버깅 강화
+	 */
+	public function rebuild_stats()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+		$year = $this->input->post('year', true) ?: date('Y');
+		$type = $this->input->post('type');
+		$area_idx = $this->input->post('area_idx');
+
+		log_message('debug', "Rebuild stats request - Org: {$org_id}, Year: {$year}, Type: {$type}, Area: {$area_idx}");
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
+			return;
+		}
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 권한에 따른 회원 목록 가져오기
+		$master_yn = $this->session->userdata('master_yn');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		$members = array();
+		$group_name = '';
+
+		if ($type === 'unassigned') {
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				echo json_encode(array('success' => false, 'message' => '미분류 그룹을 관리할 권한이 없습니다.'));
+				return;
+			}
+			$members = $this->Member_model->get_unassigned_members($org_id);
+			$group_name = '미분류 그룹';
+
+		} else if ($type === 'area' && $area_idx) {
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				$this->load->model('User_management_model');
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+				if (!in_array($area_idx, $accessible_areas)) {
+					echo json_encode(array('success' => false, 'message' => '해당 그룹을 관리할 권한이 없습니다.'));
+					return;
+				}
+			}
+			$members = $this->Member_model->get_area_members_with_children($org_id, $area_idx);
+
+			// 그룹명 가져오기
+			$this->db->select('area_name');
+			$this->db->from('wb_member_area');
+			$this->db->where('area_idx', $area_idx);
+			$area_info = $this->db->get()->row_array();
+			$group_name = $area_info ? $area_info['area_name'] . ' 그룹' : '선택된 그룹';
+
+		} else if ($type === 'org') {
+			if ($user_level >= 10 || $master_yn === 'Y') {
+				$members = $this->Member_model->get_org_members($org_id);
+				$group_name = '전체 조직';
+			} else {
+				$this->load->model('User_management_model');
+				$members = array();
+				$managed_areas = $this->User_management_model->get_user_managed_areas($user_id);
+				foreach ($managed_areas as $managed_area_idx) {
+					$area_members = $this->Member_model->get_area_members_with_children($org_id, $managed_area_idx);
+					$members = array_merge($members, $area_members);
+				}
+
+				$unique_members = array();
+				$member_ids = array();
+				foreach ($members as $member) {
+					if (!in_array($member['member_idx'], $member_ids)) {
+						$unique_members[] = $member;
+						$member_ids[] = $member['member_idx'];
+					}
+				}
+				$members = $unique_members;
+				$group_name = '관리 가능한 그룹';
+			}
+		} else {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 그룹 타입입니다.'));
+			return;
+		}
+
+		if (empty($members)) {
+			echo json_encode(array('success' => false, 'message' => '재계산할 회원이 없습니다.'));
+			return;
+		}
+
+		$member_indices = array_column($members, 'member_idx');
+		log_message('debug', "Members to rebuild: " . implode(',', $member_indices));
+
+		try {
+			$result = $this->Attendance_model->rebuild_attendance_stats_for_members($org_id, $year, $member_indices);
+
+			if ($result) {
+				echo json_encode(array(
+					'success' => true,
+					'message' => $group_name . '의 ' . count($members) . '명 출석 통계가 재계산되었습니다.',
+					'member_count' => count($members),
+					'group_name' => $group_name
+				));
+			} else {
+				echo json_encode(array('success' => false, 'message' => '통계 재계산 중 오류가 발생했습니다.'));
+			}
+		} catch (Exception $e) {
+			log_message('error', 'Stats rebuild error: ' . $e->getMessage());
+			echo json_encode(array('success' => false, 'message' => '통계 재계산 중 오류가 발생했습니다.'));
+		}
+	}
+
+	/**
+	 * 특정 회원들의 출석 통계 재계산
+	 */
+	public function rebuild_attendance_stats_for_members($org_id, $year, $member_indices)
+	{
+		if (empty($member_indices)) {
+			return false;
+		}
+
+		$this->db->trans_start();
+
+		try {
+			// 해당 연도의 일요일 날짜들 생성
+			$sunday_dates = $this->get_sunday_dates_for_year($year);
+
+			// 해당 회원들의 기존 통계 삭제
+			$this->db->where('org_id', $org_id);
+			$this->db->where('att_year', $year);
+			$this->db->where_in('member_idx', $member_indices);
+			$this->db->delete('wb_attendance_weekly_stats');
+
+			$this->db->where('org_id', $org_id);
+			$this->db->where('att_year', $year);
+			$this->db->where_in('member_idx', $member_indices);
+			$this->db->delete('wb_attendance_yearly_stats');
+
+			// 각 회원, 각 주차별로 통계 생성
+			foreach ($member_indices as $member_idx) {
+				foreach ($sunday_dates as $sunday_date) {
+					$this->update_weekly_attendance_stats($org_id, $member_idx, $year, $sunday_date);
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return false;
+			}
+
+			return true;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Rebuild stats for members error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+
+
+	/**
+	 * 출석 데이터 저장 (값 포함) - checkbox/textbox 모두 처리
+	 */
+	public function save_attendance_with_values()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$attendance_data_json = $this->input->post('attendance_data');
+		$att_date = $this->input->post('att_date');
+		$year = $this->input->post('year', true) ?: date('Y');
+
+		if (!$org_id || !$attendance_data_json || !$att_date) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		try {
+			$attendance_data = json_decode($attendance_data_json, true);
+			if (!$attendance_data) {
+				echo json_encode(array('success' => false, 'message' => '출석 데이터 형식이 올바르지 않습니다.'));
+				return;
+			}
+
+			$result = $this->Attendance_model->save_attendance_with_values($org_id, $attendance_data, $att_date, $year);
+
+			if ($result) {
+				echo json_encode(array('success' => true, 'message' => '출석이 저장되었습니다.'));
+			} else {
+				echo json_encode(array('success' => false, 'message' => '출석 저장에 실패했습니다.'));
+			}
+		} catch (Exception $e) {
+			log_message('error', 'Attendance save with values error: ' . $e->getMessage());
+			echo json_encode(array('success' => false, 'message' => '출석 저장 중 오류가 발생했습니다.'));
+		}
+	}
+
+
+
+
+
+
+
+
 }

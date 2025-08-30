@@ -61,6 +61,12 @@
 						</div>
 
 						<div class="col-3 d-flex justify-content-end align-items-center">
+
+							<!-- 점수재계산 버튼 추가 -->
+							<button class="btn btn-sm btn-outline-warning me-3" type="button" id="btnRecalculateStats">
+								<i class="bi bi-arrow-clockwise"></i> 점수재계산
+							</button>
+
 							<!-- 연도 선택 컨트롤 -->
 							<div class="year-selector me-3">
 								<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button">
