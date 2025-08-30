@@ -47,7 +47,7 @@
 			<div class="card h-100">
 				<div class="card-header">
 					<div class="row">
-						<div class="col-6 d-flex align-items-center">
+						<div class="col-4 d-flex align-items-center">
 							<h5 class="mb-0" id="selectedOrgName">
 								<i class="bi bi-calendar-check"></i> 조직을 선택해주세요
 							</h5>
@@ -60,23 +60,22 @@
 							</div>
 						</div>
 
-						<div class="col-3 d-flex justify-content-end align-items-center">
+						<div class="col-5 d-flex justify-content-end align-items-center">
 
 							<!-- 점수재계산 버튼 추가 -->
-							<button class="btn btn-sm btn-outline-warning me-3" type="button" id="btnRecalculateStats">
-								<i class="bi bi-arrow-clockwise"></i> 점수재계산
+							<button class="btn btn-sm btn-outline-warning me-3 justify-content-end" type="button" id="btnRecalculateStats">
+								<i class="bi bi-arrow-clockwise"></i> 포인트재계산
 							</button>
 
 							<!-- 연도 선택 컨트롤 -->
-							<div class="year-selector me-3">
-								<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button">
-									<i class="bi bi-chevron-left"></i>
-								</button>
-								<span class="year-display mx-2" id="currentYear">2025</span>
-								<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button">
-									<i class="bi bi-chevron-right"></i>
-								</button>
+							<div class="input-group input-group-sm year-selector justify-content-end">
+								<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
+								<label class="input-group-text year-display " id="currentYear">2025</label>
+
+								<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
 							</div>
+
+
 						</div>
 					</div>
 				</div>

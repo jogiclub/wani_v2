@@ -1,6 +1,8 @@
 .attendance-detail{}
 
 #attendanceOffcanvas table{width: 100%; table-layout: fixed;}
+#attendanceOffcanvas table th .att-point{font-size: 12px !important;color: #ff6400 !important;}
+#attendanceOffcanvas table th, #attendanceOffcanvas table td{vertical-align: middle}
 
 /* Offcanvas 크기 및 기본 스타일 */
 #attendanceOffcanvas.offcanvas-end {
@@ -96,15 +98,6 @@
 	font-weight: 600;
 	color: #6c757d;
 	margin-bottom: 0.5rem;
-}
-
-#attendanceOffcanvas .form-control,
-#attendanceOffcanvas .form-select {
-	border: 1px solid #ced4da;
-	border-radius: 6px;
-	padding: 0.75rem;
-	font-size: 1rem;
-	transition: all 0.3s ease;
 }
 
 #attendanceOffcanvas .form-control:focus,

@@ -239,7 +239,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * Fancytree 인스턴스 설정
+	 * Fancytree 인스턴스 설정 - localStorage 복원 기능 추가
 	 */
 	function setupFancytreeInstance(treeData) {
 		$("#groupTree").fancytree({
@@ -257,20 +257,12 @@ $(document).ready(function () {
 			}
 		});
 
-		// 첫 번째 조직 자동 선택
-		setTimeout(function () {
-			const tree = $("#groupTree").fancytree("getTree");
-			if (tree && tree.rootNode && tree.rootNode.children.length > 0) {
-				const firstOrgNode = tree.rootNode.children[0];
-				firstOrgNode.setActive(true);
-				firstOrgNode.setFocus(true);
-				firstOrgNode.setExpanded(true);
-			}
-		}, 100);
+		// localStorage에서 저장된 선택 상태 복원 우선 시도
+		restoreSelectedGroupFromStorage(treeData);
 	}
 
 	/**
-	 * 트리 노드 활성화 처리
+	 * 트리 노드 활성화 처리 - localStorage 저장 기능 추가
 	 */
 	function handleTreeNodeActivate(node) {
 		const nodeData = node.data;
@@ -279,11 +271,118 @@ $(document).ready(function () {
 		selectedOrgId = nodeData.org_id;
 		selectedAreaIdx = nodeData.area_idx || null;
 
+		// localStorage에 선택 상태 저장
+		saveSelectedGroupToStorage(nodeData);
+
 		updateSelectedOrgName(node.title, nodeData.type);
 		resetSearch();
 		loadAttendanceData();
 	}
 
+	/**
+	 * localStorage에 선택된 그룹 저장
+	 */
+	function saveSelectedGroupToStorage(nodeData) {
+		try {
+			const selectedGroup = {
+				type: nodeData.type,
+				org_id: nodeData.org_id,
+				area_idx: nodeData.area_idx || null,
+				timestamp: Date.now()
+			};
+
+			localStorage.setItem('member_selected_group', JSON.stringify(selectedGroup));
+			console.log('선택된 그룹 저장됨:', selectedGroup);
+		} catch (error) {
+			console.error('localStorage 저장 실패:', error);
+		}
+	}
+
+
+
+	/**
+	 * localStorage에서 저장된 그룹 선택 상태 복원
+	 */
+	function restoreSelectedGroupFromStorage(treeData) {
+		try {
+			const savedGroup = localStorage.getItem('member_selected_group');
+
+			if (!savedGroup) {
+				selectFirstOrganization();
+				return;
+			}
+
+			const groupData = JSON.parse(savedGroup);
+
+			// 7일 이내의 데이터만 복원
+			const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+			if (groupData.timestamp < sevenDaysAgo) {
+				localStorage.removeItem('member_selected_group');
+				selectFirstOrganization();
+				return;
+			}
+
+			// 저장된 노드 찾기 및 선택
+			const tree = $("#groupTree").fancytree("getTree");
+			const nodeToSelect = findSavedNode(tree, groupData);
+
+			if (nodeToSelect) {
+				nodeToSelect.setActive(true);
+				nodeToSelect.setFocus(true);
+				expandParentNodes(nodeToSelect, groupData);
+				console.log('저장된 그룹 선택 복원됨:', groupData);
+			} else {
+				console.log('저장된 그룹을 찾을 수 없음, 첫 번째 조직 선택');
+				selectFirstOrganization();
+			}
+
+		} catch (error) {
+			console.error('localStorage 복원 실패:', error);
+			selectFirstOrganization();
+		}
+	}
+
+
+	/**
+	 * 저장된 노드 찾기
+	 */
+	function findSavedNode(tree, groupData) {
+		let nodeToSelect = null;
+
+		if (groupData.type === 'unassigned' && groupData.org_id) {
+			nodeToSelect = tree.getNodeByKey('unassigned_' + groupData.org_id);
+		} else if (groupData.type === 'area' && groupData.area_idx) {
+			nodeToSelect = tree.getNodeByKey('area_' + groupData.area_idx);
+		}
+
+		if (!nodeToSelect && groupData.org_id) {
+			nodeToSelect = tree.getNodeByKey('org_' + groupData.org_id);
+		}
+
+		return nodeToSelect;
+	}
+
+	/**
+	 * 부모 노드 확장
+	 */
+	function expandParentNodes(nodeToSelect, groupData) {
+		if (groupData.type !== 'unassigned' && nodeToSelect.parent && !nodeToSelect.parent.isRootNode()) {
+			nodeToSelect.parent.setExpanded(true);
+		}
+	}
+
+	/**
+	 * 첫 번째 조직 자동 선택
+	 */
+	function selectFirstOrganization() {
+		const tree = $("#groupTree").fancytree("getTree");
+		if (tree && tree.rootNode && tree.rootNode.children.length > 0) {
+			const firstOrgNode = tree.rootNode.children[0];
+			firstOrgNode.setActive(true);
+			firstOrgNode.setFocus(true);
+			firstOrgNode.setExpanded(true);
+		}
+	}
 
 	/**
 	 * ParamQuery Grid 초기화 - 셀 클릭 개선 적용
@@ -717,7 +816,7 @@ $(document).ready(function () {
 			const inputType = type.att_type_input || 'check';
 			const typePoint = Number(type.att_type_point) || 10; // 숫자로 강제 변환
 			const displayScore = inputType === 'text' ? '' : `(${typePoint})`;
-			html += `<th style="width: 60px; text-align: center;">${typeName}${displayScore}</th>`;
+			html += `<th style="width: 60px; text-align: center;">${typeName}<br/><span class="att-point">${displayScore}</span></th>`;
 		});
 
 		html += '</tr></thead><tbody>';
@@ -774,8 +873,7 @@ $(document).ready(function () {
 							   data-att-type-idx="${type.att_type_idx}"
 							   data-att-type-score="${Number(typeScore)}"
 							   value="${Number(currentValue)}"
-							   min="0"
-							   style="width: 70px; margin: auto;">
+							   min="0">
 					</td>
 				`;
 				} else {
