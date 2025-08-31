@@ -156,7 +156,7 @@ class Login extends CI_Controller
 						redirect('main');
 					} else {
 						// 조직이 없는 경우 마이페이지로 이동
-						redirect('mypage');
+						redirect('dashboard');
 					}
 				} else {
 					// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
@@ -244,7 +244,7 @@ class Login extends CI_Controller
 						redirect('main');
 					} else {
 						// 조직이 없는 경우 마이페이지로 이동
-						redirect('mypage');
+						redirect('dashboard');
 					}
 				} else {
 					// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
@@ -344,7 +344,7 @@ class Login extends CI_Controller
 				redirect('main');
 			} else {
 				// 조직이 없는 경우 마이페이지로 이동
-				redirect('mypage');
+				redirect('dashboard');
 			}
 		} else {
 			// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동

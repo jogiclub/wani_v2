@@ -35,7 +35,7 @@ class Attendance extends My_Controller
 		// 헤더 데이터 준비
 		$header_data = $this->prepare_header_data();
 		if (empty($header_data['user_orgs'])) {
-			redirect('mypage');
+			redirect('dashboard');
 			return;
 		}
 
