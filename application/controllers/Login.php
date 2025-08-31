@@ -151,13 +151,7 @@ class Login extends CI_Controller
 					// 로그인 성공 후 조직 정보 설정
 					$has_org = $this->setup_user_organization($user_id, $user['master_yn']);
 
-					if ($has_org) {
-						// 조직이 있는 경우 메인 페이지로 이동
-						redirect('main');
-					} else {
-						// 조직이 없는 경우 마이페이지로 이동
-						redirect('dashboard');
-					}
+					redirect('dashboard');
 				} else {
 					// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
 					redirect('login/join');
@@ -239,13 +233,7 @@ class Login extends CI_Controller
 					// 로그인 성공 후 조직 정보 설정
 					$has_org = $this->setup_user_organization($user_id, $user['master_yn']);
 
-					if ($has_org) {
-						// 조직이 있는 경우 메인 페이지로 이동
-						redirect('main');
-					} else {
-						// 조직이 없는 경우 마이페이지로 이동
-						redirect('dashboard');
-					}
+					redirect('dashboard');
 				} else {
 					// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
 					redirect('login/join');
@@ -339,13 +327,7 @@ class Login extends CI_Controller
 			// 로그인 성공 후 조직 정보 설정
 			$has_org = $this->setup_user_organization($user_id, $user['master_yn']);
 
-			if ($has_org) {
-				// 조직이 있는 경우 메인 페이지로 이동
-				redirect('main');
-			} else {
-				// 조직이 없는 경우 마이페이지로 이동
-				redirect('dashboard');
-			}
+			redirect('dashboard');
 		} else {
 			// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
 			redirect('login/join');
@@ -381,6 +363,9 @@ class Login extends CI_Controller
 		}
 	}
 
+	/**
+	 * 역할: 회원가입 처리 및 초대코드 검증
+	 */
 	public function process()
 	{
 		$this->load->model('User_model');
@@ -404,6 +389,27 @@ class Login extends CI_Controller
 			$user_name = $this->input->post('user_name');
 		}
 
+		// 초대코드 필수 검증
+		if (empty($invite_code)) {
+			$response = array(
+				'success' => false,
+				'message' => '초대코드를 입력해주세요.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
+		// 초대코드 유효성 검증
+		$org = $this->Org_model->get_org_by_invite_code($invite_code);
+		if (!$org || $org['del_yn'] == 'Y') {
+			$response = array(
+				'success' => false,
+				'message' => '유효한 초대코드가 아닙니다. 확인 후 다시 입력바랍니다.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
 		// 사용자 정보 저장 (회원가입)
 		if (!$user_exists) {
 			$user_data = array(
@@ -416,16 +422,26 @@ class Login extends CI_Controller
 			$this->User_model->insert_user($user_data);
 		}
 
-		// 초대코드가 입력된 경우 조직 가입 처리
-		if (!empty($invite_code)) {
-			$this->process_invite_code($user_id, $invite_code);
-		}
+		// 초대코드가 유효한 경우 조직 가입 처리
+		$join_result = $this->process_invite_code($user_id, $invite_code);
 
-		redirect('login');
+		if ($join_result) {
+			$response = array(
+				'success' => true,
+				'message' => '회원가입이 완료되었습니다.'
+			);
+			echo json_encode($response);
+		} else {
+			$response = array(
+				'success' => false,
+				'message' => '회원가입 중 오류가 발생했습니다.'
+			);
+			echo json_encode($response);
+		}
 	}
 
 	/**
-	 * 초대코드 처리 함수
+	 * 역할: 초대코드 처리 및 조직 가입
 	 */
 	private function process_invite_code($user_id, $invite_code)
 	{
@@ -437,19 +453,25 @@ class Login extends CI_Controller
 			$existing_membership = $this->Org_model->check_user_org_membership($user_id, $org['org_id']);
 
 			if (!$existing_membership) {
-
 				$org_user_data = array(
 					'user_id' => $user_id,
 					'org_id' => $org['org_id'],
 					'level' => 0, // 기본 레벨
 					'join_date' => date('Y-m-d H:i:s')
-
 				);
 
-				$this->Org_model->insert_org_user($org_user_data);
+				$result = $this->Org_model->insert_org_user($org_user_data);
 
-				log_message('info', "사용자 {$user_id}가 초대코드 {$invite_code}로 조직 {$org['org_id']}에 초대상태로 가입했습니다.");
+				if ($result) {
+					log_message('info', "사용자 {$user_id}가 초대코드 {$invite_code}로 조직 {$org['org_id']}에 가입했습니다.");
+					return true;
+				}
+			} else {
+				// 이미 가입된 조직인 경우도 성공으로 처리
+				return true;
 			}
 		}
+
+		return false;
 	}
 }
