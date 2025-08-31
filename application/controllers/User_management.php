@@ -567,4 +567,110 @@ class User_management extends My_Controller
 		echo json_encode($response);
 	}
 
+
+	/**
+	 * 조직의 초대상태 사용자 목록 조회
+	 */
+	public function get_invited_users()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+
+		// 권한 검증 - 레벨 9 이상만 초대상태 사용자 조회 가능
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '초대상태 사용자를 조회할 권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+		$invited_users = $this->Member_model->get_invited_users($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $invited_users
+		));
+	}
+
+	/**
+	 * 초대상태 사용자 승인
+	 */
+	public function approve_invited_user()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$target_user_id = $this->input->post('target_user_id');
+		$org_id = $this->input->post('org_id');
+
+		if (!$target_user_id || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+
+		// 권한 검증
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '초대상태 사용자를 승인할 권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+		$result = $this->Member_model->approve_invited_user($target_user_id, $org_id);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '사용자가 승인되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '사용자 승인에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 초대상태 사용자 거절 (삭제)
+	 */
+	public function reject_invited_user()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$target_user_id = $this->input->post('target_user_id');
+		$org_id = $this->input->post('org_id');
+
+		if (!$target_user_id || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+
+		// 권한 검증
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '초대상태 사용자를 거절할 권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+		$result = $this->Member_model->reject_invited_user($target_user_id, $org_id);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '초대가 거절되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '초대 거절에 실패했습니다.'));
+		}
+	}
+
 }

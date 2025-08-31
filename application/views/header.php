@@ -188,7 +188,7 @@
                     </h6>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link d-flex align-items-center gap-1 active" aria-current="page" href="<?php echo base_url('main'); ?>">
+                            <a class="nav-link d-flex align-items-center gap-1 active" aria-current="page" href="<?php echo base_url('dashboard'); ?>">
                                 <i class="bi bi-file-earmark-ruled"></i> 대시보드
                             </a>
                         </li>

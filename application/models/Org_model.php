@@ -54,12 +54,49 @@ class Org_model extends CI_Model {
 		return $query->result_array();
 	}
 
-	public function get_org_by_invite_code($invite_code) {
-		$this->db->select('org_id');
+	/**
+	 * 초대코드로 조직 조회
+	 */
+	public function get_org_by_invite_code($invite_code)
+	{
+		$this->db->select('org_id, org_name, org_code, invite_code, del_yn');
 		$this->db->from('wb_org');
 		$this->db->where('invite_code', $invite_code);
+		$this->db->where('del_yn', 'N');
 		$query = $this->db->get();
 		return $query->row_array();
+	}
+
+	/**
+	 * 사용자의 특정 조직 가입 여부 확인
+	 */
+	public function check_user_org_membership($user_id, $org_id)
+	{
+		$this->db->select('idx');
+		$this->db->from('wb_org_user');
+		$this->db->where('user_id', $user_id);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+
+	/**
+	 * 조직 사용자 정보 저장
+	 */
+	public function insert_org_user($data)
+	{
+		return $this->db->insert('wb_org_user', $data);
+	}
+
+	/**
+	 * 조직 사용자 상태 업데이트 (초대 승인 등)
+	 */
+	public function update_org_user_status($user_id, $org_id, $data)
+	{
+		$this->db->where('user_id', $user_id);
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_org_user', $data);
 	}
 
 	public function get_org_by_id($org_id) {
