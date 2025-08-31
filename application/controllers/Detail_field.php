@@ -43,12 +43,7 @@ class Detail_field extends My_Controller
 
 		$currentOrgId = $data['current_org']['org_id'];
 
-		// 사용자의 조직 접근 권한 확인 - 상세필드 관리는 최소 레벨 8 이상 필요
-		$user_level = $this->User_model->get_org_user_level($user_id, $currentOrgId);
-		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
-			$this->handle_access_denied('상세필드를 관리할 권한이 없습니다.');
-			return;
-		}
+
 
 		// 선택된 조직의 상세 정보 가져오기 - 뷰에서 필요한 변수 추가
 		$this->load->model('Org_model');

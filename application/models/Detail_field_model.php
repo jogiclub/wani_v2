@@ -127,7 +127,7 @@ class Detail_field_model extends CI_Model {
 	}
 
 	/**
-	 * 사용자가 접근 가능한 조직 목록 가져오기 (일반 사용자)
+	 * 사용자가 접근 가능한 조직 목록 가져오기 (손님)
 	 */
 	public function get_user_orgs($user_id) {
 		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, wb_org_user.level');

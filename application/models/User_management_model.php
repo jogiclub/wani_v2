@@ -14,7 +14,7 @@ class User_management_model extends CI_Model
 	}
 
 	/**
-	 * 사용자가 접근 가능한 조직 목록 가져오기 (일반 사용자)
+	 * 사용자가 접근 가능한 조직 목록 가져오기 (손님)
 	 */
 	public function get_user_orgs($user_id)
 	{
@@ -479,6 +479,33 @@ class User_management_model extends CI_Model
 	}
 
 
+	/**
+	 * 파일 위치: application/models/User_management_model.php
+	 * 역할: 특정 그룹의 모든 하위 그룹 ID를 재귀적으로 가져오기
+	 */
+	private function get_all_child_area_ids($parent_area_idx, $org_id)
+	{
+		$area_ids = array();
+
+		// 직접 하위 영역들 조회
+		$this->db->select('area_idx');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('parent_idx', $parent_area_idx);
+
+		$query = $this->db->get();
+		$child_areas = $query->result_array();
+
+		foreach ($child_areas as $child_area) {
+			$area_ids[] = $child_area['area_idx'];
+
+			// 재귀적으로 하위의 하위 영역들도 가져오기
+			$grandchild_ids = $this->get_all_child_area_ids($child_area['area_idx'], $org_id);
+			$area_ids = array_merge($area_ids, $grandchild_ids);
+		}
+
+		return $area_ids;
+	}
 
 	/**
 	 * 파일 위치: application/models/User_management_model.php

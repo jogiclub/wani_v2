@@ -46,11 +46,11 @@ $this->load->view('header'); ?>
 										<th style="width: 60px;">프로필</th>
 										<th style="width: 120px;">이름</th>
 										<th style="width: 180px;">이메일</th>
-										<th style="width: 120px;">연락처</th>
+										<th style="width: 140px;">연락처</th>
 										<th style="width: 80px;">권한</th>
-										<th style="width: 200px;">관리메뉴</th>
-										<th style="width: 200px;">관리그룹</th>
-										<th style="width: 120px;">관리</th>
+										<th>관리메뉴</th>
+										<th>관리그룹</th>
+										<th style="width: 140px;">관리</th>
 									</tr>
 									</thead>
 									<tbody>
@@ -72,7 +72,7 @@ $this->load->view('header'); ?>
 											<td>
 												<strong><?php echo htmlspecialchars($user['user_name']); ?></strong>
 												<?php if ($user['master_yn'] === 'Y'): ?>
-													<br><small class="text-primary">시스템 관리자</small>
+													<br><small class="text-primary">마스터</small>
 												<?php endif; ?>
 											</td>
 											<td>
@@ -140,7 +140,7 @@ $this->load->view('header'); ?>
 													</button>
 												<?php endif; ?>
 
-												<!-- 시스템 관리자만 로그인 버튼 표시 -->
+												<!-- 마스터만 로그인 버튼 표시 -->
 												<?php if ($this->session->userdata('master_yn') === 'Y' && $user['user_id'] !== $this->session->userdata('user_id')): ?>
 													<button type="button"
 															class="btn btn-sm btn-outline-info login-as-user-btn"
@@ -226,9 +226,9 @@ $this->load->view('header'); ?>
 					<div class="mb-3">
 						<label for="edit_user_level" class="form-label">권한 레벨</label>
 						<select class="form-select" id="edit_user_level" name="level">
-							<option value="0">일반 사용자 (0)</option>
+							<option value="0">손님 (0)</option>
 							<option value="1">회원 (1)</option>
-							<option value="2">구역장 (2)</option>
+							<option value="2">리더 (2)</option>
 							<option value="5">부관리자 (5)</option>
 							<option value="9">관리자 (9)</option>
 							<option value="10">최고관리자 (10)</option>

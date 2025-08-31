@@ -51,12 +51,7 @@ class Member extends My_Controller
 			return;
 		}
 
-		// 사용자의 권한 레벨 확인 - 회원 관리는 최소 레벨 5 이상 필요
-		$user_level = $this->User_model->get_org_user_level($user_id, $currentOrgId);
-		if ($user_level < 5 && $this->session->userdata('master_yn') !== 'Y') {
-			$this->handle_access_denied('회원을 관리할 권한이 없습니다.');
-			return;
-		}
+
 
 		// 현재 조직 정보를 JavaScript로 전달하기 위해 orgs 배열에 추가
 		$data['orgs'] = array($data['current_org']);

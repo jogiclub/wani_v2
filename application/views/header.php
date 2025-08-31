@@ -321,3 +321,27 @@
     </div>
     <main class="ms-sm-auto col-xl-10">
 <?php endif; ?>
+
+
+
+		<script>
+			function returnToAdmin() {
+				if (confirm('관리자 계정으로 돌아가시겠습니까?')) {
+					$.ajax({
+						url: '/user_management/return_to_admin',
+						type: 'POST',
+						dataType: 'json',
+						success: function(response) {
+							if (response.success) {
+								location.reload();
+							} else {
+								alert('오류가 발생했습니다.');
+							}
+						},
+						error: function() {
+							alert('오류가 발생했습니다.');
+						}
+					});
+				}
+			}
+		</script>

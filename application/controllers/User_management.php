@@ -408,7 +408,7 @@ class User_management extends My_Controller
 	}
 
 	/**
-	 * 사용자로 로그인 (시스템 관리자 전용)
+	 * 사용자로 로그인 (마스터 전용)
 	 */
 	public function login_as_user()
 	{
@@ -419,7 +419,7 @@ class User_management extends My_Controller
 		// Content-Type 헤더 설정
 		header('Content-Type: application/json; charset=utf-8');
 
-		// 시스템 관리자 권한 확인
+		// 마스터 권한 확인
 		if ($this->session->userdata('master_yn') !== 'Y') {
 			$response = array('success' => false, 'message' => '권한이 없습니다.');
 			echo json_encode($response);
@@ -460,7 +460,7 @@ class User_management extends My_Controller
 			'user_name' => $target_user['user_name'],
 			'user_mail' => $target_user['user_mail'],
 			'user_hp' => $target_user['user_hp'],
-			'master_yn' => 'N', // 로그인한 사용자는 일반 사용자로 설정
+			'master_yn' => 'N', // 로그인한 사용자는 손님로 설정
 			'original_admin_id' => $current_user_id, // 원래 관리자 ID 저장
 			'is_admin_login' => true // 관리자 로그인 플래그
 		);
