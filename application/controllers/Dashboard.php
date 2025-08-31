@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Dashboard extends CI_Controller
+class Dashboard extends My_Controller
 {
 
 	public function __construct()
@@ -17,10 +17,11 @@ class Dashboard extends CI_Controller
 			redirect('login');
 			return;
 		}
+
 		// 헤더 데이터 준비
 		$header_data = $this->prepare_header_data();
 		if (empty($header_data['user_orgs'])) {
-			redirect('dashboard');
+			redirect('mypage');
 			return;
 		}
 
@@ -36,12 +37,13 @@ class Dashboard extends CI_Controller
 		$data['selected_org_detail'] = $this->Org_model->get_org_detail_by_id($currentOrgId);
 
 		// 선택된 조직의 상세필드 목록 가져오기 - 메서드명 수정
+		$this->load->model('Detail_field_model');
 		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields_by_org($currentOrgId);
 
 		// 현재 조직 정보를 JavaScript로 전달하기 위해 orgs 배열에 추가
 		$data['orgs'] = array($data['current_org']);
 
-		$this->load->view('dashboard');;
+		$this->load->view('dashboard', $data);
 	}
 
 }

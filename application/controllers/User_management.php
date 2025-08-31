@@ -568,38 +568,7 @@ class User_management extends My_Controller
 	}
 
 
-	/**
-	 * 조직의 초대상태 사용자 목록 조회
-	 */
-	public function get_invited_users()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
 
-		$org_id = $this->input->post('org_id');
-		if (!$org_id) {
-			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
-			return;
-		}
-
-		$user_id = $this->session->userdata('user_id');
-		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
-
-		// 권한 검증 - 레벨 9 이상만 초대상태 사용자 조회 가능
-		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
-			echo json_encode(array('success' => false, 'message' => '초대상태 사용자를 조회할 권한이 없습니다.'));
-			return;
-		}
-
-		$this->load->model('Member_model');
-		$invited_users = $this->Member_model->get_invited_users($org_id);
-
-		echo json_encode(array(
-			'success' => true,
-			'data' => $invited_users
-		));
-	}
 
 	/**
 	 * 초대상태 사용자 승인

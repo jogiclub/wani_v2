@@ -286,31 +286,9 @@ class Member_model extends CI_Model
 		return $query->result_array();
 	}
 
-	/**
-	* 조직의 초대상태 사용자 목록 조회
-	*/
-	public function get_invited_users($org_id)
-	{
-		$this->db->select('wu.user_id, wu.user_name, wu.user_mail, wou.invite_status, wou.join_date');
-		$this->db->from('wb_org_user wou');
-		$this->db->join('wb_user wu', 'wou.user_id = wu.user_id');
-		$this->db->where('wou.org_id', $org_id);
-		$this->db->where('wou.invite_status', 0); // 초대상태만 조회
-		$this->db->where('wu.del_yn', 'N');
-		$this->db->order_by('wou.join_date', 'DESC');
-		$query = $this->db->get();
-		return $query->result_array();
-	}
 
-	/**
-	 * 초대상태 사용자를 정회원으로 승인
-	 */
-	public function approve_invited_user($user_id, $org_id)
-	{
-		$this->db->where('user_id', $user_id);
-		$this->db->where('org_id', $org_id);
-		return $this->db->update('wb_org_user', array('invite_status' => 1));
-	}
+
+
 
 	/**
 	 * 초대상태 사용자 거절 (삭제)

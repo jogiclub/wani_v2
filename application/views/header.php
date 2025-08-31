@@ -319,7 +319,7 @@
             </div>
         </div>
     </div>
-    <main class="ms-sm-auto col-xl-10">
+    <main class="ms-sm-auto col-xl-10 mt-3">
 <?php endif; ?>
 
 

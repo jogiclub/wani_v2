@@ -437,13 +437,13 @@ class Login extends CI_Controller
 			$existing_membership = $this->Org_model->check_user_org_membership($user_id, $org['org_id']);
 
 			if (!$existing_membership) {
-				// wb_org_user 테이블에 초대상태(invite_status = 0)로 추가
+
 				$org_user_data = array(
 					'user_id' => $user_id,
 					'org_id' => $org['org_id'],
-					'level' => 1, // 기본 레벨
-					'join_date' => date('Y-m-d H:i:s'),
-					'invite_status' => 0 // 초대상태 (승인 대기)
+					'level' => 0, // 기본 레벨
+					'join_date' => date('Y-m-d H:i:s')
+
 				);
 
 				$this->Org_model->insert_org_user($org_user_data);
