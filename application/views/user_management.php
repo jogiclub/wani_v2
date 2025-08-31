@@ -17,14 +17,8 @@ $this->load->view('header'); ?>
 	</nav>
 
 	<div class="row align-items-center justify-content-between g-3 mb-4">
-		<h3 class="page-title col-6 my-1">사용자관리</h3>
-		<div class="col-6 my-1">
-			<div class="text-end" role="group" aria-label="Basic example">
-				<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteUserModal">
-					<i class="bi bi-person-plus"></i> 사용자 초대
-				</button>
-			</div>
-		</div>
+		<h3 class="page-title my-1">사용자관리</h3>
+
 	</div>
 
 	<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
@@ -32,17 +26,31 @@ $this->load->view('header'); ?>
 			<div class="col-lg-12">
 				<div class="card">
 					<div class="card-header">
-						<h5 class="card-title mb-0">
-							<i class="bi bi-people"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?> 사용자 목록
-						</h5>
+						<div class="row">
+							<h5 class="card-title col-6 mb-0 d-flex align-items-center">
+								<i class="bi bi-people"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?>
+								사용자 목록
+							</h5>
+							<!-- 선택 권한 수정 버튼 -->
+							<div class="col-6 d-flex justify-content-end align-items-center">
+								<div class="me-3"><small class="text-muted ">선택된 사용자 <span id="selectedCount">0</span>명</small></div>
+								<button type="button" class="btn btn-outline-primary me-3" id="bulkEditBtn" disabled><i class="bi bi-pencil-square"></i> 선택 권한 수정</button>
+								<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteUserModal"><i class="bi bi-person-plus"></i> 사용자 초대</button>
+							</div>
+						</div>
 					</div>
 					<div class="card-body">
 
 						<?php if (isset($org_users) && !empty($org_users)): ?>
+
+
 							<div class="table-responsive">
 								<table class="table align-middle">
 									<thead>
 									<tr>
+										<th style="width: 40px;">
+											<input type="checkbox" class="form-check-input" id="selectAllUsers">
+										</th>
 										<th style="width: 60px;">프로필</th>
 										<th style="width: 120px;">이름</th>
 										<th style="width: 180px;">이메일</th>
@@ -56,6 +64,11 @@ $this->load->view('header'); ?>
 									<tbody>
 									<?php foreach ($org_users as $user): ?>
 										<tr>
+											<td>
+												<input type="checkbox" class="form-check-input user-checkbox"
+													   value="<?php echo $user['user_id']; ?>"
+													   data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>">
+											</td>
 											<td class="text-center">
 												<?php if (!empty($user['user_profile_image'])): ?>
 													<img src="<?php echo $user['user_profile_image']; ?>"
@@ -82,65 +95,60 @@ $this->load->view('header'); ?>
 												<span><?php echo htmlspecialchars($user['user_hp']); ?></span>
 											</td>
 											<td>
-                        <span class="badge bg-<?php
+						<span class="badge bg-<?php
 						if ($user['level'] >= 10) echo 'danger';
 						elseif ($user['level'] >= 9) echo 'warning';
 						else echo 'secondary';
 						?>">
-                            <?php
+							<?php
 							if ($user['level'] >= 10) echo '최고관리자';
 							elseif ($user['level'] >= 9) echo '관리자';
 							else echo '일반(' . $user['level'] . ')';
 							?>
-                        </span>
+						</span>
 											</td>
 											<td>
-												<?php if ($user['level'] >= 10): ?>
-													<small class="text-muted">모든 메뉴</small>
-												<?php else: ?>
-													<?php if (!empty($user['managed_menus_display'])): ?>
-														<?php foreach ($user['managed_menus_display'] as $menu): ?>
-															<span class="badge bg-info text-dark me-1 mb-1"><?php echo htmlspecialchars($menu); ?></span>
-														<?php endforeach; ?>
-													<?php else: ?>
-														<small class="text-muted">설정 없음</small>
+												<?php if (!empty($user['managed_menus_display'])): ?>
+													<?php foreach (array_slice($user['managed_menus_display'], 0, 2) as $menu): ?>
+														<span class="badge bg-info text-dark me-1 mb-1"><?php echo htmlspecialchars($menu); ?></span>
+													<?php endforeach; ?>
+													<?php if (count($user['managed_menus_display']) > 2): ?>
+														<small class="text-muted">외 <?php echo count($user['managed_menus_display']) - 2; ?>개</small>
 													<?php endif; ?>
+												<?php else: ?>
+													<span class="text-muted">-</span>
 												<?php endif; ?>
 											</td>
 											<td>
-												<?php if ($user['level'] >= 10): ?>
-													<small class="text-muted">모든 그룹</small>
-												<?php else: ?>
-													<?php if (!empty($user['managed_areas_display'])): ?>
-														<?php foreach ($user['managed_areas_display'] as $area): ?>
-															<span class="badge bg-success me-1 mb-1"><?php echo htmlspecialchars($area); ?></span>
-														<?php endforeach; ?>
-													<?php else: ?>
-														<small class="text-muted">설정 없음</small>
+												<?php if (!empty($user['managed_areas_display'])): ?>
+													<?php foreach (array_slice($user['managed_areas_display'], 0, 2) as $area): ?>
+														<span class="badge bg-success me-1 mb-1"><?php echo htmlspecialchars($area); ?></span>
+													<?php endforeach; ?>
+													<?php if (count($user['managed_areas_display']) > 2): ?>
+														<small class="text-muted">외 <?php echo count($user['managed_areas_display']) - 2; ?>개</small>
 													<?php endif; ?>
+												<?php else: ?>
+													<span class="text-muted">-</span>
 												<?php endif; ?>
 											</td>
 											<td>
-												<button type="button"
-														class="btn btn-sm btn-outline-primary edit-user-btn"
+												<button type="button" class="btn btn-sm btn-outline-primary edit-user-btn"
 														data-user-id="<?php echo $user['user_id']; ?>"
 														data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
+														data-user-mail="<?php echo htmlspecialchars($user['user_mail']); ?>"
 														data-user-hp="<?php echo htmlspecialchars($user['user_hp']); ?>"
 														data-user-level="<?php echo $user['level']; ?>"
-														data-org-id="<?php echo $selected_org_detail['org_id']; ?>">
+														data-org-id="<?php echo $user['org_id']; ?>">
 													<i class="bi bi-pencil"></i>
 												</button>
-												<?php if ($user['user_id'] !== $this->session->userdata('user_id')): ?>
-													<button type="button"
-															class="btn btn-sm btn-outline-danger delete-user-btn"
+												<?php if ($user['master_yn'] !== 'Y'): ?>
+													<button type="button" class="btn btn-sm btn-outline-danger delete-user-btn"
 															data-user-id="<?php echo $user['user_id']; ?>"
 															data-user-name="<?php echo htmlspecialchars($user['user_name']); ?>"
-															data-org-id="<?php echo $selected_org_detail['org_id']; ?>">
+															data-org-id="<?php echo $user['org_id']; ?>">
 														<i class="bi bi-trash"></i>
 													</button>
 												<?php endif; ?>
-
-												<!-- 마스터만 로그인 버튼 표시 -->
 												<?php if ($this->session->userdata('master_yn') === 'Y' && $user['user_id'] !== $this->session->userdata('user_id')): ?>
 													<button type="button"
 															class="btn btn-sm btn-outline-info login-as-user-btn"
@@ -157,9 +165,8 @@ $this->load->view('header'); ?>
 								</table>
 							</div>
 						<?php else: ?>
-							<div class="text-center py-5">
-								<i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
-								<p class="text-muted mt-3">등록된 사용자가 없습니다.</p>
+							<div class="text-center py-4">
+								<p class="text-muted">등록된 사용자가 없습니다.</p>
 							</div>
 						<?php endif; ?>
 
@@ -219,36 +226,13 @@ $this->load->view('header'); ?>
 						<input type="text" class="form-control" id="edit_user_name" name="user_name" required>
 					</div>
 					<div class="mb-3">
+						<label for="edit_user_mail" class="form-label">이메일 <span class="text-danger">*</span></label>
+						<input type="email" class="form-control" id="edit_user_mail" name="user_mail" required>
+					</div>
+					<div class="mb-3">
 						<label for="edit_user_hp" class="form-label">연락처 <span class="text-danger">*</span></label>
 						<input type="text" class="form-control" id="edit_user_hp" name="user_hp"
 							   placeholder="010-0000-0000" required>
-					</div>
-					<div class="mb-3">
-						<label for="edit_user_level" class="form-label">권한 레벨</label>
-						<select class="form-select" id="edit_user_level" name="level">
-							<option value="0">손님 (0)</option>
-							<option value="1">회원 (1)</option>
-							<option value="2">리더 (2)</option>
-							<option value="5">부관리자 (5)</option>
-							<option value="9">관리자 (9)</option>
-							<option value="10">최고관리자 (10)</option>
-						</select>
-					</div>
-					<!-- 관리 메뉴 필드 -->
-					<div class="mb-3" id="managed_menus_group">
-						<label for="edit_managed_menus" class="form-label">관리 메뉴</label>
-						<select class="form-select" id="edit_managed_menus" name="managed_menus[]" multiple>
-							<!-- JavaScript로 동적 로드 -->
-						</select>
-						<div class="form-text">사용자가 접근할 수 있는 메뉴를 선택하세요. (최고관리자는 모든 메뉴에 접근 가능)</div>
-					</div>
-					<!-- 관리 그룹 필드 -->
-					<div class="mb-3" id="managed_areas_group">
-						<label for="edit_managed_areas" class="form-label">관리 그룹</label>
-						<select class="form-select" id="edit_managed_areas" name="managed_areas[]" multiple>
-							<!-- JavaScript로 동적 로드 -->
-						</select>
-						<div class="form-text">사용자가 관리할 수 있는 그룹을 선택하세요.</div>
 					</div>
 				</div>
 				<div class="modal-footer">
@@ -279,6 +263,70 @@ $this->load->view('header'); ?>
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
 				<button type="button" class="btn btn-danger" id="confirmDeleteUserBtn">삭제</button>
 			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 일괄 권한 수정 모달 -->
+<div class="modal fade" id="bulkEditModal" tabindex="-1" aria-labelledby="bulkEditModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="bulkEditModalLabel">선택 권한 수정</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<form id="bulkEditForm">
+				<input type="hidden" id="bulk_org_id" name="org_id">
+				<input type="hidden" id="bulk_user_ids" name="user_ids">
+				<div class="modal-body">
+					<div class="mb-3">
+						<h6>선택된 사용자</h6>
+						<div id="selectedUsersList" class="p-2 bg-light rounded">
+							<!-- JavaScript로 동적 생성 -->
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-md-4 mb-3">
+							<label for="bulk_user_level" class="form-label">권한 레벨</label>
+							<select class="form-select" id="bulk_user_level" name="level">
+								<option value="">변경하지 않음</option>
+								<option value="0">손님 (0)</option>
+								<option value="1">회원 (1)</option>
+								<option value="2">리더 (2)</option>
+								<option value="5">부관리자 (5)</option>
+								<option value="9">관리자 (9)</option>
+								<option value="10">최고관리자 (10)</option>
+							</select>
+						</div>
+
+						<div class="col-md-4 mb-3">
+							<label for="bulk_managed_menus" class="form-label">관리 메뉴</label>
+							<select class="form-select" id="bulk_managed_menus" name="managed_menus[]" multiple>
+								<!-- JavaScript로 동적 로드 -->
+							</select>
+							<div class="form-text">선택하지 않으면 변경하지 않습니다.</div>
+						</div>
+
+						<div class="col-md-4 mb-3">
+							<label for="bulk_managed_areas" class="form-label">관리 그룹</label>
+							<select class="form-select" id="bulk_managed_areas" name="managed_areas[]" multiple>
+								<!-- JavaScript로 동적 로드 -->
+							</select>
+							<div class="form-text">선택하지 않으면 변경하지 않습니다.</div>
+						</div>
+					</div>
+
+					<div class="alert alert-warning">
+						<i class="bi bi-exclamation-triangle"></i>
+						선택된 모든 사용자에게 동일한 권한이 적용됩니다. 신중하게 확인하세요.
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+					<button type="submit" class="btn btn-primary">일괄 수정</button>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>

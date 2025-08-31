@@ -189,75 +189,122 @@ class User_management extends My_Controller
     /**
      * 사용자 정보 수정 (관리 메뉴 및 그룹 포함)
      */
-    public function update_user() {
-        if (!$this->input->is_ajax_request()) {
-            show_404();
-        }
+	public function update_user() {
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
 
-        $user_id = $this->session->userdata('user_id');
-        $target_user_id = $this->input->post('target_user_id');
-        $org_id = $this->input->post('org_id');
+		$user_id = $this->session->userdata('user_id');
+		$target_user_id = $this->input->post('target_user_id');
+		$org_id = $this->input->post('org_id');
 
-        // 권한 검증
-        $user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
-        if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
-            echo json_encode(array('success' => false, 'message' => '사용자 정보를 수정할 권한이 없습니다.'));
-            return;
-        }
+		// 권한 검증
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '사용자 정보를 수정할 권한이 없습니다.'));
+			return;
+		}
 
-        $user_name = $this->input->post('user_name');
-        $user_hp = $this->input->post('user_hp');
-        $level = $this->input->post('level');
-        $managed_menus = $this->input->post('managed_menus');
-        $managed_areas = $this->input->post('managed_areas');
+		$user_name = $this->input->post('user_name');
+		$user_mail = $this->input->post('user_mail');
+		$user_hp = $this->input->post('user_hp');
 
-        if (empty($target_user_id) || empty($user_name) || empty($user_hp)) {
-            echo json_encode(array('success' => false, 'message' => '필수 입력 항목이 누락되었습니다.'));
-            return;
-        }
+		if (empty($target_user_id) || empty($user_name) || empty($user_mail) || empty($user_hp)) {
+			echo json_encode(array('success' => false, 'message' => '필수 입력 항목이 누락되었습니다.'));
+			return;
+		}
 
-        // 레벨 검증 (0-10)
-        if (!is_numeric($level) || $level < 0 || $level > 10) {
-            echo json_encode(array('success' => false, 'message' => '올바르지 않은 권한 레벨입니다.'));
-            return;
-        }
+		// 이메일 형식 검증
+		if (!filter_var($user_mail, FILTER_VALIDATE_EMAIL)) {
+			echo json_encode(array('success' => false, 'message' => '올바른 이메일 형식이 아닙니다.'));
+			return;
+		}
 
-        // 최고관리자가 아닌 경우 관리 메뉴/그룹 처리
-        $managed_menus_json = null;
-        $managed_areas_json = null;
+		// 사용자 정보 업데이트
+		$result = $this->User_management_model->update_user_basic_info($target_user_id, $user_name, $user_mail, $user_hp);
 
-        if ($level != 10) { // 레벨 10(최고관리자)이 아닌 경우에만 관리 메뉴/그룹 설정
-            // 관리 메뉴 JSON 변환
-            if ($managed_menus && is_array($managed_menus)) {
-                $managed_menus_json = json_encode($managed_menus, JSON_UNESCAPED_UNICODE);
-            } else {
-                $managed_menus_json = json_encode(array(), JSON_UNESCAPED_UNICODE);
-            }
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '사용자 정보가 수정되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '사용자 정보 수정에 실패했습니다.'));
+		}
+	}
 
-            // 관리 그룹 JSON 변환
-            if ($managed_areas && is_array($managed_areas)) {
-                $managed_areas_json = json_encode($managed_areas, JSON_UNESCAPED_UNICODE);
-            } else {
-                $managed_areas_json = json_encode(array(), JSON_UNESCAPED_UNICODE);
-            }
-        }
+	/**
+	 * 선택된 사용자들의 권한 일괄 수정
+	 */
+	public function bulk_update_users() {
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
 
-        $result = $this->User_management_model->update_user_info(
-            $target_user_id,
-            $org_id,
-            $user_name,
-            $user_hp,
-            $level,
-            $managed_menus_json,
-            $managed_areas_json
-        );
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+		$user_ids_json = $this->input->post('user_ids');
 
-        if ($result) {
-            echo json_encode(array('success' => true, 'message' => '사용자 정보가 수정되었습니다.'));
-        } else {
-            echo json_encode(array('success' => false, 'message' => '사용자 정보 수정에 실패했습니다.'));
-        }
-    }
+		// 권한 검증
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '권한을 수정할 권한이 없습니다.'));
+			return;
+		}
+
+		// 대상 사용자 ID 배열 파싱
+		$user_ids = json_decode($user_ids_json, true);
+		if (!is_array($user_ids) || empty($user_ids)) {
+			echo json_encode(array('success' => false, 'message' => '수정할 사용자를 선택해주세요.'));
+			return;
+		}
+
+		// 입력값 검증 및 처리
+		$level = $this->input->post('level');
+		$managed_menus = $this->input->post('managed_menus');
+		$managed_areas = $this->input->post('managed_areas');
+
+		// 레벨 값이 있는 경우에만 검증
+		if ($level !== '' && (!is_numeric($level) || $level < 0 || $level > 10)) {
+			echo json_encode(array('success' => false, 'message' => '올바르지 않은 권한 레벨입니다.'));
+			return;
+		}
+
+		// 관리 메뉴/그룹 JSON 변환
+		$managed_menus_json = null;
+		$managed_areas_json = null;
+
+		if (!empty($managed_menus) && is_array($managed_menus)) {
+			$managed_menus_json = json_encode($managed_menus);
+		}
+
+		if (!empty($managed_areas) && is_array($managed_areas)) {
+			$managed_areas_json = json_encode($managed_areas);
+		}
+
+		// 일괄 업데이트 실행
+		$success_count = 0;
+		$total_count = count($user_ids);
+
+		foreach ($user_ids as $target_user_id) {
+			// 각 사용자별로 권한 업데이트
+			$result = $this->User_management_model->bulk_update_user_permissions(
+				$target_user_id,
+				$org_id,
+				$level !== '' ? $level : null,
+				$managed_menus_json,
+				$managed_areas_json
+			);
+
+			if ($result) {
+				$success_count++;
+			}
+		}
+
+		if ($success_count === $total_count) {
+			echo json_encode(array('success' => true, 'message' => "{$success_count}명의 사용자 권한이 수정되었습니다."));
+		} else {
+			$failed_count = $total_count - $success_count;
+			echo json_encode(array('success' => false, 'message' => "{$success_count}명 수정 완료, {$failed_count}명 실패했습니다."));
+		}
+	}
 
 	/**
 	 * 사용자 삭제 (조직에서 제외) - 응답 개선 버전
