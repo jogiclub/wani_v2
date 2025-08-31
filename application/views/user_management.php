@@ -291,7 +291,7 @@ $this->load->view('header'); ?>
 							<label for="bulk_user_level" class="form-label">권한 레벨</label>
 							<select class="form-select" id="bulk_user_level" name="level">
 								<option value="">변경하지 않음</option>
-								<option value="0">손님 (0)</option>
+								<option value="0">초대중 (0)</option>
 								<option value="1">회원 (1)</option>
 								<option value="2">리더 (2)</option>
 								<option value="5">부관리자 (5)</option>
