@@ -137,4 +137,54 @@ class Member_area_model extends CI_Model {
 		return $query->row_array();
 	}
 
+
+
+
+	/**
+	 * 역할: 특정 area_idx 목록으로 그룹 정보 조회 (권한 필터링용)
+	 */
+	public function get_member_areas_by_idx($org_id, $area_indices)
+	{
+		if (empty($area_indices)) {
+			return array();
+		}
+
+		$this->db->select('area_idx, area_name, area_order, parent_idx');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where_in('area_idx', $area_indices);
+		$this->db->order_by('area_order', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 역할: 사용자가 접근 가능한 모든 그룹 정보 조회 (계층 구조 포함)
+	 */
+	public function get_user_accessible_areas($user_id, $org_id)
+	{
+		// User_management_model 로드
+		$CI =& get_instance();
+		$CI->load->model('User_management_model');
+		$CI->load->model('User_model');
+
+		$master_yn = $CI->session->userdata('master_yn');
+		$user_level = $CI->User_model->get_org_user_level($user_id, $org_id);
+
+		// 최고관리자 또는 마스터인 경우 모든 그룹 반환
+		if ($user_level >= 10 || $master_yn === 'Y') {
+			return $this->get_member_areas($org_id);
+		}
+
+		// 일반 관리자인 경우 관리 가능한 그룹만 반환
+		$accessible_area_indices = $CI->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+
+		if (empty($accessible_area_indices)) {
+			return array();
+		}
+
+		return $this->get_member_areas_by_idx($org_id, $accessible_area_indices);
+	}
+
 }

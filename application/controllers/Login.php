@@ -191,7 +191,7 @@ class Login extends CI_Controller
 					// 로그인 성공 후 조직 정보 설정 및 초대 상태 업데이트
 					$has_org = $this->setup_user_organization($user_id, $user['master_yn']);
 
-					redirect('main');
+					redirect('qrcheck');
 				} else {
 					// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
 					redirect('login/join');
@@ -274,7 +274,7 @@ class Login extends CI_Controller
 					// 로그인 성공 후 조직 정보 설정
 					$has_org = $this->setup_user_organization($user_id, $user['master_yn']);
 
-					redirect('main');
+					redirect('qrcheck');
 				} else {
 					// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
 					redirect('login/join');
@@ -368,7 +368,7 @@ class Login extends CI_Controller
 			// 로그인 성공 후 조직 정보 설정
 			$has_org = $this->setup_user_organization($user_id, $user['master_yn']);
 
-			redirect('main');
+			redirect('qrcheck');
 		} else {
 			// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
 			redirect('login/join');

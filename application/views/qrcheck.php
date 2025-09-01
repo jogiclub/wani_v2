@@ -195,7 +195,26 @@
 	$('.org-name b').text(postOrgName);
 	$('.org-name b').prepend(logoImg);
 	var activeOrgId = getCookie('activeOrg');
-	var userLevel = '<?php echo $user_level; ?>';
+
+	// 사용자 권한 정보를 JavaScript 전역 변수로 설정
+	var userLevel = parseInt('<?php echo isset($user_level) ? $user_level : 1; ?>');
+	var masterYn = '<?php echo isset($master_yn) ? $master_yn : 'N'; ?>';
+
+	// 관리 가능한 그룹이 있는지 확인
+	var hasManagementPermission = <?php echo (isset($member_areas) && !empty($member_areas)) ? 'true' : 'false'; ?>;
+
+	// 권한이 없는 경우 알림 표시
+	if (!hasManagementPermission && userLevel < 10 && masterYn !== 'Y') {
+		console.warn('관리 권한이 없는 사용자입니다.');
+		// 새 회원 추가 버튼 숨김
+		$('.btn-new').hide();
+		// displayMembers 함수에서 권한 없음 메시지 표시
+		setTimeout(function() {
+			if ($('.member-list .grid .grid-item').length === 0) {
+				$('.member-list .grid').append('<div class="no-member">회원을 조회할 권한이 없습니다.<br>관리자에게 권한을 요청해주세요.</div>');
+			}
+		}, 1000);
+	}
 
 	if (postOrgId) {
 		loadMembers(postOrgId, userLevel);
@@ -206,6 +225,7 @@
 		alert('잘못된 경로로 접근하셨습니다. 다시 접속 바랍니다.')
 	}
 
+	// 출석 타입 정보 로드
 	$.ajax({
 		url: '/main/get_attendance_types',
 		method: 'POST',
@@ -213,6 +233,9 @@
 		dataType: 'json',
 		success: function(response) {
 			attendanceTypes = response.attendance_types;
+		},
+		error: function(xhr, status, error) {
+			console.error('출석 타입 로드 실패:', error);
 		}
 	});
 
@@ -224,6 +247,18 @@
 				container: 'body'
 			});
 		});
+
+		// 권한에 따른 UI 제어
+		if (userLevel < 10 && masterYn !== 'Y') {
+			// 일반 관리자인 경우
+			if (!hasManagementPermission) {
+				// 관리 권한이 없는 경우 모든 관리 기능 비활성화
+				$('.mode-list input[type="radio"]').prop('disabled', true);
+				$('#input-search').prop('disabled', true).attr('placeholder', '관리 권한이 필요합니다');
+				$('.att-dropdown-wrap').hide();
+				$('#btn-submit').prop('disabled', true);
+			}
+		}
 	});
 
 </script>

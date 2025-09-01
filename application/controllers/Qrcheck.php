@@ -1,4 +1,7 @@
 <?php
+// 파일 위치: application/controllers/Qrcheck.php
+// 역할: 사용자 관리 > 관리그룹에서 설정한 회원들만 조회하도록 수정
+
 defined('BASEPATH') or exit('No direct script access allowed');
 
 class Qrcheck extends My_Controller
@@ -10,6 +13,7 @@ class Qrcheck extends My_Controller
 		$this->load->helper('url');
 		$this->load->model('User_model');
 		$this->load->model('Org_model');
+		$this->load->model('User_management_model'); // 사용자 권한 관리 모델 추가
 	}
 
 	public function index()
@@ -36,9 +40,26 @@ class Qrcheck extends My_Controller
 
 		$currentOrgId = $data['current_org']['org_id'];
 
-		// 해당 그룹의 area_name 목록 가져오기
+		// 사용자의 권한 레벨과 관리 권한 확인
+		$master_yn = $this->session->userdata('master_yn');
+		$user_level = $this->User_model->get_org_user_level($user_id, $currentOrgId);
+		$data['user_level'] = $user_level;
+		$data['master_yn'] = $master_yn;
+
+		// 해당 그룹의 area_name 목록 가져오기 (권한 필터링 적용)
 		$this->load->model('Member_area_model');
-		$data['member_areas'] = $this->Member_area_model->get_member_areas($currentOrgId);
+		if ($user_level >= 10 || $master_yn === 'Y') {
+			// 최고관리자인 경우 모든 그룹 조회
+			$data['member_areas'] = $this->Member_area_model->get_member_areas($currentOrgId);
+		} else {
+			// 일반 관리자인 경우 관리 가능한 그룹만 조회
+			$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $currentOrgId);
+			if (!empty($accessible_areas)) {
+				$data['member_areas'] = $this->Member_area_model->get_member_areas_by_idx($currentOrgId, $accessible_areas);
+			} else {
+				$data['member_areas'] = array();
+			}
+		}
 
 		// 활성화된 그룹의 출석타입 정보 가져오기
 		$this->load->model('Attendance_model');
@@ -46,11 +67,6 @@ class Qrcheck extends My_Controller
 
 		// 선택된 모드 설정 (기본값: mode-1)
 		$data['mode'] = $this->input->post('mode') ?? 'mode-1';
-
-		// 사용자의 그룹 레벨 가져오기
-		$user_group = $this->User_model->get_org_user($user_id, $currentOrgId);
-		$user_level = $user_group ? $user_group['level'] : 1;
-		$data['user_level'] = $user_level;
 
 		$this->load->view('qrcheck', $data);
 	}
@@ -80,6 +96,19 @@ class Qrcheck extends My_Controller
 			$org_id = $this->input->post('org_id');
 			$member_name = $this->input->post('member_name');
 			$area_idx = $this->input->post('area_idx');
+
+			// 권한 확인 - 해당 그룹에 멤버를 추가할 권한이 있는지 확인
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+				if (!in_array($area_idx, $accessible_areas)) {
+					echo json_encode(array('status' => 'error', 'message' => '해당 그룹에 회원을 추가할 권한이 없습니다.'));
+					return;
+				}
+			}
 
 			$data = array(
 				'org_id' => $org_id,
@@ -132,6 +161,10 @@ class Qrcheck extends My_Controller
 		}
 	}
 
+	/**
+	 * 파일 위치: application/controllers/Qrcheck.php - get_members() 함수
+	 * 역할: 사용자 권한에 따라 관리 가능한 그룹의 회원만 조회
+	 */
 	public function get_members()
 	{
 		if ($this->input->is_ajax_request()) {
@@ -140,9 +173,27 @@ class Qrcheck extends My_Controller
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
 			$this->load->model('Member_model');
 
-			$members = $this->Member_model->get_org_members($org_id, $level, $start_date, $end_date);
+			// 최고관리자 또는 마스터인 경우 전체 회원 조회
+			if ($user_level >= 10 || $master_yn === 'Y') {
+				$members = $this->Member_model->get_org_members($org_id, $level, $start_date, $end_date);
+			} else {
+				// 일반 관리자인 경우 관리 가능한 그룹의 회원만 조회
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+
+				if (!empty($accessible_areas)) {
+					$members = $this->Member_model->get_org_members_by_areas($org_id, $accessible_areas, $level, $start_date, $end_date);
+				} else {
+					// 관리 권한이 없는 경우 빈 배열 반환
+					$members = array();
+				}
+			}
+
 			echo json_encode($members);
 		}
 	}
@@ -273,6 +324,10 @@ class Qrcheck extends My_Controller
 		redirect('login');
 	}
 
+	/**
+	 * 파일 위치: application/controllers/Qrcheck.php - get_same_members() 함수
+	 * 역할: 권한 확인 후 같은 그룹 회원 조회
+	 */
 	public function get_same_members()
 	{
 		if ($this->input->is_ajax_request()) {
@@ -281,6 +336,19 @@ class Qrcheck extends My_Controller
 			$area_idx = $this->input->post('area_idx');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
+
+			// 권한 확인 - 해당 그룹에 접근할 권한이 있는지 확인
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+				if (!in_array($area_idx, $accessible_areas)) {
+					echo json_encode(array('status' => 'error', 'message' => '해당 그룹을 조회할 권한이 없습니다.'));
+					return;
+				}
+			}
 
 			$this->load->model('Member_model');
 			$same_members = $this->Member_model->get_same_members($member_idx, $org_id, $area_idx, $start_date, $end_date);
@@ -358,6 +426,19 @@ class Qrcheck extends My_Controller
 			$area_idx = $this->input->post('area_idx');
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
+
+			// 권한 확인
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+				if (!in_array($area_idx, $accessible_areas)) {
+					echo json_encode(array('status' => 'error', 'message' => '해당 그룹을 조회할 권한이 없습니다.'));
+					return;
+				}
+			}
 
 			$this->load->model('Attendance_model');
 			$attendance_data = $this->Attendance_model->get_org_member_attendance($org_id, $area_idx, $start_date, $end_date);

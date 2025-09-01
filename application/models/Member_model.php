@@ -263,7 +263,6 @@ class Member_model extends CI_Model
 	}
 
 
-
 	/**
 	 * 회원 인덱스 배열로 회원 정보 가져오기
 	 */
@@ -287,9 +286,6 @@ class Member_model extends CI_Model
 	}
 
 
-
-
-
 	/**
 	 * 초대상태 사용자 거절 (삭제)
 	 */
@@ -299,6 +295,119 @@ class Member_model extends CI_Model
 		$this->db->where('org_id', $org_id);
 		return $this->db->delete('wb_org_user');
 	}
+
+
+	/**
+	 * 역할: 특정 그룹들의 회원만 조회 (관리 권한에 따른 필터링용)
+	 */
+	public function get_org_members_by_areas($org_id, $area_indices, $level = null, $start_date = null, $end_date = null)
+	{
+		if (empty($area_indices)) {
+			return array();
+		}
+
+		$this->db->select('
+        m.member_idx, 
+        m.member_name, 
+        m.member_nick, 
+        m.member_birth,
+        m.photo,
+        m.new_yn,
+        m.leader_yn,
+        m.area_idx,
+        ma.area_name,
+        ma.area_order,
+        IFNULL(att_data.att_type_data, \'\') as att_type_data
+    ');
+
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area ma', 'm.area_idx = ma.area_idx', 'left');
+
+		// 출석 데이터 서브쿼리
+		if ($start_date && $end_date) {
+			$this->db->join("(
+            SELECT 
+                a.member_idx,
+                GROUP_CONCAT(CONCAT(at.att_type_nickname, ',', at.att_type_idx, ',', at.att_type_category_idx, ',', at.att_type_color) ORDER BY at.att_type_order, at.att_type_idx SEPARATOR '|') AS att_type_data
+            FROM wb_member_att a
+            LEFT JOIN wb_att_type at ON a.att_type_idx = at.att_type_idx
+            WHERE a.att_date >= '{$start_date}' 
+            AND a.att_date <= '{$end_date}'
+            GROUP BY a.member_idx
+        ) att_data", 'm.member_idx = att_data.member_idx', 'left');
+		} else {
+			$this->db->select('NULL as att_type_data', false);
+		}
+
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where_in('m.area_idx', $area_indices);
+
+		if ($level !== null) {
+			$this->db->where('m.grade >=', $level);
+		}
+
+		$this->db->order_by('ma.area_order', 'ASC');
+		$this->db->order_by('m.leader_yn', 'DESC');
+		$this->db->order_by('m.member_idx', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 역할: 특정 area_idx 목록으로 그룹 정보 조회 (권한 필터링용)
+	 */
+	public function get_member_areas_by_idx($org_id, $area_indices)
+	{
+		if (empty($area_indices)) {
+			return array();
+		}
+
+		$this->db->select('area_idx, area_name, area_order, parent_idx');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where_in('area_idx', $area_indices);
+		$this->db->order_by('area_order', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 역할: 특정 회원에 대한 접근 권한 확인
+	 */
+	public function check_member_access_permission($user_id, $member_idx)
+	{
+		// 회원 정보 조회
+		$this->db->select('m.org_id, m.area_idx');
+		$this->db->from('wb_member m');
+		$this->db->where('m.member_idx', $member_idx);
+		$this->db->where('m.del_yn', 'N');
+		$query = $this->db->get();
+		$member_info = $query->row_array();
+
+		if (!$member_info) {
+			return false;
+		}
+
+		// 사용자 권한 확인
+		$this->load->model('User_model');
+		$this->load->model('User_management_model');
+
+		$master_yn = $this->session->userdata('master_yn');
+		$user_level = $this->User_model->get_org_user_level($user_id, $member_info['org_id']);
+
+		// 최고관리자 또는 마스터인 경우
+		if ($user_level >= 10 || $master_yn === 'Y') {
+			return true;
+		}
+
+		// 일반 관리자인 경우 관리 가능한 그룹 확인
+		$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $member_info['org_id']);
+		return in_array($member_info['area_idx'], $accessible_areas);
+	}
+
 
 }
 

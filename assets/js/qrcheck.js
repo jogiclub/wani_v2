@@ -89,7 +89,8 @@ const modeConfig = {
 	}
 };
 
-// 멤버 카드 클릭 이벤트 처리
+
+// 멤버 카드 클릭 이벤트에서 권한 체크 강화
 $(document).on('click', '.member-card', function() {
 	var memberIdx = $(this).attr('member-idx');
 	var memberName = $(this).find('.member-name').text().trim();
@@ -119,11 +120,13 @@ $(document).on('click', '.member-card', function() {
 		if (areaIdx) {
 			loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx);
 		} else {
-			alert('멤버의 area_idx 정보를 찾을 수 없습니다.');
+			heyToast('멤버의 그룹 정보를 찾을 수 없습니다.', '정보 없음');
 		}
 	}
 });
 
+
+// 같은 그룹 멤버들을 불러올 때 권한 체크
 function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx) {
 	var currentWeekRange = $('.current-week').text();
 	var currentDate = getDateFromWeekRange(currentWeekRange);
@@ -215,8 +218,16 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 
 				$('#attendanceOffcanvas').offcanvas('show');
 			} else {
-				alert('멤버 정보를 가져오는데 실패했습니다.');
+				var errorMessage = response.message || '멤버 정보를 가져오는데 실패했습니다.';
+				heyToast(errorMessage, '조회 실패');
 			}
+		},
+		error: function(xhr, status, error) {
+			var errorMessage = '멤버 정보 조회 중 오류가 발생했습니다.';
+			if (xhr.responseJSON && xhr.responseJSON.message) {
+				errorMessage = xhr.responseJSON.message;
+			}
+			heyToast(errorMessage, '오류 발생');
 		}
 	});
 
@@ -230,11 +241,40 @@ $('.mode-list .btn-check').on('click', function() {
 	setCookie('selectedMode', selectedMode, 7);
 });
 
-// 새로운 멤버를 추가
+// 권한 체크 함수 추가
+function checkUserPermission(requiredAction, targetData) {
+	// 사용자 레벨과 마스터 여부를 전역 변수나 서버에서 받아온 데이터로 확인
+	// 이 부분은 페이지 로드 시 서버에서 전달받은 데이터를 사용
+	if (typeof userLevel === 'undefined' || typeof masterYn === 'undefined') {
+		return false;
+	}
+
+	// 최고관리자 또는 마스터인 경우
+	if (userLevel >= 10 || masterYn === 'Y') {
+		return true;
+	}
+
+	// 일반 관리자인 경우는 서버에서 권한 체크 필요
+	return false;
+}
+
+
+// 새로운 멤버를 추가할 때 권한 체크
 $('#saveNewMember').click(function() {
 	var member_name = $('#member_name').val();
 	var area_idx = $('#newMemberAreaIdx').val();
 	var activeOrgId = getCookie('activeOrg');
+
+	// 입력값 검증
+	if (!member_name.trim()) {
+		heyToast('회원 이름을 입력해주세요.', '입력 필요');
+		return;
+	}
+
+	if (!area_idx) {
+		heyToast('소그룹을 선택해주세요.', '선택 필요');
+		return;
+	}
 
 	$.ajax({
 		url: '/main/add_member',
@@ -258,10 +298,18 @@ $('#saveNewMember').click(function() {
 				var endDate = getWeekEndDate(currentDate);
 
 				// 멤버 목록 업데이트
-				loadMembers(activeOrgId, level, startDate, endDate);
+				loadMembers(activeOrgId, userLevel, startDate, endDate);
+				heyToast('새 회원이 추가되었습니다.', '회원 추가 완료');
 			} else {
-				alert('멤버 추가에 실패했습니다.');
+				heyToast(response.message || '회원 추가에 실패했습니다.', '추가 실패');
 			}
+		},
+		error: function(xhr, status, error) {
+			var errorMessage = '회원 추가 중 오류가 발생했습니다.';
+			if (xhr.responseJSON && xhr.responseJSON.message) {
+				errorMessage = xhr.responseJSON.message;
+			}
+			heyToast(errorMessage, '오류 발생');
 		}
 	});
 });
@@ -615,6 +663,8 @@ function formatDate(date) {
 	return `${year}.${month}.${day}`;
 }
 
+
+// 멤버 로드 함수에서 권한 정보 포함
 function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
 	$.ajax({
 		url: '/main/get_members',
@@ -639,6 +689,17 @@ function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
 			// 초기 로드 시에만 applySelectedMode 호출
 			if (initialLoad) {
 				applySelectedMode();
+			}
+		},
+		error: function(xhr, status, error) {
+			console.error('멤버 로드 실패:', error);
+			if (xhr.status === 403 || (xhr.responseJSON && xhr.responseJSON.message)) {
+				var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : '권한이 없습니다.';
+				heyToast(errorMessage, '접근 제한');
+				// 멤버 목록을 비우고 권한 없음 메시지 표시
+				displayMembers([]);
+			} else {
+				heyToast('멤버 목록을 불러오는 중 오류가 발생했습니다.', '로드 오류');
 			}
 		}
 	});
@@ -967,6 +1028,7 @@ function updateInputSearchState() {
 	}
 }
 
+// 출석 저장 시 권한 체크 강화
 $('#saveAttendanceBtn').on('click', function() {
 	var attendanceData = [];
 	var memberDataMap = {}; // 멤버별로 데이터를 그룹화하기 위한 맵
@@ -1011,6 +1073,7 @@ $('#saveAttendanceBtn').on('click', function() {
 
 	saveAttendanceData(attendanceData);
 });
+
 
 // 출석모드에서 그룹 출석 정보를 저장하는 함수 수정
 function saveAttendanceData(attendanceData) {
@@ -1207,6 +1270,7 @@ $(document).ready(function() {
 	// 페이지 로드 시 input-search 상태 업데이트
 	updateInputSearchState();
 
+	// 지난주 데이터 불러오기 권한 체크
 	$('#loadLastWeekBtn').on('click', function() {
 		var memberIdx = $(this).data('member-idx');
 		var orgId = getCookie('activeOrg');
@@ -1214,6 +1278,7 @@ $(document).ready(function() {
 		var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0];
 		loadLastWeekData(memberIdx, orgId, areaIdx, memberName);
 	});
+
 
 	function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
 		var currentWeekRange = $('.current-week').text();
@@ -1237,10 +1302,18 @@ $(document).ready(function() {
 					var attendanceData = response.attendance_data;
 					var attTypes = response.att_types;
 					updateAttendanceSelectbox(attendanceData, attTypes);
-					alert(memberName + ' 목장의 지난 주 정보를 불러왔습니다.');
+					heyToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', '데이터 로드 완료');
 				} else {
-					alert('지난주 데이터를 가져오는데 실패했습니다.');
+					var errorMessage = response.message || '지난주 데이터를 가져오는데 실패했습니다.';
+					heyToast(errorMessage, '데이터 로드 실패');
 				}
+			},
+			error: function(xhr, status, error) {
+				var errorMessage = '지난주 데이터 조회 중 오류가 발생했습니다.';
+				if (xhr.responseJSON && xhr.responseJSON.message) {
+					errorMessage = xhr.responseJSON.message;
+				}
+				heyToast(errorMessage, '오류 발생');
 			}
 		});
 	}
