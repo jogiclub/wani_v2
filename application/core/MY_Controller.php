@@ -32,11 +32,14 @@ class MY_Controller extends CI_Controller
 		// 사용자 정보 가져오기
 		$user_data = $this->User_model->get_user_by_id($user_id);
 
+		// User_management_model을 사용하여 권한이 있는 조직만 가져오기
+		$this->load->model('User_management_model');
+
 		// 사용자가 접근 가능한 조직 목록 가져오기
 		if ($master_yn === "N") {
-			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+			$user_orgs = $this->User_management_model->get_user_orgs($user_id);
 		} else {
-			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+			$user_orgs = $this->User_management_model->get_user_orgs_master($user_id);
 		}
 
 		// 현재 활성화된 조직 정보 가져오기
@@ -139,7 +142,8 @@ class MY_Controller extends CI_Controller
 	}
 
 	/**
-	 * 사용자의 조직 접근 권한 확인
+	 * 파일 위치: application/core/MY_Controller.php - check_org_access() 함수 수정
+	 * 역할: 사용자의 조직 접근 권한 확인
 	 */
 	protected function check_org_access($org_id, $required_level = 1)
 	{
@@ -155,8 +159,13 @@ class MY_Controller extends CI_Controller
 			return true;
 		}
 
+		// User_management_model을 사용하여 권한 확인
+		if (!isset($this->User_management_model)) {
+			$this->load->model('User_management_model');
+		}
+
 		// 사용자가 접근 가능한 조직인지 확인
-		$user_orgs = $this->Org_model->get_user_orgs($user_id);
+		$user_orgs = $this->User_management_model->get_user_orgs($user_id);
 		$has_access = false;
 		$user_level = 0;
 
@@ -180,7 +189,8 @@ class MY_Controller extends CI_Controller
 	}
 
 	/**
-	 * 현재 활성 조직 ID 가져오기
+	 * 파일 위치: application/core/MY_Controller.php - get_active_org_id() 함수 수정
+	 * 역할: 현재 활성 조직 ID 가져오기
 	 */
 	protected function get_active_org_id()
 	{
@@ -198,10 +208,15 @@ class MY_Controller extends CI_Controller
 			$master_yn = $this->session->userdata('master_yn');
 
 			if ($user_id) {
+				// User_management_model 사용
+				if (!isset($this->User_management_model)) {
+					$this->load->model('User_management_model');
+				}
+
 				if ($master_yn === "N") {
-					$user_orgs = $this->Org_model->get_user_orgs($user_id);
+					$user_orgs = $this->User_management_model->get_user_orgs($user_id);
 				} else {
-					$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+					$user_orgs = $this->User_management_model->get_user_orgs_master($user_id);
 				}
 
 				if (!empty($user_orgs)) {
@@ -216,8 +231,10 @@ class MY_Controller extends CI_Controller
 		return $org_id;
 	}
 
+
 	/**
-	 * 사용자 조직 존재 여부 확인
+	 * 파일 위치: application/core/MY_Controller.php - has_user_organizations() 함수 수정
+	 * 역할: 사용자 조직 존재 여부 확인
 	 */
 	protected function has_user_organizations($user_id = null)
 	{
@@ -231,10 +248,15 @@ class MY_Controller extends CI_Controller
 
 		$master_yn = $this->session->userdata('master_yn');
 
+		// User_management_model 사용
+		if (!isset($this->User_management_model)) {
+			$this->load->model('User_management_model');
+		}
+
 		if ($master_yn === "N") {
-			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+			$user_orgs = $this->User_management_model->get_user_orgs($user_id);
 		} else {
-			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+			$user_orgs = $this->User_management_model->get_user_orgs_master($user_id);
 		}
 
 		return !empty($user_orgs);
