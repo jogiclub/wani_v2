@@ -250,6 +250,12 @@ $is_master = $this->session->userdata('master_yn');
 										<i class="bi bi-qr-code-scan"></i> QR출석
 									</a>
 								</li>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1"
+									   href="<?php echo base_url('qrcheck'); ?>">
+										<i class="bi bi-qr-code-scan"></i> QR출석2
+									</a>
+								</li>
 							<?php endif; ?>
 						</ul>
 					<?php endif; ?>
