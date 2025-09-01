@@ -474,4 +474,202 @@ class Login extends CI_Controller
 
 		return false;
 	}
+
+
+
+
+	/**
+	 * 파일 위치: application/controllers/Login.php - create_organization() 함수
+	 * 역할: 새로운 조직 생성 및 최고관리자로 등록
+	 */
+	public function create_organization()
+	{
+		// POST 요청만 허용
+		if ($this->input->method() !== 'post') {
+			show_404();
+			return;
+		}
+
+		// 로그인 확인
+		$user_id = $this->session->userdata('user_id');
+		if (!$user_id) {
+			$response = array(
+				'success' => false,
+				'message' => '로그인이 필요합니다.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
+		// 입력값 검증
+		$org_name = trim($this->input->post('org_name'));
+		$org_type = trim($this->input->post('org_type'));
+		$org_desc = trim($this->input->post('org_desc'));
+
+		if (empty($org_name)) {
+			$response = array(
+				'success' => false,
+				'message' => '조직명을 입력해주세요.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
+		if (empty($org_type)) {
+			$response = array(
+				'success' => false,
+				'message' => '조직유형을 선택해주세요.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
+		$this->load->model('Org_model');
+		$this->load->model('User_model');
+
+		// 사용자 정보 확인 및 생성
+		$user_exists = $this->User_model->check_user($user_id);
+		if (!$user_exists) {
+			// 사용자 정보 생성
+			$user_data = array(
+				'user_id' => $user_id,
+				'user_name' => $this->session->userdata('user_name'),
+				'user_mail' => $this->session->userdata('user_email'),
+				'regi_date' => date('Y-m-d H:i:s'),
+				'modi_date' => date('Y-m-d H:i:s')
+			);
+			$this->User_model->insert_user($user_data);
+		}
+
+		// 5자리 초대코드 생성 (중복 확인)
+		$invite_code = $this->generate_unique_invite_code();
+
+		// 조직 정보 준비
+		$org_data = array(
+			'org_name' => $org_name,
+			'org_type' => $org_type,
+			'org_desc' => $org_desc,
+			'invite_code' => $invite_code,
+			'regi_date' => date('Y-m-d H:i:s'),
+			'modi_date' => date('Y-m-d H:i:s'),
+			'del_yn' => 'N'
+		);
+
+		// 트랜잭션 시작
+		$this->db->trans_start();
+
+		// 조직 생성
+		$org_result = $this->Org_model->insert_organization($org_data);
+
+		if (!$org_result) {
+			$this->db->trans_rollback();
+			$response = array(
+				'success' => false,
+				'message' => '조직 생성 중 오류가 발생했습니다.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
+		// 생성된 조직 ID 가져오기
+		$org_id = $this->db->insert_id();
+
+		// 조직 사용자 등록 (최고관리자 레벨 10)
+		$org_user_data = array(
+			'user_id' => $user_id,
+			'org_id' => $org_id,
+			'level' => 10, // 최고관리자
+			'join_date' => date('Y-m-d H:i:s')
+		);
+
+		$org_user_result = $this->Org_model->insert_org_user($org_user_data);
+
+		if (!$org_user_result) {
+			$this->db->trans_rollback();
+			$response = array(
+				'success' => false,
+				'message' => '관리자 등록 중 오류가 발생했습니다.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
+		// 트랜잭션 완료
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			$response = array(
+				'success' => false,
+				'message' => '조직 생성 중 오류가 발생했습니다.'
+			);
+			echo json_encode($response);
+			return;
+		}
+
+		// 세션에 조직 정보 설정
+		$this->input->set_cookie('activeOrg', $org_id, 86400);
+		$this->session->set_userdata('current_org_id', $org_id);
+		$this->session->set_userdata('current_org_name', $org_name);
+
+		log_message('info', "사용자 {$user_id}가 새로운 조직 {$org_id}({$org_name})을 생성했습니다.");
+
+		$response = array(
+			'success' => true,
+			'message' => '조직이 성공적으로 생성되었습니다.',
+			'org_id' => $org_id,
+			'redirect_url' => base_url('org')
+		);
+		echo json_encode($response);
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Login.php - generate_unique_invite_code() 함수
+	 * 역할: 중복되지 않는 5자리 초대코드 생성
+	 */
+	private function generate_unique_invite_code()
+	{
+		$this->load->model('Org_model');
+
+		$max_attempts = 100; // 최대 시도 횟수
+		$attempt = 0;
+
+		do {
+			$invite_code = $this->generate_invite_code();
+			$existing_org = $this->Org_model->get_org_by_invite_code($invite_code);
+			$attempt++;
+
+			if ($attempt >= $max_attempts) {
+				log_message('error', '초대코드 생성 시도 한계 도달');
+				break;
+			}
+
+		} while ($existing_org && $existing_org['del_yn'] == 'N');
+
+		return $invite_code;
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Login.php - generate_invite_code() 함수
+	 * 역할: 5자리 랜덤 초대코드 생성
+	 */
+	private function generate_invite_code()
+	{
+		$characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		$code = '';
+		$length = 5;
+
+		for ($i = 0; $i < $length; $i++) {
+			$code .= $characters[random_int(0, strlen($characters) - 1)];
+		}
+
+		return $code;
+	}
+
+
+
+
+
+
+
+
 }

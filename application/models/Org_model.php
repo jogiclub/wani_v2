@@ -55,20 +55,27 @@ class Org_model extends CI_Model {
 	}
 
 	/**
-	 * 초대코드로 조직 조회
+	 * 역할: 새로운 조직 정보 저장
+	 */
+	public function insert_organization($data)
+	{
+		return $this->db->insert('wb_org', $data);
+	}
+
+	/**
+	 * 역할: 초대코드로 조직 정보 조회
 	 */
 	public function get_org_by_invite_code($invite_code)
 	{
-		$this->db->select('org_id, org_name, org_code, invite_code, del_yn');
+		$this->db->select('org_id, org_name, org_type, org_desc, invite_code, del_yn');
 		$this->db->from('wb_org');
 		$this->db->where('invite_code', $invite_code);
-		$this->db->where('del_yn', 'N');
 		$query = $this->db->get();
 		return $query->row_array();
 	}
 
 	/**
-	 * 사용자의 특정 조직 가입 여부 확인
+	 * 역할: 사용자의 조직 가입 여부 확인
 	 */
 	public function check_user_org_membership($user_id, $org_id)
 	{
