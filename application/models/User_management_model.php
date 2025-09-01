@@ -230,7 +230,7 @@ class User_management_model extends CI_Model
 	 */
 	public function delete_org_user($target_user_id, $org_id)
 	{
-		// 삭제 전 사용자 존재 여부 확인 (별도 쿼리로)
+		// 삭제 전 사용자 존재 여부 확인
 		$this->db->select('user_id');
 		$this->db->where('user_id', $target_user_id);
 		$this->db->where('org_id', $org_id);
@@ -241,6 +241,8 @@ class User_management_model extends CI_Model
 			return false;
 		}
 
+		log_message('debug', "삭제 전 확인: User {$target_user_id} exists in org {$org_id}");
+
 		// 트랜잭션 시작
 		$this->db->trans_start();
 
@@ -249,20 +251,40 @@ class User_management_model extends CI_Model
 		$this->db->where('org_id', $org_id);
 		$delete_result = $this->db->delete('wb_org_user');
 
+		// 트랜잭션 완료 전 affected_rows 확인
+		$affected_rows = $this->db->affected_rows();
+		log_message('debug', "Delete operation - affected rows before trans_complete: {$affected_rows}");
+
 		// 트랜잭션 완료
 		$this->db->trans_complete();
 
 		// 트랜잭션 상태 확인
-		if ($this->db->trans_status() === FALSE) {
+		$trans_status = $this->db->trans_status();
+		log_message('debug', "Transaction status: " . ($trans_status ? 'SUCCESS' : 'FAILED'));
+
+		if ($trans_status === FALSE) {
 			log_message('error', "Delete user transaction failed: User {$target_user_id} in org {$org_id}");
 			return false;
 		}
 
-		// 실제 삭제된 행 수 확인
-		$affected_rows = $this->db->affected_rows();
-		log_message('debug', "Delete user result: User {$target_user_id} in org {$org_id}, affected rows: {$affected_rows}");
+		// 삭제 후 다시 존재 여부 확인 (실제 삭제되었는지 확인)
+		$this->db->select('user_id');
+		$this->db->where('user_id', $target_user_id);
+		$this->db->where('org_id', $org_id);
+		$check_query = $this->db->get('wb_org_user');
+		$still_exists = $check_query->num_rows() > 0;
 
-		return $affected_rows > 0;
+		log_message('debug', "Delete verification - User still exists: " . ($still_exists ? 'YES' : 'NO'));
+
+		// 실제로 삭제되었으면 성공으로 처리
+		if (!$still_exists) {
+			log_message('info', "User {$target_user_id} successfully deleted from org {$org_id}");
+			return true;
+		}
+
+		// affected_rows가 0이어도 실제로 삭제되지 않았다면 실패
+		log_message('error', "Delete failed - User {$target_user_id} still exists in org {$org_id} after deletion attempt");
+		return false;
 	}
 
 
@@ -597,18 +619,52 @@ class User_management_model extends CI_Model
 
 
 	/**
-	 * 조직 내 특정 사용자 정보 가져오기
+	 * 조직 내 특정 사용자 정보 가져오기 (삭제용 - 더 많은 정보 포함)
 	 */
 	public function get_org_user_info($user_id, $org_id)
 	{
-		$this->db->select('wb_user.user_id, wb_user.user_name, wb_user.user_mail, wb_org_user.level');
+		$this->db->select('
+        wb_user.user_id, 
+        wb_user.user_name, 
+        wb_user.user_mail, 
+        wb_user.user_hp,
+        wb_user.master_yn,
+        wb_org_user.level,
+        wb_org_user.org_id,
+        wb_org_user.join_date
+    ');
 		$this->db->from('wb_user');
 		$this->db->join('wb_org_user', 'wb_user.user_id = wb_org_user.user_id');
 		$this->db->where('wb_user.user_id', $user_id);
 		$this->db->where('wb_org_user.org_id', $org_id);
 		$this->db->where('wb_user.del_yn', 'N');
+
 		$query = $this->db->get();
-		return $query->row_array();
+		$result = $query->row_array();
+
+		// 디버그 로그 추가
+		log_message('debug', "get_org_user_info 조회 결과: User {$user_id} in Org {$org_id} - " .
+			($result ? "발견됨" : "발견되지 않음"));
+
+		return $result;
+	}
+
+	/**
+	 * 조직 내 사용자 존재 여부 확인 (간단한 체크용)
+	 */
+	public function check_org_user_exists($user_id, $org_id)
+	{
+		$this->db->select('COUNT(*) as count');
+		$this->db->from('wb_org_user');
+		$this->db->join('wb_user', 'wb_org_user.user_id = wb_user.user_id');
+		$this->db->where('wb_org_user.user_id', $user_id);
+		$this->db->where('wb_org_user.org_id', $org_id);
+		$this->db->where('wb_user.del_yn', 'N');
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		return $result['count'] > 0;
 	}
 
 	/**
@@ -627,7 +683,6 @@ class User_management_model extends CI_Model
 			'user_id' => $invite_email,
 			'user_name' => '', // 로그인 시 Google/Naver에서 가져올 예정
 			'user_mail' => $invite_email,
-			'user_grade' => 0,
 			'user_hp' => '',
 			'regi_date' => date('Y-m-d H:i:s'),
 			'modi_date' => date('Y-m-d H:i:s'),

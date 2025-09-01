@@ -183,9 +183,9 @@ $this->load->view('header'); ?>
 	<?php endif; ?>
 </div>
 
-<!-- 사용자 초대 모달 -->
+<!-- 사용자 초대 모달 - 개선된 버전 -->
 <div class="modal fade" id="inviteUserModal" tabindex="-1" aria-labelledby="inviteUserModalLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="inviteUserModalLabel">사용자 초대</h5>
@@ -194,15 +194,29 @@ $this->load->view('header'); ?>
 			<form id="inviteUserForm">
 				<div class="modal-body">
 					<div class="mb-3">
-						<label for="invite_email" class="form-label">이메일 주소 <span class="text-danger">*</span></label>
-						<input type="email" class="form-control" id="invite_email" name="invite_email"
-							   placeholder="초대할 사용자의 이메일 주소를 입력하세요" required>
-						<div class="form-text">입력한 이메일로 초대 메일이 발송됩니다.</div>
+						<label for="invite_emails" class="form-label">이메일 주소 <span class="text-danger">*</span></label>
+						<textarea class="form-control" id="invite_emails" name="invite_emails" rows="4"
+								  placeholder="초대할 사용자의 이메일 주소를 입력하세요&#10;여러 명을 초대하려면 줄바꿈 또는 쉼표(,)로 구분하세요&#10;&#10;예시:&#10;user1@example.com&#10;user2@example.com, user3@example.com" required></textarea>
+						<div class="form-text">
+							<i class="bi bi-info-circle"></i>
+							여러 명을 초대하려면 줄바꿈 또는 쉼표(,)로 구분하여 입력하세요. 각 이메일로 초대 메일이 발송됩니다.
+						</div>
+					</div>
+
+					<!-- 파싱된 이메일 목록 미리보기 -->
+					<div id="emailPreview" class="mb-3" style="display: none;">
+						<label class="form-label">초대할 사용자 목록:</label>
+						<div id="emailList" class="p-2 bg-light border rounded">
+							<!-- JavaScript로 동적 생성 -->
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-					<button type="submit" class="btn btn-primary">초대 메일 발송</button>
+					<button type="submit" class="btn btn-primary" id="inviteSubmitBtn">
+						<span id="inviteSpinner" class="spinner-border spinner-border-sm me-2" style="display: none;"></span>
+						<span id="inviteButtonText">초대 메일 발송</span>
+					</button>
 				</div>
 			</form>
 		</div>

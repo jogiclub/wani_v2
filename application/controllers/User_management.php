@@ -306,9 +306,11 @@ class User_management extends My_Controller
 		}
 	}
 
+
 	/**
-	 * 사용자 삭제 (조직에서 제외) - 응답 개선 버전
+	 * 사용자 삭제 (조직에서 제외)
 	 */
+
 	public function delete_user()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -322,17 +324,21 @@ class User_management extends My_Controller
 		$target_user_id = $this->input->post('target_user_id');
 		$org_id = $this->input->post('org_id');
 
-		log_message('debug', "Delete request received - target: {$target_user_id}, org: {$org_id}, by: {$user_id}");
+		log_message('debug', "=== DELETE USER REQUEST START ===");
+		log_message('debug', "Requester: {$user_id}, Target: {$target_user_id}, Org: {$org_id}");
 
 		// 입력값 검증
 		if (empty($target_user_id) || empty($org_id)) {
-			$response = array('success' => false, 'message' => '삭제할 사용자 정보를 찾을 수 없습니다.');
+			log_message('error', "Delete user failed: Missing required parameters");
+			$response = array('success' => false, 'message' => '필수 정보가 누락되었습니다.');
 			echo json_encode($response);
 			return;
 		}
 
 		// 권한 검증
 		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+		log_message('debug', "Requester level: {$user_level}");
+
 		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
 			log_message('error', "Delete user permission denied: User {$user_id} (level {$user_level}) trying to delete {$target_user_id} in org {$org_id}");
 			$response = array('success' => false, 'message' => '사용자를 삭제할 권한이 없습니다.');
@@ -342,31 +348,54 @@ class User_management extends My_Controller
 
 		// 자기 자신 삭제 방지
 		if ($user_id === $target_user_id) {
+			log_message('error', "Delete user failed: User trying to delete self");
 			$response = array('success' => false, 'message' => '본인 계정은 삭제할 수 없습니다.');
 			echo json_encode($response);
 			return;
 		}
 
-		// 삭제 대상 사용자 정보 확인
-		$target_user_info = $this->User_management_model->get_org_user_info($target_user_id, $org_id);
-		if (!$target_user_info) {
+		// 삭제 대상 사용자 존재 여부 확인
+		$user_exists = $this->User_management_model->check_org_user_exists($target_user_id, $org_id);
+		log_message('debug', "Target user exists: " . ($user_exists ? 'YES' : 'NO'));
+
+		if (!$user_exists) {
 			log_message('error', "Delete user failed: Target user {$target_user_id} not found in org {$org_id}");
-			$response = array('success' => false, 'message' => '삭제할 사용자 정보를 찾을 수 없습니다.');
+			$response = array('success' => false, 'message' => '삭제할 사용자를 조직에서 찾을 수 없습니다.');
 			echo json_encode($response);
 			return;
 		}
 
-		log_message('debug', "Attempting to delete user: {$target_user_id} from org: {$org_id} by user: {$user_id}");
+		// 삭제 대상 사용자 상세 정보 확인
+		$target_user_info = $this->User_management_model->get_org_user_info($target_user_id, $org_id);
+		if (!$target_user_info) {
+			log_message('error', "Delete user failed: Unable to get target user info {$target_user_id} in org {$org_id}");
+			$response = array('success' => false, 'message' => '사용자 정보를 확인할 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		// 마스터 사용자 삭제 방지
+		if (isset($target_user_info['master_yn']) && $target_user_info['master_yn'] === 'Y') {
+			log_message('error', "Delete user failed: Attempting to delete master user {$target_user_id}");
+			$response = array('success' => false, 'message' => '마스터 사용자는 삭제할 수 없습니다.');
+			echo json_encode($response);
+			return;
+		}
+
+		log_message('debug', "All validations passed. Proceeding with deletion...");
 
 		// 사용자 삭제 실행
 		$result = $this->User_management_model->delete_org_user($target_user_id, $org_id);
+
+		log_message('debug', "Delete operation result: " . ($result ? 'SUCCESS' : 'FAILED'));
+		log_message('debug', "=== DELETE USER REQUEST END ===");
 
 		if ($result) {
 			log_message('info', "User deleted successfully: {$target_user_id} from org: {$org_id} by user: {$user_id}");
 			$response = array('success' => true, 'message' => '사용자가 조직에서 제외되었습니다.');
 		} else {
 			log_message('error', "User deletion failed: {$target_user_id} from org: {$org_id} by user: {$user_id}");
-			$response = array('success' => false, 'message' => '사용자 삭제에 실패했습니다.');
+			$response = array('success' => false, 'message' => '사용자 삭제에 실패했습니다. 다시 시도해주세요.');
 		}
 
 		echo json_encode($response);
@@ -787,5 +816,256 @@ class User_management extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '초대 거절에 실패했습니다.'));
 		}
 	}
+
+
+
+	/**
+	 * 파일 위치: application/controllers/User_management.php
+	 * 역할: 다중 사용자 초대 메일 발송 처리
+	 */
+
+	/**
+	 * 다중 사용자 초대 메일 발송
+	 */
+	public function invite_users()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$invite_emails_raw = $this->input->post('invite_emails');
+		$org_id = $this->input->post('org_id');
+
+		// 권한 검증
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '사용자를 초대할 권한이 없습니다.'));
+			return;
+		}
+
+		if (empty($invite_emails_raw)) {
+			echo json_encode(array('success' => false, 'message' => '초대할 이메일 주소를 입력해주세요.'));
+			return;
+		}
+
+		// 이메일 주소 파싱 (줄바꿈, 쉼표, 세미콜론으로 구분)
+		$invite_emails = $this->parse_email_addresses($invite_emails_raw);
+
+		if (empty($invite_emails)) {
+			echo json_encode(array('success' => false, 'message' => '유효한 이메일 주소를 입력해주세요.'));
+			return;
+		}
+
+		// 이메일 개수 제한 (한 번에 최대 20개)
+		if (count($invite_emails) > 20) {
+			echo json_encode(array('success' => false, 'message' => '한 번에 최대 20명까지 초대할 수 있습니다.'));
+			return;
+		}
+
+		$results = array(
+			'success_count' => 0,
+			'failed_count' => 0,
+			'failed_emails' => array(),
+			'success_emails' => array(),
+			'duplicate_emails' => array(),
+			'invalid_emails' => array()
+		);
+
+		// 각 이메일별로 초대 처리
+		foreach ($invite_emails as $email) {
+			$email = trim($email);
+
+			// 이메일 형식 검증
+			if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+				$results['failed_count']++;
+				$results['invalid_emails'][] = $email;
+				continue;
+			}
+
+			// 중복 확인
+			$existing_org_user = $this->User_management_model->get_org_user($email, $org_id);
+			if ($existing_org_user && $existing_org_user['level'] > 0) {
+				$results['failed_count']++;
+				$results['duplicate_emails'][] = $email;
+				continue;
+			}
+
+			// 이미 초대된 사용자 확인
+			if ($existing_org_user && $existing_org_user['level'] == 0) {
+				$results['failed_count']++;
+				$results['duplicate_emails'][] = $email;
+				continue;
+			}
+
+			// 개별 초대 처리
+			$invite_result = $this->process_single_invite($email, $org_id, $user_id);
+
+			if ($invite_result['success']) {
+				$results['success_count']++;
+				$results['success_emails'][] = $email;
+			} else {
+				$results['failed_count']++;
+				$results['failed_emails'][] = array(
+					'email' => $email,
+					'message' => $invite_result['message']
+				);
+			}
+		}
+
+		// 결과 메시지 생성
+		$message = $this->generate_invite_result_message($results);
+
+		echo json_encode(array(
+			'success' => $results['success_count'] > 0,
+			'message' => $message,
+			'results' => $results
+		));
+	}
+
+	/**
+	 * 이메일 주소 파싱 (줄바꿈, 쉼표, 세미콜론으로 구분)
+	 */
+	private function parse_email_addresses($raw_emails)
+	{
+		// 줄바꿈, 쉼표, 세미콜론을 기준으로 분할
+		$emails = preg_split('/[\r\n,;]+/', $raw_emails);
+
+		$parsed_emails = array();
+		foreach ($emails as $email) {
+			$email = trim($email);
+			if (!empty($email)) {
+				$parsed_emails[] = $email;
+			}
+		}
+
+		// 중복 제거
+		return array_unique($parsed_emails);
+	}
+
+	/**
+	 * 개별 초대 처리
+	 */
+	private function process_single_invite($email, $org_id, $inviter_id)
+	{
+		try {
+			// 데이터베이스 트랜잭션 시작
+			$this->db->trans_start();
+
+			// 1. 사용자 생성 (없는 경우)
+			$invited_user_id = $this->User_management_model->create_invited_user($email);
+			if (!$invited_user_id) {
+				throw new Exception('사용자 생성에 실패했습니다.');
+			}
+
+			// 2. 조직에 사용자 추가 (level=0)
+			$org_added = $this->User_management_model->add_invited_user_to_org($invited_user_id, $org_id);
+			if (!$org_added) {
+				throw new Exception('조직에 사용자 추가에 실패했습니다.');
+			}
+
+			// 3. 초대 토큰 생성
+			$invite_token = bin2hex(random_bytes(32));
+
+			// 4. 초대 메일 발송
+			$mail_result = $this->send_invite_email($email, $org_id, $inviter_id, $invite_token);
+
+			if (!$mail_result['success']) {
+				throw new Exception($mail_result['message']);
+			}
+
+			// 5. 발송 로그 저장
+			$invite_data = array(
+				'invite_email' => $email,
+				'org_id' => $org_id,
+				'inviter_id' => $inviter_id,
+				'invite_token' => $invite_token,
+				'status' => 'sent',
+				'sent_date' => date('Y-m-d H:i:s')
+			);
+
+			$log_saved = $this->User_management_model->save_invite_log($invite_data);
+
+			// 트랜잭션 커밋
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				throw new Exception('데이터베이스 트랜잭션 실패');
+			}
+
+			return array('success' => true, 'message' => '초대 성공');
+
+		} catch (Exception $e) {
+			// 트랜잭션 롤백
+			$this->db->trans_rollback();
+
+			log_message('error', "개별 초대 실패 ({$email}): " . $e->getMessage());
+			return array('success' => false, 'message' => $e->getMessage());
+		}
+	}
+
+	/**
+	 * 초대 결과 메시지 생성
+	 */
+	private function generate_invite_result_message($results)
+	{
+		$messages = array();
+
+		if ($results['success_count'] > 0) {
+			$messages[] = "{$results['success_count']}명에게 초대 메일을 발송했습니다.";
+		}
+
+		if ($results['failed_count'] > 0) {
+			$messages[] = "{$results['failed_count']}명 초대에 실패했습니다.";
+		}
+
+		if (!empty($results['duplicate_emails'])) {
+			$messages[] = "이미 가입되었거나 초대된 사용자: " . implode(', ', array_slice($results['duplicate_emails'], 0, 3)) .
+				(count($results['duplicate_emails']) > 3 ? " 외 " . (count($results['duplicate_emails']) - 3) . "명" : "");
+		}
+
+		if (!empty($results['invalid_emails'])) {
+			$messages[] = "잘못된 이메일 형식: " . implode(', ', array_slice($results['invalid_emails'], 0, 3)) .
+				(count($results['invalid_emails']) > 3 ? " 외 " . (count($results['invalid_emails']) - 3) . "명" : "");
+		}
+
+		return implode("\n", $messages);
+	}
+
+	/**
+	 * 조직의 사용자 목록 API (AJAX용 - 실시간 갱신용)
+	 */
+	public function get_org_users_ajax()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+
+		// 권한 검증
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 사용자 목록 조회
+		$org_users = $this->User_management_model->get_org_users($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'users' => $org_users,
+			'total_count' => count($org_users)
+		));
+	}
+
 
 }

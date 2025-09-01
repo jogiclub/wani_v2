@@ -394,10 +394,16 @@ function submitEditUserForm(formData) {
 	});
 }
 
+
 /**
- * 사용자 삭제 처리
+ * 사용자 삭제 처리 - 개선된 버전
  */
 function deleteUser(userId, userName, orgId) {
+	if (!userId || !orgId) {
+		showToast('삭제할 사용자 정보가 올바르지 않습니다.');
+		return;
+	}
+
 	$.ajax({
 		url: 'user_management/delete_user',
 		type: 'POST',
@@ -406,31 +412,64 @@ function deleteUser(userId, userName, orgId) {
 			org_id: orgId
 		},
 		dataType: 'json',
+		beforeSend: function() {
+			// 로딩 상태 표시 (선택사항)
+			console.log('사용자 삭제 요청 시작:', userId);
+		},
 		success: function(response) {
+			// 응답이 문자열인 경우 JSON 파싱 시도
 			if (typeof response === 'string') {
 				try {
 					response = JSON.parse(response);
 				} catch (e) {
 					console.error('JSON 파싱 실패:', e);
+					console.error('서버 응답:', response);
 					showToast('서버 응답을 처리할 수 없습니다.');
 					return;
 				}
 			}
 
-			if (response && response.success) {
-				showToast(response.message);
-				location.reload();
+			// 응답 검증
+			if (response && typeof response === 'object') {
+				if (response.success) {
+					showToast(response.message || '사용자가 성공적으로 삭제되었습니다.');
+					// 페이지 새로고침으로 목록 갱신
+					setTimeout(function() {
+						location.reload();
+					}, 1000);
+				} else {
+					showToast(response.message || '사용자 삭제에 실패했습니다.');
+				}
 			} else {
-				showToast(response ? response.message : '사용자 삭제에 실패했습니다.');
+				console.error('예상하지 못한 응답 형식:', response);
+				showToast('서버에서 예상하지 못한 응답을 받았습니다.');
 			}
 		},
 		error: function(xhr, status, error) {
-			console.error('AJAX 에러:', {xhr, status, error});
-			showToast('사용자 삭제 중 오류가 발생했습니다.');
+			console.error('AJAX 요청 실패:', {
+				status: status,
+				error: error,
+				responseText: xhr.responseText
+			});
+
+			let errorMessage = '사용자 삭제 중 오류가 발생했습니다.';
+
+			// HTTP 상태 코드별 에러 메시지
+			if (xhr.status === 403) {
+				errorMessage = '사용자를 삭제할 권한이 없습니다.';
+			} else if (xhr.status === 404) {
+				errorMessage = '요청한 기능을 찾을 수 없습니다.';
+			} else if (xhr.status >= 500) {
+				errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+			}
+
+			showToast(errorMessage);
+		},
+		complete: function() {
+			console.log('사용자 삭제 요청 완료:', userId);
 		}
 	});
 }
-
 /**
  * 사용자 초대 처리
  */
@@ -520,33 +559,6 @@ function showConfirm(message, callback, title = '확인') {
 	$('#confirmModal').modal('show');
 }
 
-/**
- * Toast 메시지 표시
- */
-function showToast(message) {
-	let toastContainer = $('.toast-container');
-	if (toastContainer.length === 0) {
-		$('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
-		toastContainer = $('.toast-container');
-	}
-
-	const toast = $('<div class="toast" role="alert" aria-live="assertive" aria-atomic="true">' +
-		'<div class="toast-header">' +
-		'<strong class="me-auto">알림</strong>' +
-		'<button type="button" class="btn-close" data-bs-dismiss="toast"></button>' +
-		'</div>' +
-		'<div class="toast-body">' + message + '</div>' +
-		'</div>');
-
-	toastContainer.append(toast);
-
-	const bsToast = new bootstrap.Toast(toast[0]);
-	bsToast.show();
-
-	toast.on('hidden.bs.toast', function() {
-		$(this).remove();
-	});
-}
 
 // ========================= 이벤트 핸들러 =========================
 
@@ -639,20 +651,7 @@ $(document).on('click', '.delete-user-btn', function() {
 	);
 });
 
-// 사용자 초대 폼 제출
-$(document).on('submit', '#inviteUserForm', function(e) {
-	e.preventDefault();
 
-	const inviteEmail = $('#invite_email').val();
-	const orgId = getCookie('activeOrg');
-
-	if (!inviteEmail) {
-		showToast('초대할 이메일 주소를 입력해주세요.');
-		return;
-	}
-
-	inviteUser(inviteEmail, orgId);
-});
 
 
 // 사용자로 로그인 버튼 클릭 이벤트
@@ -689,3 +688,441 @@ $(document).on('click', '.login-as-user-btn', function() {
 		'사용자 로그인 확인'
 	);
 });
+
+
+/**
+ * 파일 위치: assets/js/user_management.js
+ * 역할: 다중 사용자 초대 및 실시간 테이블 갱신 기능
+ */
+
+// ========================= 초대 관련 함수 =========================
+
+/**
+ * 이메일 주소 파싱 및 검증
+ */
+function parseEmailAddresses(rawEmails) {
+	if (!rawEmails) return [];
+
+	// 줄바꿈, 쉼표, 세미콜론을 기준으로 분할
+	const emails = rawEmails.split(/[\r\n,;]+/)
+		.map(email => email.trim())
+		.filter(email => email.length > 0);
+
+	// 중복 제거
+	return [...new Set(emails)];
+}
+
+/**
+ * 이메일 형식 검증
+ */
+function validateEmail(email) {
+	const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+	return emailRegex.test(email);
+}
+
+/**
+ * 이메일 미리보기 업데이트
+ */
+function updateEmailPreview() {
+	const rawEmails = $('#invite_emails').val();
+	const emails = parseEmailAddresses(rawEmails);
+
+	if (emails.length === 0) {
+		$('#emailPreview').hide();
+		return;
+	}
+
+	let previewHtml = '';
+	let validCount = 0;
+	let invalidCount = 0;
+
+	emails.forEach(function(email) {
+		if (validateEmail(email)) {
+			previewHtml += '<span class="badge bg-success me-1 mb-1">' + email + '</span>';
+			validCount++;
+		} else {
+			previewHtml += '<span class="badge bg-danger me-1 mb-1">' + email + ' (잘못된 형식)</span>';
+			invalidCount++;
+		}
+	});
+
+	// 통계 정보 추가
+	previewHtml += '<div class="mt-2 small text-muted">';
+	previewHtml += '총 ' + emails.length + '개 이메일';
+	if (validCount > 0) previewHtml += ' | 유효: ' + validCount + '개';
+	if (invalidCount > 0) previewHtml += ' | 오류: ' + invalidCount + '개';
+	previewHtml += '</div>';
+
+	$('#emailList').html(previewHtml);
+	$('#emailPreview').show();
+}
+
+/**
+ * 다중 사용자 초대 처리
+ */
+function inviteUsers(rawEmails, orgId) {
+	const emails = parseEmailAddresses(rawEmails);
+
+	if (emails.length === 0) {
+		showToast('초대할 이메일 주소를 입력해주세요.');
+		return;
+	}
+
+	// 유효하지 않은 이메일 확인
+	const invalidEmails = emails.filter(email => !validateEmail(email));
+	if (invalidEmails.length > 0) {
+		showToast('잘못된 이메일 형식이 있습니다: ' + invalidEmails.slice(0, 3).join(', ') +
+			(invalidEmails.length > 3 ? ' 외 ' + (invalidEmails.length - 3) + '개' : ''));
+		return;
+	}
+
+	// 스피너 표시
+	showInviteLoading(true);
+
+	$.ajax({
+		url: 'user_management/invite_users',
+		type: 'POST',
+		data: {
+			invite_emails: rawEmails,
+			org_id: orgId
+		},
+		dataType: 'json',
+		timeout: 60000, // 60초 타임아웃 (메일 발송 시간 고려)
+		success: function(response) {
+			showInviteLoading(false);
+
+			if (response.success) {
+				showToast(response.message, 'success');
+				$('#inviteUserModal').modal('hide');
+				$('#inviteUserForm')[0].reset();
+				$('#emailPreview').hide();
+
+				// 테이블 실시간 갱신
+				refreshUserTable();
+
+			} else {
+				showToast(response.message, 'warning');
+			}
+		},
+		error: function(xhr, status, error) {
+			showInviteLoading(false);
+
+			let errorMessage = '초대 메일 발송 중 오류가 발생했습니다.';
+
+			if (status === 'timeout') {
+				errorMessage = '요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.';
+			} else if (xhr.status >= 500) {
+				errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+			}
+
+			showToast(errorMessage, 'error');
+		}
+	});
+}
+
+/**
+ * 초대 로딩 상태 표시
+ */
+function showInviteLoading(show) {
+	if (show) {
+		$('#inviteSpinner').show();
+		$('#inviteButtonText').text('발송 중...');
+		$('#inviteSubmitBtn').prop('disabled', true);
+		// 모달 닫기 버튼도 비활성화
+		$('.modal-header .btn-close, .modal-footer .btn-secondary').prop('disabled', true);
+	} else {
+		$('#inviteSpinner').hide();
+		$('#inviteButtonText').text('초대 메일 발송');
+		$('#inviteSubmitBtn').prop('disabled', false);
+		$('.modal-header .btn-close, .modal-footer .btn-secondary').prop('disabled', false);
+	}
+}
+
+/**
+ * 사용자 테이블 실시간 갱신
+ */
+function refreshUserTable() {
+	const orgId = getCookie('activeOrg');
+
+	if (!orgId) {
+		console.error('조직 정보를 찾을 수 없습니다.');
+		return;
+	}
+
+	$.ajax({
+		url: 'user_management/get_org_users_ajax',
+		type: 'POST',
+		data: { org_id: orgId },
+		dataType: 'json',
+		success: function(response) {
+			if (response.success) {
+				updateUserTableHTML(response.users);
+				updateSelectedCount(); // 체크박스 상태 초기화
+			} else {
+				console.error('사용자 목록 갱신 실패:', response.message);
+			}
+		},
+		error: function(xhr, status, error) {
+			console.error('사용자 목록 갱신 중 오류:', error);
+		}
+	});
+}
+
+/**
+ * 사용자 테이블 HTML 업데이트
+ */
+function updateUserTableHTML(users) {
+	const tbody = $('.table tbody');
+
+	if (!users || users.length === 0) {
+		tbody.html('<tr><td colspan="9" class="text-center py-4"><p class="text-muted">등록된 사용자가 없습니다.</p></td></tr>');
+		return;
+	}
+
+	let html = '';
+
+	users.forEach(function(user) {
+		html += '<tr>';
+
+		// 체크박스
+		html += '<td><input type="checkbox" class="form-check-input user-checkbox" value="' + user.user_id + '" data-user-name="' + escapeHtml(user.user_name) + '"></td>';
+
+		// 프로필 이미지
+		html += '<td class="text-center">';
+		if (user.user_profile_image) {
+			html += '<img src="' + user.user_profile_image + '" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" alt="프로필">';
+		} else {
+			html += '<div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-person text-muted"></i></div>';
+		}
+		html += '</td>';
+
+		// 이름
+		html += '<td><strong>' + escapeHtml(user.user_name || '미입력') + '</strong>';
+		if (user.master_yn === 'Y') {
+			html += '<br><small class="text-primary">마스터</small>';
+		}
+		html += '</td>';
+
+		// 이메일
+		html += '<td><span>' + escapeHtml(user.user_mail) + '</span></td>';
+
+		// 연락처
+		// html += '<td><span>' + escapeHtml(user.user_hp || '미입력') + '</span></td>';
+
+		// 권한
+		html += '<td>' + getUserLevelBadge(user.level) + '</td>';
+
+		// 관리메뉴
+		html += '<td>' + getManagedMenusDisplay(user.managed_menus_display) + '</td>';
+
+		// 관리그룹
+		html += '<td>' + getManagedAreasDisplay(user.managed_areas_display) + '</td>';
+
+		// 관리 버튼
+		html += '<td>' + getUserActionButtons(user) + '</td>';
+
+		html += '</tr>';
+	});
+
+	tbody.html(html);
+
+	// 전체 선택 체크박스 초기화
+	$('#selectAllUsers').prop('checked', false).prop('indeterminate', false);
+}
+
+/**
+ * 권한 레벨 뱃지 생성
+ */
+function getUserLevelBadge(level) {
+	let badgeClass = 'bg-secondary';
+	let text = '일반(' + level + ')';
+
+	if (level >= 10) {
+		badgeClass = 'bg-danger';
+		text = '최고관리자';
+	} else if (level >= 9) {
+		badgeClass = 'bg-warning';
+		text = '관리자';
+	} else if (level === 0) {
+		badgeClass = 'bg-secondary';
+		text = '초대중';
+	}
+
+	return '<span class="badge ' + badgeClass + '">' + text + '</span>';
+}
+
+/**
+ * 관리 메뉴 표시 생성
+ */
+function getManagedMenusDisplay(managedMenus) {
+	if (!managedMenus || managedMenus.length === 0) {
+		return '<span class="text-muted">-</span>';
+	}
+
+	let html = '';
+	const displayMenus = managedMenus.slice(0, 2);
+
+	displayMenus.forEach(function(menu) {
+		html += '<span class="badge bg-info text-dark me-1 mb-1">' + escapeHtml(menu) + '</span>';
+	});
+
+	if (managedMenus.length > 2) {
+		html += '<small class="text-muted">외 ' + (managedMenus.length - 2) + '개</small>';
+	}
+
+	return html;
+}
+
+/**
+ * 관리 그룹 표시 생성
+ */
+function getManagedAreasDisplay(managedAreas) {
+	if (!managedAreas || managedAreas.length === 0) {
+		return '<span class="text-muted">-</span>';
+	}
+
+	let html = '';
+	const displayAreas = managedAreas.slice(0, 2);
+
+	displayAreas.forEach(function(area) {
+		html += '<span class="badge bg-success me-1 mb-1">' + escapeHtml(area) + '</span>';
+	});
+
+	if (managedAreas.length > 2) {
+		html += '<small class="text-muted">외 ' + (managedAreas.length - 2) + '개</small>';
+	}
+
+	return html;
+}
+
+/**
+ * 사용자 액션 버튼 생성
+ */
+function getUserActionButtons(user) {
+	let html = '';
+
+	// 수정 버튼
+	html += '<button type="button" class="btn btn-sm btn-outline-primary edit-user-btn" ';
+	html += 'data-user-id="' + user.user_id + '" ';
+	html += 'data-user-name="' + escapeHtml(user.user_name) + '" ';
+	html += 'data-user-mail="' + escapeHtml(user.user_mail) + '" ';
+	html += 'data-user-hp="' + escapeHtml(user.user_hp) + '" ';
+	html += 'data-user-level="' + user.level + '" ';
+	html += 'data-org-id="' + user.org_id + '">';
+	html += '<i class="bi bi-pencil"></i></button> ';
+
+	// 삭제 버튼 (마스터가 아닌 경우)
+	if (user.master_yn !== 'Y') {
+		html += '<button type="button" class="btn btn-sm btn-outline-danger delete-user-btn" ';
+		html += 'data-user-id="' + user.user_id + '" ';
+		html += 'data-user-name="' + escapeHtml(user.user_name) + '" ';
+		html += 'data-org-id="' + user.org_id + '">';
+		html += '<i class="bi bi-trash"></i></button> ';
+	}
+
+	// 로그인 버튼 (마스터 전용)
+	// 세션 정보는 서버에서 확인해야 하므로 여기서는 생략
+
+	return html;
+}
+
+/**
+ * HTML 이스케이프 처리
+ */
+function escapeHtml(text) {
+	if (!text) return '';
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+/**
+ * Toast 메시지 표시 (타입별 색상)
+ */
+function showToast(message, type = 'info') {
+	let toastContainer = $('.toast-container');
+	if (toastContainer.length === 0) {
+		$('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
+		toastContainer = $('.toast-container');
+	}
+
+	let headerClass = 'bg-primary text-white';
+	let icon = 'bi-info-circle';
+
+	switch(type) {
+		case 'success':
+			headerClass = 'bg-success text-white';
+			icon = 'bi-check-circle';
+			break;
+		case 'warning':
+			headerClass = 'bg-warning text-dark';
+			icon = 'bi-exclamation-triangle';
+			break;
+		case 'error':
+			headerClass = 'bg-danger text-white';
+			icon = 'bi-x-circle';
+			break;
+	}
+
+	const toast = $('<div class="toast" role="alert" aria-live="assertive" aria-atomic="true">' +
+		'<div class="toast-header ' + headerClass + '">' +
+		'<i class="bi ' + icon + ' me-2"></i>' +
+		'<strong class="me-auto">알림</strong>' +
+		'<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>' +
+		'</div>' +
+		'<div class="toast-body">' + message + '</div>' +
+		'</div>');
+
+	toastContainer.append(toast);
+
+	const bsToast = new bootstrap.Toast(toast[0], {
+		autohide: true,
+		delay: 5000
+	});
+	bsToast.show();
+
+	toast.on('hidden.bs.toast', function() {
+		$(this).remove();
+	});
+}
+
+// ========================= 이벤트 핸들러 추가 =========================
+
+// 이메일 입력 시 실시간 미리보기 업데이트
+$(document).on('input paste keyup', '#invite_emails', function() {
+	// 짧은 지연 후 업데이트 (타이핑 중 너무 자주 업데이트 방지)
+	clearTimeout(this.previewTimeout);
+	this.previewTimeout = setTimeout(updateEmailPreview, 300);
+});
+
+// 다중 사용자 초대 폼 제출
+$(document).on('submit', '#inviteUserForm', function(e) {
+	e.preventDefault();
+
+	const rawEmails = $('#invite_emails').val();
+	const orgId = getCookie('activeOrg');
+
+	if (!rawEmails || rawEmails.trim().length === 0) {
+		showToast('초대할 이메일 주소를 입력해주세요.');
+		return;
+	}
+
+	if (!orgId) {
+		showToast('조직 정보를 찾을 수 없습니다.');
+		return;
+	}
+
+	inviteUsers(rawEmails, orgId);
+});
+
+// 초대 모달이 닫힐 때 초기화
+$(document).on('hidden.bs.modal', '#inviteUserModal', function() {
+	$('#inviteUserForm')[0].reset();
+	$('#emailPreview').hide();
+	showInviteLoading(false);
+});
+
+// 기존 단일 초대 함수는 호환성을 위해 유지하되 내부적으로 다중 초대 함수 호출
+function inviteUser(inviteEmail, orgId) {
+	inviteUsers(inviteEmail, orgId);
+}
