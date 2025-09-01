@@ -31,23 +31,21 @@ ul, dl{}
 .list-group-item+.list-group-item.active{background: #0d9af0; border-color: #0d9af0; color:#fff}
 /*마손리*/
 .grid-sizer,.grid-item {width: 16.66%; padding: 3px;}
-.grid-item .member-card{border: 1px solid #999; padding: 25px 12px 6px 12px; font-size: 18px; height: 58px; display: flex; align-items: center; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer; background: #fff}
-.grid-item .member-card.leader{height: 122px;    flex-direction: column;     justify-content: space-between;}
-.grid-item .member-card.leader .photo{display: inline-block; height: 64px; width: 64px; background: #efefef; border-radius: 32px;    background-position: center center;background-size: cover;}
-.grid-item .member-card .badge {font-size: 20px;padding: 3px 4px;position: absolute; left: 10px; bottom: 8px;}
+.grid-item .member-card{border: 1px solid #999; padding: 12px 12px 6px 12px; font-size: 18px; border-radius: 3px; box-shadow: 0 0 3px 0 #ddd; cursor:pointer; background: #fff;    text-align: center;}
+.grid-item .member-card .photo{display: inline-block; height: 64px; width: 64px; background: #efefef ; border-radius: 32px;    background-position: center center;background-size: cover; position: relative}
+.grid-item .member-card .badge {font-size: 18px; padding: 0}
 .grid-item .member-card.leader .badge i{color:#0d9af0;}
 .grid-item .member-card.new .badge i{color: #ff8000;}
 .grid-item .member-card.now{border: 2px solid #cb3128;}
 .grid-item .member-card .birth i{color: #CB3227}
 .grid-item .member-card .bedge-leader{}
-.grid-item .member-card .area{position: absolute; left: 16px; top: 13px; font-size: 12px; color:#999;}
-.grid-item .member-card .member-wrap{width: 100%;}
-.grid-item .member-card .member-wrap .member-name{line-height: 20px; position: absolute;bottom: 12px;left: 14px;}
-.grid-item .member-card .member-wrap .att-stamp-warp{display: flex; position: absolute;right: 10px;bottom: 12px; }
+.grid-item .member-card .member-wrap{width: 100%; margin-top: 5px; margin-bottom: 5px}
+.grid-item .member-card .member-wrap .member-name{line-height: 20px;}
+.grid-item .member-card .member-wrap .att-stamp-warp{display: flex; justify-content: center;}
 .grid-item .member-card .member-wrap .att-stamp-warp.hidden{display: none}
-.grid-item .member-card .member-wrap .att-stamp-warp .att-stamp{background: #CB3227; height: 25px; width: 25px; border-radius: 3px; justify-content: center; align-items: center; display: flex; font-size: 14px; color:#fff; margin-left: 2px}
-.grid-item .member-card.leader .member-wrap .member-name{padding-left: 20px;}
-.grid-item .member-card.new .member-wrap .member-name{padding-left: 20px}
+.grid-item .member-card .member-wrap .att-stamp-warp .att-stamp{background: #CB3227;height: 20px;width: 20px;border-radius: 3px;font-size: 12px;color: #fff;display: flex;align-items: center;justify-content: center; white-space: pre}
+.grid-item .member-card.leader .member-wrap .member-name{}
+.grid-item .member-card.new .member-wrap .member-name{}
 
 .grid-item .member-card.off{opacity: 0.5; box-shadow: none;}
 .grid-item .member-card.on{opacity: 1; box-shadow: 0 0 3px 0 #ddd!important;}
@@ -69,6 +67,25 @@ ul, dl{}
 .toast-header{font-size: 20px}
 .toast-body{font-size: 20px}
 
+
+.grid-sizer,.grid-item{width: 10%}
+
+@media screen and (max-width: 1400px){
+    .grid-sizer,.grid-item{width: 12.5%}
+}
+@media screen and (max-width: 1200px){
+    .grid-sizer,.grid-item{width: 16.66%}
+}
+@media screen and (max-width: 992px){
+    .grid-sizer,.grid-item{width: 20%}
+}
+@media screen and (max-width: 768px){
+    .grid-sizer,.grid-item{width: 25%}
+}
+@media screen and (max-width: 576px){
+    .grid-sizer,.grid-item{width: 33.33%}
+}
+/*
 @media screen and (max-width: 1400px){
     .grid-sizer,.grid-item{width: 16.66%}
 }
@@ -83,7 +100,7 @@ ul, dl{}
 }
 @media screen and (max-width: 576px){
     .grid-sizer,.grid-item{width: 50%}
-}
+}*/
 
 /*버튼커스터마이징
 .btn{white-space: pre}*/
@@ -118,6 +135,10 @@ header .logo img{height: 27px}
 header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex; align-items: center; justify-content: center;}
 header h2 b{position: relative;font-size: 38px;}
 header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
+@media screen and (max-width: 1200px){
+	header .logo img{height: 20px}
+}
+
 
 
 .att-dropdown-wrap{position: absolute; right: 80px; z-index: 1; top: 3px;}

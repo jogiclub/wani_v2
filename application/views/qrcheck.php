@@ -1,11 +1,10 @@
-<html lang="ko">
-<head>
+
 	<?php $this->load->view('header'); ?>
-</head>
-<body>
+	<!-- Member CSS -->
+	<link rel="stylesheet" href="/assets/css/qrcheck.css?<?php echo date('Ymdhis'); ?>">
 
 <div class="pt-3 pb-2 ">
-	<div class="container">
+	<div class="container-fluid">
 		<div class="row">
 
 			<div class="col-xl-12 text-center mt-1 mb-3 mode-list">
@@ -186,8 +185,8 @@
 <?php $this->load->view('footer'); ?>
 
 <script src="/assets/js/qrcheck.js?<?php echo date('Ymdhis');?>"></script>
-<script>
-
+	<script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+	<script>
 	// 페이지 최초 로드 시 그룹 정보 확인
 	var postOrgId = '<?php echo isset($postOrg['org_id']) ? $postOrg['org_id'] : ''; ?>';
 	var postOrgName = '<?php echo isset($postOrg['org_name']) ? $postOrg['org_name'] : ''; ?>';
@@ -262,6 +261,3 @@
 	});
 
 </script>
-
-</body>
-</html>

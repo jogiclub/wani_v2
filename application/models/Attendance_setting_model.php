@@ -126,7 +126,7 @@ class Attendance_setting_model extends CI_Model
 	public function has_attendance_records($att_type_idx)
 	{
 		$this->db->where('att_type_idx', $att_type_idx);
-		$this->db->from('wb_attendance');
+		$this->db->from('wb_member_att');
 		return $this->db->count_all_results() > 0;
 	}
 

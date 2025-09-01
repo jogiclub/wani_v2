@@ -47,7 +47,7 @@
 			<img src="/assets/images/logo.png">
 		</a>
 
-		<div class="btn-group col-xl-4 col-8">
+		<div class="btn-group col-auto">
 			<?php if (isset($current_org) && $current_org): ?>
 				<button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
 					<?php echo htmlspecialchars($current_org['org_name']); ?>

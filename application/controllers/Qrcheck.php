@@ -453,4 +453,6 @@ class Qrcheck extends My_Controller
 			echo json_encode($response);
 		}
 	}
+
+
 }
