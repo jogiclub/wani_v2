@@ -266,86 +266,74 @@ class User_management_model extends CI_Model
 	}
 
 
-
 	/**
-	 * 사용자가 조직에 속해있는지 확인
+	 * 사용자가 조직에 속해있는지 확인 - del_yn 제거
 	 */
 	public function check_user_in_org($user_email, $org_id)
 	{
-		$this->db->select('wb_org_user.idx');
-		$this->db->from('wb_user');
-		$this->db->join('wb_org_user', 'wb_user.user_id = wb_org_user.user_id');
-		$this->db->where('wb_user.user_mail', $user_email);
-		$this->db->where('wb_org_user.org_id', $org_id);
-		$this->db->where('wb_user.del_yn', 'N');
+		$this->db->select('wou.idx, wou.level');
+		$this->db->from('wb_user wu');
+		$this->db->join('wb_org_user wou', 'wu.user_id = wou.user_id');
+		$this->db->where('wu.user_mail', $user_email);
+		$this->db->where('wou.org_id', $org_id);
+		$this->db->where('wu.del_yn', 'N');
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+
+	/**
+	 * 초대 메일 발송 로그 저장
+	 */
+	public function save_invite_log($invite_data)
+	{
+		return $this->db->insert('wb_send_invitemail', $invite_data);
+	}
+
+	/**
+	 * 초대 메일 발송 로그 조회
+	 */
+	public function get_invite_log($invite_email, $org_id)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_invitemail');
+		$this->db->where('invite_email', $invite_email);
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('sent_date', 'DESC');
+		$this->db->limit(1);
 		$query = $this->db->get();
 		return $query->row_array();
 	}
 
 	/**
-	 * 초대 메일 발송 (실제 메일 발송 로직은 별도 구현 필요)
+	 * 초대 메일 상태 업데이트
 	 */
-	public function send_invite_email($invite_email, $org_id, $inviter_id)
+	public function update_invite_status($idx, $status, $date_field = null)
 	{
-		// 조직 정보 가져오기
-		$org_info = $this->get_org_detail_by_id($org_id);
-		if (!$org_info) {
-			return false;
+		$update_data = array('status' => $status);
+
+		if ($date_field) {
+			$update_data[$date_field] = date('Y-m-d H:i:s');
 		}
 
-		// 초대자 정보 가져오기
-		$inviter_info = $this->get_user_info($inviter_id);
-		if (!$inviter_info) {
-			return false;
-		}
-
-		// 초대 로그 저장 (필요한 경우)
-		$invite_data = array(
-			'invite_email' => $invite_email,
-			'org_id' => $org_id,
-			'inviter_id' => $inviter_id,
-			'invite_date' => date('Y-m-d H:i:s'),
-			'status' => 'sent'
-		);
-
-		// wb_invite 테이블이 있다면 저장 (없으면 주석 처리)
-		// $this->db->insert('wb_invite', $invite_data);
-
-		// 실제 메일 발송 로직
-		$this->load->library('email');
-
-		$config['protocol'] = 'smtp';
-		$config['smtp_host'] = 'smtp.example.com'; // SMTP 서버 설정 필요
-		$config['smtp_user'] = 'noreply@example.com'; // 발송 이메일 설정 필요
-		$config['smtp_pass'] = 'password'; // 비밀번호 설정 필요
-		$config['smtp_port'] = 587;
-		$config['charset'] = 'utf-8';
-		$config['wordwrap'] = TRUE;
-		$config['mailtype'] = 'html';
-
-		$this->email->initialize($config);
-
-		$this->email->from('noreply@example.com', '왔니');
-		$this->email->to($invite_email);
-		$this->email->subject($org_info['org_name'] . ' 조직 초대');
-
-		$message = "
-			<h3>" . $org_info['org_name'] . "에 초대되었습니다</h3>
-			<p>" . $inviter_info['user_name'] . "님이 회원님을 " . $org_info['org_name'] . " 조직에 초대하였습니다.</p>
-			<p>초대코드: <strong>" . $org_info['invite_code'] . "</strong></p>
-			<p><a href='" . base_url('login') . "'>로그인하여 참여하기</a></p>
-		";
-
-		$this->email->message($message);
-
-		// 개발 환경에서는 실제 메일 발송 대신 로그만 기록
-		if (ENVIRONMENT === 'development') {
-			log_message('info', 'Invite email would be sent to: ' . $invite_email);
-			return true;
-		}
-
-		return $this->email->send();
+		$this->db->where('idx', $idx);
+		return $this->db->update('wb_send_invitemail', $update_data);
 	}
+
+	/**
+	 * 초대 토큰으로 초대 정보 조회
+	 */
+	public function get_invite_by_token($token)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_invitemail');
+		$this->db->where('invite_token', $token);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 
 	/**
 	 * 사용자 정보 가져오기
@@ -468,7 +456,6 @@ class User_management_model extends CI_Model
 	}
 
 
-
 	/**
 	 * 파일 위치: application/models/User_management_model.php
 	 * 역할: 사용자의 관리 그룹과 모든 하위 그룹 ID 조회 (1학년 권한이 있으면 1반, 2반, 3반도 포함)
@@ -522,7 +509,6 @@ class User_management_model extends CI_Model
 
 		return $area_ids;
 	}
-
 
 
 	/**
@@ -625,4 +611,137 @@ class User_management_model extends CI_Model
 		return $query->row_array();
 	}
 
+	/**
+	 * 초대된 사용자 생성 (wb_user 테이블)
+	 */
+	public function create_invited_user($invite_email)
+	{
+		// 이미 존재하는 사용자인지 확인
+		$existing_user = $this->get_user_by_email($invite_email);
+		if ($existing_user) {
+			return $existing_user['user_id'];
+		}
+
+		// 새 사용자 생성
+		$user_data = array(
+			'user_id' => $invite_email,
+			'user_name' => '', // 로그인 시 Google/Naver에서 가져올 예정
+			'user_mail' => $invite_email,
+			'user_grade' => 0,
+			'user_hp' => '',
+			'regi_date' => date('Y-m-d H:i:s'),
+			'modi_date' => date('Y-m-d H:i:s'),
+			'del_yn' => 'N',
+			'master_yn' => 'N'
+		);
+
+		$result = $this->db->insert('wb_user', $user_data);
+
+		if ($result) {
+			log_message('info', '초대된 사용자 생성 완료: ' . $invite_email);
+			return $invite_email;
+		} else {
+			log_message('error', '초대된 사용자 생성 실패: ' . $invite_email);
+			return false;
+		}
+	}
+
+
+	/**
+	 * 초대된 사용자를 조직에 추가 (level=0)
+	 */
+	public function add_invited_user_to_org($user_id, $org_id)
+	{
+		// 이미 조직 멤버인지 확인
+		$existing_org_user = $this->get_org_user($user_id, $org_id);
+		if ($existing_org_user) {
+			return true; // 이미 존재함
+		}
+
+		$org_user_data = array(
+			'user_id' => $user_id,
+			'org_id' => $org_id,
+			'level' => 0, // 초대 상태 (아직 로그인하지 않음)
+			'join_date' => date('Y-m-d H:i:s')
+		);
+
+		$result = $this->db->insert('wb_org_user', $org_user_data);
+
+		if ($result) {
+			log_message('info', "사용자 {$user_id}가 조직 {$org_id}에 level=0으로 추가됨");
+			return true;
+		} else {
+			log_message('error', "사용자 {$user_id}를 조직 {$org_id}에 추가 실패");
+			return false;
+		}
+	}
+
+	/**
+	 * 조직 사용자 정보 조회
+	 */
+	public function get_org_user($user_id, $org_id)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_org_user');
+		$this->db->where('user_id', $user_id);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+
+	/**
+	 * 초대된 사용자의 레벨을 0에서 1로 업데이트
+	 */
+	public function activate_invited_user($user_id, $org_id)
+	{
+		$this->db->set('level', 1);
+		$this->db->set('join_date', date('Y-m-d H:i:s'));
+		$this->db->where('user_id', $user_id);
+		$this->db->where('org_id', $org_id);
+		$this->db->where('level', 0); // level=0인 경우만 업데이트
+
+		$result = $this->db->update('wb_org_user');
+		$affected_rows = $this->db->affected_rows();
+
+		if ($affected_rows > 0) {
+			log_message('info', "사용자 {$user_id}의 조직 {$org_id} 레벨이 0->1로 업데이트됨");
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * 이메일로 사용자 정보 조회
+	 */
+	public function get_user_by_email($email)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_user');
+		$this->db->where('user_mail', $email);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+	/**
+	 * 사용자가 초대받은 조직 목록 조회 (level=0) - COLLATE 제거
+	 */
+	public function get_user_pending_invites($user_id)
+	{
+		$this->db->select('wo.org_id, wo.org_name, wou.join_date, wsi.inviter_id, wu.user_name as inviter_name');
+		$this->db->from('wb_org_user wou');
+		$this->db->join('wb_org wo', 'wou.org_id = wo.org_id');
+		$this->db->join('wb_send_invitemail wsi', 'wsi.org_id = wo.org_id AND wsi.invite_email = wou.user_id', 'left');
+		$this->db->join('wb_user wu', 'wsi.inviter_id = wu.user_id', 'left');
+		$this->db->where('wou.user_id', $user_id);
+		$this->db->where('wou.level', 0);
+		$this->db->where('wo.del_yn', 'N');
+		$this->db->order_by('wou.join_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 }
+

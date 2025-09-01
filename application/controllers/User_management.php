@@ -372,54 +372,200 @@ class User_management extends My_Controller
 		echo json_encode($response);
 	}
 
-    /**
-     * 사용자 초대 메일 발송
-     */
-    public function invite_user()
-    {
-        if (!$this->input->is_ajax_request()) {
-            show_404();
-        }
+	/**
+	 * 사용자 초대 메일 발송
+	 */
+	public function invite_user()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
 
-        $user_id = $this->session->userdata('user_id');
-        $invite_email = $this->input->post('invite_email');
-        $org_id = $this->input->post('org_id');
+		$user_id = $this->session->userdata('user_id');
+		$invite_email = $this->input->post('invite_email');
+		$org_id = $this->input->post('org_id');
 
-        // 권한 검증
-        $user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
-        if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
-            echo json_encode(array('success' => false, 'message' => '사용자를 초대할 권한이 없습니다.'));
-            return;
-        }
+		// 권한 검증
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '사용자를 초대할 권한이 없습니다.'));
+			return;
+		}
 
-        if (empty($invite_email)) {
-            echo json_encode(array('success' => false, 'message' => '초대할 이메일 주소를 입력해주세요.'));
-            return;
-        }
+		if (empty($invite_email)) {
+			echo json_encode(array('success' => false, 'message' => '초대할 이메일 주소를 입력해주세요.'));
+			return;
+		}
 
-        // 이메일 형식 검증
-        if (!filter_var($invite_email, FILTER_VALIDATE_EMAIL)) {
-            echo json_encode(array('success' => false, 'message' => '올바른 이메일 주소를 입력해주세요.'));
-            return;
-        }
+		// 이메일 형식 검증
+		if (!filter_var($invite_email, FILTER_VALIDATE_EMAIL)) {
+			echo json_encode(array('success' => false, 'message' => '올바른 이메일 주소를 입력해주세요.'));
+			return;
+		}
 
-        // 이미 해당 조직에 속한 사용자인지 확인
-        $existing_user = $this->User_management_model->check_user_in_org($invite_email, $org_id);
-        if ($existing_user) {
-            echo json_encode(array('success' => false, 'message' => '이미 해당 조직에 속한 사용자입니다.'));
-            return;
-        }
+		// 이미 해당 조직에 속한 사용자인지 확인 (level > 0)
+		$existing_org_user = $this->User_management_model->get_org_user($invite_email, $org_id);
+		if ($existing_org_user && $existing_org_user['level'] > 0) {
+			echo json_encode(array('success' => false, 'message' => '이미 해당 조직에 가입된 사용자입니다.'));
+			return;
+		}
 
-        // 초대 메일 발송 로직
-        $result = $this->User_management_model->send_invite_email($invite_email, $org_id, $user_id);
+		// 이미 초대된 사용자인지 확인 (level = 0)
+		if ($existing_org_user && $existing_org_user['level'] == 0) {
+			echo json_encode(array('success' => false, 'message' => '이미 초대된 사용자입니다. 로그인을 기다려주세요.'));
+			return;
+		}
 
-        if ($result) {
-            echo json_encode(array('success' => true, 'message' => '초대 메일이 발송되었습니다.'));
-        } else {
-            echo json_encode(array('success' => false, 'message' => '초대 메일 발송에 실패했습니다.'));
-        }
-    }
+		// 데이터베이스 트랜잭션 시작
+		$this->db->trans_start();
 
+		try {
+			// 1. 사용자 생성 (없는 경우)
+			$invited_user_id = $this->User_management_model->create_invited_user($invite_email);
+			if (!$invited_user_id) {
+				throw new Exception('사용자 생성에 실패했습니다.');
+			}
+
+			// 2. 조직에 사용자 추가 (level=0)
+			$org_added = $this->User_management_model->add_invited_user_to_org($invited_user_id, $org_id);
+			if (!$org_added) {
+				throw new Exception('조직에 사용자 추가에 실패했습니다.');
+			}
+
+			// 3. 초대 토큰 생성
+			$invite_token = bin2hex(random_bytes(32));
+
+			// 4. 초대 메일 발송
+			$mail_result = $this->send_invite_email($invite_email, $org_id, $user_id, $invite_token);
+
+			if (!$mail_result['success']) {
+				throw new Exception($mail_result['message']);
+			}
+
+			// 5. 발송 로그 저장
+			$invite_data = array(
+				'invite_email' => $invite_email,
+				'org_id' => $org_id,
+				'inviter_id' => $user_id,
+				'invite_token' => $invite_token,
+				'status' => 'sent',
+				'sent_date' => date('Y-m-d H:i:s')
+			);
+
+			$log_saved = $this->User_management_model->save_invite_log($invite_data);
+			if (!$log_saved) {
+				log_message('warning', '초대 메일 발송 로그 저장 실패: ' . $invite_email);
+			}
+
+			// 트랜잭션 커밋
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				throw new Exception('데이터베이스 트랜잭션 실패');
+			}
+
+			echo json_encode(array('success' => true, 'message' => '초대 메일이 발송되고 사용자가 조직에 추가되었습니다.'));
+
+		} catch (Exception $e) {
+			// 트랜잭션 롤백
+			$this->db->trans_rollback();
+
+			log_message('error', '사용자 초대 처리 중 오류: ' . $e->getMessage());
+			echo json_encode(array('success' => false, 'message' => $e->getMessage()));
+		}
+	}
+
+
+	/**
+	 * 실제 메일 발송 처리
+	 */
+	private function send_invite_email($invite_email, $org_id, $inviter_id, $invite_token)
+	{
+		try {
+			// 조직 정보 가져오기
+			$org_info = $this->User_management_model->get_org_detail_by_id($org_id);
+			if (!$org_info) {
+				log_message('error', '조직 정보를 찾을 수 없음: ' . $org_id);
+				return array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.');
+			}
+
+			// 초대자 정보 가져오기
+			$inviter_info = $this->User_management_model->get_user_info($inviter_id);
+			if (!$inviter_info) {
+				log_message('error', '초대자 정보를 찾을 수 없음: ' . $inviter_id);
+				return array('success' => false, 'message' => '초대자 정보를 찾을 수 없습니다.');
+			}
+
+			// 이메일 라이브러리 로드
+			$this->load->library('email');
+
+			// SMTP 설정
+			$config['protocol'] = 'smtp';
+			$config['smtp_host'] = 'smtp.gmail.com';
+			$config['smtp_user'] = 'jogiclub@gmail.com'; // 실제 Gmail 주소로 변경
+			$config['smtp_pass'] = 'zdlt driw epud yoym'; // Gmail 앱 비밀번호로 변경
+			$config['smtp_port'] = 587;
+			$config['smtp_crypto'] = 'tls';
+			$config['charset'] = 'utf-8';
+			$config['wordwrap'] = TRUE;
+			$config['mailtype'] = 'html';
+			$config['newline'] = "\r\n";
+			$config['crlf'] = "\r\n";
+
+			$this->email->initialize($config);
+
+			// 초대 링크 생성
+			$invite_url = base_url('login/invite/' . $invite_token);
+
+			$this->email->from('your-email@gmail.com', '왔니'); // 실제 이메일로 변경
+			$this->email->to($invite_email);
+			$this->email->subject($org_info['org_name'] . ' 조직 초대');
+
+			$message = "
+            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                <h3 style='color: #333;'>" . $org_info['org_name'] . "에 초대되었습니다</h3>
+                <p style='font-size: 16px; color: #555;'>
+                    " . $inviter_info['user_name'] . "님이 회원님을 " . $org_info['org_name'] . " 조직에 초대하였습니다.
+                </p>
+                <div style='background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;'>
+                    <p style='margin: 0; font-size: 14px; color: #666;'>초대코드</p>
+                    <p style='margin: 5px 0 0 0; font-size: 18px; font-weight: bold; color: #007bff;'>" . $org_info['invite_code'] . "</p>
+                </div>
+                <p style='text-align: center; margin: 30px 0;'>
+                    <a href='" . $invite_url . "' style='background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>
+                        초대 수락하기
+                    </a>
+                </p>
+                <p style='font-size: 14px; color: #666; text-align: center;'>
+                    또는 다음 링크를 복사하여 브라우저에 붙여넣으세요:<br>
+                    <span style='font-size: 12px; color: #999;'>" . $invite_url . "</span>
+                </p>
+                <hr style='border: none; border-top: 1px solid #eee; margin: 30px 0;'>
+                <p style='font-size: 12px; color: #999; text-align: center;'>
+                    이 메일은 왔니 시스템에서 자동으로 발송된 메일입니다.
+                </p>
+            </div>
+        ";
+
+			$this->email->message($message);
+
+			// 메일 발송 시도
+			$result = $this->email->send();
+
+			if (!$result) {
+				$error = $this->email->print_debugger();
+				log_message('error', '메일 발송 실패: ' . $invite_email . ' - ' . $error);
+				return array('success' => false, 'message' => '메일 발송에 실패했습니다. 관리자에게 문의해주세요.');
+			}
+
+			log_message('info', '초대 메일 발송 성공: ' . $invite_email . ' (조직: ' . $org_id . ')');
+			return array('success' => true, 'message' => '초대 메일이 성공적으로 발송되었습니다.');
+
+		} catch (Exception $e) {
+			log_message('error', '메일 발송 중 예외 발생: ' . $e->getMessage());
+			return array('success' => false, 'message' => '메일 발송 중 오류가 발생했습니다.');
+		}
+	}
 
 	/**
 	 * 관리 그룹 트리 구조 목록 조회 API

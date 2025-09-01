@@ -201,7 +201,7 @@ $is_master = $this->session->userdata('master_yn');
 				<div class="offcanvas-body d-xl-flex flex-column p-0 pt-xl-3 overflow-y-auto">
 
 					<!-- OVERVIEW 섹션 -->
-					<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('OVERVIEW', $user_managed_menus, $is_master, $current_user_level)): ?>
+
 						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
 							OVERVIEW
 						</h6>
@@ -213,7 +213,7 @@ $is_master = $this->session->userdata('master_yn');
 								</a>
 							</li>
 						</ul>
-					<?php endif; ?>
+
 
 					<!-- MEMBER 섹션 -->
 					<?php

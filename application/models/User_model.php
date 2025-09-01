@@ -93,9 +93,20 @@ class User_model extends CI_Model {
 		return $this->db->affected_rows() > 0;
 	}
 
-	public function update_user($user_id, $data) {
+	/**
+	 * 사용자 정보 업데이트
+	 */
+	public function update_user($user_id, $update_data)
+	{
 		$this->db->where('user_id', $user_id);
-		$this->db->update('wb_user', $data);
+		$result = $this->db->update('wb_user', $update_data);
+
+		if ($result && $this->db->affected_rows() > 0) {
+			log_message('info', "사용자 {$user_id} 정보 업데이트 완료");
+			return true;
+		}
+
+		return false;
 	}
 
 	public function insert_org_user($data) {

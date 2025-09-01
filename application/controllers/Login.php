@@ -43,11 +43,42 @@ class Login extends CI_Controller
 	}
 
 	/**
-	 * 로그인 성공 후 조직 정보 설정
+	 * 초대받은 조직들의 상태를 활성화 (level 0 -> 1)
+	 */
+	private function activate_pending_invites($user_id)
+	{
+		// 초대받은 조직 목록 조회 (level=0)
+		$pending_invites = $this->User_management_model->get_user_pending_invites($user_id);
+
+		if (!empty($pending_invites)) {
+			foreach ($pending_invites as $invite) {
+				// 레벨 0에서 1로 업데이트
+				$activated = $this->User_management_model->activate_invited_user($user_id, $invite['org_id']);
+
+				if ($activated) {
+					// 초대 메일 로그의 상태도 업데이트
+					$invite_log = $this->User_management_model->get_invite_log($user_id, $invite['org_id']);
+					if ($invite_log) {
+						$this->User_management_model->update_invite_status($invite_log['idx'], 'joined', 'joined_date');
+					}
+
+					log_message('info', "사용자 {$user_id}가 조직 {$invite['org_id']}에 가입 완료 (level 0->1)");
+				}
+			}
+
+			log_message('info', "사용자 {$user_id}의 " . count($pending_invites) . "개 초대 조직 활성화 처리 완료");
+		}
+	}
+
+	/**
+	 * 로그인 성공 후 조직 정보 설정 및 초대 상태 업데이트
 	 */
 	private function setup_user_organization($user_id, $master_yn)
 	{
 		$this->load->model('Org_model');
+
+		// 초대받은 조직들의 레벨을 0에서 1로 업데이트
+		$this->activate_pending_invites($user_id);
 
 		// 사용자가 속한 조직 목록 가져오기
 		if ($master_yn === "N") {
@@ -96,6 +127,10 @@ class Login extends CI_Controller
 		redirect($auth_url);
 	}
 
+
+	/**
+	 * Google 로그인 콜백 처리 수정
+	 */
 	public function google_callback()
 	{
 		require_once APPPATH . '../vendor/autoload.php';
@@ -115,13 +150,6 @@ class Login extends CI_Controller
 
 			if (isset($token['access_token'])) {
 				$client->setAccessToken($token['access_token']);
-
-				// 리프레시 토큰 저장
-				if (isset($token['refresh_token'])) {
-					$this->session->set_userdata('refresh_token', $token['refresh_token']);
-				}
-
-				$this->session->set_userdata('access_token', $token['access_token']);
 
 				// 사용자 정보 가져오기
 				$oauth = new Google\Service\Oauth2($client);
@@ -143,12 +171,24 @@ class Login extends CI_Controller
 				if ($user_exists) {
 					// 회원가입이 되어 있는 경우 로그인 처리
 					$user = $this->User_model->get_user_by_id($user_id);
-					$user_data['user_grade'] = $user['user_grade'];
-					$user_data['user_hp'] = $user['user_hp'];
-					$user_data['master_yn'] = $user['master_yn']; // master_yn 값 세션에 추가
+
+					// 초대받았지만 아직 이름이 없는 경우 업데이트
+					if (empty($user['user_name']) && !empty($user_info->name)) {
+						$update_data = array(
+							'user_name' => $user_info->name,
+							'modi_date' => date('Y-m-d H:i:s')
+						);
+						$this->User_model->update_user($user_id, $update_data);
+						$user['user_name'] = $user_info->name;
+					}
+
+					// 사용자 정보를 세션에 저장 (기본값 설정)
+					$user_data['user_grade'] = isset($user['user_grade']) ? $user['user_grade'] : 0;
+					$user_data['user_hp'] = isset($user['user_hp']) ? $user['user_hp'] : '';
+					$user_data['master_yn'] = isset($user['master_yn']) ? $user['master_yn'] : 'N';
 					$this->session->set_userdata($user_data);
 
-					// 로그인 성공 후 조직 정보 설정
+					// 로그인 성공 후 조직 정보 설정 및 초대 상태 업데이트
 					$has_org = $this->setup_user_organization($user_id, $user['master_yn']);
 
 					redirect('main');
@@ -164,6 +204,7 @@ class Login extends CI_Controller
 			redirect('login');
 		}
 	}
+
 
 	public function naver_login()
 	{
@@ -331,35 +372,6 @@ class Login extends CI_Controller
 		} else {
 			// 회원가입이 되어 있지 않은 경우 회원가입 페이지로 이동
 			redirect('login/join');
-		}
-	}
-
-	public function invite($invite_code)
-	{
-		$this->load->model('Invite_model');
-		$invite = $this->Invite_model->get_invite_by_code($invite_code);
-
-		if ($invite) {
-			if ($invite['del_yn'] == 'N') {
-				$this->load->model('User_model');
-				$user_data = array(
-					'user_grade' => 1
-				);
-				$this->User_model->update_user($invite['invite_mail'], $user_data);
-
-				// 초대 코드 비활성화
-				$this->Invite_model->update_invite($invite_code, array('del_yn' => 'Y'));
-
-				// 로그인 페이지로 리다이렉트
-				redirect('login');
-			} else {
-				// 이미 사용된 초대 코드인 경우 알림 표시
-				echo '<script>alert("유효한 코드가 아닙니다.");</script>';
-				redirect('login');
-			}
-		} else {
-			// 초대 코드가 유효하지 않은 경우 에러 페이지로 리다이렉트
-			redirect('login');
 		}
 	}
 
@@ -667,7 +679,37 @@ class Login extends CI_Controller
 
 
 
+	/**
+	 * 초대 링크를 통한 접속 처리
+	 */
+	public function invite($token = null)
+	{
+		if (!$token) {
+			show_404();
+		}
 
+		// 초대 정보 조회
+		$invite_info = $this->User_management_model->get_invite_by_token($token);
+
+		if (!$invite_info) {
+			$this->session->set_flashdata('error', '유효하지 않은 초대 링크입니다.');
+			redirect('login');
+			return;
+		}
+
+		// 초대 상태 업데이트 (열람됨)
+		if ($invite_info['status'] === 'sent') {
+			$this->User_management_model->update_invite_status($invite_info['idx'], 'opened', 'opened_date');
+		}
+
+		// 세션에 초대 정보 저장
+		$this->session->set_userdata('invite_token', $token);
+		$this->session->set_userdata('invite_org_id', $invite_info['org_id']);
+
+		// 로그인 페이지로 리다이렉트 (초대 정보 포함)
+		$data['invite_info'] = $invite_info;
+		$this->load->view('login', $data);
+	}
 
 
 
