@@ -36,8 +36,8 @@
 		<div class="logo"><img src="/assets/images/logo.png?2"></div>
 	</header>
     <div class="container-fluid">
-		<div class="">
-    		<main class="d-flex justify-content-center align-items-center flex-column">
+		<div class="row">
+			<main class="col-xl-12 d-flex justify-content-center align-items-center flex-column">
 
 
 
