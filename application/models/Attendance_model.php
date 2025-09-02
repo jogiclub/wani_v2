@@ -353,58 +353,6 @@ class Attendance_model extends CI_Model {
 
 
 
-	/**
-	 * 주별 출석통계 재계산 및 업데이트 - att_value 고려
-	 */
-	public function update_weekly_attendance_stats($org_id, $member_idx, $att_year, $sunday_date)
-	{
-		// 해당 주의 날짜 범위 계산
-		$start_date = $sunday_date;
-		$end_date = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
-
-		// 실제 출석 값 합계 계산 (att_value 필드 사용)
-		$this->db->select('SUM(COALESCE(att_value, 10)) as total_score'); // att_value가 없으면 기본 10점
-		$this->db->from('wb_member_att');
-		$this->db->where('member_idx', $member_idx);
-		$this->db->where('org_id', $org_id);
-		$this->db->where('att_date >=', $start_date);
-		$this->db->where('att_date <=', $end_date);
-		$this->db->where('att_year', $att_year);
-
-		$query = $this->db->get();
-		$result = $query->row_array();
-		$total_score = intval($result['total_score'] ?? 0);
-
-		// 출석 횟수도 계산
-		$this->db->select('COUNT(*) as attendance_count');
-		$this->db->from('wb_member_att');
-		$this->db->where('member_idx', $member_idx);
-		$this->db->where('org_id', $org_id);
-		$this->db->where('att_date >=', $start_date);
-		$this->db->where('att_date <=', $end_date);
-		$this->db->where('att_year', $att_year);
-
-		$query = $this->db->get();
-		$result = $query->row_array();
-		$attendance_count = intval($result['attendance_count'] ?? 0);
-
-		// 통계 테이블에 업데이트 또는 삽입
-		$stats_data = array(
-			'org_id' => $org_id,
-			'member_idx' => $member_idx,
-			'att_year' => $att_year,
-			'sunday_date' => $sunday_date,
-			'attendance_count' => $attendance_count,
-			'total_score' => $total_score // 실제 점수 합계
-		);
-
-		$this->db->replace('wb_attendance_weekly_stats', $stats_data);
-
-		// 연간 통계도 업데이트
-		$this->update_yearly_attendance_stats($org_id, $member_idx, $att_year);
-
-		return $total_score;
-	}
 
 	/**
 	 * 연간 출석 통계 업데이트
@@ -436,99 +384,6 @@ class Attendance_model extends CI_Model {
 	}
 
 
-	/**
-	 * 통계 테이블에서 주별 출석 데이터 조회 - 포인트 계산 개선
-	 */
-	public function get_weekly_attendance_stats_fast($org_id, $member_indices, $sunday_dates, $year)
-	{
-		if (empty($member_indices) || empty($sunday_dates)) {
-			return array();
-		}
-
-		// 출석유형별 포인트 정보 가져오기
-		$attendance_types = $this->get_attendance_types($org_id);
-		$type_points = array();
-
-		foreach ($attendance_types as $type) {
-			$type_points[$type['att_type_idx']] = array(
-				'point' => intval($type['att_type_point']) ?: 10,
-				'input_type' => $type['att_type_input'] ?: 'check'
-			);
-		}
-
-		// 각 회원별, 주별 실제 포인트 계산
-		$stats = array();
-
-		foreach ($member_indices as $member_idx) {
-			$stats[$member_idx] = array();
-
-			foreach ($sunday_dates as $sunday_date) {
-				// 해당 주의 날짜 범위 계산
-				$start_date = $sunday_date;
-				$end_date = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
-
-				// 해당 주간의 실제 출석 기록 가져오기 (att_value 포함)
-				$select_fields = 'att_type_idx';
-				if ($this->db->field_exists('att_value', 'wb_member_att')) {
-					$select_fields .= ', att_value';
-				}
-
-				$this->db->select($select_fields);
-				$this->db->from('wb_member_att');
-				$this->db->where('member_idx', $member_idx);
-				$this->db->where('org_id', $org_id);
-				$this->db->where('att_date >=', $start_date);
-				$this->db->where('att_date <=', $end_date);
-				$this->db->where('att_year', $year);
-
-				$query = $this->db->get();
-				$records = $query->result_array();
-
-				// 실제 포인트 계산
-				$total_points = 0;
-				foreach ($records as $record) {
-					$att_type_idx = $record['att_type_idx'];
-					$att_value = isset($record['att_value']) ? $record['att_value'] : null;
-
-					if (isset($type_points[$att_type_idx])) {
-						$type_info = $type_points[$att_type_idx];
-
-						if ($type_info['input_type'] === 'text' && !empty($att_value)) {
-							// 텍스트박스인 경우 실제 입력값 사용
-							$total_points += intval($att_value);
-						} else {
-							// 체크박스인 경우 출석유형의 기본 포인트 사용
-							$total_points += $type_info['point'];
-						}
-					} else {
-						// 출석유형 정보가 없으면 기본 10점
-						$total_points += 10;
-					}
-				}
-
-				$stats[$member_idx][$sunday_date] = array(
-					'total_score' => $total_points
-				);
-			}
-		}
-
-		// 누락된 데이터는 0으로 채우기
-		foreach ($member_indices as $member_idx) {
-			if (!isset($stats[$member_idx])) {
-				$stats[$member_idx] = array();
-			}
-
-			foreach ($sunday_dates as $sunday_date) {
-				if (!isset($stats[$member_idx][$sunday_date])) {
-					$stats[$member_idx][$sunday_date] = array(
-						'total_score' => 0
-					);
-				}
-			}
-		}
-
-		return $stats;
-	}
 
 	/**
 	 * 연간 합계 데이터 빠른 조회
@@ -759,64 +614,6 @@ class Attendance_model extends CI_Model {
 		}
 	}
 
-	/**
-	 * 파일 위치: application/models/Attendance_model.php
-	 * 역할: 값을 포함한 출석 데이터 저장 - att_date를 일요일로 저장하고 att_year, regi_date, modi_date 추가
-	 */
-	public function save_attendance_with_values($org_id, $attendance_data, $att_date, $year)
-	{
-		$this->db->trans_start();
-
-		try {
-			// att_date에 해당하는 일요일 계산
-			$sunday_date = $this->get_sunday_of_week($att_date);
-			$att_year = date('Y', strtotime($sunday_date));
-
-			foreach ($attendance_data as $member_data) {
-				$member_idx = $member_data['member_idx'];
-				$attendance_types = $member_data['attendance_types'];
-
-				// 해당 회원의 해당 일요일 날짜 출석기록 삭제
-				$this->db->where('member_idx', $member_idx);
-				$this->db->where('att_date', $sunday_date);
-				$this->db->where('org_id', $org_id);
-				$this->db->where('att_year', $att_year);
-				$this->db->delete('wb_member_att');
-
-				// 새로운 출석기록 삽입
-				foreach ($attendance_types as $att_type_data) {
-					$insert_data = array(
-						'member_idx' => $member_idx,
-						'att_date' => $sunday_date, // 일요일 날짜로 저장
-						'att_type_idx' => $att_type_data['att_type_idx'],
-						'att_value' => $att_type_data['att_value'], // textbox 값 또는 checkbox 점수
-						'org_id' => $org_id,
-						'att_year' => $att_year, // att_year 추가
-						'regi_date' => date('Y-m-d H:i:s'), // 등록일 추가
-						'modi_date' => date('Y-m-d') // 변경일 추가
-					);
-
-					$this->db->insert('wb_member_att', $insert_data);
-				}
-
-				// 해당 주의 통계 업데이트
-				$this->update_weekly_attendance_stats($org_id, $member_idx, $att_year, $sunday_date);
-			}
-
-			$this->db->trans_complete();
-
-			if ($this->db->trans_status() === FALSE) {
-				return false;
-			}
-
-			return true;
-
-		} catch (Exception $e) {
-			$this->db->trans_rollback();
-			log_message('error', 'Save attendance with values error: ' . $e->getMessage());
-			return false;
-		}
-	}
 
 	/**
 	 * 파일 위치: application/models/Attendance_model.php
@@ -955,6 +752,234 @@ class Attendance_model extends CI_Model {
 		}
 
 		return $stats;
+	}
+
+
+	/**
+	 * 파일 위치: application/models/Attendance_model.php - get_weekly_attendance_stats_fast() 함수 수정
+	 * 역할: att_value 컬럼 존재 여부 확인하여 오류 방지
+	 */
+	public function get_weekly_attendance_stats_fast($org_id, $member_indices, $sunday_dates, $year)
+	{
+		if (empty($member_indices) || empty($sunday_dates)) {
+			return array();
+		}
+
+		// 출석유형별 포인트 정보 가져오기
+		$attendance_types = $this->get_attendance_types($org_id);
+		$type_points = array();
+
+		foreach ($attendance_types as $type) {
+			$type_points[$type['att_type_idx']] = array(
+				'point' => intval($type['att_type_point']) ?: 10,
+				'input_type' => $type['att_type_input'] ?: 'check'
+			);
+		}
+
+		// att_value 컬럼 존재 여부 확인
+		$has_att_value = $this->db->field_exists('att_value', 'wb_member_att');
+
+		// 각 회원별, 주별 실제 포인트 계산
+		$stats = array();
+
+		foreach ($member_indices as $member_idx) {
+			$stats[$member_idx] = array();
+
+			foreach ($sunday_dates as $sunday_date) {
+				// 해당 주의 날짜 범위 계산
+				$start_date = $sunday_date;
+				$end_date = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
+
+				// SELECT 필드 동적 설정
+				$select_fields = 'att_type_idx';
+				if ($has_att_value) {
+					$select_fields .= ', att_value';
+				}
+
+				$this->db->select($select_fields);
+				$this->db->from('wb_member_att');
+				$this->db->where('member_idx', $member_idx);
+				$this->db->where('org_id', $org_id);
+				$this->db->where('att_date >=', $start_date);
+				$this->db->where('att_date <=', $end_date);
+				$this->db->where('att_year', $year);
+
+				$query = $this->db->get();
+				$records = $query->result_array();
+
+				// 실제 포인트 계산
+				$total_points = 0;
+				foreach ($records as $record) {
+					$att_type_idx = $record['att_type_idx'];
+					$att_value = $has_att_value && isset($record['att_value']) ? $record['att_value'] : null;
+
+					if (isset($type_points[$att_type_idx])) {
+						$type_info = $type_points[$att_type_idx];
+
+						if ($type_info['input_type'] === 'text' && !empty($att_value)) {
+							// 텍스트박스인 경우 실제 입력값 사용
+							$total_points += intval($att_value);
+						} else {
+							// 체크박스인 경우 출석유형의 기본 포인트 사용
+							$total_points += $type_info['point'];
+						}
+					} else {
+						// 출석유형 정보가 없으면 기본 10점
+						$total_points += 10;
+					}
+				}
+
+				$stats[$member_idx][$sunday_date] = array(
+					'total_score' => $total_points
+				);
+			}
+		}
+
+		// 누락된 데이터는 0으로 채우기
+		foreach ($member_indices as $member_idx) {
+			if (!isset($stats[$member_idx])) {
+				$stats[$member_idx] = array();
+			}
+
+			foreach ($sunday_dates as $sunday_date) {
+				if (!isset($stats[$member_idx][$sunday_date])) {
+					$stats[$member_idx][$sunday_date] = array(
+						'total_score' => 0
+					);
+				}
+			}
+		}
+
+		return $stats;
+	}
+
+	/**
+	 * 파일 위치: application/models/Attendance_model.php - save_attendance_with_values() 함수 추가
+	 * 역할: att_value 필드를 포함한 출석 데이터 저장
+	 */
+	public function save_attendance_with_values($org_id, $attendance_data, $att_date, $year)
+	{
+		$this->db->trans_start();
+
+		try {
+			// att_value 컬럼 존재 여부 확인
+			$has_att_value = $this->db->field_exists('att_value', 'wb_member_att');
+
+			foreach ($attendance_data as $member_data) {
+				$member_idx = $member_data['member_idx'];
+				$attendance_types = $member_data['attendance_types'];
+
+				// 해당 회원의 해당 날짜 기존 출석 기록 삭제
+				$this->db->where('member_idx', $member_idx);
+				$this->db->where('att_date', $att_date);
+				$this->db->where('org_id', $org_id);
+				$this->db->where('att_year', $year);
+				$this->db->delete('wb_member_att');
+
+				// 새로운 출석 기록 삽입
+				foreach ($attendance_types as $att_type_data) {
+					$insert_data = array(
+						'member_idx' => $member_idx,
+						'att_date' => $att_date,
+						'att_type_idx' => $att_type_data['att_type_idx'],
+						'org_id' => $org_id,
+						'att_year' => $year,
+						'regi_date' => date('Y-m-d H:i:s'),
+						'modi_date' => date('Y-m-d')
+					);
+
+					// att_value 컬럼이 존재하고 값이 있으면 추가
+					if ($has_att_value && isset($att_type_data['att_value'])) {
+						$insert_data['att_value'] = intval($att_type_data['att_value']);
+					}
+
+					$this->db->insert('wb_member_att', $insert_data);
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return false;
+			}
+
+			// 통계 업데이트
+			$sunday_date = $this->get_sunday_of_week($att_date);
+			$member_indices = array_unique(array_column($attendance_data, 'member_idx'));
+
+			foreach ($member_indices as $member_idx) {
+				$this->update_weekly_attendance_stats($org_id, $member_idx, $year, $sunday_date);
+			}
+
+			return true;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Save attendance with values error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 파일 위치: application/models/Attendance_model.php - update_weekly_attendance_stats() 함수 수정
+	 * 역할: att_value 컬럼 존재 여부 확인하여 통계 계산
+	 */
+	public function update_weekly_attendance_stats($org_id, $member_idx, $att_year, $sunday_date)
+	{
+		// 해당 주의 날짜 범위 계산
+		$start_date = $sunday_date;
+		$end_date = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
+
+		// att_value 컬럼 존재 여부 확인
+		$has_att_value = $this->db->field_exists('att_value', 'wb_member_att');
+
+		// 실제 출석 값 합계 계산
+		if ($has_att_value) {
+			$this->db->select('SUM(COALESCE(att_value, 10)) as total_score'); // att_value가 없으면 기본 10점
+		} else {
+			$this->db->select('COUNT(*) * 10 as total_score'); // att_value 컬럼이 없으면 개수 * 10점
+		}
+
+		$this->db->from('wb_member_att');
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('org_id', $org_id);
+		$this->db->where('att_date >=', $start_date);
+		$this->db->where('att_date <=', $end_date);
+		$this->db->where('att_year', $att_year);
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+		$total_score = intval($result['total_score'] ?? 0);
+
+		// 출석 횟수도 계산
+		$this->db->select('COUNT(*) as attendance_count');
+		$this->db->from('wb_member_att');
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('org_id', $org_id);
+		$this->db->where('att_date >=', $start_date);
+		$this->db->where('att_date <=', $end_date);
+		$this->db->where('att_year', $att_year);
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+		$attendance_count = intval($result['attendance_count'] ?? 0);
+
+		// 통계 테이블에 업데이트 또는 삽입
+		$stats_data = array(
+			'org_id' => $org_id,
+			'member_idx' => $member_idx,
+			'att_year' => $att_year,
+			'sunday_date' => $sunday_date,
+			'attendance_count' => $attendance_count,
+			'total_score' => $total_score
+		);
+
+		$this->db->replace('wb_attendance_weekly_stats', $stats_data);
+
+		// 연간 통계도 업데이트
+		$this->update_yearly_attendance_stats($org_id, $member_idx, $att_year);
+
+		return $total_score;
 	}
 
 }

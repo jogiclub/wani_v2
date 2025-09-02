@@ -237,9 +237,9 @@ class Org extends My_Controller
 
 		$this->email->initialize($config);
 
-		$this->email->from('no-reply@wani.im', '와니 시스템');
+		$this->email->from('no-reply@wani.im', '왔니 시스템');
 		$this->email->to($delegate_user['user_mail']);
-		$this->email->subject('[와니] 조직 관리자 권한 위임 알림');
+		$this->email->subject('[왔니] 조직 관리자 권한 위임 알림');
 
 		$message = "
         <h3>조직 관리자 권한 위임 알림</h3>
@@ -249,7 +249,7 @@ class Org extends My_Controller
         <p><a href='" . base_url('org') . "'>조직 설정 페이지로 이동</a></p>
         <br>
         <p>감사합니다.</p>
-        <p>와니 시스템</p>
+        <p>왔니 시스템</p>
         ";
 
 		$this->email->message($message);

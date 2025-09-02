@@ -8,23 +8,23 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="와니"/>
+<meta name="description" content="왔니, 세상에서 가장 따뜻한 한마디!"/>
 <meta name="keywords" content="출석체크, 교회, 메모, 심방"/>
 <meta name="author" content="wani.im"/>
 
 <!-- Facebook and Twitter integration -->
-<meta property="og:title" content="와니"/>
+<meta property="og:title" content="왔니"/>
 <meta property="og:image" content=""/>
 <meta property="og:url" content=""/>
-<meta property="og:site_name" content="와니"/>
-<meta property="og:description" content="와니"/>
+<meta property="og:site_name" content="왔니"/>
+<meta property="og:description" content="왔니"/>
 
-<meta name="twitter:title" content="와니"/>
+<meta name="twitter:title" content="왔니"/>
 <meta name="twitter:image" content=""/>
 <meta name="twitter:url" content="wani.im"/>
-<meta name="twitter:card" content="와니"/>
+<meta name="twitter:card" content="왔니"/>
 
-<title>와니</title>
+<title>왔니, 세상에서 가장 따뜻한 한마디!</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css"
 	  integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg=="
 	  crossorigin="anonymous" referrerpolicy="no-referrer"/>

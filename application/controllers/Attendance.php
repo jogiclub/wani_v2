@@ -400,9 +400,9 @@ class Attendance extends My_Controller
 		// 회원 정보 가져오기
 		$members_info = $this->Member_model->get_members_by_indices($member_indices);
 
-		// 메모 정보 가져오기 (att_idx 기준)
+		// 메모 정보 가져오기 - att_date 기반으로 수정
 		$this->load->model('Memo_model');
-		$memo_records = $this->Memo_model->get_attendance_memo_by_week($member_indices, $sunday_date);
+		$memo_records = $this->Memo_model->get_members_memo_by_date($member_indices, $sunday_date);
 
 		echo json_encode(array(
 			'success' => true,
@@ -462,7 +462,7 @@ class Attendance extends My_Controller
 				}
 			}
 
-			// 메모 데이터 저장 - 모든 메모를 처리하도록 수정
+			// 메모 데이터 저장 - att_date 기반으로 수정
 			if ($result && $memo_data_json) {
 				$memo_data = json_decode($memo_data_json, true);
 				log_message('debug', 'Decoded memo data: ' . print_r($memo_data, true));
@@ -478,35 +478,11 @@ class Attendance extends My_Controller
 
 						$member_idx = $memo_item['member_idx'];
 						$memo_content = isset($memo_item['memo_content']) ? trim($memo_item['memo_content']) : '';
-						$att_idx = isset($memo_item['att_idx']) && $memo_item['att_idx'] ? $memo_item['att_idx'] : null;
 
-						log_message('debug', "Processing memo for member {$member_idx}: '{$memo_content}', att_idx: {$att_idx}");
+						log_message('debug', "Processing memo for member {$member_idx}: '{$memo_content}'");
 
-						// att_idx가 없고 메모 내용이 있으면 출석 레코드 생성/조회
-						if (!$att_idx && $memo_content) {
-							$att_idx = $this->get_or_create_attendance_idx($org_id, $member_idx, $att_date, $year);
-							log_message('debug', "Created/found att_idx: {$att_idx}");
-						}
-
-						// 기존 메모가 있는지 확인 (att_idx 기준 또는 member_idx + date 기준)
-						$existing_memo = null;
-
-						if ($att_idx) {
-							$existing_memo = $this->Memo_model->get_memo_by_att_idx($att_idx);
-						}
-
-						// att_idx가 없는 경우 member_idx와 날짜로 찾기 (일반 메모)
-						if (!$existing_memo) {
-							$this->db->select('*');
-							$this->db->from('wb_memo');
-							$this->db->where('member_idx', $member_idx);
-							$this->db->where('DATE(regi_date)', $att_date);
-							$this->db->where('att_idx IS NULL');
-							$this->db->order_by('regi_date', 'DESC');
-							$this->db->limit(1);
-							$query = $this->db->get();
-							$existing_memo = $query->row_array();
-						}
+						// 기존 메모가 있는지 확인 - att_date 기반으로 수정
+						$existing_memo = $this->Memo_model->get_member_memo_by_date($member_idx, $att_date);
 
 						if ($memo_content) {
 							// 메모 내용이 있는 경우
@@ -514,7 +490,8 @@ class Attendance extends My_Controller
 								// 기존 메모 수정
 								$update_data = array(
 									'memo_content' => $memo_content,
-									'modi_date' => date('Y-m-d H:i:s')
+									'modi_date' => date('Y-m-d H:i:s'),
+									'att_date' => $att_date  // att_date 업데이트
 								);
 								$update_result = $this->Memo_model->update_memo($existing_memo['idx'], $update_data);
 								log_message('debug', "Updated existing memo: " . ($update_result ? 'success' : 'failed'));
@@ -526,7 +503,8 @@ class Attendance extends My_Controller
 									'regi_date' => date('Y-m-d H:i:s'),
 									'user_id' => $user_id,
 									'member_idx' => $member_idx,
-									'att_idx' => $att_idx
+									'att_date' => $att_date,  // att_date 포함
+									'att_idx' => null
 								);
 								$insert_result = $this->Memo_model->save_memo($insert_data);
 								log_message('debug', "Inserted new memo: " . ($insert_result ? 'success' : 'failed'));

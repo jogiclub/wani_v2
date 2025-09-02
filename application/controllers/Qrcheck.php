@@ -346,8 +346,7 @@ class Qrcheck extends My_Controller
 	}
 
 	/**
-	 * 파일 위치: application/controllers/Qrcheck.php - get_same_members() 함수
-	 * 역할: 권한 확인 후 같은 그룹 회원 조회
+	* 역할: 권한 확인 후 같은 그룹 회원 조회
 	 */
 	public function get_same_members()
 	{
@@ -378,6 +377,20 @@ class Qrcheck extends My_Controller
 			$this->load->model('Attendance_model');
 			$att_types = $this->Attendance_model->get_attendance_types($org_id);
 
+			// 메모 정보 가져오기 - 일요일 날짜로 조회
+			if ($same_members) {
+				$sunday_date = $this->get_sunday_of_week($start_date);
+
+				$this->load->model('Memo_model');
+
+				foreach ($same_members as &$member) {
+					// 해당 회원의 해당 주차 메모 조회
+					$memo_data = $this->Memo_model->get_member_memo_by_date($member['member_idx'], $sunday_date);
+					$member['memo_content'] = $memo_data ? $memo_data['memo_content'] : '';
+				}
+				unset($member); // 참조 해제
+			}
+
 			if ($same_members) {
 				$response = array('status' => 'success', 'members' => $same_members, 'att_types' => $att_types);
 			} else {
@@ -390,8 +403,7 @@ class Qrcheck extends My_Controller
 
 
 	/**
-	 * 파일 위치: application/controllers/Qrcheck.php - save_memo_data() 함수 추가
-	 * 역할: 메모 데이터만 저장하는 전용 엔드포인트
+	 * 역할: 메모 데이터 저장 시 att_date 포함하여 CRUD 처리
 	 */
 	public function save_memo_data()
 	{
@@ -442,6 +454,7 @@ class Qrcheck extends My_Controller
 
 				// 권한 확인 - 해당 회원이 관리 가능한 그룹에 속하는지 확인
 				if ($user_level < 10 && $master_yn !== 'Y') {
+					$this->load->model('Member_model');
 					$member_area = $this->Member_model->get_member_area($member_idx);
 					if (!$member_area || !in_array($member_area['area_idx'], $accessible_areas)) {
 						continue; // 권한이 없는 회원은 건너뛰기
@@ -457,7 +470,8 @@ class Qrcheck extends My_Controller
 						// 기존 메모 수정
 						$update_data = array(
 							'memo_content' => $memo_content,
-							'modi_date' => date('Y-m-d H:i:s')
+							'modi_date' => date('Y-m-d H:i:s'),
+							'att_date' => $memo_date  // att_date 업데이트
 						);
 						$this->Memo_model->update_memo($existing_memo['idx'], $update_data);
 					} else {
@@ -468,6 +482,7 @@ class Qrcheck extends My_Controller
 							'regi_date' => $memo_date . ' ' . date('H:i:s'),
 							'user_id' => $user_id,
 							'member_idx' => $member_idx,
+							'att_date' => $memo_date  // att_date 포함하여 저장
 						);
 						$this->Memo_model->save_memo($insert_data);
 					}

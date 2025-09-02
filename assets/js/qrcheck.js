@@ -753,7 +753,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 
 
 /**
- * 역할: 출석+메모 저장 함수 수정 - 일요일 날짜로 저장
+ * 역할: 출석+메모 저장 시 att_date 포함하여 저장
  */
 function saveAttendanceAndMemo() {
 	console.log('출석 및 메모 저장 시작');
@@ -775,7 +775,7 @@ function saveAttendanceAndMemo() {
 	// 저장할 데이터 수집
 	var attendanceData = [];
 	var memoData = [];
-	var allMemberIndices = []; // 모든 회원 인덱스 수집
+	var allMemberIndices = [];
 
 	// 1. 먼저 모든 회원 인덱스를 수집
 	$('.att-type-select, .memo-input').each(function() {
@@ -824,14 +824,14 @@ function saveAttendanceAndMemo() {
 			});
 		}
 
-		// 메모 데이터 수집 (모든 회원 포함)
+		// 메모 데이터 수집 (모든 회원 포함) - att_date 포함
 		var memoInput = $('.memo-input[data-member-idx="' + memberIdx + '"]');
 		if (memoInput.length > 0) {
 			var memoContent = memoInput.val().trim();
 			memoData.push({
 				member_idx: memberIdx,
 				memo_content: memoContent,
-				memo_date: sundayDate, // 일요일 날짜로 저장
+				memo_date: sundayDate, // 일요일 날짜로 저장 (att_date로 사용됨)
 				org_id: activeOrgId
 			});
 		}
