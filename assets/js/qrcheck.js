@@ -692,7 +692,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 
 						// 메모 입력 필드 추가 (이름 바로 옆)
 						var existingMemo = member.memo_content || ''; // 기존 메모가 있으면 표시
-						tableHtml += '<td><textarea class="form-control memo-input" data-member-idx="' + member.member_idx + '" rows="2" placeholder="메모 입력...">' + existingMemo + '</textarea></td>';
+						tableHtml += '<td><input type="text" class="form-control memo-input" data-member-idx="' + member.member_idx + '" placeholder="메모 입력..." value="' + existingMemo.replace(/"/g, '&quot;') + '"></td>';
 
 						// 각 회원의 출석 타입 selectbox 추가
 						if (attTypes && attTypes.length > 0) {
@@ -752,7 +752,9 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 }
 
 
-// 출석+메모 저장 함수 수정
+/**
+ * 역할: 출석+메모 저장 함수 수정 - 일요일 날짜로 저장
+ */
 function saveAttendanceAndMemo() {
 	console.log('출석 및 메모 저장 시작');
 
@@ -766,6 +768,9 @@ function saveAttendanceAndMemo() {
 	var today = new Date();
 	var formattedToday = formatDate(today);
 	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
+
+	// 일요일 날짜 계산
+	var sundayDate = getSundayOfWeek(attDate);
 
 	// 저장할 데이터 수집
 	var attendanceData = [];
@@ -804,7 +809,7 @@ function saveAttendanceAndMemo() {
 			attendanceData.push({
 				member_idx: memberIdx,
 				att_type_idx: attTypeIdx,
-				att_date: attDate,
+				att_date: sundayDate, // 일요일 날짜로 저장
 				has_data: true
 			});
 		}
@@ -814,7 +819,7 @@ function saveAttendanceAndMemo() {
 			attendanceData.push({
 				member_idx: memberIdx,
 				att_type_idx: null,
-				att_date: attDate,
+				att_date: sundayDate, // 일요일 날짜로 저장
 				has_data: false
 			});
 		}
@@ -826,7 +831,7 @@ function saveAttendanceAndMemo() {
 			memoData.push({
 				member_idx: memberIdx,
 				memo_content: memoContent,
-				memo_date: attDate,
+				memo_date: sundayDate, // 일요일 날짜로 저장
 				org_id: activeOrgId
 			});
 		}
@@ -849,7 +854,7 @@ function saveAttendanceAndMemo() {
 			org_id: activeOrgId,
 			start_date: startDate,
 			end_date: endDate,
-			att_date: attDate
+			att_date: sundayDate // 일요일 날짜로 저장
 		},
 		dataType: 'json',
 		success: function(response) {
@@ -871,6 +876,16 @@ function saveAttendanceAndMemo() {
 	});
 }
 
+/**
+ * 역할: 일요일 날짜 계산 유틸리티 함수
+ */
+function getSundayOfWeek(date) {
+	var dateObj = new Date(date);
+	var day = dateObj.getDay(); // 0=일요일, 1=월요일...
+	var diff = dateObj.getDate() - day;
+	var sunday = new Date(dateObj.setDate(diff));
+	return formatDate(sunday);
+}
 
 // 메모 데이터 저장 함수
 function saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText) {
@@ -1279,14 +1294,20 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 var attend_type_color_map = {};
 var attend_type_order_map = {};
 
+/**
+ * 역할: 출석 스탬프 업데이트 함수 - 일요일 날짜로 조회하도록 수정
+ */
 function updateAttStamps(orgId, startDate, endDate) {
+	// 시작일에 해당하는 일요일 날짜 계산
+	var sundayDate = getSundayOfWeek(startDate);
+
 	$.ajax({
 		url: '/qrcheck/get_attendance_data',
 		method: 'POST',
 		data: {
 			org_id: orgId,
-			start_date: startDate,
-			end_date: endDate
+			start_date: sundayDate, // 일요일 날짜로 조회
+			end_date: sundayDate    // 일요일 날짜로 조회 (단일 날짜)
 		},
 		dataType: 'json',
 		success: function(attendanceData) {
@@ -1409,7 +1430,9 @@ $('#saveAttendanceBtn').off('click').on('click', function() {
 });
 
 
-// 출석모드에서 그룹 출석 정보를 저장하는 함수 수정
+/**
+ * 역할: 출석 데이터 저장 함수 수정 - 일요일 날짜로 저장
+ */
 function saveAttendanceData(attendanceData) {
 	var currentWeekRange = $('.current-week').text();
 	var currentDate = getDateFromWeekRange(currentWeekRange);
@@ -1421,6 +1444,9 @@ function saveAttendanceData(attendanceData) {
 	var today = new Date();
 	var formattedToday = formatDate(today);
 	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
+
+	// 일요일 날짜 계산
+	var sundayDate = getSundayOfWeek(attDate);
 
 	// 멤버별로 출석 데이터 정리 (중복 제거 및 빈 값 필터링)
 	var memberAttendanceMap = {};
@@ -1449,7 +1475,7 @@ function saveAttendanceData(attendanceData) {
 			processedAttendanceData.push({
 				member_idx: memberIdx,
 				att_type_idx: attTypeIdx,
-				att_date: attDate
+				att_date: sundayDate // 일요일 날짜로 저장
 			});
 		});
 	}

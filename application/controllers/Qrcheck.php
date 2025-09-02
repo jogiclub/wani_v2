@@ -76,11 +76,32 @@ class Qrcheck extends My_Controller
 		if ($this->input->is_ajax_request()) {
 			$member_idx = $this->input->post('member_idx');
 			$att_type_idx = $this->input->post('att_type_idx');
-			$att_date = $this->input->post('att_date');
+			$att_type_category_idx = $this->input->post('att_type_category_idx');
 			$org_id = $this->input->post('org_id');
+			$att_date = $this->input->post('att_date');
+			$selected_value = $this->input->post('selected_value');
 
+			// att_date에 해당하는 일요일 날짜 계산
+			$sunday_date = $this->get_sunday_of_week($att_date);
+			$att_year = date('Y', strtotime($sunday_date));
+
+			// 해당 회원의 해당 카테고리 출석 데이터 먼저 삭제
 			$this->load->model('Attendance_model');
-			$result = $this->Attendance_model->save_single_attendance($member_idx, $att_type_idx, $att_date, $org_id);
+			$this->Attendance_model->delete_attendance_by_category($member_idx, $att_type_category_idx, $sunday_date, $att_year);
+
+			// 새로운 출석 데이터 저장
+			$data = array(
+				'att_date' => $sunday_date, // 일요일 날짜로 저장
+				'att_type_idx' => $att_type_idx,
+				'member_idx' => $member_idx,
+				'org_id' => $org_id,
+				'att_year' => $att_year, // att_year 추가
+				'att_value' => $selected_value ?: 0,
+				'regi_date' => date('Y-m-d H:i:s'), // 등록일 추가
+				'modi_date' => date('Y-m-d') // 변경일 추가
+			);
+
+			$result = $this->Attendance_model->save_single_attendance($data);
 
 			if ($result) {
 				echo json_encode(array('status' => 'success', 'message' => '출석이 저장되었습니다.'));
@@ -367,57 +388,6 @@ class Qrcheck extends My_Controller
 		}
 	}
 
-	public function save_attendance_data()
-	{
-		if ($this->input->is_ajax_request()) {
-			$attendance_data = json_decode($this->input->post('attendance_data'), true);
-			$org_id = $this->input->post('org_id');
-			$start_date = $this->input->post('start_date');
-			$end_date = $this->input->post('end_date');
-
-			$this->load->model('Attendance_model');
-
-			// 해당 기간의 모든 멤버 출석 정보를 먼저 삭제
-			$member_indices = array_unique(array_column($attendance_data, 'member_idx'));
-
-			if (!empty($member_indices)) {
-				$this->db->where_in('member_idx', $member_indices);
-				$this->db->where('org_id', $org_id);
-				$this->db->where('att_date >=', $start_date);
-				$this->db->where('att_date <=', $end_date);
-				$this->db->delete('wb_member_att');
-			}
-
-			// 새로운 출석 정보를 직접 삽입
-			$insert_success = true;
-			foreach ($attendance_data as $item) {
-				$member_idx = $item['member_idx'];
-				$att_date = $item['att_date'];
-				$att_type_idx = $item['att_type_idx'];
-
-				if (!empty($att_type_idx)) {
-					$data = array(
-						'member_idx' => $member_idx,
-						'att_date' => $att_date,
-						'att_type_idx' => $att_type_idx,
-						'org_id' => $org_id
-					);
-
-					$result = $this->db->insert('wb_member_att', $data);
-					if (!$result) {
-						$insert_success = false;
-						break;
-					}
-				}
-			}
-
-			if ($insert_success) {
-				echo json_encode(array('status' => 'success', 'message' => '출석이 저장되었습니다.'));
-			} else {
-				echo json_encode(array('status' => 'error', 'message' => '출석 저장에 실패했습니다.'));
-			}
-		}
-	}
 
 	/**
 	 * 파일 위치: application/controllers/Qrcheck.php - save_memo_data() 함수 추가
@@ -561,8 +531,7 @@ class Qrcheck extends My_Controller
 	}
 
 	/**
-	 * 파일 위치: application/controllers/Qrcheck.php
-	 * 역할: 모든 회원의 출석 데이터를 처리하고 불필요한 데이터 정리
+	 * 역할: 모든 회원의 출석 데이터를 처리하고 불필요한 데이터 정리 - att_date를 일요일로 저장
 	 */
 	public function save_attendance_data_with_cleanup()
 	{
@@ -591,6 +560,10 @@ class Qrcheck extends My_Controller
 				}
 			}
 
+			// att_date에 해당하는 일요일 날짜 계산
+			$sunday_date = $this->get_sunday_of_week($att_date);
+			$att_year = date('Y', strtotime($sunday_date));
+
 			$this->db->trans_start();
 
 			try {
@@ -598,14 +571,15 @@ class Qrcheck extends My_Controller
 				$all_member_indices = array_unique(array_column($attendance_data, 'member_idx'));
 
 				if (!empty($all_member_indices)) {
-					// 1. 해당 날짜의 모든 회원 출석 정보 삭제 (메모용 더미 제외)
+					// 1. 해당 일요일 날짜의 모든 회원 출석 정보 삭제 (메모용 더미 제외)
 					$this->db->where_in('member_idx', $all_member_indices);
 					$this->db->where('org_id', $org_id);
-					$this->db->where('att_date', $att_date);
+					$this->db->where('att_date', $sunday_date);
+					$this->db->where('att_year', $att_year);
 					$this->db->where('att_type_idx >', 0); // 메모용 더미(att_type_idx = 0) 제외
 					$delete_result = $this->db->delete('wb_member_att');
 
-					log_message('info', 'Deleted attendance records for members: ' . implode(',', $all_member_indices) . ' on date: ' . $att_date);
+					log_message('info', 'Deleted attendance records for members: ' . implode(',', $all_member_indices) . ' on Sunday date: ' . $sunday_date);
 
 					// 2. 새로운 출석 정보 삽입 (has_data가 true인 것만)
 					$insert_success = true;
@@ -620,9 +594,12 @@ class Qrcheck extends My_Controller
 
 						$data = array(
 							'member_idx' => $member_idx,
-							'att_date' => $att_date,
+							'att_date' => $sunday_date,
 							'att_type_idx' => $att_type_idx,
-							'org_id' => $org_id
+							'org_id' => $org_id,
+							'att_year' => $att_year,
+							'regi_date' => date('Y-m-d H:i:s'),
+							'modi_date' => date('Y-m-d')
 						);
 
 						$result = $this->db->insert('wb_member_att', $data);
@@ -652,6 +629,125 @@ class Qrcheck extends My_Controller
 			} catch (Exception $e) {
 				$this->db->trans_rollback();
 				log_message('error', 'Attendance save with cleanup error: ' . $e->getMessage());
+				echo json_encode(array('status' => 'error', 'message' => '출석 저장 중 오류가 발생했습니다.'));
+			}
+		}
+	}
+
+	/**
+	 * 역할: 일요일 날짜 계산을 위한 공통 함수
+	 */
+	private function get_sunday_of_week($date)
+	{
+		$formatted_date = str_replace('.', '-', $date);
+		$dt = new DateTime($formatted_date);
+		$days_from_sunday = $dt->format('w'); // 0=일요일, 1=월요일...
+
+		if ($days_from_sunday > 0) {
+			$dt->sub(new DateInterval('P' . $days_from_sunday . 'D'));
+		}
+
+		return $dt->format('Y-m-d');
+	}
+
+	/**
+	 * 역할: 기본 출석 데이터 저장 함수 - 일요일 날짜로 저장
+	 */
+	public function save_attendance_data()
+	{
+		if ($this->input->is_ajax_request()) {
+			$attendance_data = json_decode($this->input->post('attendance_data'), true);
+			$org_id = $this->input->post('org_id');
+			$start_date = $this->input->post('start_date');
+			$end_date = $this->input->post('end_date');
+
+			if (!$attendance_data || !$org_id) {
+				echo json_encode(array('status' => 'error', 'message' => '필수 정보가 누락되었습니다.'));
+				return;
+			}
+
+			// 권한 확인
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+				if (empty($accessible_areas)) {
+					echo json_encode(array('status' => 'error', 'message' => '출석 정보를 수정할 권한이 없습니다.'));
+					return;
+				}
+			}
+
+			$this->db->trans_start();
+
+			try {
+				// 멤버별로 그룹화
+				$member_attendance_data = array();
+
+				foreach ($attendance_data as $item) {
+					$member_idx = $item['member_idx'];
+					$att_type_idx = $item['att_type_idx'];
+					$att_date = $item['att_date'];
+
+					// att_date에 해당하는 일요일 날짜 계산
+					$sunday_date = $this->get_sunday_of_week($att_date);
+					$att_year = date('Y', strtotime($sunday_date));
+
+					if (!isset($member_attendance_data[$member_idx])) {
+						$member_attendance_data[$member_idx] = array();
+					}
+
+					// 일요일 날짜로 저장
+					$member_attendance_data[$member_idx][] = array(
+						'att_date' => $sunday_date,
+						'att_type_idx' => $att_type_idx,
+						'att_year' => $att_year
+					);
+				}
+
+				// 기존 출석 데이터 삭제 및 새로운 데이터 삽입
+				foreach ($member_attendance_data as $member_idx => $attendance_list) {
+					// 해당 회원의 해당 기간 출석기록 삭제
+					foreach ($attendance_list as $attendance) {
+						$sunday_date = $attendance['att_date'];
+						$att_year = $attendance['att_year'];
+
+						$this->db->where('member_idx', $member_idx);
+						$this->db->where('org_id', $org_id);
+						$this->db->where('att_date', $sunday_date);
+						$this->db->where('att_year', $att_year);
+						$this->db->delete('wb_member_att');
+					}
+
+					// 새로운 출석기록 삽입
+					foreach ($attendance_list as $attendance) {
+						$data = array(
+							'member_idx' => $member_idx,
+							'att_date' => $attendance['att_date'],
+							'att_type_idx' => $attendance['att_type_idx'],
+							'org_id' => $org_id,
+							'att_year' => $attendance['att_year'],
+							'regi_date' => date('Y-m-d H:i:s'),
+							'modi_date' => date('Y-m-d')
+						);
+
+						$this->db->insert('wb_member_att', $data);
+					}
+				}
+
+				$this->db->trans_complete();
+
+				if ($this->db->trans_status() === FALSE) {
+					echo json_encode(array('status' => 'error', 'message' => '출석 저장에 실패했습니다.'));
+					return;
+				}
+
+				echo json_encode(array('status' => 'success', 'message' => '출석이 저장되었습니다.'));
+
+			} catch (Exception $e) {
+				$this->db->trans_rollback();
+				log_message('error', 'Attendance save error: ' . $e->getMessage());
 				echo json_encode(array('status' => 'error', 'message' => '출석 저장 중 오류가 발생했습니다.'));
 			}
 		}
