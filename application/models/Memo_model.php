@@ -191,4 +191,18 @@ class Memo_model extends CI_Model {
 	}
 
 
+	public function get_member_memo_by_date($member_idx, $memo_date)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_memo');
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('DATE(regi_date)', $memo_date);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('regi_date', 'DESC');
+		$this->db->limit(1);
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 }

@@ -419,6 +419,112 @@ class Qrcheck extends My_Controller
 		}
 	}
 
+	/**
+	 * 파일 위치: application/controllers/Qrcheck.php - save_memo_data() 함수 추가
+	 * 역할: 메모 데이터만 저장하는 전용 엔드포인트
+	 */
+	public function save_memo_data()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$memo_data_json = $this->input->post('memo_data');
+		$org_id = $this->input->post('org_id');
+
+		if (!$memo_data_json || !$org_id) {
+			echo json_encode(array('status' => 'error', 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 10 && $master_yn !== 'Y') {
+			// 일반 관리자는 관리 가능한 그룹의 회원들만 메모 작성 가능
+			$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+			if (empty($accessible_areas)) {
+				echo json_encode(array('status' => 'error', 'message' => '메모를 작성할 권한이 없습니다.'));
+				return;
+			}
+		}
+
+		$memo_data = json_decode($memo_data_json, true);
+		if (!$memo_data || !is_array($memo_data)) {
+			echo json_encode(array('status' => 'error', 'message' => '메모 데이터가 올바르지 않습니다.'));
+			return;
+		}
+
+		$this->load->model('Memo_model');
+		$this->db->trans_start();
+
+		try {
+			foreach ($memo_data as $memo_item) {
+				if (!isset($memo_item['member_idx']) || !$memo_item['member_idx']) {
+					continue;
+				}
+
+				$member_idx = $memo_item['member_idx'];
+				$memo_content = isset($memo_item['memo_content']) ? trim($memo_item['memo_content']) : '';
+				$memo_date = isset($memo_item['memo_date']) ? $memo_item['memo_date'] : date('Y-m-d');
+
+				// 권한 확인 - 해당 회원이 관리 가능한 그룹에 속하는지 확인
+				if ($user_level < 10 && $master_yn !== 'Y') {
+					$member_area = $this->Member_model->get_member_area($member_idx);
+					if (!$member_area || !in_array($member_area['area_idx'], $accessible_areas)) {
+						continue; // 권한이 없는 회원은 건너뛰기
+					}
+				}
+
+				// 기존 메모 확인 (해당 날짜의 메모)
+				$existing_memo = $this->Memo_model->get_member_memo_by_date($member_idx, $memo_date);
+
+				if (!empty($memo_content)) {
+					// 메모 내용이 있는 경우
+					if ($existing_memo) {
+						// 기존 메모 수정
+						$update_data = array(
+							'memo_content' => $memo_content,
+							'modi_date' => date('Y-m-d H:i:s')
+						);
+						$this->Memo_model->update_memo($existing_memo['idx'], $update_data);
+					} else {
+						// 새 메모 추가
+						$insert_data = array(
+							'memo_type' => 1, // 일반 메모
+							'memo_content' => $memo_content,
+							'regi_date' => $memo_date . ' ' . date('H:i:s'),
+							'user_id' => $user_id,
+							'member_idx' => $member_idx,
+						);
+						$this->Memo_model->save_memo($insert_data);
+					}
+				} else {
+					// 메모 내용이 비어있으면 기존 메모 삭제
+					if ($existing_memo) {
+						$this->Memo_model->delete_memo($existing_memo['idx']);
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				echo json_encode(array('status' => 'error', 'message' => '메모 저장에 실패했습니다.'));
+				return;
+			}
+
+			echo json_encode(array('status' => 'success', 'message' => '메모가 저장되었습니다.'));
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Memo save error: ' . $e->getMessage());
+			echo json_encode(array('status' => 'error', 'message' => '메모 저장 중 오류가 발생했습니다.'));
+		}
+	}
+
 	public function get_last_week_attendance()
 	{
 		if ($this->input->is_ajax_request()) {
@@ -451,6 +557,103 @@ class Qrcheck extends My_Controller
 			);
 
 			echo json_encode($response);
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Qrcheck.php
+	 * 역할: 모든 회원의 출석 데이터를 처리하고 불필요한 데이터 정리
+	 */
+	public function save_attendance_data_with_cleanup()
+	{
+		if ($this->input->is_ajax_request()) {
+			$attendance_data = json_decode($this->input->post('attendance_data'), true);
+			$org_id = $this->input->post('org_id');
+			$start_date = $this->input->post('start_date');
+			$end_date = $this->input->post('end_date');
+			$att_date = $this->input->post('att_date');
+
+			if (!$attendance_data || !$org_id || !$att_date) {
+				echo json_encode(array('status' => 'error', 'message' => '필수 정보가 누락되었습니다.'));
+				return;
+			}
+
+			// 권한 확인
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+				if (empty($accessible_areas)) {
+					echo json_encode(array('status' => 'error', 'message' => '출석 정보를 수정할 권한이 없습니다.'));
+					return;
+				}
+			}
+
+			$this->db->trans_start();
+
+			try {
+				// 전체 회원 목록 추출
+				$all_member_indices = array_unique(array_column($attendance_data, 'member_idx'));
+
+				if (!empty($all_member_indices)) {
+					// 1. 해당 날짜의 모든 회원 출석 정보 삭제 (메모용 더미 제외)
+					$this->db->where_in('member_idx', $all_member_indices);
+					$this->db->where('org_id', $org_id);
+					$this->db->where('att_date', $att_date);
+					$this->db->where('att_type_idx >', 0); // 메모용 더미(att_type_idx = 0) 제외
+					$delete_result = $this->db->delete('wb_member_att');
+
+					log_message('info', 'Deleted attendance records for members: ' . implode(',', $all_member_indices) . ' on date: ' . $att_date);
+
+					// 2. 새로운 출석 정보 삽입 (has_data가 true인 것만)
+					$insert_success = true;
+					foreach ($attendance_data as $item) {
+						// has_data가 false이거나 att_type_idx가 없으면 건너뛰기 (삭제만 처리됨)
+						if (!isset($item['has_data']) || !$item['has_data'] || empty($item['att_type_idx'])) {
+							continue;
+						}
+
+						$member_idx = $item['member_idx'];
+						$att_type_idx = $item['att_type_idx'];
+
+						$data = array(
+							'member_idx' => $member_idx,
+							'att_date' => $att_date,
+							'att_type_idx' => $att_type_idx,
+							'org_id' => $org_id
+						);
+
+						$result = $this->db->insert('wb_member_att', $data);
+						if (!$result) {
+							$insert_success = false;
+							log_message('error', 'Failed to insert attendance for member: ' . $member_idx . ', att_type: ' . $att_type_idx);
+							break;
+						}
+					}
+
+					if (!$insert_success) {
+						$this->db->trans_rollback();
+						echo json_encode(array('status' => 'error', 'message' => '출석 정보 저장 중 오류가 발생했습니다.'));
+						return;
+					}
+				}
+
+				$this->db->trans_complete();
+
+				if ($this->db->trans_status() === FALSE) {
+					echo json_encode(array('status' => 'error', 'message' => '출석 저장에 실패했습니다.'));
+					return;
+				}
+
+				echo json_encode(array('status' => 'success', 'message' => '출석이 저장되었습니다.'));
+
+			} catch (Exception $e) {
+				$this->db->trans_rollback();
+				log_message('error', 'Attendance save with cleanup error: ' . $e->getMessage());
+				echo json_encode(array('status' => 'error', 'message' => '출석 저장 중 오류가 발생했습니다.'));
+			}
 		}
 	}
 

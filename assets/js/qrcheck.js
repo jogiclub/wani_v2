@@ -139,7 +139,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 	var endDate = getWeekEndDate(currentDate);
 
 	$.ajax({
-		url: '/main/get_same_members',
+		url: '/qrcheck/get_same_members',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -282,7 +282,7 @@ $('#saveNewMember').click(function() {
 	}
 
 	$.ajax({
-		url: '/main/add_member',
+		url: '/qrcheck/add_member',
 		method: 'POST',
 		data: {
 			org_id: activeOrgId,
@@ -321,7 +321,7 @@ $('#saveNewMember').click(function() {
 
 function loadMemberAttendance(memberIdx, startDate, endDate) {
 	$.ajax({
-		url: '/main/get_member_attendance',
+		url: '/qrcheck/get_member_attendance',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -400,7 +400,7 @@ $('#saveAttendance').click(function() {
 	});
 
 	$.ajax({
-		url: '/main/save_attendance',
+		url: '/qrcheck/save_attendance',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -645,7 +645,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 	var endDate = getWeekEndDate(currentDate);
 
 	$.ajax({
-		url: '/main/get_same_members', // 동일한 엔드포인트 사용
+		url: '/qrcheck/get_same_members', // 동일한 엔드포인트 사용
 		method: 'POST',
 		data: {
 			member_idx: 0, // 임시값
@@ -752,7 +752,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 }
 
 
-// 출석+메모 저장 함수 추가
+// 출석+메모 저장 함수 수정
 function saveAttendanceAndMemo() {
 	console.log('출석 및 메모 저장 시작');
 
@@ -770,47 +770,69 @@ function saveAttendanceAndMemo() {
 	// 저장할 데이터 수집
 	var attendanceData = [];
 	var memoData = [];
-	var memberDataMap = {}; // 회원별로 데이터를 그룹화하기 위한 맵
+	var allMemberIndices = []; // 모든 회원 인덱스 수집
 
-	// 출석 데이터 수집 (기존 방식 유지)
-	$('.att-type-select').each(function() {
+	// 1. 먼저 모든 회원 인덱스를 수집
+	$('.att-type-select, .memo-input').each(function() {
 		var memberIdx = $(this).data('member-idx');
-		var attTypeIdx = $(this).val();
-		var attTypeCategoryIdx = $(this).data('att-type-category-idx');
-
-		if (attTypeIdx && attTypeIdx.trim() !== '') {
-			if (!memberDataMap[memberIdx]) {
-				memberDataMap[memberIdx] = {};
-			}
-			memberDataMap[memberIdx][attTypeCategoryIdx] = attTypeIdx;
+		if (memberIdx && allMemberIndices.indexOf(memberIdx) === -1) {
+			allMemberIndices.push(memberIdx);
 		}
 	});
 
-	// 메모 데이터 수집
-	$('.memo-input').each(function() {
-		var memberIdx = $(this).data('member-idx');
-		var memoContent = $(this).val().trim();
+	console.log('전체 회원 인덱스:', allMemberIndices);
 
-		memoData.push({
-			member_idx: memberIdx,
-			memo_content: memoContent,
-			memo_date: attDate,
-			org_id: activeOrgId
+	// 2. 각 회원별로 출석 데이터와 메모 데이터 수집
+	allMemberIndices.forEach(function(memberIdx) {
+		// 출석 데이터 수집
+		var memberAttendanceData = {};
+		var hasAttendanceData = false;
+
+		$('.att-type-select[data-member-idx="' + memberIdx + '"]').each(function() {
+			var attTypeIdx = $(this).val();
+			var attTypeCategoryIdx = $(this).data('att-type-category-idx');
+
+			if (attTypeIdx && attTypeIdx.trim() !== '') {
+				memberAttendanceData[attTypeCategoryIdx] = attTypeIdx;
+				hasAttendanceData = true;
+			}
 		});
-	});
 
-	// memberDataMap을 attendanceData 배열로 변환
-	for (var memberIdx in memberDataMap) {
-		for (var categoryIdx in memberDataMap[memberIdx]) {
-			var attTypeIdx = memberDataMap[memberIdx][categoryIdx];
+		// 출석 데이터를 배열로 변환 (값이 있든 없든 해당 회원 정보는 포함)
+		for (var categoryIdx in memberAttendanceData) {
+			var attTypeIdx = memberAttendanceData[categoryIdx];
 			attendanceData.push({
 				member_idx: memberIdx,
-				att_type_idx: attTypeIdx
+				att_type_idx: attTypeIdx,
+				att_date: attDate,
+				has_data: true
 			});
 		}
-	}
 
-	console.log('출석 데이터:', attendanceData);
+		// 출석 데이터가 없는 회원도 삭제 처리를 위해 포함
+		if (!hasAttendanceData) {
+			attendanceData.push({
+				member_idx: memberIdx,
+				att_type_idx: null,
+				att_date: attDate,
+				has_data: false
+			});
+		}
+
+		// 메모 데이터 수집 (모든 회원 포함)
+		var memoInput = $('.memo-input[data-member-idx="' + memberIdx + '"]');
+		if (memoInput.length > 0) {
+			var memoContent = memoInput.val().trim();
+			memoData.push({
+				member_idx: memberIdx,
+				memo_content: memoContent,
+				memo_date: attDate,
+				org_id: activeOrgId
+			});
+		}
+	});
+
+	console.log('수정된 출석 데이터:', attendanceData);
 	console.log('메모 데이터:', memoData);
 
 	// 저장 버튼 상태 변경
@@ -818,48 +840,35 @@ function saveAttendanceAndMemo() {
 	var originalText = $saveBtn.text();
 	$saveBtn.prop('disabled', true).text('저장 중...');
 
-	// 1. 먼저 출석 데이터 저장
-	if (attendanceData.length > 0) {
-		var processedAttendanceData = [];
-		attendanceData.forEach(function(item) {
-			processedAttendanceData.push({
-				member_idx: item.member_idx,
-				att_type_idx: item.att_type_idx,
-				att_date: attDate
-			});
-		});
+	// 출석 데이터 저장
+	$.ajax({
+		url: '/qrcheck/save_attendance_data_with_cleanup',
+		method: 'POST',
+		data: {
+			attendance_data: JSON.stringify(attendanceData),
+			org_id: activeOrgId,
+			start_date: startDate,
+			end_date: endDate,
+			att_date: attDate
+		},
+		dataType: 'json',
+		success: function(response) {
+			console.log('출석 저장 응답:', response);
 
-		$.ajax({
-			url: '/main/save_attendance_data',
-			method: 'POST',
-			data: {
-				attendance_data: JSON.stringify(processedAttendanceData),
-				org_id: activeOrgId,
-				start_date: startDate,
-				end_date: endDate
-			},
-			dataType: 'json',
-			success: function(response) {
-				console.log('출석 저장 응답:', response);
-
-				// 2. 출석 저장 성공 후 메모 저장
-				if (response.status === 'success') {
-					saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText);
-				} else {
-					$saveBtn.prop('disabled', false).text(originalText);
-					heyToast('출석 정보 저장에 실패했습니다.', '저장 실패');
-				}
-			},
-			error: function(xhr, status, error) {
-				console.error('출석 저장 오류:', xhr.responseText);
+			// 출석 저장 성공 후 메모 저장
+			if (response.status === 'success') {
+				saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText);
+			} else {
 				$saveBtn.prop('disabled', false).text(originalText);
-				heyToast('출석 정보 저장 중 오류가 발생했습니다.', '저장 오류');
+				heyToast('출석 정보 저장에 실패했습니다.', '저장 실패');
 			}
-		});
-	} else {
-		// 출석 데이터가 없으면 메모만 저장
-		saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText);
-	}
+		},
+		error: function(xhr, status, error) {
+			console.error('출석 저장 오류:', xhr.responseText);
+			$saveBtn.prop('disabled', false).text(originalText);
+			heyToast('출석 정보 저장 중 오류가 발생했습니다.', '저장 오류');
+		}
+	});
 }
 
 
@@ -872,7 +881,7 @@ function saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, origi
 	}
 
 	$.ajax({
-		url: '/main/save_memo_data', // 메모 저장 전용 엔드포인트
+		url: '/qrcheck/save_memo_data', // 메모 저장 전용 엔드포인트
 		method: 'POST',
 		data: {
 			memo_data: JSON.stringify(memoData),
@@ -1021,7 +1030,7 @@ function formatDate(date) {
 // 멤버 로드 함수에서 권한 정보 포함
 function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
 	$.ajax({
-		url: '/main/get_members',
+		url: '/qrcheck/get_members',
 		method: 'POST',
 		data: {
 			org_id: orgId,
@@ -1205,7 +1214,7 @@ function playBirthSound() {
 
 function showToast(memberIdx) {
 	$.ajax({
-		url: '/main/get_member_info',
+		url: '/qrcheck/get_member_info',
 		method: 'POST',
 		data: { member_idx: memberIdx },
 		dataType: 'json',
@@ -1239,7 +1248,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 	}
 
 	$.ajax({
-		url: '/main/save_single_attendance',
+		url: '/qrcheck/save_single_attendance',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -1272,7 +1281,7 @@ var attend_type_order_map = {};
 
 function updateAttStamps(orgId, startDate, endDate) {
 	$.ajax({
-		url: '/main/get_attendance_data',
+		url: '/qrcheck/get_attendance_data',
 		method: 'POST',
 		data: {
 			org_id: orgId,
@@ -1446,7 +1455,7 @@ function saveAttendanceData(attendanceData) {
 	}
 
 	$.ajax({
-		url: '/main/save_attendance_data',
+		url: '/qrcheck/save_attendance_data',
 		method: 'POST',
 		data: {
 			attendance_data: JSON.stringify(processedAttendanceData),
@@ -1474,7 +1483,7 @@ function saveAttendanceData(attendanceData) {
 
 function updateAttendanceTypes(orgId) {
 	$.ajax({
-		url: '/main/get_attendance_types',
+		url: '/qrcheck/get_attendance_types',
 		method: 'POST',
 		data: { org_id: orgId },
 		dataType: 'json',
@@ -1612,7 +1621,7 @@ $(document).ready(function() {
 		var lastWeekEndDate = getWeekEndDate(new Date(currentDate.setDate(currentDate.getDate())));
 
 		$.ajax({
-			url: '/main/get_last_week_attendance',
+			url: '/qrcheck/get_last_week_attendance',
 			method: 'POST',
 			data: {
 				member_idx: memberIdx,
