@@ -391,7 +391,7 @@ class Member_model extends CI_Model
 
 	public function get_member_area($member_idx)
 	{
-		$this->db->select('area_idx, area_name');
+		$this->db->select('m.area_idx, ma.area_name');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area ma', 'm.area_idx = ma.area_idx', 'left');
 		$this->db->where('m.member_idx', $member_idx);

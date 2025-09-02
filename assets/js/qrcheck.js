@@ -473,8 +473,6 @@ function displayMembers(members) {
 	} else {
 		memberList.append('<div class="grid-sizer"></div>');
 
-		// 출석 유형별 숫자 초기화
-		var attTypeCount = {};
 		var prevAreaName = null;
 		var currentGroupMembers = [];
 
@@ -544,9 +542,9 @@ function displayMembers(members) {
 					memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-lightning-fill"></i></span>');
 				}
 
+				// 출석 스탬프 추가 (서버에서 받은 데이터)
 				if (member.att_type_data) {
 					var attTypeData = member.att_type_data.split('|');
-
 					var attStamps = attTypeData.map(function(attData) {
 						var attDataArr = attData.split(',');
 						var attType = attDataArr[0].trim();
@@ -554,20 +552,10 @@ function displayMembers(members) {
 						var attTypeCategoryIdx = attDataArr[2].trim();
 						var attTypeColor = attDataArr[3].trim();
 
-						// 출석 유형별 숫자 카운트
-						if (attTypeCount[attType]) {
-							attTypeCount[attType]++;
-						} else {
-							attTypeCount[attType] = 1;
-						}
+						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '" style="background-color: #' + attTypeColor + '">' + attType + '</span>';
+					}).join(' ');
 
-						return {
-							attType: attType,
-							attTypeIdx: attTypeIdx,
-							attTypeCategoryIdx: attTypeCategoryIdx,
-							attTypeColor: attTypeColor
-						};
-					});
+					memberCard.find('.att-stamp-warp').append(attStamps);
 				}
 
 				memberList.append(memberCard);
@@ -579,32 +567,9 @@ function displayMembers(members) {
 				memberList.append(areaDivider);
 			}
 		});
-
-		// 출석 유형별 숫자 출력
-		var totalAttList = $('.total-att-list');
-		totalAttList.empty();
-
-		// 출석 유형을 att_type_order 순으로 정렬
-		var sortedAttTypes = Object.keys(attTypeCount).sort(function(a, b) {
-			var attTypeA = attendanceTypes.find(function(type) {
-				return type.att_type_nickname === a;
-			});
-			var attTypeB = attendanceTypes.find(function(type) {
-				return type.att_type_nickname === b;
-			});
-			return attTypeA.att_type_order - attTypeB.att_type_order;
-		});
-
-		sortedAttTypes.forEach(function(attType) {
-			var attTypeInfo = attendanceTypes.find(function(type) {
-				return type.att_type_nickname === attType;
-			});
-			var attTypeColor = attTypeInfo ? attTypeInfo.att_type_color : 'CB3227';
-			totalAttList.append('<dt style="background-color: #' + attTypeColor + '">' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
-		});
 	}
 
-	// total-list 합산 계산
+	// total-list 합산 계산 (화면에 표시된 회원들만 계산)
 	var totalMembers = $('.grid-item .member-card').length;
 	var totalNewMembers = $('.member-card.new').length;
 	var totalAttMembers = totalMembers - totalNewMembers;
@@ -615,10 +580,60 @@ function displayMembers(members) {
 	$('.total-list dd').eq(1).text(totalAttMembers);
 	$('.total-list dd').eq(2).text(totalLeaderMembers);
 
+	// 출석 타입별 숫자 계산 (화면에 표시된 스탬프들만 계산)
+	updateAttTypeCountFromDOM();
+
 	// Masonry 초기화 및 지연 실행
 	initializeMasonry();
 }
 
+/**
+ * 역할: 화면에 표시된 출석 스탬프를 기반으로 출석 타입별 개수 계산
+ */
+function updateAttTypeCountFromDOM() {
+	var attTypeCount = {};
+
+	// 화면에 표시된 모든 출석 스탬프 카운트
+	$('.att-stamp').each(function() {
+		var attType = $(this).text().trim();
+		if (attTypeCount[attType]) {
+			attTypeCount[attType]++;
+		} else {
+			attTypeCount[attType] = 1;
+		}
+	});
+
+	// .total-att-list 업데이트
+	var totalAttList = $('.total-att-list');
+	totalAttList.empty();
+
+	if (Object.keys(attTypeCount).length === 0) {
+		// 출석 데이터가 없는 경우 기본 표시
+		totalAttList.append('<dt>출석</dt><dd>0</dd>');
+		return;
+	}
+
+	// 출석 타입을 att_type_order 순으로 정렬
+	var sortedAttTypes = Object.keys(attTypeCount).sort(function(a, b) {
+		var attTypeA = attendanceTypes.find(function(type) {
+			return type.att_type_nickname === a;
+		});
+		var attTypeB = attendanceTypes.find(function(type) {
+			return type.att_type_nickname === b;
+		});
+
+		if (!attTypeA || !attTypeB) return 0;
+		return attTypeA.att_type_order - attTypeB.att_type_order;
+	});
+
+	sortedAttTypes.forEach(function(attType) {
+		var attTypeInfo = attendanceTypes.find(function(type) {
+			return type.att_type_nickname === attType;
+		});
+		var attTypeColor = attTypeInfo ? attTypeInfo.att_type_color : 'CB3227';
+		totalAttList.append('<dt style="background-color: #' + attTypeColor + '">' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
+	});
+}
 
 
 // 목장출석+메모입력 버튼 클릭 이벤트 (출석관리화면의 상세 offcanvas 표시)
@@ -1295,7 +1310,7 @@ var attend_type_color_map = {};
 var attend_type_order_map = {};
 
 /**
- * 역할: 출석 스탬프 업데이트 함수 - 일요일 날짜로 조회하도록 수정
+ * 역할: 출석 스탬프 업데이트 함수 수정 - 화면 기반 카운트 적용
  */
 function updateAttStamps(orgId, startDate, endDate) {
 	// 시작일에 해당하는 일요일 날짜 계산
@@ -1306,15 +1321,12 @@ function updateAttStamps(orgId, startDate, endDate) {
 		method: 'POST',
 		data: {
 			org_id: orgId,
-			start_date: sundayDate, // 일요일 날짜로 조회
-			end_date: sundayDate    // 일요일 날짜로 조회 (단일 날짜)
+			start_date: sundayDate,
+			end_date: sundayDate
 		},
 		dataType: 'json',
 		success: function(attendanceData) {
 			$('.member-card .att-stamp-warp .att-stamp').remove();
-
-			// 출석 유형별 숫자 초기화
-			var attTypeCount = {};
 
 			$.each(attendanceData, function(memberIdx, attTypeNicknames) {
 				var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
@@ -1328,53 +1340,15 @@ function updateAttStamps(orgId, startDate, endDate) {
 						var attTypeCategoryIdx = attTypeArr[2].trim();
 						var attTypeColor = attTypeArr[3].trim();
 
-						// 전역변수에 색상 및 순서 정보 저장
-						attend_type_color_map[attTypeNickname] = attTypeColor;
-						attend_type_order_map[attTypeIdx] = Object.keys(attend_type_order_map).length;
-
-						// 출석 유형별 숫자 카운트
-						if (attTypeCount[attTypeNickname]) {
-							attTypeCount[attTypeNickname]++;
-						} else {
-							attTypeCount[attTypeNickname] = 1;
-						}
-
-						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '">' + attTypeNickname + '</span>';
+						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '" style="background-color: #' + attTypeColor + '">' + attTypeNickname + '</span>';
 					}).join(' ');
 
 					attStampsContainer.append(attStamps);
 				}
 			});
 
-			// 전역변수를 사용하여 배경색 설정
-			$('.att-stamp').each(function() {
-				var attTypeNickname = $(this).text();
-				var backgroundColor = attend_type_color_map[attTypeNickname];
-				$(this).css('background-color', backgroundColor);
-			});
-
-			// .total-att-list 업데이트
-			var totalAttList = $('.total-att-list');
-			totalAttList.empty();
-
-			// 출석 유형을 att_type_order 순으로 정렬
-			var sortedAttTypes = Object.keys(attTypeCount).sort(function(a, b) {
-				var attTypeA = attendanceTypes.find(function(type) {
-					return type.att_type_nickname === a;
-				});
-				var attTypeB = attendanceTypes.find(function(type) {
-					return type.att_type_nickname === b;
-				});
-				return attTypeA.att_type_order - attTypeB.att_type_order;
-			});
-
-			sortedAttTypes.forEach(function(attType) {
-				var attTypeInfo = attendanceTypes.find(function(type) {
-					return type.att_type_nickname === attType;
-				});
-				var attTypeColor = attTypeInfo ? attTypeInfo.att_type_color : 'CB3227';
-				totalAttList.append('<dt style="background-color: #' + attTypeColor + '">' + attType + '</dt><dd>' + attTypeCount[attType] + '</dd>');
-			});
+			// 화면에 표시된 스탬프를 기반으로 카운트 업데이트
+			updateAttTypeCountFromDOM();
 		}
 	});
 }
