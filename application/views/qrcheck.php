@@ -226,7 +226,7 @@
 
 	// 출석 타입 정보 로드
 	$.ajax({
-		url: '/main/get_attendance_types',
+		url: '/qrcheck/get_attendance_types',
 		method: 'POST',
 		data: { org_id: activeOrgId, level: userLevel },
 		dataType: 'json',

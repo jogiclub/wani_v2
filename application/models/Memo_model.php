@@ -5,12 +5,30 @@ class Memo_model extends CI_Model {
         $this->load->database();
     }
 
-    public function save_memo($data) {
-        $this->db->insert('wb_memo', $data);
-        return $this->db->affected_rows() > 0;
-    }
+	public function save_memo($data)
+	{
+		return $this->db->insert('wb_memo', $data);
+	}
 
-    public function get_memo_list($member_idx, $limit, $offset) {
+	/**
+	 * 특정 날짜의 회원 메모 조회
+	 */
+	public function get_member_memo_by_date($member_idx, $memo_date)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_memo');
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('DATE(regi_date)', $memo_date);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('regi_date', 'DESC');
+		$this->db->limit(1);
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+
+	public function get_memo_list($member_idx, $limit, $offset) {
         $this->db->select('m.*, u.user_name');
         $this->db->from('wb_memo m');
         $this->db->join('wb_user u', 'm.user_id = u.user_id', 'left');
@@ -24,11 +42,19 @@ class Memo_model extends CI_Model {
     }
 
 
-    public function delete_memo($idx) {
-        $this->db->where('idx', $idx);
-        $this->db->delete('wb_memo');
-        return $this->db->affected_rows() > 0;
-    }
+	/**
+	 * 메모 삭제 (소프트 삭제)
+	 */
+	public function delete_memo($idx)
+	{
+		$data = array(
+			'del_yn' => 'Y',
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('idx', $idx);
+		return $this->db->update('wb_memo', $data);
+	}
 
 
     public function get_memo_counts($org_id, $start_date, $end_date) {
@@ -62,8 +88,7 @@ class Memo_model extends CI_Model {
 	public function update_memo($idx, $data)
 	{
 		$this->db->where('idx', $idx);
-		$this->db->update('wb_memo', $data);
-		return $this->db->affected_rows() > 0;
+		return $this->db->update('wb_memo', $data);
 	}
 
 	/**
@@ -79,21 +104,16 @@ class Memo_model extends CI_Model {
 		return $query->row_array();
 	}
 
-
-
 	/**
-	 * 파일 위치: application/models/Memo_model.php
-	 * 역할: att_idx를 기준으로 한 메모 관리 기능 추가
-	 */
-
-	/**
-	 * att_idx를 기준으로 메모 조회
+	 * att_idx로 메모 조회
 	 */
 	public function get_memo_by_att_idx($att_idx)
 	{
 		$this->db->select('*');
 		$this->db->from('wb_memo');
 		$this->db->where('att_idx', $att_idx);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('regi_date', 'DESC');
 		$this->db->limit(1);
 
 		$query = $this->db->get();
@@ -188,6 +208,34 @@ class Memo_model extends CI_Model {
 		$this->db->where('att_idx', $att_idx);
 		$this->db->update('wb_memo', $data);
 		return $this->db->affected_rows() > 0;
+	}
+
+	public function get_member_memo_by_date_range($member_idx, $start_date, $end_date)
+	{
+		$this->db->select('m.*, ma.att_date');
+		$this->db->from('wb_memo m');
+		$this->db->join('wb_member_att ma', 'm.att_idx = ma.att_idx', 'left');
+		$this->db->where('m.member_idx', $member_idx);
+		$this->db->where('m.del_yn', 'N');
+
+		// att_idx가 있는 경우는 출석 날짜로 필터링
+		$this->db->group_start();
+		$this->db->where('ma.att_date >=', $start_date);
+		$this->db->where('ma.att_date <=', $end_date);
+		$this->db->group_end();
+
+		// att_idx가 없는 경우는 메모 등록일로 필터링
+		$this->db->or_group_start();
+		$this->db->where('m.att_idx IS NULL');
+		$this->db->where('DATE(m.regi_date) >=', $start_date);
+		$this->db->where('DATE(m.regi_date) <=', $end_date);
+		$this->db->group_end();
+
+		$this->db->order_by('m.regi_date', 'DESC');
+		$this->db->limit(1);
+
+		$query = $this->db->get();
+		return $query->row_array();
 	}
 
 

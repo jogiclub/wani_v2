@@ -139,7 +139,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 	var endDate = getWeekEndDate(currentDate);
 
 	$.ajax({
-		url: '/main/get_same_members',
+		url: '/qrcheck/get_same_members',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -282,7 +282,7 @@ $('#saveNewMember').click(function() {
 	}
 
 	$.ajax({
-		url: '/main/add_member',
+		url: '/qrcheck/add_member',
 		method: 'POST',
 		data: {
 			org_id: activeOrgId,
@@ -321,7 +321,7 @@ $('#saveNewMember').click(function() {
 
 function loadMemberAttendance(memberIdx, startDate, endDate) {
 	$.ajax({
-		url: '/main/get_member_attendance',
+		url: '/qrcheck/get_member_attendance',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -400,7 +400,7 @@ $('#saveAttendance').click(function() {
 	});
 
 	$.ajax({
-		url: '/main/save_attendance',
+		url: '/qrcheck/save_attendance',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -645,7 +645,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 	var endDate = getWeekEndDate(currentDate);
 
 	$.ajax({
-		url: '/main/get_same_members', // 동일한 엔드포인트 사용
+		url: '/qrcheck/get_same_members', // 동일한 엔드포인트 사용
 		method: 'POST',
 		data: {
 			member_idx: 0, // 임시값
@@ -830,7 +830,7 @@ function saveAttendanceAndMemo() {
 		});
 
 		$.ajax({
-			url: '/main/save_attendance_data',
+			url: '/qrcheck/save_attendance_data',
 			method: 'POST',
 			data: {
 				attendance_data: JSON.stringify(processedAttendanceData),
@@ -872,7 +872,7 @@ function saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, origi
 	}
 
 	$.ajax({
-		url: '/main/save_memo_data', // 메모 저장 전용 엔드포인트
+		url: '/qrcheck/save_memo_data', // 메모 저장 전용 엔드포인트
 		method: 'POST',
 		data: {
 			memo_data: JSON.stringify(memoData),
@@ -1021,7 +1021,7 @@ function formatDate(date) {
 // 멤버 로드 함수에서 권한 정보 포함
 function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
 	$.ajax({
-		url: '/main/get_members',
+		url: '/qrcheck/get_members',
 		method: 'POST',
 		data: {
 			org_id: orgId,
@@ -1205,7 +1205,7 @@ function playBirthSound() {
 
 function showToast(memberIdx) {
 	$.ajax({
-		url: '/main/get_member_info',
+		url: '/qrcheck/get_member_info',
 		method: 'POST',
 		data: { member_idx: memberIdx },
 		dataType: 'json',
@@ -1239,7 +1239,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 	}
 
 	$.ajax({
-		url: '/main/save_single_attendance',
+		url: '/qrcheck/save_single_attendance',
 		method: 'POST',
 		data: {
 			member_idx: memberIdx,
@@ -1272,7 +1272,7 @@ var attend_type_order_map = {};
 
 function updateAttStamps(orgId, startDate, endDate) {
 	$.ajax({
-		url: '/main/get_attendance_data',
+		url: '/qrcheck/get_attendance_data',
 		method: 'POST',
 		data: {
 			org_id: orgId,
@@ -1446,7 +1446,7 @@ function saveAttendanceData(attendanceData) {
 	}
 
 	$.ajax({
-		url: '/main/save_attendance_data',
+		url: '/qrcheck/save_attendance_data',
 		method: 'POST',
 		data: {
 			attendance_data: JSON.stringify(processedAttendanceData),
@@ -1474,7 +1474,7 @@ function saveAttendanceData(attendanceData) {
 
 function updateAttendanceTypes(orgId) {
 	$.ajax({
-		url: '/main/get_attendance_types',
+		url: '/qrcheck/get_attendance_types',
 		method: 'POST',
 		data: { org_id: orgId },
 		dataType: 'json',
@@ -1611,8 +1611,16 @@ $(document).ready(function() {
 		var lastWeekStartDate = getWeekStartDate(new Date(currentDate.setDate(currentDate.getDate() - 7)));
 		var lastWeekEndDate = getWeekEndDate(new Date(currentDate.setDate(currentDate.getDate())));
 
+		console.log('지난주 데이터 로드 요청:', {
+			memberIdx: memberIdx,
+			orgId: orgId,
+			areaIdx: areaIdx,
+			startDate: lastWeekStartDate,
+			endDate: lastWeekEndDate
+		});
+
 		$.ajax({
-			url: '/main/get_last_week_attendance',
+			url: '/qrcheck/get_last_week_attendance',
 			method: 'POST',
 			data: {
 				member_idx: memberIdx,
@@ -1623,17 +1631,29 @@ $(document).ready(function() {
 			},
 			dataType: 'json',
 			success: function(response) {
+				console.log('서버 응답 데이터:', response);
+
 				if (response.status === 'success') {
 					var attendanceData = response.attendance_data;
 					var attTypes = response.att_types;
-					updateAttendanceSelectbox(attendanceData, attTypes);
-					heyToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', '데이터 로드 완료');
+
+					console.log('출석 데이터:', attendanceData);
+					console.log('출석 타입들:', attTypes);
+
+					// 데이터가 있는지 확인
+					if (attendanceData && Object.keys(attendanceData).length > 0) {
+						updateAttendanceSelectbox(attendanceData, attTypes);
+						heyToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', '데이터 로드 완료');
+					} else {
+						heyToast('지난주 출석 데이터가 없습니다.', '데이터 없음');
+					}
 				} else {
 					var errorMessage = response.message || '지난주 데이터를 가져오는데 실패했습니다.';
 					heyToast(errorMessage, '데이터 로드 실패');
 				}
 			},
 			error: function(xhr, status, error) {
+				console.error('AJAX 에러:', xhr.responseText);
 				var errorMessage = '지난주 데이터 조회 중 오류가 발생했습니다.';
 				if (xhr.responseJSON && xhr.responseJSON.message) {
 					errorMessage = xhr.responseJSON.message;
@@ -1644,15 +1664,26 @@ $(document).ready(function() {
 	}
 
 	function updateAttendanceSelectbox(attendanceData, attTypes) {
+		// 지난주 데이터가 없으면 함수 실행 중단
+		if (!attendanceData || Object.keys(attendanceData).length === 0) {
+			heyToast('지난주 출석 데이터가 없습니다.', '데이터 없음');
+			return;
+		}
+
 		$('.att-type-select').each(function() {
 			var memberIdx = $(this).data('member-idx');
 			var attTypeCategoryIdx = parseInt($(this).data('att-type-category-idx'));
 			var attTypeIdxs = attendanceData[memberIdx] || [];
 
+			// 해당 회원의 지난주 데이터가 없으면 이 selectbox는 건너뛰기
+			if (attTypeIdxs.length === 0) {
+				return; // continue to next selectbox
+			}
+
 			// 현재 selectbox의 att_type_category_idx에 해당하는 att_type_idx 찾기
 			var selectedAttTypeIdx = '';
 			for (var i = 0; i < attTypeIdxs.length; i++) {
-				var attTypeIdx = parseInt(attTypeIdxs[i].trim());
+				var attTypeIdx = parseInt(attTypeIdxs[i]);
 				var attType = attTypes.find(function(type) {
 					return parseInt(type.att_type_idx) === attTypeIdx;
 				});
@@ -1662,7 +1693,11 @@ $(document).ready(function() {
 				}
 			}
 
-			$(this).val(selectedAttTypeIdx);
+			// 값이 있을 때만 선택
+			if (selectedAttTypeIdx) {
+				$(this).val(selectedAttTypeIdx);
+			}
 		});
 	}
+
 });

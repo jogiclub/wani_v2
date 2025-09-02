@@ -324,48 +324,7 @@ class Qrcheck extends My_Controller
 		redirect('login');
 	}
 
-	/**
-	 * 파일 위치: application/controllers/Qrcheck.php - get_same_members() 함수
-	 * 역할: 권한 확인 후 같은 그룹 회원 조회
-	 */
-	public function get_same_members()
-	{
-		if ($this->input->is_ajax_request()) {
-			$member_idx = $this->input->post('member_idx');
-			$org_id = $this->input->post('org_id');
-			$area_idx = $this->input->post('area_idx');
-			$start_date = $this->input->post('start_date');
-			$end_date = $this->input->post('end_date');
 
-			// 권한 확인 - 해당 그룹에 접근할 권한이 있는지 확인
-			$user_id = $this->session->userdata('user_id');
-			$master_yn = $this->session->userdata('master_yn');
-			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
-
-			if ($user_level < 10 && $master_yn !== 'Y') {
-				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
-				if (!in_array($area_idx, $accessible_areas)) {
-					echo json_encode(array('status' => 'error', 'message' => '해당 그룹을 조회할 권한이 없습니다.'));
-					return;
-				}
-			}
-
-			$this->load->model('Member_model');
-			$same_members = $this->Member_model->get_same_members($member_idx, $org_id, $area_idx, $start_date, $end_date);
-
-			// 출석 유형 정보 가져오기
-			$this->load->model('Attendance_model');
-			$att_types = $this->Attendance_model->get_attendance_types($org_id);
-
-			if ($same_members) {
-				$response = array('status' => 'success', 'members' => $same_members, 'att_types' => $att_types);
-			} else {
-				$response = array('status' => 'error');
-			}
-
-			echo json_encode($response);
-		}
-	}
 
 	public function save_attendance_data()
 	{
@@ -419,6 +378,207 @@ class Qrcheck extends My_Controller
 		}
 	}
 
+
+
+	/**
+	 * 파일 위치: application/controllers/Qrcheck.php - save_memo_data() 함수 수정
+	 * 역할: att_idx 연결 및 메모 저장 개선
+	 */
+	public function save_memo_data()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$memo_data_json = $this->input->post('memo_data');
+		$org_id = $this->input->post('org_id');
+
+		if (!$memo_data_json || !$org_id) {
+			echo json_encode(array('status' => 'error', 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 10 && $master_yn !== 'Y') {
+			// 일반 관리자는 관리 가능한 그룹의 회원들만 메모 작성 가능
+			$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+			if (empty($accessible_areas)) {
+				echo json_encode(array('status' => 'error', 'message' => '메모를 작성할 권한이 없습니다.'));
+				return;
+			}
+		}
+
+		$memo_data = json_decode($memo_data_json, true);
+		if (!$memo_data || !is_array($memo_data)) {
+			echo json_encode(array('status' => 'error', 'message' => '메모 데이터가 올바르지 않습니다.'));
+			return;
+		}
+
+		$this->load->model('Memo_model');
+		$this->db->trans_start();
+
+		try {
+			foreach ($memo_data as $memo_item) {
+				if (!isset($memo_item['member_idx']) || !$memo_item['member_idx']) {
+					continue;
+				}
+
+				$member_idx = $memo_item['member_idx'];
+				$memo_content = isset($memo_item['memo_content']) ? trim($memo_item['memo_content']) : '';
+				$memo_date = isset($memo_item['memo_date']) ? $memo_item['memo_date'] : date('Y-m-d');
+
+				// 권한 확인 - 해당 회원이 관리 가능한 그룹에 속하는지 확인
+				if ($user_level < 10 && $master_yn !== 'Y') {
+					$member_area = $this->Member_model->get_member_area($member_idx);
+					if (!$member_area || !in_array($member_area['area_idx'], $accessible_areas)) {
+						continue; // 권한이 없는 회원은 건너뛰기
+					}
+				}
+
+				$att_idx = null;
+
+				// 메모 내용이 있는 경우에만 att_idx 생성/조회
+				if (!empty($memo_content)) {
+					// 해당 날짜의 기존 출석 레코드 확인
+					$this->db->select('att_idx');
+					$this->db->from('wb_member_att');
+					$this->db->where('member_idx', $member_idx);
+					$this->db->where('att_date', $memo_date);
+					$this->db->where('org_id', $org_id);
+					$this->db->order_by('att_idx', 'DESC');
+					$this->db->limit(1);
+					$att_query = $this->db->get();
+					$att_record = $att_query->row_array();
+
+					if ($att_record) {
+						$att_idx = $att_record['att_idx'];
+					} else {
+						// 출석 레코드가 없으면 메모용 더미 레코드 생성
+						$att_data = array(
+							'member_idx' => $member_idx,
+							'att_date' => $memo_date,
+							'att_type_idx' => 0, // 메모 전용 더미 타입
+							'org_id' => $org_id
+						);
+						$this->db->insert('wb_member_att', $att_data);
+						$att_idx = $this->db->insert_id();
+					}
+				}
+
+				// 기존 메모 확인 (해당 날짜의 메모)
+				$existing_memo = $this->Memo_model->get_member_memo_by_date($member_idx, $memo_date);
+
+				if (!empty($memo_content)) {
+					// 메모 내용이 있는 경우
+					if ($existing_memo) {
+						// 기존 메모 수정 (att_idx도 업데이트)
+						$update_data = array(
+							'memo_content' => $memo_content,
+							'att_idx' => $att_idx,
+							'modi_date' => date('Y-m-d H:i:s')
+						);
+						$this->Memo_model->update_memo($existing_memo['idx'], $update_data);
+					} else {
+						// 새 메모 추가
+						$insert_data = array(
+							'memo_type' => 1, // 일반 메모
+							'memo_content' => $memo_content,
+							'regi_date' => $memo_date . ' ' . date('H:i:s'),
+							'user_id' => $user_id,
+							'member_idx' => $member_idx,
+							'att_idx' => $att_idx,
+							'del_yn' => 'N'
+						);
+						$this->Memo_model->save_memo($insert_data);
+					}
+				} else {
+					// 메모 내용이 비어있으면 기존 메모 삭제
+					if ($existing_memo) {
+						$this->Memo_model->delete_memo($existing_memo['idx']);
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				echo json_encode(array('status' => 'error', 'message' => '메모 저장에 실패했습니다.'));
+				return;
+			}
+
+			echo json_encode(array('status' => 'success', 'message' => '메모가 저장되었습니다.'));
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Memo save error: ' . $e->getMessage());
+			echo json_encode(array('status' => 'error', 'message' => '메모 저장 중 오류가 발생했습니다.'));
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Qrcheck.php - get_same_members() 함수 수정
+	 * 역할: 메모 정보도 함께 조회하도록 개선
+	 */
+	public function get_same_members()
+	{
+		if ($this->input->is_ajax_request()) {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+			$area_idx = $this->input->post('area_idx');
+			$start_date = $this->input->post('start_date');
+			$end_date = $this->input->post('end_date');
+
+			// 권한 확인 - 해당 그룹에 접근할 권한이 있는지 확인
+			$user_id = $this->session->userdata('user_id');
+			$master_yn = $this->session->userdata('master_yn');
+			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+			if ($user_level < 10 && $master_yn !== 'Y') {
+				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+				if (!in_array($area_idx, $accessible_areas)) {
+					echo json_encode(array('status' => 'error', 'message' => '해당 그룹을 조회할 권한이 없습니다.'));
+					return;
+				}
+			}
+
+			$this->load->model('Member_model');
+			$this->load->model('Memo_model');
+
+			// 해당 그룹의 회원들과 출석 정보 조회
+			$same_members = $this->Member_model->get_same_members($member_idx, $org_id, $area_idx, $start_date, $end_date);
+
+			// 각 회원에 대해 메모 정보도 추가
+			if ($same_members) {
+				foreach ($same_members as &$member) {
+					// 해당 기간 내 메모 조회 (가장 최근 메모)
+					$memo_info = $this->Memo_model->get_member_memo_by_date_range($member['member_idx'], $start_date, $end_date);
+					$member['memo_content'] = $memo_info ? $memo_info['memo_content'] : '';
+					$member['att_idx'] = $memo_info ? $memo_info['att_idx'] : null;
+				}
+			}
+
+			// 출석 유형 정보 가져오기
+			$this->load->model('Attendance_model');
+			$att_types = $this->Attendance_model->get_attendance_types($org_id);
+
+			if ($same_members) {
+				$response = array('status' => 'success', 'members' => $same_members, 'att_types' => $att_types);
+			} else {
+				$response = array('status' => 'error');
+			}
+
+			echo json_encode($response);
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Qrcheck.php - get_last_week_attendance() 함수 완전 수정
+	 * 역할: 지난 주 출석 정보를 올바르게 조회하여 반환
+	 */
 	public function get_last_week_attendance()
 	{
 		if ($this->input->is_ajax_request()) {
@@ -440,8 +600,38 @@ class Qrcheck extends My_Controller
 				}
 			}
 
+			// 해당 그룹의 회원들과 지난 주 출석 정보를 한 번에 조회
+			$this->db->select('
+			m.member_idx, 
+			m.member_name,
+			GROUP_CONCAT(DISTINCT ma.att_type_idx ORDER BY ma.att_type_idx SEPARATOR ",") as att_type_indices
+		');
+			$this->db->from('wb_member m');
+			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date >= "' . $start_date . '" AND ma.att_date <= "' . $end_date . '" AND ma.att_type_idx > 0', 'left');
+			$this->db->where('m.org_id', $org_id);
+			$this->db->where('m.area_idx', $area_idx);
+			$this->db->where('m.del_yn', 'N');
+			$this->db->group_by('m.member_idx');
+			$this->db->order_by('m.member_name', 'ASC');
+
+			$query = $this->db->get();
+			$members_with_attendance = $query->result_array();
+
+			$attendance_data = array();
+
+			foreach ($members_with_attendance as $member) {
+				$member_idx = $member['member_idx'];
+				$att_type_indices = $member['att_type_indices'];
+
+				if (!empty($att_type_indices)) {
+					// 문자열을 배열로 변환
+					$att_indices_array = explode(',', $att_type_indices);
+					$attendance_data[$member_idx] = $att_indices_array;
+				}
+			}
+
+			// 출석 타입 정보 가져오기
 			$this->load->model('Attendance_model');
-			$attendance_data = $this->Attendance_model->get_org_member_attendance($org_id, $area_idx, $start_date, $end_date);
 			$att_types = $this->Attendance_model->get_attendance_types($org_id);
 
 			$response = array(
@@ -453,6 +643,5 @@ class Qrcheck extends My_Controller
 			echo json_encode($response);
 		}
 	}
-
 
 }
