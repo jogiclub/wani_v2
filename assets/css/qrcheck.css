@@ -3,23 +3,22 @@
 
 /* 소그룹 헤더 스타일 */
 .area-header {
-	margin-bottom: 15px !important;
+	margin-bottom: 5px !important;
 	padding: 0 !important;
 	height: 50px;
 }
 
 .area-header .area-title {
-	background: #fff;
-	padding: 12px 20px;
+	padding: 8px 5px;
 	font-size: 16px;
 	font-weight: 600;
-	color: #495057;
 	text-align: left;
 	margin: 10px 0;
 	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+
 }
 
 

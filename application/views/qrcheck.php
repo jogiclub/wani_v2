@@ -73,7 +73,7 @@
 	</div>
 </div>
 <main>
-	<div class="container-xl">
+	<div class="container-fluid">
 		<div class="row">
 			<div class="member-list">
 				<div class="grid">
@@ -159,7 +159,7 @@
 	<div class="offcanvas-footer">
 		<div class="input-group">
 			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 33.33%">취소</button>
-			<button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난 주 정보 불러오기</button>
+			<button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난 주 정보</button>
 			<button type="button" class="btn btn-primary" id="saveAttendanceBtn" style="width: 33.33%">저장</button>
 		</div>
 	</div>

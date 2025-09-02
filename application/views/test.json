@@ -1,51 +1,72 @@
 [
 	{
-		"member_idx": "2708",
-		"att_date": "2025-01-05",
-		"attendance_types": [
-			{
-				"att_type_idx": 1,
-				"att_value": 1,
-				"input_type": "check"
-			},
-			{
-				"att_type_idx": 467,
-				"att_value": 6,
-				"input_type": "text"
-			}
-		]
+		"member_idx": "1010",
+		"att_type_idx": "40",
+		"att_date": "2025.09.02"
 	},
 	{
-		"member_idx": "2709",
-		"att_date": "2025-01-05",
-		"attendance_types": [
-			{
-				"att_type_idx": 1,
-				"att_value": 1,
-				"input_type": "check"
-			}
-		]
+		"member_idx": "1010",
+		"att_type_idx": "55",
+		"att_date": "2025.09.02"
 	},
 	{
-		"member_idx": "2711",
-		"att_date": "2025-01-05",
-		"attendance_types": [
-			{
-				"att_type_idx": 1,
-				"att_value": 1,
-				"input_type": "check"
-			}
-		]
+		"member_idx": "1010",
+		"att_type_idx": "444",
+		"att_date": "2025.09.02"
 	},
 	{
-		"member_idx": "2710",
-		"att_date": "2025-01-05",
-		"attendance_types": [
-			{
-				"att_type_idx": 1,
-				"att_value": 1,
-				"input_type": "check"
-			}
-		]
+		"member_idx": "1015",
+		"att_type_idx": "40",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1015",
+		"att_type_idx": "55",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1015",
+		"att_type_idx": "444",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1015",
+		"att_type_idx": "446",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1017",
+		"att_type_idx": "40",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1017",
+		"att_type_idx": "55",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1017",
+		"att_type_idx": "444",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1017",
+		"att_type_idx": "446",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1018",
+		"att_type_idx": "40",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1018",
+		"att_type_idx": "55",
+		"att_date": "2025.09.02"
+	},
+	{
+		"member_idx": "1018",
+		"att_type_idx": "444",
+		"att_date": "2025.09.02"
 	}
 ]
