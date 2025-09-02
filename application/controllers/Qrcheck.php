@@ -183,7 +183,6 @@ class Qrcheck extends My_Controller
 	}
 
 	/**
-	 * 파일 위치: application/controllers/Qrcheck.php - get_members() 함수
 	 * 역할: 사용자 권한에 따라 관리 가능한 그룹의 회원만 조회
 	 */
 	public function get_members()
@@ -206,6 +205,8 @@ class Qrcheck extends My_Controller
 			} else {
 				// 일반 관리자인 경우 관리 가능한 그룹의 회원만 조회
 				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
+
+
 
 				if (!empty($accessible_areas)) {
 					$members = $this->Member_model->get_org_members_by_areas($org_id, $accessible_areas, $level, $start_date, $end_date);

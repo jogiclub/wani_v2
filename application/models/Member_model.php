@@ -300,43 +300,23 @@ class Member_model extends CI_Model
 	/**
 	 * 역할: 특정 그룹들의 회원만 조회 (관리 권한에 따른 필터링용)
 	 */
+	/**
+	 * 역할: 특정 그룹들의 회원만 조회 (관리 권한에 따른 필터링용)
+	 */
 	public function get_org_members_by_areas($org_id, $area_indices, $level = null, $start_date = null, $end_date = null)
 	{
 		if (empty($area_indices)) {
 			return array();
 		}
 
-		$this->db->select('
-        m.member_idx, 
-        m.member_name, 
-        m.member_nick, 
-        m.member_birth,
-        m.photo,
-        m.new_yn,
-        m.leader_yn,
-        m.area_idx,
-        ma.area_name,
-        ma.area_order,
-        IFNULL(att_data.att_type_data, \'\') as att_type_data
-    ');
-
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
-		$this->db->join('wb_member_area ma', 'm.area_idx = ma.area_idx', 'left');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
-		// 출석 데이터 서브쿼리
 		if ($start_date && $end_date) {
-			$this->db->join("(
-            SELECT 
-                a.member_idx,
-                GROUP_CONCAT(CONCAT(at.att_type_nickname, ',', at.att_type_idx, ',', at.att_type_category_idx, ',', at.att_type_color) ORDER BY at.att_type_order, at.att_type_idx SEPARATOR '|') AS att_type_data
-            FROM wb_member_att a
-            LEFT JOIN wb_att_type at ON a.att_type_idx = at.att_type_idx
-            WHERE a.att_date >= '{$start_date}' 
-            AND a.att_date <= '{$end_date}'
-            GROUP BY a.member_idx
-        ) att_data", 'm.member_idx = att_data.member_idx', 'left');
-		} else {
-			$this->db->select('NULL as att_type_data', false);
+			$this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ", ", at.att_type_idx, ", ", at.att_type_category_idx, ", ", at.att_type_color) SEPARATOR "|") AS att_type_data', false);
+			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date >= "' . $start_date . '" AND ma.att_date <= "' . $end_date . '"', 'left');
+			$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
 		}
 
 		$this->db->where('m.org_id', $org_id);
@@ -347,14 +327,14 @@ class Member_model extends CI_Model
 			$this->db->where('m.grade >=', $level);
 		}
 
-		$this->db->order_by('ma.area_order', 'ASC');
-		$this->db->order_by('m.leader_yn', 'DESC');
-		$this->db->order_by('m.member_idx', 'ASC');
+		$this->db->group_by('m.member_idx');
+		$this->db->order_by('a.area_order', 'ASC');
+		$this->db->order_by('m.leader_yn', 'ASC');
+		$this->db->order_by('m.member_name', 'ASC');
 
 		$query = $this->db->get();
 		return $query->result_array();
 	}
-
 	/**
 	 * 역할: 특정 area_idx 목록으로 그룹 정보 조회 (권한 필터링용)
 	 */
