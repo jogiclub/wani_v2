@@ -356,35 +356,6 @@ class Member_model extends CI_Model
 	}
 
 	/**
-	 * 파일 위치: application/models/Member_model.php - get_member_area() 메서드 추가
-	 * 역할: 회원의 소속 그룹 정보 조회
-	 */
-	public function get_member_area($member_idx)
-	{
-		$this->db->select('area_idx, area_name');
-		$this->db->from('wb_member m');
-		$this->db->join('wb_member_area ma', 'm.area_idx = ma.area_idx', 'left');
-		$this->db->where('m.member_idx', $member_idx);
-		$this->db->where('m.del_yn', 'N');
-
-		$query = $this->db->get();
-		return $query->row_array();
-	}
-
-	public function get_members_by_area($org_id, $area_idx)
-	{
-		$this->db->select('m.member_idx, m.member_name, m.member_nick, m.area_idx');
-		$this->db->from('wb_member m');
-		$this->db->where('m.org_id', $org_id);
-		$this->db->where('m.area_idx', $area_idx);
-		$this->db->where('m.del_yn', 'N');
-		$this->db->order_by('m.member_name', 'ASC');
-
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
-	/**
 	 * 역할: 특정 area_idx 목록으로 그룹 정보 조회 (권한 필터링용)
 	 */
 	public function get_member_areas_by_idx($org_id, $area_indices)

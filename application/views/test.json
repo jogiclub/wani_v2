@@ -1,72 +1,128 @@
 [
 	{
-		"member_idx": "1010",
+		"member_idx": 1005,
+		"att_type_idx": null,
+		"att_date": "2025.09.02",
+		"has_data": false
+	},
+	{
+		"member_idx": 1006,
+		"att_type_idx": null,
+		"att_date": "2025.09.02",
+		"has_data": false
+	},
+	{
+		"member_idx": 1008,
+		"att_type_idx": null,
+		"att_date": "2025.09.02",
+		"has_data": false
+	},
+	{
+		"member_idx": 1009,
+		"att_type_idx": null,
+		"att_date": "2025.09.02",
+		"has_data": false
+	},
+	{
+		"member_idx": 1010,
 		"att_type_idx": "40",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1010",
+		"member_idx": 1010,
 		"att_type_idx": "55",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1010",
+		"member_idx": 1010,
 		"att_type_idx": "444",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1015",
+		"member_idx": 1011,
+		"att_type_idx": null,
+		"att_date": "2025.09.02",
+		"has_data": false
+	},
+	{
+		"member_idx": 1012,
+		"att_type_idx": null,
+		"att_date": "2025.09.02",
+		"has_data": false
+	},
+	{
+		"member_idx": 1014,
+		"att_type_idx": null,
+		"att_date": "2025.09.02",
+		"has_data": false
+	},
+	{
+		"member_idx": 1015,
 		"att_type_idx": "40",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1015",
+		"member_idx": 1015,
 		"att_type_idx": "55",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1015",
+		"member_idx": 1015,
 		"att_type_idx": "444",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1015",
+		"member_idx": 1015,
 		"att_type_idx": "446",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1017",
+		"member_idx": 1017,
 		"att_type_idx": "40",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1017",
-		"att_type_idx": "55",
-		"att_date": "2025.09.02"
+		"member_idx": 1017,
+		"att_type_idx": "49",
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1017",
+		"member_idx": 1017,
 		"att_type_idx": "444",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1017",
+		"member_idx": 1017,
 		"att_type_idx": "446",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1018",
+		"member_idx": 1018,
 		"att_type_idx": "40",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1018",
-		"att_type_idx": "55",
-		"att_date": "2025.09.02"
+		"member_idx": 1018,
+		"att_type_idx": "51",
+		"att_date": "2025.09.02",
+		"has_data": true
 	},
 	{
-		"member_idx": "1018",
+		"member_idx": 1018,
 		"att_type_idx": "444",
-		"att_date": "2025.09.02"
+		"att_date": "2025.09.02",
+		"has_data": true
 	}
 ]

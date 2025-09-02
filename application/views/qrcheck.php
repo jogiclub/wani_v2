@@ -1,7 +1,7 @@
 
-	<?php $this->load->view('header'); ?>
-	<!-- Member CSS -->
-	<link rel="stylesheet" href="/assets/css/qrcheck.css?<?php echo date('Ymdhis'); ?>">
+<?php $this->load->view('header'); ?>
+<!-- Member CSS -->
+<link rel="stylesheet" href="/assets/css/qrcheck.css?<?php echo date('Ymdhis'); ?>">
 
 <div class="pt-3 pb-2 ">
 	<div class="container-fluid">
@@ -73,7 +73,7 @@
 	</div>
 </div>
 <main>
-	<div class="container-fluid">
+	<div class="container-xl">
 		<div class="row">
 			<div class="member-list">
 				<div class="grid">
@@ -159,7 +159,7 @@
 	<div class="offcanvas-footer">
 		<div class="input-group">
 			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 33.33%">취소</button>
-			<button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난 주 정보</button>
+			<button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난 주 정보 불러오기</button>
 			<button type="button" class="btn btn-primary" id="saveAttendanceBtn" style="width: 33.33%">저장</button>
 		</div>
 	</div>
@@ -185,8 +185,8 @@
 <?php $this->load->view('footer'); ?>
 
 <script src="/assets/js/qrcheck.js?<?php echo date('Ymdhis');?>"></script>
-	<script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
-	<script>
+<script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+<script>
 	// 페이지 최초 로드 시 그룹 정보 확인
 	var postOrgId = '<?php echo isset($postOrg['org_id']) ? $postOrg['org_id'] : ''; ?>';
 	var postOrgName = '<?php echo isset($postOrg['org_name']) ? $postOrg['org_name'] : ''; ?>';
@@ -226,7 +226,7 @@
 
 	// 출석 타입 정보 로드
 	$.ajax({
-		url: '/qrcheck/get_attendance_types',
+		url: '/main/get_attendance_types',
 		method: 'POST',
 		data: { org_id: activeOrgId, level: userLevel },
 		dataType: 'json',
