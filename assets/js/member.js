@@ -2318,49 +2318,6 @@ $(document).ready(function () {
 		return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
 	}
 
-	/**
-	 * Toast 메시지 표시
-	 */
-	function showToast(message, type = 'info') {
-		const toast = $('#memberToast');
-		const toastBody = toast.find('.toast-body');
-
-		// 타입별 아이콘 설정
-		let icon = '';
-		let bgClass = '';
-
-		switch(type) {
-			case 'success':
-				icon = '<i class="bi bi-check-circle-fill text-success me-2"></i>';
-				bgClass = 'bg-success-subtle';
-				break;
-			case 'error':
-				icon = '<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>';
-				bgClass = 'bg-danger-subtle';
-				break;
-			case 'warning':
-				icon = '<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>';
-				bgClass = 'bg-warning-subtle';
-				break;
-			case 'info':
-			default:
-				icon = '<i class="bi bi-info-circle-fill text-info me-2"></i>';
-				bgClass = 'bg-info-subtle';
-				break;
-		}
-
-		// Toast 내용 설정
-		toastBody.removeClass('bg-success-subtle bg-danger-subtle bg-warning-subtle bg-info-subtle')
-			.addClass(bgClass)
-			.html(icon + message);
-
-		// Toast 표시
-		const bsToast = new bootstrap.Toast(toast[0], {
-			autohide: true,
-			delay: 3000
-		});
-		bsToast.show();
-	}
 
 	// ===== 회원 저장 버튼 클릭 이벤트 수정 =====
 

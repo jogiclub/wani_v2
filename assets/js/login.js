@@ -122,37 +122,3 @@ $(document).ready(function() {
 	});
 });
 
-/**
- * Toast 메시지 표시 함수
- */
-function showToast(message, type = 'info') {
-	// 기존 toast가 있다면 제거
-	$('.toast').remove();
-
-	const toastType = type === 'success' ? 'text-bg-success' :
-		type === 'error' ? 'text-bg-danger' : 'text-bg-primary';
-
-	const toastHtml = `
-        <div class="toast align-items-center ${toastType} border-0 position-fixed" 
-             style="top: 20px; right: 20px; z-index: 9999;" 
-             role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="d-flex">
-                <div class="toast-body text-white">
-                    ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" 
-                        data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>
-    `;
-
-	$('body').append(toastHtml);
-
-	const toastElement = $('.toast').last()[0];
-	const bsToast = new bootstrap.Toast(toastElement, {
-		autohide: true,
-		delay: 3000
-	});
-
-	bsToast.show();
-}

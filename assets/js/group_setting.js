@@ -665,33 +665,3 @@ function hideTreeSpinner() {
 	$('#treeSpinner').removeClass('d-flex').addClass('d-none');
 }
 
-/**
- * Toast 메시지 표시
- */
-function showToast(message, type = 'info') {
-	const toastId = 'toast_' + Date.now();
-	const iconClass = {
-		'success': 'bi-check-circle-fill text-success',
-		'error': 'bi-x-circle-fill text-danger',
-		'warning': 'bi-exclamation-triangle-fill text-warning',
-		'info': 'bi-info-circle-fill text-info'
-	}[type] || 'bi-info-circle-fill text-info';
-
-	const toastHtml = `
-		<div class="toast align-items-center border-0" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
-			<div class="d-flex">
-				<div class="toast-body">
-					<i class="${iconClass} me-2"></i>${message}
-				</div>
-				<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-			</div>
-		</div>
-	`;
-
-	$('#toastContainer').append(toastHtml);
-	$(`#${toastId}`).toast('show');
-
-	$(`#${toastId}`).on('hidden.bs.toast', function() {
-		$(this).remove();
-	});
-}

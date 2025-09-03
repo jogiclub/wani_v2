@@ -161,18 +161,7 @@
 	</div>
 </div>
 
-<!-- 내용전달용 토스트 -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-	<div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-		<div class="toast-header">
-			<i class="bi bi-chat-heart-fill"></i>
-			<strong class="me-auto"> 출석체크 완료!</strong>
-			<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-		</div>
-		<div class="toast-body">
-		</div>
-	</div>
-</div>
+
 
 <audio id="sound-ok" src="/assets/sound/sound_ok.mp3"></audio>
 <audio id="sound-no" src="/assets/sound/sound_no.mp3"></audio>

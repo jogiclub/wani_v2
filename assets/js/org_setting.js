@@ -305,10 +305,5 @@ $(document).ready(function() {
 		document.body.removeChild(textArea);
 	}
 
-	// Toast 메시지 표시
-	function showToast(message) {
-		$('#orgToast .toast-body').text(message);
-		const toast = new bootstrap.Toast($('#orgToast'));
-		toast.show();
-	}
+
 });

@@ -1036,55 +1036,6 @@ function escapeHtml(text) {
 	return div.innerHTML;
 }
 
-/**
- * Toast 메시지 표시 (타입별 색상)
- */
-function showToast(message, type = 'info') {
-	let toastContainer = $('.toast-container');
-	if (toastContainer.length === 0) {
-		$('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
-		toastContainer = $('.toast-container');
-	}
-
-	let headerClass = 'bg-primary text-white';
-	let icon = 'bi-info-circle';
-
-	switch(type) {
-		case 'success':
-			headerClass = 'bg-success text-white';
-			icon = 'bi-check-circle';
-			break;
-		case 'warning':
-			headerClass = 'bg-warning text-dark';
-			icon = 'bi-exclamation-triangle';
-			break;
-		case 'error':
-			headerClass = 'bg-danger text-white';
-			icon = 'bi-x-circle';
-			break;
-	}
-
-	const toast = $('<div class="toast" role="alert" aria-live="assertive" aria-atomic="true">' +
-		'<div class="toast-header ' + headerClass + '">' +
-		'<i class="bi ' + icon + ' me-2"></i>' +
-		'<strong class="me-auto">알림</strong>' +
-		'<button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>' +
-		'</div>' +
-		'<div class="toast-body">' + message + '</div>' +
-		'</div>');
-
-	toastContainer.append(toast);
-
-	const bsToast = new bootstrap.Toast(toast[0], {
-		autohide: true,
-		delay: 5000
-	});
-	bsToast.show();
-
-	toast.on('hidden.bs.toast', function() {
-		$(this).remove();
-	});
-}
 
 // ========================= 이벤트 핸들러 추가 =========================
 

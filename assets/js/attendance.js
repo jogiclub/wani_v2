@@ -1402,40 +1402,7 @@ $(document).ready(function () {
 		row.find('.week-total').text(weekTotal);
 	}
 
-	/**
-	 * 역할: Toast 메시지 표시 함수
-	 */
-	function showToast(message, type = 'info') {
-		const toast = $('#attendanceToast');
-		const toastBody = toast.find('.toast-body');
 
-		// Toast 메시지 설정
-		toastBody.text(message);
-
-		// 타입별 스타일 적용
-		toast.removeClass('bg-success bg-danger bg-warning bg-info');
-		switch(type) {
-			case 'success':
-				toast.addClass('bg-success text-white');
-				break;
-			case 'error':
-				toast.addClass('bg-danger text-white');
-				break;
-			case 'warning':
-				toast.addClass('bg-warning text-dark');
-				break;
-			default:
-				toast.addClass('bg-info text-white');
-				break;
-		}
-
-		// Toast 표시
-		const toastInstance = new bootstrap.Toast(toast[0], {
-			autohide: true,
-			delay: 3000
-		});
-		toastInstance.show();
-	}
 
 	// ===== 스피너 관련 함수들 =====
 
