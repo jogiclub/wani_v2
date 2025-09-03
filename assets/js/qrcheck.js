@@ -214,7 +214,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 				$('#attendanceOffcanvas').offcanvas('show');
 			} else {
 				var errorMessage = response.message || '회원 정보를 가져오는데 실패했습니다.';
-				heyToast(errorMessage, '조회 실패');
+				showToast(errorMessage, 'error');
 			}
 		},
 		error: function(xhr, status, error) {
@@ -222,7 +222,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 			if (xhr.responseJSON && xhr.responseJSON.message) {
 				errorMessage = xhr.responseJSON.message;
 			}
-			heyToast(errorMessage, '오류 발생');
+			showToast(errorMessage, 'error');
 		}
 	});
 
@@ -262,12 +262,12 @@ $('#saveNewMember').click(function() {
 
 	// 입력값 검증
 	if (!member_name.trim()) {
-		heyToast('회원 이름을 입력해주세요.', '입력 필요');
+		showToast('회원 이름을 입력해주세요.', 'warning');
 		return;
 	}
 
 	if (!area_idx) {
-		heyToast('소그룹을 선택해주세요.', '선택 필요');
+		showToast('소그룹을 선택해주세요.', 'warning');
 		return;
 	}
 
@@ -294,9 +294,9 @@ $('#saveNewMember').click(function() {
 
 				// 회원 목록 업데이트
 				loadMembers(activeOrgId, userLevel, startDate, endDate);
-				heyToast('새 회원이 추가되었습니다.', '회원 추가 완료');
+				showToast('새 회원이 추가되었습니다.', '회원 추가 완료');
 			} else {
-				heyToast(response.message || '회원 추가에 실패했습니다.', '추가 실패');
+				showToast(response.message || '회원 추가에 실패했습니다.', 'error');
 			}
 		},
 		error: function(xhr, status, error) {
@@ -304,7 +304,7 @@ $('#saveNewMember').click(function() {
 			if (xhr.responseJSON && xhr.responseJSON.message) {
 				errorMessage = xhr.responseJSON.message;
 			}
-			heyToast(errorMessage, '오류 발생');
+			showToast(errorMessage, 'error');
 		}
 	});
 });
@@ -633,7 +633,7 @@ $(document).on('click', '.btn-area-attendance-memo', function() {
 	var areaName = $(this).data('area-name');
 
 	if (!areaIdx) {
-		heyToast('소그룹 정보를 찾을 수 없습니다.', '정보 없음');
+		showToast('소그룹 정보를 찾을 수 없습니다.', 'error');
 		return;
 	}
 
@@ -744,7 +744,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 				$('#attendanceOffcanvas').offcanvas('show');
 			} else {
 				var errorMessage = response.message || '회원 정보를 가져오는데 실패했습니다.';
-				heyToast(errorMessage, '조회 실패');
+				showToast(errorMessage, 'error');
 			}
 		},
 		error: function(xhr, status, error) {
@@ -752,7 +752,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 			if (xhr.responseJSON && xhr.responseJSON.message) {
 				errorMessage = xhr.responseJSON.message;
 			}
-			heyToast(errorMessage, '오류 발생');
+			showToast(errorMessage, 'error');
 		}
 	});
 }
@@ -871,13 +871,13 @@ function saveAttendanceAndMemo() {
 				saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText);
 			} else {
 				$saveBtn.prop('disabled', false).text(originalText);
-				heyToast('출석 정보 저장에 실패했습니다.', '저장 실패');
+				showToast('출석 정보 저장에 실패했습니다.', 'error');
 			}
 		},
 		error: function(xhr, status, error) {
 			console.error('출석 저장 오류:', xhr.responseText);
 			$saveBtn.prop('disabled', false).text(originalText);
-			heyToast('출석 정보 저장 중 오류가 발생했습니다.', '저장 오류');
+			showToast('출석 정보 저장 중 오류가 발생했습니다.', 'error');
 		}
 	});
 }
@@ -897,7 +897,7 @@ function getSundayOfWeek(date) {
 function saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText) {
 	if (memoData.length === 0) {
 		$saveBtn.prop('disabled', false).text(originalText);
-		heyToast('저장할 데이터가 없습니다.', '저장 완료');
+		showToast('저장할 데이터가 없습니다.', 'success');
 		return;
 	}
 
@@ -916,14 +916,14 @@ function saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, origi
 				$('#attendanceOffcanvas').offcanvas('hide');
 				updateAttStamps(activeOrgId, startDate, endDate);
 				var areaName = $('#attendanceOffcanvasLabel').text().split(' ')[0];
-				heyToast(areaName + ' 목장의 출석을 성공적으로 저장했습니다.', '저장 완료');
+				showToast(areaName + ' 목장의 출석을 성공적으로 저장했습니다.', 'success');
 			} else {
-				heyToast(response.message || '메모 저장에 실패했습니다.', '저장 실패');
+				showToast(response.message || '메모 저장에 실패했습니다.', 'error');
 			}
 		},
 		error: function(xhr, status, error) {
 			console.error('메모 저장 오류:', xhr.responseText);
-			heyToast('메모 저장 중 오류가 발생했습니다.', '저장 오류');
+			showToast('메모 저장 중 오류가 발생했습니다.', 'error');
 		},
 		complete: function() {
 			$saveBtn.prop('disabled', false).text(originalText);
@@ -1083,11 +1083,11 @@ function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
 			console.error('회원 로드 실패:', error);
 			if (xhr.status === 403 || (xhr.responseJSON && xhr.responseJSON.message)) {
 				var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : '권한이 없습니다.';
-				heyToast(errorMessage, '접근 제한');
+				showToast(errorMessage, 'warning');
 				// 회원 목록을 비우고 권한 없음 메시지 표시
 				displayMembers([]);
 			} else {
-				heyToast('회원 목록을 불러오는 중 오류가 발생했습니다.', '로드 오류');
+				showToast('회원 목록을 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		}
 	});
@@ -1186,7 +1186,7 @@ function addAttStamp() {
 			var existingAttStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]');
 			if (existingAttStamp.length > 0) {
 				playNoSound();
-				heyToast('이미 출석체크 하였습니다.', '중복출석체크');
+				showToast('이미 출석체크 하였습니다.', 'warning');
 				$('#input-search').val('').focus();
 				return;
 			}
@@ -1204,7 +1204,7 @@ function addAttStamp() {
 			saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx);
 
 			// 토스트 띄우기
-			showToast(memberIdx);
+			attComplete(memberIdx);
 
 			// 생일 여부 확인 후 사운드 재생
 			var isBirthday = memberCard.hasClass('birth');
@@ -1216,7 +1216,7 @@ function addAttStamp() {
 
 		} else {
 			playNoSound()
-			heyToast('등록된 회원이 아닙니다.', '등록회원 없음');
+			showToast('등록된 회원이 아닙니다.', 'error');
 		}
 	}
 	$('#input-search').val('').focus();
@@ -1237,21 +1237,7 @@ function playBirthSound() {
 	audio.play();
 }
 
-function showToast(memberIdx) {
-	$.ajax({
-		url: '/qrcheck/get_member_info',
-		method: 'POST',
-		data: { member_idx: memberIdx },
-		dataType: 'json',
-		success: function(response) {
-			var memberName = response.member_name;
-			var memberNick = response.member_nick;
-			$('.toast-header strong').text(memberName + '님 출석완료!');
-			$('.toast-body').text(memberNick);
-			$('#liveToast').toast('show');
-		}
-	});
-}
+
 
 function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue) {
 	var activeOrgId = getCookie('activeOrg');
@@ -1460,14 +1446,14 @@ function saveAttendanceData(attendanceData) {
 				$('#attendanceOffcanvas').offcanvas('hide');
 				updateAttStamps(activeOrgId, startDate, endDate);
 				var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0];
-				heyToast(memberName + ' 목장의 출석체크를 완료하였습니다.', '출석체크 완료');
+				showToast(memberName + ' 목장의 출석체크를 완료하였습니다.', 'success');
 			} else {
-				heyToast('출석 정보 저장에 실패했습니다.', '저장 실패');
+				showToast('출석 정보 저장에 실패했습니다.', 'error');
 			}
 		},
 		error: function(xhr, status, error) {
 			console.log(xhr.responseText);
-			heyToast('출석 정보 저장 중 오류가 발생했습니다.', '저장 오류');
+			showToast('출석 정보 저장 중 오류가 발생했습니다.', 'error');
 		}
 	});
 }
@@ -1517,33 +1503,24 @@ function deleteCookie(name) {
 	document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;';
 }
 
-// heyToast 함수 정의
-function heyToast(message, title) {
-	if (typeof bootstrap !== 'undefined') {
-		// Bootstrap 5의 Toast 생성
-		var toastEl = document.createElement('div');
-		toastEl.className = 'toast position-fixed top-0 end-0 m-3';
-		toastEl.innerHTML = `
-            <div class="toast-header">
-                <strong class="me-auto">${title || '알림'}</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-            </div>
-            <div class="toast-body">${message}</div>
-        `;
 
-		document.body.appendChild(toastEl);
-		var toast = new bootstrap.Toast(toastEl);
-		toast.show();
-
-		// Toast가 숨겨진 후 DOM에서 제거
-		toastEl.addEventListener('hidden.bs.toast', function () {
-			document.body.removeChild(toastEl);
-		});
-	} else {
-		// Bootstrap이 없는 경우 일반 alert 사용
-		alert(message);
-	}
+function attComplete(memberIdx) {
+	$.ajax({
+		url: '/qrcheck/get_member_info',
+		method: 'POST',
+		data: { member_idx: memberIdx },
+		dataType: 'json',
+		success: function(response) {
+			var memberName = response.member_name;
+			var memberNick = response.member_nick;
+			var messege = $('.toast-header strong').text(memberName + '님 출석완료!');
+			$('.toast-body').text(memberNick);
+			$('#liveToast').toast('show');
+			showToast(messege, 'success')
+		}
+	});
 }
+
 
 var attendanceTypes = [];
 
@@ -1627,10 +1604,10 @@ $(document).ready(function() {
 					var attendanceData = response.attendance_data;
 					var attTypes = response.att_types;
 					updateAttendanceSelectbox(attendanceData, attTypes);
-					heyToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', '데이터 로드 완료');
+					showToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', 'success');
 				} else {
 					var errorMessage = response.message || '지난주 데이터를 가져오는데 실패했습니다.';
-					heyToast(errorMessage, '데이터 로드 실패');
+					showToast(errorMessage, 'error');
 				}
 			},
 			error: function(xhr, status, error) {
@@ -1638,7 +1615,7 @@ $(document).ready(function() {
 				if (xhr.responseJSON && xhr.responseJSON.message) {
 					errorMessage = xhr.responseJSON.message;
 				}
-				heyToast(errorMessage, '오류 발생');
+				showToast(errorMessage, 'error');
 			}
 		});
 	}
