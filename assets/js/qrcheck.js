@@ -1512,11 +1512,14 @@ function attComplete(memberIdx) {
 		dataType: 'json',
 		success: function(response) {
 			var memberName = response.member_name;
-			var memberNick = response.member_nick;
-			var messege = $('.toast-header strong').text(memberName + '님 출석완료!');
-			$('.toast-body').text(memberNick);
-			$('#liveToast').toast('show');
-			showToast(messege, 'success')
+			var memberNick = response.member_nick || (memberName + '님 환영합니다!');
+
+			// 메시지를 문자열로 직접 생성
+			var message = memberName + '님 출석완료';
+
+
+			// showToast 호출 (message가 첫 번째 매개변수, memberNick이 헤더)
+			showToast(memberNick, 'success', message);
 		}
 	});
 }

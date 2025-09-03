@@ -63,9 +63,11 @@ ul, dl{}
 .grid-item--width100{width: 100% !important; height: 0; padding: 0}
 .no-member{width: 100%; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 20px 0; text-align: center}
 
-.toast-header i{color:#CB3227; margin-right: 5px}
-.toast-header{font-size: 20px}
-.toast-body{font-size: 20px}
+.toast-header i{}
+.toast-header{}
+.toast-header strong{font-size: 28px}
+.toast-header .btn-close{font-size: 28px}
+.toast-body{font-size: 28px}
 
 
 .grid-sizer,.grid-item{width: 10%}

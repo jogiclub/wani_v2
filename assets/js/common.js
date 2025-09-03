@@ -7,62 +7,28 @@ function go_url(url) {
 function open_url(url) {
 	window.open(url, "_blank");
 }
-//
-// function heyToast(message, header = '알림') {
-// 	// liveToast가 있으면 사용
-// 	if ($('#liveToast').length > 0) {
-// 		$('#liveToast .toast-header strong').text(header);
-// 		$('#liveToast .toast-body').text(message);
-// 		const toast = new bootstrap.Toast($('#liveToast')[0], {
-// 			autohide: true,
-// 			delay: 3000
-// 		});
-// 		toast.show();
-// 		return;
-// 	}
-//
-// 	// liveToast가 없으면 동적 생성
-// 	createAndShowToast(message, header);
-// }
-//
-//
-// function createAndShowToast(message, header = '알림') {
-// 	// Toast 컨테이너가 없으면 생성
-// 	if ($('.toast-container').length === 0) {
-// 		$('body').append('<div class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
-// 	}
-//
-// 	// Toast 요소 생성
-// 	const toastHtml = `
-// 		<div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-// 			<div class="toast-header">
-// 				<strong class="me-auto">${header}</strong>
-// 				<button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-// 			</div>
-// 			<div class="toast-body">${message}</div>
-// 		</div>
-// 	`;
-//
-// 	const $toast = $(toastHtml);
-// 	$('.toast-container').append($toast);
-//
-// 	// Toast 표시
-// 	const toast = new bootstrap.Toast($toast[0], {
-// 		autohide: true,
-// 		delay: 3000
-// 	});
-// 	toast.show();
-//
-// 	// Toast가 숨겨진 후 DOM에서 제거
-// 	$toast.on('hidden.bs.toast', function() {
-// 		$(this).remove();
-// 	});
-// }
 
-/**
- * Toast 메시지 표시
- */
-function showToast(message, type = 'info') {
+function showToast(message, type = 'info', header = null) {
+	// 타입별 기본 헤더 설정
+	let defaultHeader = '알림';
+	switch(type) {
+		case 'success':
+			defaultHeader = '성공';
+			break;
+		case 'error':
+			defaultHeader = '오류';
+			break;
+		case 'warning':
+			defaultHeader = '경고';
+			break;
+		case 'info':
+		default:
+			defaultHeader = '알림';
+			break;
+	}
+	console.log('test-->'+header);
+	// 헤더가 제공되지 않으면 기본값 사용
+	const toastHeader = header || defaultHeader;
 
 	if ($('#liveToast').length > 0) {
 		// 타입별 아이콘 및 헤더 클래스 설정
@@ -71,27 +37,27 @@ function showToast(message, type = 'info') {
 
 		switch(type) {
 			case 'success':
-				icon = '<i class="bi bi-check-circle-fill text-success me-2"></i>';
+				icon = '<i class="bi bi-check-circle-fill  me-2"></i>';
 				headerClass = 'bg-success text-white';
 				break;
 			case 'error':
-				icon = '<i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>';
+				icon = '<i class="bi bi-exclamation-triangle-fill  me-2"></i>';
 				headerClass = 'bg-danger text-white';
 				break;
 			case 'warning':
-				icon = '<i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>';
+				icon = '<i class="bi bi-exclamation-triangle-fill  me-2"></i>';
 				headerClass = 'bg-warning text-dark';
 				break;
 			case 'info':
 			default:
-				icon = '<i class="bi bi-info-circle-fill text-info me-2"></i>';
+				icon = '<i class="bi bi-info-circle-fill me-2"></i>';
 				headerClass = 'bg-info text-white';
 				break;
 		}
 
 		$('#liveToast .toast-header').removeClass().addClass('toast-header ' + headerClass);
-		$('#liveToast .toast-header strong').text('회원관리');
-		$('#liveToast .toast-body').html(icon + message);
+		$('#liveToast .toast-header strong').html(icon + toastHeader);
+		$('#liveToast .toast-body').html(message);
 
 		const toast = new bootstrap.Toast($('#liveToast')[0], {
 			autohide: true,
@@ -101,9 +67,10 @@ function showToast(message, type = 'info') {
 		return;
 	}
 
-	// 3. 동적으로 toast 생성
-	createAndShowToast(message, '회원관리', type);
+
+
 }
+
 
 // 확인 모달 표시 함수
 function showConfirmModal(title, message, confirmCallback, cancelCallback = null) {
