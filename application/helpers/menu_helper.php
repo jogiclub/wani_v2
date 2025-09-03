@@ -13,7 +13,7 @@ if (!function_exists('get_system_menus')) {
             'OVERVIEW' => array(
                 'name' => '대시보드',
                 'key' => 'OVERVIEW',
-                'url' => 'main',
+                'url' => 'dashboard',
                 'icon' => 'bi bi-file-earmark-ruled',
                 'level' => 0
             ),
@@ -34,7 +34,7 @@ if (!function_exists('get_system_menus')) {
             'ATTENDANCE_BOARD' => array(
                 'name' => 'QR출석',
                 'key' => 'ATTENDANCE_BOARD',
-                'url' => 'main',
+                'url' => 'qrcheck',
                 'icon' => 'bi bi-person-check',
                 'level' => 1
             ),

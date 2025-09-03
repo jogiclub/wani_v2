@@ -1050,6 +1050,10 @@ function formatDate(date) {
 
 // 회원 로드 함수에서 권한 정보 포함
 function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
+
+	// Call the function to delete the 'selectedMode' cookie
+	deleteCookie('selectedMode');
+
 	$.ajax({
 		url: '/qrcheck/get_members',
 		method: 'POST',

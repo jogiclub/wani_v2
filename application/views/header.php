@@ -47,7 +47,7 @@
 			<img src="/assets/images/logo.png">
 		</a>
 
-		<div class="btn-group col-auto">
+		<div class="btn-group col-auto ms-2">
 			<?php if (isset($current_org) && $current_org): ?>
 				<button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
 					<?php echo htmlspecialchars($current_org['org_name']); ?>
@@ -246,14 +246,8 @@ $is_master = $this->session->userdata('master_yn');
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
 									<a class="nav-link d-flex align-items-center gap-1"
-									   href="<?php echo base_url('main'); ?>">
-										<i class="bi bi-qr-code-scan"></i> QR출석
-									</a>
-								</li>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
 									   href="<?php echo base_url('qrcheck'); ?>">
-										<i class="bi bi-qr-code-scan"></i> QR출석2
+										<i class="bi bi-qr-code-scan"></i> QR출석
 									</a>
 								</li>
 							<?php endif; ?>

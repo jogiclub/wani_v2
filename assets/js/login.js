@@ -19,7 +19,7 @@ $(document).ready(function() {
 				if (response.success) {
 					showToast(response.message, 'success');
 					setTimeout(function() {
-						window.location.href = '/main';
+						window.location.href = '/dashboard';
 					}, 1500);
 				} else {
 					showToast(response.message, 'error');

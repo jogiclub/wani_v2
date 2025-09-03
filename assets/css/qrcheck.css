@@ -13,12 +13,11 @@
 	font-size: 16px;
 	font-weight: 600;
 	text-align: left;
-	margin: 10px 0;
+	margin: 10px 0 20px;
 	position: relative;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-
 }
 
 

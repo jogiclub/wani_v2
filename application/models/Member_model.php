@@ -323,9 +323,7 @@ class Member_model extends CI_Model
 		$this->db->where('m.del_yn', 'N');
 		$this->db->where_in('m.area_idx', $area_indices);
 
-		if ($level !== null) {
-			$this->db->where('m.grade >=', $level);
-		}
+
 
 		$this->db->group_by('m.member_idx');
 		$this->db->order_by('a.area_order', 'ASC');
