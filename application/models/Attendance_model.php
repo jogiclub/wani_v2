@@ -34,11 +34,11 @@ class Attendance_model extends CI_Model {
 		$this->db->trans_start();
 
 		try {
-			// 멤버별로 그룹화된 데이터에서 멤버 인덱스 추출
+			// 회원별로 그룹화된 데이터에서 회원 인덱스 추출
 			$member_indices = array_keys($member_attendance_data);
 
 			if (!empty($member_indices)) {
-				// 해당 멤버들의 해당 기간 출석 정보 삭제
+				// 해당 회원들의 해당 기간 출석 정보 삭제
 				$this->db->where_in('member_idx', $member_indices);
 				$this->db->where('org_id', $org_id);
 				$this->db->where('att_date >=', $start_date);
@@ -980,6 +980,23 @@ class Attendance_model extends CI_Model {
 		$this->update_yearly_attendance_stats($org_id, $member_idx, $att_year);
 
 		return $total_score;
+	}
+
+	/**
+	 * 역할: 특정 회원의 날짜 범위별 출석 데이터 삭제
+	 */
+	public function delete_attendance_by_date_range($member_idx, $start_date, $end_date)
+	{
+		// 시작일에 해당하는 일요일 날짜 계산
+		$sunday_date = $this->get_sunday_of_week($start_date);
+		$att_year = date('Y', strtotime($sunday_date));
+
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('att_date', $sunday_date); // 일요일 날짜로 삭제
+		$this->db->where('att_year', $att_year); // att_year 조건 추가
+
+		$result = $this->db->delete('wb_member_att');
+		return $this->db->affected_rows() > 0;
 	}
 
 }

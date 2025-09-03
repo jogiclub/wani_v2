@@ -118,7 +118,7 @@ class Qrcheck extends My_Controller
 			$member_name = $this->input->post('member_name');
 			$area_idx = $this->input->post('area_idx');
 
-			// 권한 확인 - 해당 그룹에 멤버를 추가할 권한이 있는지 확인
+			// 권한 확인 - 해당 그룹에 회원를 추가할 권한이 있는지 확인
 			$user_id = $this->session->userdata('user_id');
 			$master_yn = $this->session->userdata('master_yn');
 			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
@@ -266,6 +266,10 @@ class Qrcheck extends My_Controller
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
+			// att_date를 일요일 날짜로 계산
+			$sunday_date = $this->get_sunday_of_week($att_date);
+			$att_year = date('Y', strtotime($sunday_date));
+
 			$this->load->model('Attendance_model');
 
 			// 해당 날짜의 모든 출석 정보 삭제
@@ -274,10 +278,13 @@ class Qrcheck extends My_Controller
 			if (!empty($attendance_data) && is_array($attendance_data)) {
 				foreach ($attendance_data as $att_type_idx) {
 					$data = array(
-						'att_date' => $att_date,
+						'att_date' => $sunday_date, // 일요일 날짜로 저장
 						'att_type_idx' => $att_type_idx,
 						'member_idx' => $member_idx,
-						'org_id' => $org_id
+						'org_id' => $org_id,
+						'att_year' => $att_year, // att_year 추가
+						'regi_date' => date('Y-m-d H:i:s'), // 등록일 추가
+						'modi_date' => date('Y-m-d') // 변경일 추가
 					);
 
 					$this->db->insert('wb_member_att', $data);
@@ -698,7 +705,7 @@ class Qrcheck extends My_Controller
 			$this->db->trans_start();
 
 			try {
-				// 멤버별로 그룹화
+				// 회원별로 그룹화
 				$member_attendance_data = array();
 
 				foreach ($attendance_data as $item) {

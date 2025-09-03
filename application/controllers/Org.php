@@ -200,10 +200,10 @@ class Org extends My_Controller
 			return;
 		}
 
-		// 해당 사용자가 이미 조직 멤버인지 확인
+		// 해당 사용자가 이미 조직 회원인지 확인
 		$existing_org_user = $this->Org_model->get_org_user($delegate_user['user_id'], $org_id);
 		if (!$existing_org_user) {
-			echo json_encode(array('success' => false, 'message' => '해당 사용자는 이 조직의 멤버가 아닙니다.'));
+			echo json_encode(array('success' => false, 'message' => '해당 사용자는 이 조직의 회원가 아닙니다.'));
 			return;
 		}
 

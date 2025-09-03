@@ -26,7 +26,7 @@ class Security_helper {
 			return true;
 		}
 
-		// 사용자가 해당 조직의 멤버인지 확인
+		// 사용자가 해당 조직의 회원인지 확인
 		$org_user = $this->CI->User_model->get_org_user($user_id, $org_id);
 		return !empty($org_user);
 	}

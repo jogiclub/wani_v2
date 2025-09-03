@@ -196,8 +196,8 @@ main{background: #fafafa; height: 85vh;}
 
 /*푸터*/
 footer{position:relative;}
-footer .btn-new{position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
-footer .btn-new i{font-size:30px}
+footer .btn-new{position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 60px;height: 60px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
+footer .btn-new i{font-size:26px}
 footer .btn-area{position: fixed;bottom: 120px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0077ff;box-shadow: 0 0 5px 0 #aaa;}
 footer .btn-area i{font-size:30px}
 
@@ -501,3 +501,8 @@ span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font
 	0% { transform: rotate(0deg); }
 	100% { transform: rotate(360deg); }
 }
+
+
+.master-login{    position: absolute;
+	top: 60px;
+	right: 10px;}

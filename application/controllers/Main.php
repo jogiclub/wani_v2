@@ -309,7 +309,7 @@ class Main extends My_Controller
 
 			$this->load->model('Attendance_model');
 
-			// 해당 기간의 모든 멤버 출석 정보를 먼저 삭제
+			// 해당 기간의 모든 회원 출석 정보를 먼저 삭제
 			$member_indices = array_unique(array_column($attendance_data, 'member_idx'));
 
 			if (!empty($member_indices)) {

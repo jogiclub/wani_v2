@@ -95,14 +95,14 @@ const modeConfig = {
 };
 
 
-// 멤버 카드 클릭 이벤트에서 권한 체크 강화
+// 회원 카드 클릭 이벤트에서 권한 체크 강화
 $(document).on('click', '.member-card', function() {
 	var memberIdx = $(this).attr('member-idx');
 	var memberName = $(this).find('.member-name').text().trim();
 
 	var selectedMode = $('.mode-list .btn-check:checked').attr('id');
 
-	if (selectedMode === 'mode-1') {
+
 		// QR모드
 		var modalTitle = memberName + ' 님의 출석';
 
@@ -115,23 +115,13 @@ $(document).on('click', '.member-card', function() {
 		var startDate = getWeekStartDate(currentDate);
 		var endDate = getWeekEndDate(currentDate);
 
-		// 멤버의 출석 데이터 불러오기
+		// 회원의 출석 데이터 불러오기
 		loadMemberAttendance(memberIdx, startDate, endDate);
-	} else if (selectedMode === 'mode-4') {
-		var orgId = getCookie('activeOrg');
-		var areaIdxMatch = $(this).attr('class').match(/area-idx-(\d+)/);
-		var areaIdx = areaIdxMatch ? areaIdxMatch[1] : null;
 
-		if (areaIdx) {
-			loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx);
-		} else {
-			heyToast('멤버의 그룹 정보를 찾을 수 없습니다.', '정보 없음');
-		}
-	}
 });
 
 
-// 같은 그룹 멤버들을 불러올 때 권한 체크
+// 같은 그룹 회원들을 불러올 때 권한 체크
 function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx) {
 	var currentWeekRange = $('.current-week').text();
 	var currentDate = getDateFromWeekRange(currentWeekRange);
@@ -183,7 +173,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 					members.forEach(function(member) {
 						tableHtml += '<tr><td style="width: 100px">' + member.member_name + '</td>';
 
-						// 각 멤버의 att_type selectbox 추가
+						// 각 회원의 att_type selectbox 추가
 						if (attTypes && attTypes.length > 0) {
 							var attTypeCategoryIdxs = Object.keys(attTypeCategories);
 							attTypeCategoryIdxs.forEach(function(categoryIdx) {
@@ -223,12 +213,12 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 
 				$('#attendanceOffcanvas').offcanvas('show');
 			} else {
-				var errorMessage = response.message || '멤버 정보를 가져오는데 실패했습니다.';
+				var errorMessage = response.message || '회원 정보를 가져오는데 실패했습니다.';
 				heyToast(errorMessage, '조회 실패');
 			}
 		},
 		error: function(xhr, status, error) {
-			var errorMessage = '멤버 정보 조회 중 오류가 발생했습니다.';
+			var errorMessage = '회원 정보 조회 중 오류가 발생했습니다.';
 			if (xhr.responseJSON && xhr.responseJSON.message) {
 				errorMessage = xhr.responseJSON.message;
 			}
@@ -264,7 +254,7 @@ function checkUserPermission(requiredAction, targetData) {
 }
 
 
-// 새로운 멤버를 추가할 때 권한 체크
+// 새로운 회원를 추가할 때 권한 체크
 $('#saveNewMember').click(function() {
 	var member_name = $('#member_name').val();
 	var area_idx = $('#newMemberAreaIdx').val();
@@ -302,7 +292,7 @@ $('#saveNewMember').click(function() {
 				var startDate = getWeekStartDate(currentDate);
 				var endDate = getWeekEndDate(currentDate);
 
-				// 멤버 목록 업데이트
+				// 회원 목록 업데이트
 				loadMembers(activeOrgId, userLevel, startDate, endDate);
 				heyToast('새 회원이 추가되었습니다.', '회원 추가 완료');
 			} else {
@@ -424,7 +414,8 @@ $('#saveAttendance').click(function() {
 					// 이벤트 리스너를 한 번만 실행하고 제거
 					$(this).off('hidden.bs.modal');
 				});
-
+				// Masonry 초기화 및 지연 실행
+				initializeMasonry();
 			} else {
 				alert('출석 정보 저장에 실패했습니다.');
 			}
@@ -507,7 +498,7 @@ function displayMembers(members) {
 				'<span class="area-name">' + areaName + '</span>' +
 				'<div class="area-buttons">' +
 				'<button class="btn btn-sm btn-outline-primary btn-area-attendance-memo" data-area-idx="' + areaIdx + '" data-area-name="' + areaName + '">' +
-				'<i class="bi bi-clipboard-check"></i> 목장출석+메모입력' +
+				'<i class="bi bi-clipboard-check"></i> 목장출석' +
 				'</button>' +
 				'</div>' +
 				'</div>' +
@@ -636,7 +627,7 @@ function updateAttTypeCountFromDOM() {
 }
 
 
-// 목장출석+메모입력 버튼 클릭 이벤트 (출석관리화면의 상세 offcanvas 표시)
+// 목장출석 버튼 클릭 이벤트 (출석관리화면의 상세 offcanvas 표시)
 $(document).on('click', '.btn-area-attendance-memo', function() {
 	var areaIdx = $(this).data('area-idx');
 	var areaName = $(this).data('area-name');
@@ -677,7 +668,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 
 				var offcanvasTitle = $('#attendanceOffcanvasLabel');
 				var offcanvasBody = $('#attendanceOffcanvas .offcanvas-body');
-				offcanvasTitle.text(areaName + ' 목장출석+메모관리');
+				offcanvasTitle.text(areaName + ' 목장출석');
 				offcanvasBody.empty();
 
 				// 상세 관리용 테이블 생성 (메모를 이름 옆으로 이동)
@@ -748,7 +739,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 				offcanvasBody.append(tableHtml);
 
 				// offcanvas 버튼 텍스트 변경
-				$('#saveAttendanceBtn').text('출석+메모 저장');
+				$('#saveAttendanceBtn').text('저장');
 
 				$('#attendanceOffcanvas').offcanvas('show');
 			} else {
@@ -925,7 +916,7 @@ function saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, origi
 				$('#attendanceOffcanvas').offcanvas('hide');
 				updateAttStamps(activeOrgId, startDate, endDate);
 				var areaName = $('#attendanceOffcanvasLabel').text().split(' ')[0];
-				heyToast(areaName + ' 목장의 출석+메모를 성공적으로 저장했습니다.', '저장 완료');
+				heyToast(areaName + ' 목장의 출석을 성공적으로 저장했습니다.', '저장 완료');
 			} else {
 				heyToast(response.message || '메모 저장에 실패했습니다.', '저장 실패');
 			}
@@ -1057,7 +1048,7 @@ function formatDate(date) {
 }
 
 
-// 멤버 로드 함수에서 권한 정보 포함
+// 회원 로드 함수에서 권한 정보 포함
 function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
 	$.ajax({
 		url: '/qrcheck/get_members',
@@ -1085,14 +1076,14 @@ function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
 			}
 		},
 		error: function(xhr, status, error) {
-			console.error('멤버 로드 실패:', error);
+			console.error('회원 로드 실패:', error);
 			if (xhr.status === 403 || (xhr.responseJSON && xhr.responseJSON.message)) {
 				var errorMessage = xhr.responseJSON ? xhr.responseJSON.message : '권한이 없습니다.';
 				heyToast(errorMessage, '접근 제한');
-				// 멤버 목록을 비우고 권한 없음 메시지 표시
+				// 회원 목록을 비우고 권한 없음 메시지 표시
 				displayMembers([]);
 			} else {
-				heyToast('멤버 목록을 불러오는 중 오류가 발생했습니다.', '로드 오류');
+				heyToast('회원 목록을 불러오는 중 오류가 발생했습니다.', '로드 오류');
 			}
 		}
 	});
@@ -1185,7 +1176,7 @@ function addAttStamp() {
 		var attTypeNickname = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-nickname');
 		var attTypeCategoryIdx = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-category-idx');
 
-		// 해당 member-idx를 가진 멤버에게 att-stamp 추가
+		// 해당 member-idx를 가진 회원에게 att-stamp 추가
 		var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
 		if (memberCard.length > 0) {
 			var existingAttStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]');
@@ -1271,7 +1262,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 		// 현재 member-card에 'now' 클래스 추가
 		memberCard.addClass('now');
 
-		// 해당 멤버 카드로 스크롤 이동
+		// 해당 회원 카드로 스크롤 이동
 		$('html, body').animate({
 			scrollTop: memberCard.offset().top - 100
 		}, 500);
@@ -1298,6 +1289,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 				var endDate = getWeekEndDate(currentDate);
 
 				updateAttStamps(activeOrgId, startDate, endDate);
+				initializeMasonry()
 			} else {
 				console.log('출석 정보 저장 실패');
 			}
@@ -1394,13 +1386,8 @@ function updateInputSearchState() {
 $('#saveAttendanceBtn').off('click').on('click', function() {
 	const buttonText = $(this).text();
 
-	if (buttonText.includes('출석+메모')) {
-		// 상세 관리 모드 (출석+메모 저장)
 		saveAttendanceAndMemo();
-	} else {
-		// 기본 출석 모드
-		saveAttendanceData();
-	}
+
 });
 
 
@@ -1422,7 +1409,7 @@ function saveAttendanceData(attendanceData) {
 	// 일요일 날짜 계산
 	var sundayDate = getSundayOfWeek(attDate);
 
-	// 멤버별로 출석 데이터 정리 (중복 제거 및 빈 값 필터링)
+	// 회원별로 출석 데이터 정리 (중복 제거 및 빈 값 필터링)
 	var memberAttendanceMap = {};
 
 	attendanceData.forEach(function(item) {

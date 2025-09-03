@@ -128,7 +128,7 @@
 
 		<!-- 기존 헤더 내용 중 사용자 정보 드롭다운 부분에 추가 -->
 		<?php if ($this->session->userdata('is_admin_login')): ?>
-			<div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+			<div class="alert alert-warning alert-dismissible fade show mb-3 master-login" role="alert">
 				<i class="bi bi-exclamation-triangle-fill"></i>
 				<strong><?php echo $this->session->userdata('user_name'); ?></strong>님으로 로그인 중입니다.
 				<button type="button" class="btn btn-sm btn-outline-dark ms-2" onclick="returnToAdmin()">

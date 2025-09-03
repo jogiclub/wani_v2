@@ -7,14 +7,10 @@
 	<div class="container-fluid">
 		<div class="row">
 
-			<div class="col-xl-12 text-center mt-1 mb-3 mode-list">
-				<div class="btn-group" role="group" aria-label="Vertical radio toggle button group">
-					<input type="radio" class="btn-check" name="vbtn-radio" id="mode-1" autocomplete="off" >
-					<label class="btn btn-outline-secondary" for="mode-1"><i class="bi bi-qr-code"></i> QR모드</label>
-					<input type="radio" class="btn-check" name="vbtn-radio" id="mode-4" autocomplete="off">
-					<label class="btn btn-outline-secondary" for="mode-4"><i class="bi bi-clipboard-check"></i> 출석모드</label>
-				</div>
-			</div>
+
+
+
+
 
 			<div class="col-lg-5 mb-2">
 				<div class="input-group">
@@ -117,12 +113,12 @@
 	</div>
 </div>
 
-<!-- 새 멤버 추가 모달 -->
+<!-- 새 회원 추가 모달 -->
 <div class="modal fade" id="newMemberModal" tabindex="-1" aria-labelledby="newMemberModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="newMemberModalLabel">새 멤버 추가</h5>
+				<h5 class="modal-title" id="newMemberModalLabel">새 회원 추가</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
@@ -159,7 +155,7 @@
 	<div class="offcanvas-footer">
 		<div class="input-group">
 			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas" style="width: 33.33%">취소</button>
-			<button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난 주 정보 불러오기</button>
+			<button type="button" class="btn btn-warning" id="loadLastWeekBtn" style="width: 33.33%">지난 주 출석</button>
 			<button type="button" class="btn btn-primary" id="saveAttendanceBtn" style="width: 33.33%">저장</button>
 		</div>
 	</div>

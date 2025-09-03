@@ -707,7 +707,7 @@ class User_management_model extends CI_Model
 	 */
 	public function add_invited_user_to_org($user_id, $org_id)
 	{
-		// 이미 조직 멤버인지 확인
+		// 이미 조직 회원인지 확인
 		$existing_org_user = $this->get_org_user($user_id, $org_id);
 		if ($existing_org_user) {
 			return true; // 이미 존재함

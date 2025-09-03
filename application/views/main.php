@@ -118,12 +118,12 @@
 	</div>
 </div>
 
-<!-- 새 멤버 추가 모달 -->
+<!-- 새 회원 추가 모달 -->
 <div class="modal fade" id="newMemberModal" tabindex="-1" aria-labelledby="newMemberModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="newMemberModalLabel">새 멤버 추가</h5>
+				<h5 class="modal-title" id="newMemberModalLabel">새 회원 추가</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">

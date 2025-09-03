@@ -89,7 +89,7 @@ const modeConfig = {
 	}
 };
 
-// 멤버 카드 클릭 이벤트 처리
+// 회원 카드 클릭 이벤트 처리
 $(document).on('click', '.member-card', function() {
 	var memberIdx = $(this).attr('member-idx');
 	var memberName = $(this).find('.member-name').text().trim();
@@ -109,7 +109,7 @@ $(document).on('click', '.member-card', function() {
 		var startDate = getWeekStartDate(currentDate);
 		var endDate = getWeekEndDate(currentDate);
 
-		// 멤버의 출석 데이터 불러오기
+		// 회원의 출석 데이터 불러오기
 		loadMemberAttendance(memberIdx, startDate, endDate);
 	} else if (selectedMode === 'mode-4') {
 		var orgId = getCookie('activeOrg');
@@ -119,7 +119,7 @@ $(document).on('click', '.member-card', function() {
 		if (areaIdx) {
 			loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx);
 		} else {
-			alert('멤버의 area_idx 정보를 찾을 수 없습니다.');
+			alert('회원의 area_idx 정보를 찾을 수 없습니다.');
 		}
 	}
 });
@@ -175,7 +175,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 					members.forEach(function(member) {
 						tableHtml += '<tr><td style="width: 100px">' + member.member_name + '</td>';
 
-						// 각 멤버의 att_type selectbox 추가
+						// 각 회원의 att_type selectbox 추가
 						if (attTypes && attTypes.length > 0) {
 							var attTypeCategoryIdxs = Object.keys(attTypeCategories);
 							attTypeCategoryIdxs.forEach(function(categoryIdx) {
@@ -215,7 +215,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 
 				$('#attendanceOffcanvas').offcanvas('show');
 			} else {
-				alert('멤버 정보를 가져오는데 실패했습니다.');
+				alert('회원 정보를 가져오는데 실패했습니다.');
 			}
 		}
 	});
@@ -230,7 +230,7 @@ $('.mode-list .btn-check').on('click', function() {
 	setCookie('selectedMode', selectedMode, 7);
 });
 
-// 새로운 멤버를 추가
+// 새로운 회원를 추가
 $('#saveNewMember').click(function() {
 	var member_name = $('#member_name').val();
 	var area_idx = $('#newMemberAreaIdx').val();
@@ -257,10 +257,10 @@ $('#saveNewMember').click(function() {
 				var startDate = getWeekStartDate(currentDate);
 				var endDate = getWeekEndDate(currentDate);
 
-				// 멤버 목록 업데이트
+				// 회원 목록 업데이트
 				loadMembers(activeOrgId, level, startDate, endDate);
 			} else {
-				alert('멤버 추가에 실패했습니다.');
+				alert('회원 추가에 실패했습니다.');
 			}
 		}
 	});
@@ -727,7 +727,7 @@ function addAttStamp() {
 		var attTypeNickname = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-nickname');
 		var attTypeCategoryIdx = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-category-idx');
 
-		// 해당 member-idx를 가진 멤버에게 att-stamp 추가
+		// 해당 member-idx를 가진 회원에게 att-stamp 추가
 		var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
 		if (memberCard.length > 0) {
 			var existingAttStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]');
@@ -813,7 +813,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 		// 현재 member-card에 'now' 클래스 추가
 		memberCard.addClass('now');
 
-		// 해당 멤버 카드로 스크롤 이동
+		// 해당 회원 카드로 스크롤 이동
 		$('html, body').animate({
 			scrollTop: memberCard.offset().top - 100
 		}, 500);
@@ -969,7 +969,7 @@ function updateInputSearchState() {
 
 $('#saveAttendanceBtn').on('click', function() {
 	var attendanceData = [];
-	var memberDataMap = {}; // 멤버별로 데이터를 그룹화하기 위한 맵
+	var memberDataMap = {}; // 회원별로 데이터를 그룹화하기 위한 맵
 
 	// 모든 selectbox를 순회하면서 데이터 수집
 	$('.att-type-select').each(function() {
@@ -981,7 +981,7 @@ $('#saveAttendanceBtn').on('click', function() {
 
 		// 빈 값이 아닌 경우에만 처리
 		if (attTypeIdx && attTypeIdx.trim() !== '') {
-			// memberDataMap에 멤버별로 그룹화
+			// memberDataMap에 회원별로 그룹화
 			if (!memberDataMap[memberIdx]) {
 				memberDataMap[memberIdx] = {};
 			}
@@ -1025,7 +1025,7 @@ function saveAttendanceData(attendanceData) {
 	var formattedToday = formatDate(today);
 	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
 
-	// 멤버별로 출석 데이터 정리 (중복 제거 및 빈 값 필터링)
+	// 회원별로 출석 데이터 정리 (중복 제거 및 빈 값 필터링)
 	var memberAttendanceMap = {};
 
 	attendanceData.forEach(function(item) {

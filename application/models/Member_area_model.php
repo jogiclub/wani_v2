@@ -6,7 +6,7 @@ class Member_area_model extends CI_Model {
 	}
 
 	/**
-	 * 조직의 모든 멤버 영역 가져오기 (트리 구조용)
+	 * 조직의 모든 회원 영역 가져오기 (트리 구조용)
 	 */
 	public function get_member_areas($org_id) {
 		$this->db->select('area_idx, area_name, parent_idx, area_order');

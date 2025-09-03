@@ -144,7 +144,7 @@ const modeConfig = {
 
 
 
-// 멤버 카드 클릭 이벤트 처리
+// 회원 카드 클릭 이벤트 처리
 $(document).on('click', '.member-card', function() {
     var memberIdx = $(this).attr('member-idx');
     var memberName = $(this).find('.member-name').text().trim();
@@ -167,7 +167,7 @@ $(document).on('click', '.member-card', function() {
         var startDate = getWeekStartDate(currentDate);
         var endDate = getWeekEndDate(currentDate);
 
-        // 멤버의 출석 데이터 불러오기
+        // 회원의 출석 데이터 불러오기
         loadMemberAttendance(memberIdx, startDate, endDate);
     } else if (selectedMode === 'mode-2') {
         // 관리모드
@@ -193,7 +193,7 @@ $(document).on('click', '.member-card', function() {
         if (areaIdx) {
             loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, areaIdx);
         } else {
-            alert('멤버의 area_idx 정보를 찾을 수 없습니다.');
+            alert('회원의 area_idx 정보를 찾을 수 없습니다.');
         }
     }
 });
@@ -254,7 +254,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
                     members.forEach(function(member) {
                         tableHtml += '<tr><td style="width: 100px">' + member.member_name + '</td>';
 
-                        // 각 멤버의 att_type selectbox 추가
+                        // 각 회원의 att_type selectbox 추가
                         if (attTypes && attTypes.length > 0) {
                             var attTypeCategoryIdxs = Object.keys(attTypeCategories);
                             attTypeCategoryIdxs.forEach(function(categoryIdx) {
@@ -305,7 +305,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 
                 $('#attendanceOffcanvas').offcanvas('show');
             } else {
-                alert('멤버 정보를 가져오는데 실패했습니다.');
+                alert('회원 정보를 가져오는데 실패했습니다.');
             }
         }
     });
@@ -340,14 +340,14 @@ function loadSameMembersInOffcanvas(memberIdx, orgId, grade) {
                 members.forEach(function(member) {
                     var memberHtml = '<div>' +
                         '<h6>' + member.member_name + '</h6>' +
-                        // 필요한 멤버 정보 추가
+                        // 필요한 회원 정보 추가
                         '</div>';
                     offcanvasBody.append(memberHtml);
                 });
 
                 $('#memberOffcanvas').offcanvas('show');
             } else {
-                alert('멤버 정보를 가져오는데 실패했습니다.');
+                alert('회원 정보를 가져오는데 실패했습니다.');
             }
         }
     });
@@ -382,7 +382,7 @@ function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
         success: function(response) {
             if (response.status === 'success') {
                 $('#memberOffcanvas').offcanvas('hide');
-                // 멤버 정보 업데이트 후 필요한 작업 수행
+                // 회원 정보 업데이트 후 필요한 작업 수행
                 var currentWeekRange = $('.current-week').text();
                 var currentDate = getDateFromWeekRange(currentWeekRange);
                 var startDate = getWeekStartDate(currentDate);
@@ -392,7 +392,7 @@ function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
                 $('#allGradeCheck').prop('checked', false);
                 $('#allAreaCheck').prop('checked', false);
             } else {
-                alert('멤버 정보 업데이트에 실패했습니다.');
+                alert('회원 정보 업데이트에 실패했습니다.');
             }
         }
     });
@@ -401,7 +401,7 @@ function updateMultipleMembers(formData, allGradeCheck, allAreaCheck) {
 
 
 
-// 멤버 삭제 버튼 클릭 이벤트
+// 회원 삭제 버튼 클릭 이벤트
 $('#delMember').click(function() {
     var memberIdx = $('#memberIdx').val();
     var memberName = $('#memberName').val();
@@ -420,7 +420,7 @@ function deleteMember(memberIdx) {
         success: function(response) {
             if (response.status === 'success') {
                 $('#memberOffcanvas').offcanvas('hide');
-                // 멤버 삭제 후 필요한 작업 수행
+                // 회원 삭제 후 필요한 작업 수행
                 var currentWeekRange = $('.current-week').text();
                 var currentDate = getDateFromWeekRange(currentWeekRange);
                 var startDate = getWeekStartDate(currentDate);
@@ -428,7 +428,7 @@ function deleteMember(memberIdx) {
                 var activeOrgId = getCookie('activeOrg');
                 loadMembers(activeOrgId, level, startDate, endDate);
             } else {
-                alert('멤버 삭제에 실패했습니다.');
+                alert('회원 삭제에 실패했습니다.');
             }
         }
     });
@@ -445,7 +445,7 @@ $('.mode-list .btn-check').on('click', function() {
 
 
 
-//새로운 멤버를 추가
+//새로운 회원를 추가
 $('#saveNewMember').click(function() {
     var member_name = $('#member_name').val();
     var area_idx = $('#newMemberAreaIdx').val();
@@ -472,16 +472,16 @@ $('#saveNewMember').click(function() {
                 var startDate = getWeekStartDate(currentDate);
                 var endDate = getWeekEndDate(currentDate);
 
-                // 멤버 목록 업데이트
+                // 회원 목록 업데이트
                 loadMembers(activeOrgId, level, startDate, endDate);
             } else {
-                alert('멤버 추가에 실패했습니다.');
+                alert('회원 추가에 실패했습니다.');
             }
         }
     });
 });
 
-// 멤버 정보 로드
+// 회원 정보 로드
 function loadMemberInfo(memberIdx) {
     $.ajax({
         url: '/week/get_member_info',
@@ -601,7 +601,7 @@ function saveMemberInfo(formData) {
                     $('#memberOffcanvas').offcanvas('hide');
                     updateMemberCard(response);
                 } else {
-                    alert('멤버 정보 저장에 실패했습니다.');
+                    alert('회원 정보 저장에 실패했습니다.');
                 }
             }
         });
@@ -631,7 +631,7 @@ $('#saveMemo').click(function() {
                 // 메모 내용 비우기
                 $('#memoContent').val('');
 
-                // 해당 멤버의 memo-count 업데이트
+                // 해당 회원의 memo-count 업데이트
                 updateMemoCountForMember(memberIdx, 1);
             } else {
                 alert('메모 저장에 실패했습니다.');
@@ -641,7 +641,7 @@ $('#saveMemo').click(function() {
 });
 
 
-// 특정 멤버의 memo-count 업데이트 함수 추가
+// 특정 회원의 memo-count 업데이트 함수 추가
 function updateMemoCountForMember(memberIdx, count) {
     var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
     var memoStampsContainer = memberCard.find('.member-wrap');
@@ -687,7 +687,7 @@ function deleteMemo(idx) {
                 var memberIdx = $('#memoMemberIdx').val();
                 loadMemoList(memberIdx);
 
-                // 해당 멤버의 memo-count 업데이트
+                // 해당 회원의 memo-count 업데이트
                 updateMemoCountForMember(memberIdx, -1);
 
             } else {
@@ -1244,7 +1244,7 @@ function loadMembers(orgId, level, startDate, endDate, initialLoad = true) {
                     }
                 });
             } else {
-                // hideFiveWeeksAgo가 false인 경우 모든 멤버 보이기
+                // hideFiveWeeksAgo가 false인 경우 모든 회원 보이기
                 $('.grid-item').show();
                 // Masonry 레이아웃 업데이트
                 if ($('.grid').data('masonry')) {
@@ -1279,7 +1279,7 @@ function hideInactiveMembersForFiveWeeks(activeMembers) {
     // 모든 .grid-item 요소 숨기기
     $('.grid-item:not(.grid-item--width100)').hide();
 
-    // activeMembers에 포함된 멤버들의 .grid-item 요소만 보이기
+    // activeMembers에 포함된 회원들의 .grid-item 요소만 보이기
     activeMembers.forEach(function(memberIdx) {
         $('.member-card[member-idx="' + memberIdx + '"]').closest('.grid-item').show();
     });
@@ -1505,7 +1505,7 @@ function addAttStamp() {
         var attTypeNickname = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-nickname');
         var attTypeCategoryIdx = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-category-idx');
 
-        // 해당 member-idx를 가진 멤버에게 att-stamp 추가
+        // 해당 member-idx를 가진 회원에게 att-stamp 추가
         var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
         if (memberCard.length > 0) {
             var existingAttStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]');
@@ -1599,7 +1599,7 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
         // 현재 member-card에 'now' 클래스 추가
         memberCard.addClass('now');
 
-        // 해당 멤버 카드로 스크롤 이동
+        // 해당 회원 카드로 스크롤 이동
         $('html, body').animate({
             scrollTop: memberCard.offset().top - 100
         }, 500);
@@ -1764,7 +1764,7 @@ function saveAttendanceData(attendanceData) {
             if (response.status === 'success') {
                 $('#attendanceOffcanvas').offcanvas('hide');
                 updateAttStamps(activeOrgId, startDate, endDate);
-                var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 멤버 이름 추출
+                var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 회원 이름 추출
                 alert(memberName + ' 목장의 출석체크를 완료하였습니다.');
             } else {
                 alert('출석 정보 저장에 실패했습니다.');
@@ -1892,7 +1892,7 @@ $(document).ready(function() {
         var memberIdx = $(this).data('member-idx');
         var orgId = getCookie('activeOrg');
         var areaIdx = $(this).data('area-idx');
-        var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 멤버 이름 추출
+        var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0]; // 회원 이름 추출
         loadLastWeekData(memberIdx, orgId, areaIdx, memberName);
     });
 

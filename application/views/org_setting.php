@@ -231,7 +231,7 @@
 						<label for="delegate_email" class="form-label">위임받을 사용자의 이메일</label>
 						<input type="email" class="form-control" id="delegate_email" name="delegate_email"
 							   placeholder="example@domain.com" required>
-						<div class="form-text">해당 사용자는 이미 이 조직의 멤버여야 합니다.</div>
+						<div class="form-text">해당 사용자는 이미 이 조직의 회원여야 합니다.</div>
 					</div>
 				</form>
 			</div>
