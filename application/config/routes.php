@@ -76,7 +76,7 @@ $route['member/delete_member'] = 'member/delete_member';
 
 // Main 컨트롤러 관련 라우팅
 $route['main/profile'] = 'main/profile';
-$route['main/logout'] = 'main/logout';
+$route['login/logout'] = 'login/logout';
 $route['main/get_members'] = 'main/get_members';
 $route['main/save_attendance'] = 'main/save_attendance';
 $route['main/get_attendance_types'] = 'main/get_attendance_types';

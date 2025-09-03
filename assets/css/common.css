@@ -17,6 +17,7 @@ ul, dl{}
 .offcanvas.offcanvas-end{width: 700px}
 .circle{border-radius: 50%;}
 .badge{font-weight: 400; letter-spacing: 0}
+.badge-sm{padding: 3px 5px; font-size: 12px; border-radius: 3px;}
 
 .text-bg-primary{background: #0d9af0;}
 .offcanvas{border-left:1px solid #0d9af0!important;}
@@ -75,34 +76,16 @@ ul, dl{}
 @media screen and (max-width: 1400px){
     .grid-sizer,.grid-item{width: 12.5%}
 }
-@media screen and (max-width: 1200px){
-    .grid-sizer,.grid-item{width: 16.66%}
-}
+
 @media screen and (max-width: 992px){
-    .grid-sizer,.grid-item{width: 20%}
+	.grid-sizer,.grid-item{width: 16.66%}
 }
 @media screen and (max-width: 768px){
-    .grid-sizer,.grid-item{width: 25%}
+    .grid-sizer,.grid-item{width: 20%}
 }
 @media screen and (max-width: 576px){
     .grid-sizer,.grid-item{width: 33.33%}
 }
-/*
-@media screen and (max-width: 1400px){
-    .grid-sizer,.grid-item{width: 16.66%}
-}
-@media screen and (max-width: 1200px){
-    .grid-sizer,.grid-item{width: 20%}
-}
-@media screen and (max-width: 992px){
-    .grid-sizer,.grid-item{width: 25%}
-}
-@media screen and (max-width: 768px){
-    .grid-sizer,.grid-item{width: 33.33%}
-}
-@media screen and (max-width: 576px){
-    .grid-sizer,.grid-item{width: 50%}
-}*/
 
 /*버튼커스터마이징
 .btn{white-space: pre}*/
@@ -246,7 +229,7 @@ table tr th, table tr td{text-align: center; font-weight: 500}
 footer .btn-add-org {position: fixed;bottom: 30px;right: 30px;display: inline-block;width: 80px;height: 80px;border-radius: 40px;border: 0;color: #fff;background: #0d9af0;box-shadow: 0 0 5px 0 #aaa;}
 footer .btn-add-org i{font-size:30px}
 
-.bi-info-circle-fill{color:#ff8000}
+
 
 
 /*통계*/

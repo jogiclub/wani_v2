@@ -209,7 +209,7 @@ $is_master = $this->session->userdata('master_yn');
 							<li class="nav-item">
 								<a class="nav-link d-flex align-items-center gap-1 active" aria-current="page"
 								   href="<?php echo base_url('dashboard'); ?>">
-									<i class="bi bi-file-earmark-ruled"></i> 대시보드
+									<i class="bi bi-file-earmark-ruled"></i> 대시보드 <span class="badge badge-sm text-bg-info">준비중</span>
 								</a>
 							</li>
 						</ul>
@@ -268,14 +268,14 @@ $is_master = $this->session->userdata('master_yn');
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
 									<a class="nav-link d-flex align-items-center gap-1" href="#">
-										<i class="bi bi-graph-up-arrow"></i> 주별통계
+										<i class="bi bi-graph-up-arrow"></i> 주별통계 <span class="badge badge-sm text-bg-info">준비중</span>
 									</a>
 								</li>
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
 									<a class="nav-link d-flex align-items-center gap-1" href="#">
-										<i class="bi bi-clipboard-data"></i> 회원별통계
+										<i class="bi bi-clipboard-data"></i> 회원별통계 <span class="badge badge-sm text-bg-info">준비중</span>
 									</a>
 								</li>
 							<?php endif; ?>
@@ -343,7 +343,7 @@ $is_master = $this->session->userdata('master_yn');
 					<ul class="nav flex-column mb-auto">
 						<li class="nav-item">
 							<a class="nav-link d-flex align-items-center gap-1"
-							   href="<?php echo base_url('main/logout'); ?>">
+							   href="<?php echo base_url('login/logout'); ?>">
 								<i class="bi bi-box-arrow-right"></i> 로그아웃
 							</a>
 						</li>

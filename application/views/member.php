@@ -70,7 +70,18 @@
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
 								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled><i class="bi bi-trash"></i> 선택삭제</button>
+								<div class="btn-group" role="group">
+									<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+										더보기
+									</button>
+									<ul class="dropdown-menu">
+										<li><a class="dropdown-item" href="#">선택QR인쇄  <span class="badge badge-sm text-bg-info">준비중</span></a></li>
+										<li><a class="dropdown-item" href="#">엑셀다운로드 <span class="badge badge-sm text-bg-info">준비중</span></a> </li>
+										<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-info">준비중</span></a> </li>
+									</ul>
+								</div>
 							</div>
+
 						</div>
 					</div>
 				</div>

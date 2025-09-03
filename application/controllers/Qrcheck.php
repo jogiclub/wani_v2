@@ -337,21 +337,7 @@ class Qrcheck extends My_Controller
 		}
 	}
 
-	public function logout()
-	{
-		// 세션 삭제
-		$this->session->sess_destroy();
 
-		// 브라우저 캐시 방지 헤더
-		$this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-		$this->output->set_header('Pragma: no-cache');
-
-		// 쿠키 삭제 (CodeIgniter3 방식)
-		$this->input->set_cookie('ci_session', '', time() - 3600);
-		$this->input->set_cookie('activeOrg', '', time() - 3600);
-
-		redirect('login');
-	}
 
 	/**
 	* 역할: 권한 확인 후 같은 그룹 회원 조회
