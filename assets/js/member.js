@@ -151,6 +151,12 @@ $(document).ready(function () {
 			handleAddMemberClick();
 		});
 
+		// 엑셀 다운로드 버튼 이벤트 추가
+		$(document).on('click', '#btnExcelDownload', function (e) {
+			e.preventDefault();
+			exportMemberToExcel();
+		});
+
 		// 회원 검색 기능 바인딩
 		bindMemberSearchEvents();
 
@@ -167,7 +173,122 @@ $(document).ready(function () {
 	}
 
 
+	/**
+	 * 엑셀 다운로드 기능
+	 */
+	function exportMemberToExcel() {
+		// 조직이 선택되지 않은 경우
+		if (!selectedOrgId) {
+			showToast('조직을 먼저 선택해주세요.', 'warning');
+			return;
+		}
 
+		// 그리드가 초기화되지 않은 경우
+		if (!memberGrid) {
+			showToast('회원 데이터를 불러온 후 다시 시도해주세요.', 'warning');
+			return;
+		}
+
+		try {
+			// 현재 그리드 데이터 가져오기
+			const gridData = memberGrid.pqGrid("option", "dataModel.data");
+
+			if (!gridData || gridData.length === 0) {
+				showToast('다운로드할 회원 데이터가 없습니다.', 'info');
+				return;
+			}
+
+			// 현재 선택된 조직명 가져오기
+			const selectedOrgName = $('#selectedOrgName').text().trim() || '회원목록';
+			const currentDate = new Date();
+			const dateStr = currentDate.getFullYear() +
+				String(currentDate.getMonth() + 1).padStart(2, '0') +
+				String(currentDate.getDate()).padStart(2, '0');
+
+			const fileName = selectedOrgName.replace(/[^\w가-힣]/g, '_') + '_' + dateStr + '.xlsx';
+
+			// ParamQuery Grid의 내장 엑셀 익스포트 기능 사용
+			memberGrid.pqGrid('exportData', {
+				type: 'excel',
+				filename: fileName,
+				title: selectedOrgName + ' 회원 목록',
+				author: '회원관리시스템',
+				noCols: getExcelExportColumns(),
+				render: true
+			});
+
+			showToast('엑셀 파일 다운로드가 시작되었습니다.', 'success');
+
+		} catch (error) {
+			console.error('엑셀 다운로드 오류:', error);
+			showToast('엑셀 다운로드 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+	/**
+	 * 엑셀 익스포트용 컬럼 설정
+	 */
+	function getExcelExportColumns() {
+		return [
+			{ dataIndx: "member_idx", title: "회원번호" },
+			{ dataIndx: "area_name", title: "소그룹" },
+			{ dataIndx: "member_name", title: "이름" },
+			{ dataIndx: "member_nick", title: "닉네임" },
+			{ dataIndx: "member_phone", title: "휴대폰번호" },
+			{ dataIndx: "member_birth", title: "생년월일" },
+			{ dataIndx: "member_address", title: "주소" },
+			{ dataIndx: "member_address_detail", title: "상세주소" },
+			{
+				dataIndx: "leader_yn",
+				title: "리더여부",
+				render: function(ui) {
+					return ui.cellData === 'Y' ? '리더' : '';
+				}
+			},
+			{
+				dataIndx: "new_yn",
+				title: "신규여부",
+				render: function(ui) {
+					return ui.cellData === 'Y' ? '신규' : '';
+				}
+			},
+			{ dataIndx: "member_etc", title: "특이사항" },
+			{
+				dataIndx: "regi_date",
+				title: "등록일",
+				render: function(ui) {
+					return formatDateForExcel(ui.cellData);
+				}
+			},
+			{
+				dataIndx: "modi_date",
+				title: "수정일",
+				render: function(ui) {
+					return formatDateForExcel(ui.cellData);
+				}
+			}
+		];
+	}
+
+	/**
+	 * 엑셀용 날짜 포맷팅
+	 */
+	function formatDateForExcel(dateTimeString) {
+		if (!dateTimeString) return '';
+
+		try {
+			const date = new Date(dateTimeString);
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const day = String(date.getDate()).padStart(2, '0');
+			const hours = String(date.getHours()).padStart(2, '0');
+			const minutes = String(date.getMinutes()).padStart(2, '0');
+
+			return `${year}-${month}-${day} ${hours}:${minutes}`;
+		} catch (error) {
+			return dateTimeString;
+		}
+	}
 
 	/**
 	 * 회원 검색 이벤트 바인딩

@@ -76,7 +76,7 @@
 									</button>
 									<ul class="dropdown-menu">
 										<li><a class="dropdown-item" href="#" id="btnSelectedQrPrint">선택QR인쇄</a></li>
-										<li><a class="dropdown-item" href="#">엑셀다운로드 <span class="badge badge-sm text-bg-info">준비중</span></a> </li>
+										<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
 										<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-info">준비중</span></a> </li>
 									</ul>
 								</div>
