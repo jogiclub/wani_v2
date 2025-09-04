@@ -13,11 +13,7 @@ $(document).ready(function () {
 	let currentMemberIdx = null;       // 현재 선택된 회원 ID
 	let editingMemoIdx = null;         // 현재 수정 중인 메모 ID
 
-	// ===== 디버깅 및 초기화 =====
-	console.log('jQuery:', typeof $);
-	console.log('Fancytree:', typeof $.fn.fancytree);
-	console.log('ParamQuery pqGrid:', typeof $.fn.pqGrid);
-	console.log('Split:', typeof Split);
+
 
 	// 초기화 시도 (지연 로딩)
 	setTimeout(function () {
@@ -28,7 +24,7 @@ $(document).ready(function () {
 	 * 페이지 초기화 메인 함수
 	 */
 	function initializePage() {
-		console.log('페이지 초기화 시작');
+
 
 		// 페이지 초기 로딩 시 모든 스피너 표시
 		showAllSpinners();
@@ -63,7 +59,7 @@ $(document).ready(function () {
 			setupCleanupEvents();
 			initDetailTab();           // 상세정보 탭 초기화
 			bindMemoTabEvents();       // 메모 탭 이벤트 바인딩 추가
-			console.log('페이지 초기화 완료');
+
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
 			hideAllSpinners();
@@ -75,7 +71,7 @@ $(document).ready(function () {
 	 * Split.js 초기화
 	 */
 	function initializeSplitJS() {
-		console.log('Split.js 초기화 시작');
+
 
 		try {
 			splitInstance = Split(['#left-pane', '#right-pane'], {
@@ -112,7 +108,7 @@ $(document).ready(function () {
 				}
 			}
 
-			console.log('Split.js 초기화 완료');
+
 		} catch (error) {
 			console.error('Split.js 초기화 실패:', error);
 			showToast('화면 분할 기능 초기화에 실패했습니다.', 'error');
@@ -226,7 +222,7 @@ $(document).ready(function () {
 				return;
 			}
 
-			console.log('검색어:', searchText);
+
 
 			// 그리드 데이터 직접 필터링 방식 사용
 			const allData = memberGrid.pqGrid("option", "dataModel.data");
@@ -254,7 +250,7 @@ $(document).ready(function () {
 			memberGrid.pqGrid("option", "dataModel.data", filteredData);
 			memberGrid.pqGrid("refreshDataAndView");
 
-			console.log(`검색결과: ${filteredData.length}명`);
+
 
 			// 검색 결과에 따른 toast 메시지 표시
 			if (filteredData.length === 0) {
@@ -282,8 +278,6 @@ $(document).ready(function () {
 			if (window.originalGridData) {
 				memberGrid.pqGrid("option", "dataModel.data", window.originalGridData);
 				memberGrid.pqGrid("refreshDataAndView");
-
-				console.log(`전체 회원: ${window.originalGridData.length}명`);
 			}
 
 		} catch (error) {
@@ -291,22 +285,7 @@ $(document).ready(function () {
 		}
 	}
 
-	/**
-	 * 검색 상태 초기화
-	 */
-	function resetMemberSearch() {
-		const searchInput = $('.card-header input[type="text"]');
-		searchInput.val('');
-		clearMemberGridFilter();
 
-		// 검색 타임아웃 초기화
-		if (window.searchTimeout) {
-			clearTimeout(window.searchTimeout);
-		}
-
-		// 원본 데이터 초기화
-		window.originalGridData = null;
-	}
 
 	/**
 	 * 검색 상태 초기화
@@ -348,7 +327,7 @@ $(document).ready(function () {
 	 * Fancytree 초기화
 	 */
 	function initializeFancytree() {
-		console.log('Fancytree 초기화 시작');
+
 
 		// 트리 스피너 표시
 		showTreeSpinner();
@@ -358,7 +337,7 @@ $(document).ready(function () {
 			method: 'POST',
 			dataType: 'json',
 			success: function (treeData) {
-				console.log('트리 데이터:', treeData);
+
 
 				if (!treeData || treeData.length === 0) {
 					hideTreeSpinner();
@@ -371,7 +350,7 @@ $(document).ready(function () {
 
 				// 트리 로딩 완료 후 스피너 숨김
 				hideTreeSpinner();
-				console.log('Fancytree 초기화 완료');
+
 			},
 			error: function (xhr, status, error) {
 				console.error('그룹 트리 로드 실패:', error);
@@ -396,23 +375,13 @@ $(document).ready(function () {
 				const nodeKey = node.key;
 				const nodeTitle = node.title;
 
-				console.log('노드 활성화:', {
-					key: nodeKey,
-					title: nodeTitle,
-					data: node.data
-				});
+
 
 				// 검색 상태 초기화
 				resetMemberSearch();
 
 				// 기존 노드 활성화 처리 함수 호출
 				handleTreeNodeActivate(node);
-			},
-			expand: function(event, data) {
-				console.log('노드 확장:', data.node.title);
-			},
-			collapse: function(event, data) {
-				console.log('노드 축소:', data.node.title);
 			},
 			autoScroll: true,
 			keyboard: true,
@@ -426,7 +395,7 @@ $(document).ready(function () {
 	 */
 	function handleTreeNodeActivate(node) {
 		const nodeData = node.data;
-		console.log('선택된 노드:', nodeData);
+
 
 		// 전역 변수 업데이트
 		selectedType = nodeData.type;
@@ -452,7 +421,7 @@ $(document).ready(function () {
 			};
 
 			localStorage.setItem('member_selected_group', JSON.stringify(selectedGroup));
-			console.log('선택된 그룹 저장됨:', selectedGroup);
+
 		} catch (error) {
 			console.error('localStorage 저장 실패:', error);
 		}
@@ -488,9 +457,9 @@ $(document).ready(function () {
 				nodeToSelect.setActive(true);
 				nodeToSelect.setFocus(true);
 				expandParentNodes(nodeToSelect, groupData);
-				console.log('저장된 그룹 선택 복원됨:', groupData);
+
 			} else {
-				console.log('저장된 그룹을 찾을 수 없음, 첫 번째 조직 선택');
+
 				selectFirstOrganization();
 			}
 
@@ -541,37 +510,43 @@ $(document).ready(function () {
 		}
 	}
 
-	// ===== PARAMQUERY GRID 관련 함수들 =====
+
 
 	/**
-	 * ParamQuery Grid 초기화
+	 * ParamQuery Grid 초기화 (개선된 버전)
 	 */
 	function initializeParamQuery() {
-		console.log('ParamQuery 초기화 시작');
 
-		// 그리드 스피너 표시
 		showGridSpinner();
 
 		const gridOptions = createGridOptions();
 
 		try {
-			memberGrid = $("#memberGrid").pqGrid(gridOptions);
-			console.log('ParamQuery 초기화 완료');
-			bindCheckboxEvents();
+			// 기존 그리드가 있다면 완전히 제거
+			if (memberGrid) {
+				try {
+					memberGrid.pqGrid("destroy");
+				} catch (e) {
+					console.log('기존 그리드 제거 중 오류 (무시 가능):', e);
+				}
+			}
 
-			// Grid 초기화 완료 후 스피너 숨김
+			// 그리드 컨테이너 초기화
+			$("#memberGrid").empty();
+
+			// 새 그리드 생성
+			memberGrid = $("#memberGrid").pqGrid(gridOptions);
+
 			hideGridSpinner();
 		} catch (error) {
 			console.error('ParamQuery Grid 초기화 실패:', error);
-
-			// 에러 발생 시 스피너 숨김
 			hideGridSpinner();
 			showToast('그리드 초기화에 실패했습니다.', 'warning');
 		}
 	}
 
 	/**
-	 * 그리드 옵션 생성
+	 * 그리드 옵션 생성 (개선된 버전)
 	 */
 	function createGridOptions() {
 		return {
@@ -583,7 +558,7 @@ $(document).ready(function () {
 			},
 			colModel: createColumnModel(),
 			selectionModel: {
-				type: 'row',
+				type: 'cell',
 				mode: 'single'
 			},
 			scrollModel: {
@@ -591,12 +566,6 @@ $(document).ready(function () {
 				horizontal: true,
 				vertical: true
 			},
-			// 필터 설정 추가
-			// filterModel: {
-			// 	on: true,
-			// 	mode: "AND",
-			// 	header: false
-			// },
 			freezeCols: 4,
 			numberCell: { show: false },
 			title: false,
@@ -608,14 +577,17 @@ $(document).ready(function () {
 			cellClick: function(event, ui) {
 				handleGridCellClick(event, ui);
 			},
-			refresh: function () {
-				bindCheckboxEvents();
+			// 렌더링 완료 후 중복 체크박스 처리
+			complete: function() {
+				setTimeout(function() {
+					removeDuplicateCheckboxes();
+				}, 100);
 			}
 		};
 	}
 
 	/**
-	 * 컬럼 모델 생성
+	 * 컬럼 모델 생성 (체크박스 렌더링 개선)
 	 */
 	function createColumnModel() {
 		return [
@@ -629,7 +601,9 @@ $(document).ready(function () {
 				menuIcon: false,
 				frozen: true,
 				render: function (ui) {
-					return '<input type="checkbox" class="member-checkbox" data-member-idx="' + ui.rowData.member_idx + '" />';
+					// 중복 생성 방지를 위한 고유 ID 사용
+					const checkboxId = 'member-checkbox-' + ui.rowData.member_idx;
+					return '<input type="checkbox" class="member-checkbox" id="' + checkboxId + '" data-member-idx="' + ui.rowData.member_idx + '" />';
 				}
 			},
 			{
@@ -758,7 +732,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 그리드 셀 클릭 처리
+	 * 그리드 셀 클릭 처리 (수정된 버전)
 	 */
 	function handleGridCellClick(event, ui) {
 		const colIndx = ui.colIndx;
@@ -779,7 +753,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 체크박스 컬럼 클릭 처리
+	 * 체크박스 컬럼 클릭 처리 (수정된 버전)
 	 */
 	function handleCheckboxColumnClick(event, memberIdx) {
 		// 직접 체크박스를 클릭한 경우가 아니라면 체크박스 토글
@@ -796,22 +770,63 @@ $(document).ready(function () {
 
 	// ===== 체크박스 관련 함수들 =====
 
+
+
 	/**
-	 * 체크박스 이벤트 바인딩
+	 * 체크박스 이벤트 바인딩 (최종 개선 버전)
 	 */
 	function bindCheckboxEvents() {
+
+
+		// 기존 이벤트 완전히 제거
+		$(document).off('change', '#selectAllCheckbox');
+		$(document).off('change', '.member-checkbox');
+
 		// 전체 선택 체크박스 이벤트
-		$(document).off('change', '#selectAllCheckbox').on('change', '#selectAllCheckbox', function () {
+		$(document).on('change', '#selectAllCheckbox', function (e) {
+			e.stopPropagation();
+
 			const isChecked = $(this).is(':checked');
-			$('.member-checkbox').prop('checked', isChecked);
+
+
+			// 실제 존재하는 고유 체크박스만 선택
+			const uniqueCheckboxes = getUniqueCheckboxes();
+
+
+			uniqueCheckboxes.forEach(function(checkbox) {
+				$(checkbox).prop('checked', isChecked);
+			});
+
 			updateSelectedMemberButtons();
 		});
 
 		// 개별 체크박스 이벤트
-		$(document).off('change', '.member-checkbox').on('change', '.member-checkbox', function () {
+		$(document).on('change', '.member-checkbox', function (e) {
+			e.stopPropagation();
 			updateSelectAllCheckbox();
 			updateSelectedMemberButtons();
 		});
+
+
+	}
+
+
+	/**
+	 * 고유한 체크박스만 가져오기
+	 */
+	function getUniqueCheckboxes() {
+		const uniqueCheckboxes = [];
+		const seenMemberIds = new Set();
+
+		$('.member-checkbox').each(function() {
+			const memberIdx = $(this).data('member-idx');
+			if (!seenMemberIds.has(memberIdx)) {
+				seenMemberIds.add(memberIdx);
+				uniqueCheckboxes.push(this);
+			}
+		});
+
+		return uniqueCheckboxes;
 	}
 
 	/**
@@ -831,14 +846,29 @@ $(document).ready(function () {
 		}
 	}
 
+
 	/**
-	 * 선택된 회원 기반 버튼 상태 업데이트
+	 * 선택된 회원 기반 버튼 상태 업데이트 (최종 버전)
 	 */
 	function updateSelectedMemberButtons() {
-		const checkedCheckboxes = $('.member-checkbox:checked').length;
-		$('#btnDeleteMember').prop('disabled', checkedCheckboxes === 0);
-		$('#btnMoveMember').prop('disabled', checkedCheckboxes === 0);
+		// 고유 체크박스 중 체크된 것만 카운트
+		const uniqueCheckedBoxes = [];
+		const seenMemberIds = new Set();
+
+		$('.member-checkbox:checked').each(function() {
+			const memberIdx = $(this).data('member-idx');
+			if (!seenMemberIds.has(memberIdx)) {
+				seenMemberIds.add(memberIdx);
+				uniqueCheckedBoxes.push(this);
+			}
+		});
+
+		const checkedCount = uniqueCheckedBoxes.length;
+
+		$('#btnDeleteMember').prop('disabled', checkedCount === 0);
+		$('#btnMoveMember').prop('disabled', checkedCount === 0);
 	}
+
 
 	/**
 	 * 선택된 회원들 이동
@@ -853,8 +883,6 @@ $(document).ready(function () {
 			return;
 		}
 
-		const nodeData = activeNode.data;
-		const currentGroupName = activeNode.title.replace(/\s*\(\d+명\)$/, '');
 
 		// 이동 확인 메시지
 		const message = `선택한 ${memberCount}명의 회원을 다른 소그룹으로 이동하시겠습니까?`;
@@ -963,23 +991,9 @@ $(document).ready(function () {
 		});
 	}
 
-	/**
-	 * 선택된 회원 데이터 가져오기
-	 */
-	function getSelectedMembers() {
-		const selectedMembers = [];
-		$('.member-checkbox:checked').each(function () {
-			const memberIdx = $(this).data('member-idx');
-			const gridData = memberGrid.pqGrid("option", "dataModel.data");
-			const memberData = gridData.find(member => member.member_idx == memberIdx);
-			if (memberData) {
-				selectedMembers.push(memberData);
-			}
-		});
-		return selectedMembers;
-	}
 
-	// ===== 회원 관련 CRUD 함수들 =====
+
+
 
 	/**
 	 * 회원 추가 버튼 클릭 처리
@@ -1106,7 +1120,6 @@ $(document).ready(function () {
 	 * 그룹 트리 새로고침
 	 */
 	function refreshGroupTree() {
-		console.log('그룹 트리 새로고침 시작');
 
 		// 현재 선택된 트리 정보 저장
 		const tree = $("#groupTree").fancytree("getTree");
@@ -1126,7 +1139,7 @@ $(document).ready(function () {
 			method: 'POST',
 			dataType: 'json',
 			success: function (treeData) {
-				console.log('새로고침된 트리 데이터:', treeData);
+
 
 				if (!treeData || treeData.length === 0) {
 					hideTreeSpinner();
@@ -1143,7 +1156,7 @@ $(document).ready(function () {
 
 				// 트리 새로고침 완료 후 스피너 숨김
 				hideTreeSpinner();
-				console.log('그룹 트리 새로고침 완료');
+
 			},
 			error: function (xhr, status, error) {
 				console.error('그룹 트리 새로고침 실패:', error);
@@ -1185,9 +1198,9 @@ $(document).ready(function () {
 					nodeToSelect.parent.setExpanded(true);
 				}
 
-				console.log('트리 선택 상태 복원됨:', selection);
+
 			} else {
-				console.log('복원할 노드를 찾을 수 없음, 첫 번째 조직 선택');
+
 				selectFirstOrganization();
 			}
 		} catch (error) {
@@ -1204,11 +1217,7 @@ $(document).ready(function () {
 	function loadMemberData() {
 		if (!selectedOrgId) return;
 
-		console.log('회원 데이터 로드:', {
-			type: selectedType,
-			org_id: selectedOrgId,
-			area_idx: selectedAreaIdx
-		});
+
 
 		// 회원 데이터 로딩 시 그리드 스피너 표시
 		showGridSpinner();
@@ -1223,7 +1232,7 @@ $(document).ready(function () {
 			},
 			dataType: 'json',
 			success: function (response) {
-				console.log('회원 데이터 응답:', response);
+
 				handleMemberDataResponse(response);
 			},
 			error: function (xhr, status, error) {
@@ -1238,30 +1247,78 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 회원 데이터 응답 처리
+	 * 회원 데이터 응답 처리 (중복 렌더링 방지 버전)
 	 */
 	function handleMemberDataResponse(response) {
 		if (response.success) {
 			if (memberGrid) {
 				try {
-					memberGrid.pqGrid("option", "dataModel.data", response.data || []);
+					// 기존 데이터 완전 초기화
+					memberGrid.pqGrid("option", "dataModel.data", []);
 					memberGrid.pqGrid("refreshDataAndView");
+
+					// 잠시 대기 후 새 데이터 설정
+					setTimeout(function() {
+						memberGrid.pqGrid("option", "dataModel.data", response.data || []);
+						memberGrid.pqGrid("refreshDataAndView");
+
+						// 추가 대기 후 체크박스 처리
+						setTimeout(function() {
+							// 중복 체크박스 제거
+							removeDuplicateCheckboxes();
+
+							// 체크 상태 초기화
+							$('.member-checkbox').prop('checked', false);
+							$('#selectAllCheckbox').prop('checked', false);
+
+							// 체크박스 이벤트 바인딩
+							bindCheckboxEvents();
+
+
+
+						}, 100);
+					}, 50);
+
 				} catch (error) {
 					console.error('그리드 데이터 업데이트 실패:', error);
 				}
 			}
-			$('#btnDeleteMember').prop('disabled', true);
 
-			// 데이터 로딩 완료 후 그리드 스피너 숨김
+			$('#btnDeleteMember').prop('disabled', true);
 			hideGridSpinner();
 		} else {
 			console.error('회원 데이터 로드 실패:', response.message);
-
-			// 실패 시 그리드 스피너 숨김
 			hideGridSpinner();
 			showToast('회원 데이터를 불러오는데 실패했습니다.', 'error');
 		}
 	}
+
+	/**
+	 * 중복 체크박스 제거 함수
+	 */
+	function removeDuplicateCheckboxes() {
+		const seenMemberIds = new Set();
+		const checkboxesToRemove = [];
+
+		$('.member-checkbox').each(function() {
+			const memberIdx = $(this).data('member-idx');
+
+			if (seenMemberIds.has(memberIdx)) {
+				// 중복된 체크박스 발견
+				checkboxesToRemove.push(this);
+
+			} else {
+				seenMemberIds.add(memberIdx);
+			}
+		});
+
+		// 중복된 체크박스들 제거
+		checkboxesToRemove.forEach(function(checkbox) {
+			$(checkbox).closest('td').html(''); // 해당 셀을 비움
+		});
+
+	}
+
 	/**
 	 * 선택된 조직명 업데이트
 	 */
@@ -1933,7 +1990,6 @@ $(document).ready(function () {
 			try {
 				splitInstance.destroy();
 				splitInstance = null;
-				console.log('Split.js 인스턴스 정리 완료');
 			} catch (error) {
 				console.error('Split.js 정리 실패:', error);
 			}
@@ -2358,7 +2414,7 @@ $(document).ready(function () {
 	 */
 	function showTreeSpinner() {
 		$('#treeSpinner').removeClass('d-none').addClass('d-flex');
-		console.log('트리 스피너 표시');
+
 	}
 
 	/**
@@ -2366,7 +2422,6 @@ $(document).ready(function () {
 	 */
 	function hideTreeSpinner() {
 		$('#treeSpinner').removeClass('d-flex').addClass('d-none');
-		console.log('트리 스피너 숨김');
 	}
 
 	/**
@@ -2374,7 +2429,6 @@ $(document).ready(function () {
 	 */
 	function showGridSpinner() {
 		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
-		console.log('그리드 스피너 표시');
 	}
 
 	/**
@@ -2382,7 +2436,7 @@ $(document).ready(function () {
 	 */
 	function hideGridSpinner() {
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
-		console.log('그리드 스피너 숨김');
+
 	}
 
 	/**
@@ -2391,7 +2445,7 @@ $(document).ready(function () {
 	function showAllSpinners() {
 		showTreeSpinner();
 		showGridSpinner();
-		console.log('모든 스피너 표시');
+
 	}
 
 	/**
@@ -2400,17 +2454,19 @@ $(document).ready(function () {
 	function hideAllSpinners() {
 		hideTreeSpinner();
 		hideGridSpinner();
-		console.log('모든 스피너 숨김');
+
 	}
 
 
 
-// 선택QR인쇄 버튼 클릭 이벤트 (member.js 하단에 추가)
+// 선택QR인쇄 버튼 클릭 이벤트 (수정된 버전)
 	$(document).on('click', '#btnSelectedQrPrint', function() {
 		const selectedMembers = getSelectedMembers();
 
+
+
 		if (selectedMembers.length === 0) {
-			showToast('인쇄할 회원을 선택해주세요.');
+			showToast('인쇄할 회원을 선택해주세요.', 'warning');
 			return;
 		}
 
@@ -2427,33 +2483,50 @@ $(document).ready(function () {
 		}
 	});
 
+
 	/**
-	 * 선택된 회원 목록 가져오기
+	 * 선택된 회원 목록 가져오기 (최종 버전)
 	 */
 	function getSelectedMembers() {
 		const selectedMembers = [];
+		const processedMemberIds = new Set();
 
-		if (memberGrid && memberGrid.length > 0) {
-			const gridData = memberGrid.pqGrid('option', 'dataModel.data');
+		// 고유한 체크된 체크박스만 처리
+		$('.member-checkbox:checked').each(function() {
+			const memberIdx = $(this).data('member-idx');
 
-			gridData.forEach(function(row) {
-				if (row.pq_rowselect === true) {
+			// 중복 제거
+			if (processedMemberIds.has(memberIdx)) {
+				return true; // continue
+			}
+
+			processedMemberIds.add(memberIdx);
+
+			// 그리드에서 해당 회원의 데이터 찾기
+			if (memberGrid && memberGrid.length > 0) {
+				const gridData = memberGrid.pqGrid('option', 'dataModel.data');
+				const memberData = gridData.find(row => row.member_idx == memberIdx);
+
+				if (memberData) {
 					selectedMembers.push({
-						member_idx: row.member_idx,
-						member_name: row.member_name,
-						area_name: row.area_name
+						member_idx: memberData.member_idx,
+						member_name: memberData.member_name,
+						area_name: memberData.area_name
 					});
 				}
-			});
-		}
+			}
+		});
+
 
 		return selectedMembers;
 	}
 
 	/**
-	 * 선택QR인쇄 모달 열기
+	 * 선택QR인쇄 모달 열기 (수정된 버전)
 	 */
 	function openSelectedQrPrintModal(selectedMembers) {
+
+
 		$('#selectedMemberCount').val(selectedMembers.length + '명 선택됨');
 
 		// 모달에 선택된 회원 정보 저장
@@ -2465,15 +2538,20 @@ $(document).ready(function () {
 		$('#selectedQrPrintModal').modal('show');
 	}
 
+
+
+
 	/**
-	 * 인쇄하기 버튼 클릭 이벤트
+	 * 인쇄하기 버튼 클릭 이벤트 (수정된 버전)
 	 */
 	$(document).on('click', '#executePrintSelectedQr', function() {
 		const selectedMembers = $('#selectedQrPrintModal').data('selectedMembers');
 		const startPosition = $('#startPositionSelect').val();
 
+
+
 		if (!selectedMembers || selectedMembers.length === 0) {
-			showToast('선택된 회원이 없습니다.');
+			showToast('선택된 회원이 없습니다.', 'error');
 			return;
 		}
 
@@ -2484,6 +2562,8 @@ $(document).ready(function () {
 		const url = '/member/print_selected_qr?' +
 			'members=' + memberIndices.join(',') +
 			'&start_position=' + startPosition;
+
+
 
 		// 새 창에서 인쇄 페이지 열기
 		window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes');
@@ -2539,5 +2619,7 @@ $(document).ready(function () {
 
 		$('#confirmModal').modal('show');
 	}
+
+
 
 });

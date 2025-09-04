@@ -1427,7 +1427,6 @@ $(document).ready(function () {
 	 */
 	function showGridSpinner() {
 		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
-		console.log('그리드 스피너 표시');
 	}
 
 	/**
