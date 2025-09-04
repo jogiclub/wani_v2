@@ -173,9 +173,6 @@ $(document).ready(function () {
 	}
 
 
-	/**
-	 * 엑셀 다운로드 기능
-	 */
 	function exportMemberToExcel() {
 		// 조직이 선택되지 않은 경우
 		if (!selectedOrgId) {
@@ -205,19 +202,33 @@ $(document).ready(function () {
 				String(currentDate.getMonth() + 1).padStart(2, '0') +
 				String(currentDate.getDate()).padStart(2, '0');
 
-			const fileName = selectedOrgName.replace(/[^\w가-힣]/g, '_') + '_' + dateStr + '.xlsx';
+			const fileName = selectedOrgName.replace(/[^\w가-힣]/g, '_') + '_' + dateStr;
 
 			// ParamQuery Grid의 내장 엑셀 익스포트 기능 사용
-			memberGrid.pqGrid('exportData', {
-				type: 'excel',
-				filename: fileName,
-				title: selectedOrgName + ' 회원 목록',
-				author: '회원관리시스템',
-				noCols: getExcelExportColumns(),
-				render: true
+			const blob = memberGrid.pqGrid('exportData', {
+				format: 'xlsx',
+				render: true,
+				type: 'blob',
+				sheetName: '회원목록',
+				noCols: getExcelExportColumns()
 			});
 
-			showToast('엑셀 파일 다운로드가 시작되었습니다.', 'success');
+			// FileSaver.js를 사용하여 파일 다운로드
+			if (typeof saveAs !== 'undefined' && blob) {
+				saveAs(blob, fileName + '.xlsx');
+				showToast('엑셀 파일 다운로드가 시작되었습니다.', 'success');
+			} else {
+				// FileSaver가 없는 경우 대체 방법
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = fileName + '.xlsx';
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+				showToast('엑셀 파일 다운로드가 시작되었습니다.', 'success');
+			}
 
 		} catch (error) {
 			console.error('엑셀 다운로드 오류:', error);
@@ -225,9 +236,6 @@ $(document).ready(function () {
 		}
 	}
 
-	/**
-	 * 엑셀 익스포트용 컬럼 설정
-	 */
 	function getExcelExportColumns() {
 		return [
 			{ dataIndx: "member_idx", title: "회원번호" },
@@ -241,31 +249,23 @@ $(document).ready(function () {
 			{
 				dataIndx: "leader_yn",
 				title: "리더여부",
-				render: function(ui) {
-					return ui.cellData === 'Y' ? '리더' : '';
-				}
+				exportRender: true
 			},
 			{
 				dataIndx: "new_yn",
 				title: "신규여부",
-				render: function(ui) {
-					return ui.cellData === 'Y' ? '신규' : '';
-				}
+				exportRender: true
 			},
 			{ dataIndx: "member_etc", title: "특이사항" },
 			{
 				dataIndx: "regi_date",
 				title: "등록일",
-				render: function(ui) {
-					return formatDateForExcel(ui.cellData);
-				}
+				exportRender: true
 			},
 			{
 				dataIndx: "modi_date",
 				title: "수정일",
-				render: function(ui) {
-					return formatDateForExcel(ui.cellData);
-				}
+				exportRender: true
 			}
 		];
 	}
