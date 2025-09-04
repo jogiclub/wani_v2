@@ -399,6 +399,27 @@ class Member_model extends CI_Model
 		return $query->row_array();
 	}
 
+	public function get_member($member_idx)
+	{
+		$this->db->select('
+        m.member_idx,
+        m.member_name,
+        m.member_phone,
+        m.member_birth,
+        m.org_id,
+        m.area_idx,
+        m.photo,
+        COALESCE(ma.area_name, "미분류") as area_name
+    ');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area ma', 'm.area_idx = ma.area_idx', 'left');
+		$this->db->where('m.member_idx', $member_idx);
+		$this->db->where('m.del_yn', 'N');
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 }
 
 

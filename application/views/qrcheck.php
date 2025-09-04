@@ -6,12 +6,6 @@
 <div class="pt-3 pb-2 ">
 	<div class="container-fluid">
 		<div class="row">
-
-
-
-
-
-
 			<div class="col-lg-5 mb-2">
 				<div class="input-group">
 					<button type="button" class="input-group-text prev-week"><i class="bi bi-chevron-left"></i></button>
@@ -69,7 +63,7 @@
 	</div>
 </div>
 <main>
-	<div class="container-xl">
+	<div class="container-fluid">
 		<div class="row">
 			<div class="member-list">
 				<div class="grid">

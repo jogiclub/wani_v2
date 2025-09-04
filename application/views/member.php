@@ -75,7 +75,7 @@
 										더보기
 									</button>
 									<ul class="dropdown-menu">
-										<li><a class="dropdown-item" href="#">선택QR인쇄  <span class="badge badge-sm text-bg-info">준비중</span></a></li>
+										<li><a class="dropdown-item" href="#" id="btnSelectedQrPrint">선택QR인쇄  <span class="badge badge-sm text-bg-info">준비중</span></a></li>
 										<li><a class="dropdown-item" href="#">엑셀다운로드 <span class="badge badge-sm text-bg-info">준비중</span></a> </li>
 										<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-info">준비중</span></a> </li>
 									</ul>
@@ -126,7 +126,13 @@
 					<button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">상세정보</button>
 				</li>
 				<li class="nav-item" role="presentation">
+					<button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">타임라인 <span class="badge badge-sm text-bg-info">준비중</span></button>
+				</li>
+				<li class="nav-item" role="presentation">
 					<button class="nav-link" id="memo-tab" data-bs-toggle="tab" data-bs-target="#memo-tab-pane" type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">회원메모</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button class="nav-link" id="editing-tab" data-bs-toggle="tab" data-bs-target="#editing-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">수정내역 <span class="badge badge-sm text-bg-info">준비중</span></button>
 				</li>
 
 			</ul>
@@ -247,6 +253,13 @@
 						</div>
 					</div>
 				</div>
+				<div class="tab-pane fade" id="timeline-tab-pane" role="tabpanel" aria-labelledby="timeline-tab" tabindex="0">
+					<div class="row mt-3">
+						<div class="col-12">
+							타임라인
+						</div>
+					</div>
+				</div>
 				<div class="tab-pane fade" id="memo-tab-pane" role="tabpanel" aria-labelledby="memo-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="col-12">
@@ -270,6 +283,13 @@
 									</div>
 								</div>
 							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane fade" id="editing-tab-pane" role="tabpanel" aria-labelledby="editing-tab" tabindex="0">
+					<div class="row mt-3">
+						<div class="col-12">
+							수정내역
 						</div>
 					</div>
 				</div>
@@ -338,7 +358,54 @@
 	</div>
 </div>
 
+<!-- 선택QR인쇄 모달 -->
+<div class="modal fade" id="selectedQrPrintModal" tabindex="-1" aria-labelledby="selectedQrPrintModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="selectedQrPrintModalLabel">선택 QR 인쇄</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-info">
+					<i class="bi bi-info-circle"></i>
+					<strong>안내:</strong> 선택한 회원들의 QR 코드를 A4 라벨지(7x10, 총 70개)에 인쇄할 수 있습니다.
+				</div>
 
+				<div class="mb-3">
+					<label for="selectedMemberCount" class="form-label">선택된 회원 수</label>
+					<input type="text" class="form-control" id="selectedMemberCount" readonly>
+				</div>
+
+				<div class="mb-3">
+					<label for="startPositionSelect" class="form-label">시작 위치</label>
+					<select class="form-select" id="startPositionSelect">
+						<?php for ($i = 1; $i <= 70; $i++): ?>
+							<option value="<?php echo $i; ?>"><?php echo $i; ?>번째 라벨부터</option>
+						<?php endfor; ?>
+					</select>
+					<div class="form-text">
+						라벨지의 몇 번째 위치부터 인쇄할지 선택하세요. (1번: 왼쪽 상단)
+					</div>
+				</div>
+
+				<div class="alert alert-warning">
+					<i class="bi bi-exclamation-triangle"></i>
+					<strong>주의사항:</strong>
+					<ul class="mb-0 mt-2">
+						<li>A4 라벨지 규격: 7열 x 10행 (총 70개)</li>
+						<li>라벨 크기: 25mm x 30mm</li>
+						<li>선택된 회원 수가 남은 라벨 수보다 많으면 다음 장에 인쇄됩니다</li>
+					</ul>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="executePrintSelectedQr">인쇄하기</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <?php $this->load->view('footer'); ?>
 

@@ -2403,4 +2403,141 @@ $(document).ready(function () {
 		console.log('모든 스피너 숨김');
 	}
 
+
+
+// 선택QR인쇄 버튼 클릭 이벤트 (member.js 하단에 추가)
+	$(document).on('click', '#btnSelectedQrPrint', function() {
+		const selectedMembers = getSelectedMembers();
+
+		if (selectedMembers.length === 0) {
+			showToast('인쇄할 회원을 선택해주세요.');
+			return;
+		}
+
+		if (selectedMembers.length > 70) {
+			showConfirmModal(
+				'선택된 회원이 70명을 초과합니다',
+				'선택된 회원(' + selectedMembers.length + '명)이 한 장의 라벨지 용량(70개)을 초과합니다. 여러 장에 나누어 인쇄됩니다. 계속하시겠습니까?',
+				function() {
+					openSelectedQrPrintModal(selectedMembers);
+				}
+			);
+		} else {
+			openSelectedQrPrintModal(selectedMembers);
+		}
+	});
+
+	/**
+	 * 선택된 회원 목록 가져오기
+	 */
+	function getSelectedMembers() {
+		const selectedMembers = [];
+
+		if (memberGrid && memberGrid.length > 0) {
+			const gridData = memberGrid.pqGrid('option', 'dataModel.data');
+
+			gridData.forEach(function(row) {
+				if (row.pq_rowselect === true) {
+					selectedMembers.push({
+						member_idx: row.member_idx,
+						member_name: row.member_name,
+						area_name: row.area_name
+					});
+				}
+			});
+		}
+
+		return selectedMembers;
+	}
+
+	/**
+	 * 선택QR인쇄 모달 열기
+	 */
+	function openSelectedQrPrintModal(selectedMembers) {
+		$('#selectedMemberCount').val(selectedMembers.length + '명 선택됨');
+
+		// 모달에 선택된 회원 정보 저장
+		$('#selectedQrPrintModal').data('selectedMembers', selectedMembers);
+
+		// 시작 위치 초기화
+		$('#startPositionSelect').val('1');
+
+		$('#selectedQrPrintModal').modal('show');
+	}
+
+	/**
+	 * 인쇄하기 버튼 클릭 이벤트
+	 */
+	$(document).on('click', '#executePrintSelectedQr', function() {
+		const selectedMembers = $('#selectedQrPrintModal').data('selectedMembers');
+		const startPosition = $('#startPositionSelect').val();
+
+		if (!selectedMembers || selectedMembers.length === 0) {
+			showToast('선택된 회원이 없습니다.');
+			return;
+		}
+
+		// 회원 인덱스 배열 생성
+		const memberIndices = selectedMembers.map(member => member.member_idx);
+
+		// URL 생성
+		const url = '/member/print_selected_qr?' +
+			'members=' + memberIndices.join(',') +
+			'&start_position=' + startPosition;
+
+		// 새 창에서 인쇄 페이지 열기
+		window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes');
+
+		// 모달 닫기
+		$('#selectedQrPrintModal').modal('hide');
+	});
+
+	/**
+	 * Confirm 모달 표시 함수 (공통 함수)
+	 */
+	function showConfirmModal(title, message, onConfirm, onCancel) {
+		// 기존 확인 모달이 있으면 제거
+		$('#confirmModal').remove();
+
+		const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                        <button type="button" class="btn btn-primary" id="confirmYes">확인</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+		$('body').append(modalHtml);
+
+		// 확인 버튼 클릭 이벤트
+		$('#confirmYes').on('click', function() {
+			$('#confirmModal').modal('hide');
+			if (typeof onConfirm === 'function') {
+				onConfirm();
+			}
+		});
+
+		// 모달 닫힘 이벤트
+		$('#confirmModal').on('hidden.bs.modal', function() {
+			$(this).remove();
+			if (typeof onCancel === 'function') {
+				onCancel();
+			}
+		});
+
+		$('#confirmModal').modal('show');
+	}
+
 });

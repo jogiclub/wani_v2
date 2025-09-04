@@ -1203,4 +1203,85 @@ class Member extends My_Controller
 		}
 	}
 
+
+	/**
+	 * 선택된 회원들의 QR 코드 인쇄 페이지
+	 */
+	public function print_selected_qr()
+	{
+		$member_indices = $this->input->get('members');
+		$start_position = $this->input->get('start_position', TRUE);
+
+		if (!$member_indices) {
+			show_404();
+			return;
+		}
+
+		// 문자열을 배열로 변환
+		$member_indices = explode(',', $member_indices);
+		$member_indices = array_map('intval', $member_indices);
+
+		// 시작 위치 기본값 설정 (1~70 범위)
+		if (!$start_position || $start_position < 1 || $start_position > 70) {
+			$start_position = 1;
+		}
+
+		$data = array(
+			'member_indices' => $member_indices,
+			'start_position' => $start_position
+		);
+
+		$this->load->view('selected_qr_print_view', $data);
+	}
+
+	/**
+	 * 선택된 회원들의 정보 조회 API
+	 */
+	public function get_selected_members()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_indices = $this->input->post('member_indices');
+
+		if (!$member_indices || !is_array($member_indices)) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보가 필요합니다.'));
+			return;
+		}
+
+		// 권한 확인
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 선택된 회원들의 정보 조회
+		$members = array();
+		foreach ($member_indices as $member_idx) {
+			$member = $this->Member_model->get_member($member_idx);
+
+			if (!$member) {
+				continue;
+			}
+
+			// 권한 확인 - 사용자가 해당 회원을 관리할 수 있는지 확인
+			if ($master_yn !== 'Y') {
+				$user_level = $this->User_model->get_org_user_level($user_id, $member['org_id']);
+
+				if ($user_level < 10) {
+					// 관리 가능한 그룹 확인
+					$this->load->model('User_management_model');
+					$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $member['org_id']);
+
+					if (!in_array($member['area_idx'], $accessible_areas)) {
+						continue; // 권한이 없는 회원은 제외
+					}
+				}
+			}
+
+			$members[] = $member;
+		}
+
+		echo json_encode(array('success' => true, 'members' => $members));
+	}
+
 }

@@ -26,7 +26,7 @@ function showToast(message, type = 'info', header = null) {
 			defaultHeader = '알림';
 			break;
 	}
-	console.log('test-->'+header);
+
 	// 헤더가 제공되지 않으면 기본값 사용
 	const toastHeader = header || defaultHeader;
 
