@@ -252,5 +252,5 @@
 </script>
 
 
-<script src="/assets/js/org_setting.js?20250905"></script>
+<script src="/assets/js/org_setting.js?20250906"></script>
 

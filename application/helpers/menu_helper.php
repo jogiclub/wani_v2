@@ -59,6 +59,13 @@ if (!function_exists('get_system_menus')) {
                 'icon' => 'bi bi-building-gear',
                 'level' => 9
             ),
+			'TIMELINE_SETTING' => array(
+                'name' => '타임라인설정',
+                'key' => 'TIMELINE_SETTING',
+                'url' => 'org',
+                'icon' => 'bi bi-stopwatch',
+                'level' => 9
+            ),
             'GROUP_SETTING' => array(
                 'name' => '그룹설정',
                 'key' => 'GROUP_SETTING',

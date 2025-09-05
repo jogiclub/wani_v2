@@ -86,4 +86,4 @@
 
 <?php $this->load->view('footer'); ?>
 
-<script src="/assets/js/login.js?20250905"></script>
+<script src="/assets/js/login.js?20250906"></script>

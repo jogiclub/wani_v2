@@ -14,6 +14,6 @@
 
 <?php $this->load->view('footer'); ?>
 <script type="text/javascript" src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js" charset="utf-8"></script>
-<script src="/assets/js/login.js?20250905"></script>
+<script src="/assets/js/login.js?20250906"></script>
 
 

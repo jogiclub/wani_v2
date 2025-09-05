@@ -353,7 +353,7 @@ $this->load->view('header'); ?>
 	/*출석관리 메뉴 active*/
 	$('.menu-45').addClass('active');
 </script>
-<script src="/assets/js/user_management.js?20250905"></script>
+<script src="/assets/js/user_management.js?20250906"></script>
 
 
 

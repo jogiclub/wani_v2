@@ -38,7 +38,7 @@
 	  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"/>
 <!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">-->
 
-<link rel="stylesheet" href="/assets/css/common.css?20250905">
+<link rel="stylesheet" href="/assets/css/common.css?20250906">
 
 <?php if ($this->session->userdata('user_id')): ?>
 <header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start shadow bg-white">
@@ -294,6 +294,14 @@ $is_master = $this->session->userdata('master_yn');
 									<a class="nav-link d-flex align-items-center gap-1 menu-41"
 									   href="<?php echo base_url('org'); ?>">
 										<i class="bi bi-building-gear"></i> 조직설정
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('TIMELINE_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1 menu-41"
+									   href="<?php echo base_url('timeline'); ?>">
+										<i class="bi bi bi-stopwatch"></i> 타임라인설정
 									</a>
 								</li>
 							<?php endif; ?>
