@@ -166,6 +166,10 @@
 <script src="/assets/js/qrcheck.js?<?php echo date('Ymdhis');?>"></script>
 <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
 <script>
+
+	/*출석관리 메뉴 active*/
+	$('.menu-23').addClass('active');
+
 	// 페이지 최초 로드 시 그룹 정보 확인
 	var postOrgId = '<?php echo isset($postOrg['org_id']) ? $postOrg['org_id'] : ''; ?>';
 	var postOrgName = '<?php echo isset($postOrg['org_name']) ? $postOrg['org_name'] : ''; ?>';

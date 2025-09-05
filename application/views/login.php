@@ -1,6 +1,6 @@
 <?php $this->load->view('noheader'); ?>
 
-<div class="col-3 mx-auto">
+<div class="col-sm-4 col-12">
 	<h2 class="text-center">로그인</h2>
 	<div class="d-grid">
 		<a href="<?php echo base_url('login/google_login'); ?>" class="btn btn-danger mt-2"><i class="bi bi-google"></i> 구글계정으로 시작하기</a>

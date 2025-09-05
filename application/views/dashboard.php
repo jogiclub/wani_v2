@@ -25,5 +25,10 @@
 
 
 <?php $this->load->view('footer'); ?>
+
+<script>
+	/*출석관리 메뉴 active*/
+	$('.menu-11').addClass('active');
+</script>
 <script src="/assets/js/org_setting.js?<?php echo date('Ymdhis'); ?>"></script>
 

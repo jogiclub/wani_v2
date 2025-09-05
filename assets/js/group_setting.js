@@ -30,9 +30,9 @@ $(document).ready(function() {
  */
 function initializeSplitPanes() {
 	Split(['#left-pane', '#right-pane'], {
-		sizes: [30, 70],
-		minSize: [250, 400],
-		gutterSize: 10,
+		sizes: [15, 85],
+		minSize: [50, 50],
+		gutterSize: 7,
 		cursor: 'col-resize'
 	});
 }

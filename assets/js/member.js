@@ -75,28 +75,24 @@ $(document).ready(function () {
 
 		try {
 			splitInstance = Split(['#left-pane', '#right-pane'], {
-				sizes: [20, 80],              // 초기 크기 비율 (왼쪽 25%, 오른쪽 75%)
-				minSize: [50, 400],          // 최소 크기 (px)
+				sizes: [15, 85],              // 초기 크기 비율 (왼쪽 25%, 오른쪽 75%)
+				minSize: [50, 50],          // 최소 크기 (px)
 				gutterSize: 7,                // divider 두께
 				cursor: 'col-resize',         // 커서 스타일
 				direction: 'horizontal',      // 수평 분할
 				onDragEnd: function(sizes) {
 					// 크기 조정 완료 시 그리드 리프레시
-					setTimeout(function() {
-						if (memberGrid) {
-							try {
-								memberGrid.pqGrid("refresh");
-							} catch (error) {
-								console.error('그리드 리프레시 실패:', error);
-							}
+					if (memberGrid) {
+						try {
+							memberGrid.pqGrid("refresh");
+						} catch (error) {
+							console.error('그리드 리프레시 실패:', error);
 						}
-					}, 100);
-
+					}
 					// 로컬스토리지에 크기 저장 (선택사항)
 					localStorage.setItem('member-split-sizes', JSON.stringify(sizes));
 				}
 			});
-
 			// 이전에 저장된 크기가 있다면 복원
 			const savedSizes = localStorage.getItem('member-split-sizes');
 			if (savedSizes) {
@@ -670,6 +666,12 @@ $(document).ready(function () {
 	 * 그리드 옵션 생성 (개선된 버전)
 	 */
 	function createGridOptions() {
+
+		showGridSpinner();
+
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+			|| window.innerWidth <= 768;
+
 		return {
 			width: "100%",
 			height: "100%",
@@ -687,7 +689,7 @@ $(document).ready(function () {
 				horizontal: true,
 				vertical: true
 			},
-			freezeCols: 4,
+			freezeCols: isMobile ? 0 : 4,  // 모바일에서는 0, 데스크톱에서는 4
 			numberCell: { show: false },
 			title: false,
 			resizable: true,
@@ -719,6 +721,7 @@ $(document).ready(function () {
 				align: "center",
 				resizable: false,
 				sortable: false,
+				editable: false,
 				menuIcon: false,
 				frozen: true,
 				render: function (ui) {
@@ -732,12 +735,15 @@ $(document).ready(function () {
 				dataIndx: "area_name",
 				width: 140,
 				align: "center",
+				editable: false,
 				frozen: true
+
 			},
 			{
 				title: "사진",
 				dataIndx: "photo",
 				width: 70,
+				editable: false,
 				align: "center",
 				frozen: true,
 				render: function (ui) {
@@ -749,6 +755,7 @@ $(document).ready(function () {
 				title: "이름",
 				dataIndx: "member_name",
 				width: 80,
+				editable: false,
 				align: "center",
 				frozen: true
 			},
@@ -756,6 +763,7 @@ $(document).ready(function () {
 				title: "회원번호",
 				dataIndx: "member_idx",
 				width: 80,
+				editable: false,
 				align: "center",
 				hidden: true
 			},
@@ -763,36 +771,42 @@ $(document).ready(function () {
 				title: "닉네임",
 				dataIndx: "member_nick",
 				width: 100,
+				editable: false,
 				align: "center"
 			},
 			{
 				title: "휴대폰번호",
 				dataIndx: "member_phone",
 				width: 140,
+				editable: false,
 				align: "center"
 			},
 			{
 				title: "생년월일",
 				dataIndx: "member_birth",
 				width: 110,
+				editable: false,
 				align: "center"
 			},
 			{
 				title: "주소",
 				dataIndx: "member_address",
 				width: 250,
+				editable: false,
 				align: "left"
 			},
 			{
 				title: "상세주소",
 				dataIndx: "member_address_detail",
 				width: 250,
+				editable: false,
 				align: "left"
 			},
 			{
 				title: "리더",
 				dataIndx: "leader_yn",
 				width: 60,
+				editable: false,
 				align: "center",
 				render: function (ui) {
 					return ui.cellData === 'Y' ? '<i class="bi bi-check-circle-fill text-success"></i>' : '';
@@ -802,6 +816,7 @@ $(document).ready(function () {
 				title: "신규",
 				dataIndx: "new_yn",
 				width: 60,
+				editable: false,
 				align: "center",
 				render: function (ui) {
 					return ui.cellData === 'Y' ? '<i class="bi bi-star-fill text-warning"></i>' : '';
@@ -811,6 +826,7 @@ $(document).ready(function () {
 				title: "등록일",
 				dataIndx: "regi_date",
 				width: 120,
+				editable: false,
 				align: "center",
 				render: function (ui) {
 					return formatDateTime(ui.cellData);
@@ -820,18 +836,13 @@ $(document).ready(function () {
 				title: "수정일",
 				dataIndx: "modi_date",
 				width: 120,
+				editable: false,
 				align: "center",
 				render: function (ui) {
 					return formatDateTime(ui.cellData);
 				}
-			},
-			{
-				title: "소그룹번호",
-				dataIndx: "area_idx",
-				width: 80,
-				align: "center",
-				hidden: true
 			}
+
 		];
 	}
 
@@ -1637,7 +1648,6 @@ $(document).ready(function () {
 		});
 	}
 
-	// ===== 메모 관련 함수들 =====
 
 	/**
 	 * 메모 탭 이벤트 바인딩

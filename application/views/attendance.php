@@ -47,23 +47,23 @@
 			<div class="card h-100">
 				<div class="card-header">
 					<div class="row">
-						<div class="col-4 d-flex align-items-center">
-							<h5 class="mb-0" id="selectedOrgName">
-								<i class="bi bi-calendar-check"></i> 조직을 선택해주세요
+						<div class="col-lg-4 col-3 d-flex align-items-center">
+							<h5 class="mb-0 text-truncate" id="selectedOrgName">
+								조직을 선택해주세요
 							</h5>
 						</div>
 
-						<div class="col-3 d-flex justify-content-end">
-							<div class="input-group input-group-sm">
+						<div class="col-lg-3 col-1 d-flex justify-content-end">
+							<div class="input-group input-group-sm d-none d-lg-flex">
 								<input type="text" class="form-control" placeholder="회원명 검색" aria-label="Member's name" aria-describedby="button-search">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
 							</div>
 						</div>
 
-						<div class="col-5 d-flex justify-content-end align-items-center">
+						<div class="col-lg-5 col-8 d-flex justify-content-end">
 
 							<!-- 점수재계산 버튼 추가 -->
-							<button class="btn btn-sm btn-outline-warning me-3 justify-content-end" type="button" id="btnRecalculateStats">
+							<button class="btn btn-sm btn-outline-warning me-3 justify-content-end d-none d-lg-flex" type="button" id="btnRecalculateStats">
 								<i class="bi bi-arrow-clockwise"></i> 포인트재계산
 							</button>
 
@@ -71,7 +71,6 @@
 							<div class="input-group input-group-sm year-selector justify-content-end">
 								<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
 								<label class="input-group-text year-display " id="currentYear">2025</label>
-
 								<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
 							</div>
 
@@ -136,5 +135,9 @@
 		baseUrl: '<?php echo base_url(); ?>',
 		currentYear: <?php echo date('Y'); ?>
 	};
+
+	/*출석관리 메뉴 active*/
+	$('.menu-22').addClass('active');
+
 </script>
 <script src="/assets/js/attendance.js?<?php echo date('Ymdhis'); ?>"></script>

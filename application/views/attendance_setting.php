@@ -261,4 +261,8 @@
 
 
 <?php $this->load->view('footer'); ?>
+<script>
+	/*출석관리 메뉴 active*/
+	$('.menu-44').addClass('active');
+</script>
 <script src="/assets/js/attendance_setting.js?<?php echo date('Ymdhis'); ?>"></script>

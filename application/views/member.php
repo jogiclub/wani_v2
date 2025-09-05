@@ -52,32 +52,34 @@
 			<div class="card h-100">
 				<div class="card-header">
 					<div class="row">
-						<div class="col-4 d-flex align-items-center">
-							<h5 class="mb-0" id="selectedOrgName">
+						<div class="col-lg-4 col-3 d-flex align-items-center">
+							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
 						</div>
 
-						<div class="col-3  d-flex justify-content-end">
-							<div class="input-group input-group-sm">
+						<div class="col-lg-3 col-1 d-flex justify-content-end">
+							<div class="input-group input-group-sm d-none d-lg-flex">
 								<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
 							</div>
 						</div>
 
-						<div class="col-5 d-flex justify-content-end">
+						<div class="col-lg-5 col-8 d-flex justify-content-end">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
-								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
-								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteMember" disabled><i class="bi bi-trash"></i> 선택삭제</button>
+								<button type="button" class="btn btn-sm btn-outline-success d-none d-md-block" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
+								<button type="button" class="btn btn-sm btn-outline-danger d-none d-md-block" id="btnDeleteMember" disabled><i class="bi bi-trash"></i> 선택삭제</button>
 								<div class="btn-group" role="group">
 									<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
 										더보기
 									</button>
 									<ul class="dropdown-menu">
+										<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveMember">선택이동</a></li>
+										<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteMember">선택삭제</a></li>
 										<li><a class="dropdown-item" href="#" id="btnSelectedQrPrint">선택QR인쇄</a></li>
 										<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
-										<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-info">준비중</span></a> </li>
+										<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
 									</ul>
 								</div>
 							</div>
@@ -126,13 +128,13 @@
 					<button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">상세정보</button>
 				</li>
 				<li class="nav-item" role="presentation">
-					<button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">타임라인 <span class="badge badge-sm text-bg-info">준비중</span></button>
+					<button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">타임라인 <span class="badge badge-sm text-bg-warning">준비중</span></button>
 				</li>
 				<li class="nav-item" role="presentation">
 					<button class="nav-link" id="memo-tab" data-bs-toggle="tab" data-bs-target="#memo-tab-pane" type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">회원메모</button>
 				</li>
 				<li class="nav-item" role="presentation">
-					<button class="nav-link" id="editing-tab" data-bs-toggle="tab" data-bs-target="#editing-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">수정내역 <span class="badge badge-sm text-bg-info">준비중</span></button>
+					<button class="nav-link" id="editing-tab" data-bs-toggle="tab" data-bs-target="#editing-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">수정내역 <span class="badge badge-sm text-bg-warning">준비중</span></button>
 				</li>
 
 			</ul>
@@ -424,5 +426,8 @@
 	window.memberPageData = {
 		baseUrl: '<?php echo base_url(); ?>'
 	};
+
+	/*출석관리 메뉴 active*/
+	$('.menu-21').addClass('active');
 </script>
 <script src="/assets/js/member.js?<?php echo date('Ymdhis'); ?>"></script>

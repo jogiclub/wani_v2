@@ -520,7 +520,7 @@ function displayMembers(members) {
 				// 리더 배지 추가
 				if (member.leader_yn === 'Y') {
 					memberCard.find('.member-card').addClass('leader');
-					memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-stars"></i></span>');
+					memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-star-fill"></i></span>');
 				}
 
 				if (member.area_idx) {
@@ -530,7 +530,7 @@ function displayMembers(members) {
 				// 새가족 배지 추가
 				if (member.new_yn === 'Y') {
 					memberCard.find('.member-card').addClass('new');
-					memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-lightning-fill"></i></span>');
+					memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-asterisk"></i></span>');
 				}
 
 				// 출석 스탬프 추가 (서버에서 받은 데이터)

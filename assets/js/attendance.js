@@ -81,13 +81,13 @@ $(document).ready(function () {
 	function initializeSplitJS() {
 		try {
 			splitInstance = Split(['#left-pane', '#right-pane'], {
-				sizes: [25, 75],
-				minSize: [250, 400],
+				sizes: [15, 85],
+				minSize: [50, 50],
 				gutterSize: 7,
 				cursor: 'col-resize',
 				direction: 'horizontal',
 				onDragEnd: function (sizes) {
-					setTimeout(function () {
+
 						if (attendanceGrid) {
 							try {
 								attendanceGrid.pqGrid("refresh");
@@ -95,12 +95,13 @@ $(document).ready(function () {
 								console.error('그리드 리프레시 실패:', error);
 							}
 						}
-					}, 100);
+					// 로컬스토리지에 크기 저장 (선택사항)
+					localStorage.setItem('member-split-sizes', JSON.stringify(sizes));
 				}
 			});
 
 			// 저장된 크기 복원
-			const savedSizes = localStorage.getItem('attendance-split-sizes');
+			const savedSizes = localStorage.getItem('member-split-sizes');
 			if (savedSizes) {
 				try {
 					const sizes = JSON.parse(savedSizes);
@@ -388,8 +389,11 @@ $(document).ready(function () {
 	 * ParamQuery Grid 초기화 - 세로 hover 적용
 	 */
 	function initializeParamQuery() {
-		console.log('ParamQuery Grid 초기화');
+
 		showGridSpinner();
+
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+			|| window.innerWidth <= 768;
 
 		try {
 			attendanceGrid = $("#attendanceGrid").pqGrid({
@@ -399,7 +403,7 @@ $(document).ready(function () {
 				colModel: getInitialColumns(),
 				selectionModel: {type: '', mode: 'single'},
 				scrollModel: {autoFit: false, horizontal: true, vertical: true},
-				freezeCols: 3,
+				freezeCols: isMobile ? 0 : 3,  // 모바일에서는 0, 데스크톱에서는 4
 				numberCell: {show: false},
 				title: false,
 				resizable: true,
@@ -1299,7 +1303,7 @@ $(document).ready(function () {
 				break;
 		}
 
-		orgNameElement.html('<i class="bi bi-calendar-check"></i> ' + displayText);
+		orgNameElement.html(displayText);
 	}
 
 	/**

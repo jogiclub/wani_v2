@@ -96,8 +96,7 @@
 	<div class="header-end col-xl-6 col-2 d-flex justify-content-end px-3 gap-3 align-items-center">
 		<ul class="navbar-nav flex-row d-xl-none fs-1">
 			<li class="nav-item text-nowrap">
-				<button class="nav-link " type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu"
-						aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+				<button class="nav-link " type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
 					<i class="bi bi-list"></i>
 				</button>
 			</li>
@@ -108,11 +107,7 @@
 		</div>
 
 		<div id="navbarProfile" class="profile-area d-xl-flex align-items-center gap-3 d-none">
-			<img src="<?php if ($user['user_profile_image']) {
-				echo $user['user_profile_image'];
-			} else {
-				echo '/assets/images/photo_no.png?3';
-			} ?>" class="rounded-circle profile-img" width="40" height="40">
+			<img src="<?php if ($user['user_profile_image']) {echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle profile-img" width="40" height="40">
 
 			<div class="profile-name">
 				<span><a class="dropdown-item" href="#"><?php if ($user['user_name']) {
@@ -192,11 +187,9 @@ $is_master = $this->session->userdata('master_yn');
 <div class="container-fluid gnb-menu">
 	<div class="row">
 		<div class="sidebar border border-right col-xl-2 p-0 bg-body-tertiary">
-			<div class="offcanvas-xl offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu"
-				 aria-labelledby="sidebarMenuLabel">
+			<div class="offcanvas-xl offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
 				<div class="offcanvas-header">
-					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu"
-							aria-label="Close"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
 				</div>
 				<div class="offcanvas-body d-xl-flex flex-column p-0 pt-xl-3 overflow-y-auto">
 
@@ -207,9 +200,9 @@ $is_master = $this->session->userdata('master_yn');
 						</h6>
 						<ul class="nav flex-column">
 							<li class="nav-item">
-								<a class="nav-link d-flex align-items-center gap-1 active" aria-current="page"
+								<a class="nav-link d-flex align-items-center gap-1 menu-11" aria-current="page"
 								   href="<?php echo base_url('dashboard'); ?>">
-									<i class="bi bi-file-earmark-ruled"></i> 대시보드 <span class="badge badge-sm text-bg-info">준비중</span>
+									<i class="bi bi-file-earmark-ruled"></i> 대시보드 <span class="badge badge-sm text-bg-warning">준비중</span>
 								</a>
 							</li>
 						</ul>
@@ -229,7 +222,7 @@ $is_master = $this->session->userdata('master_yn');
 						<ul class="nav flex-column mb-auto">
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('MEMBER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-21"
 									   href="<?php echo base_url('member'); ?>">
 										<i class="bi bi-people"></i> 회원관리
 									</a>
@@ -237,7 +230,7 @@ $is_master = $this->session->userdata('master_yn');
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ATTENDANCE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-22"
 									   href="<?php echo base_url('attendance'); ?>">
 										<i class="bi bi-clipboard-check"></i> 출석관리
 									</a>
@@ -245,7 +238,7 @@ $is_master = $this->session->userdata('master_yn');
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-23"
 									   href="<?php echo base_url('qrcheck'); ?>">
 										<i class="bi bi-qr-code-scan"></i> QR출석
 									</a>
@@ -267,15 +260,15 @@ $is_master = $this->session->userdata('master_yn');
 						<ul class="nav flex-column mb-auto">
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1" href="#">
-										<i class="bi bi-graph-up-arrow"></i> 주별통계 <span class="badge badge-sm text-bg-info">준비중</span>
+									<a class="nav-link d-flex align-items-center gap-1 menu-31" href="#">
+										<i class="bi bi-graph-up-arrow"></i> 주별통계 <span class="badge badge-sm text-bg-warning">준비중</span>
 									</a>
 								</li>
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1" href="#">
-										<i class="bi bi-clipboard-data"></i> 회원별통계 <span class="badge badge-sm text-bg-info">준비중</span>
+									<a class="nav-link d-flex align-items-center gap-1 menu-32" href="#">
+										<i class="bi bi-clipboard-data"></i> 회원별통계 <span class="badge badge-sm text-bg-warning">준비중</span>
 									</a>
 								</li>
 							<?php endif; ?>
@@ -298,7 +291,7 @@ $is_master = $this->session->userdata('master_yn');
 						<ul class="nav flex-column mb-auto">
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ORG_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-41"
 									   href="<?php echo base_url('org'); ?>">
 										<i class="bi bi-building-gear"></i> 조직설정
 									</a>
@@ -306,7 +299,7 @@ $is_master = $this->session->userdata('master_yn');
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('GROUP_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-42"
 									   href="<?php echo base_url('group_setting'); ?>">
 										<i class="bi bi-diagram-3"></i> 그룹설정
 									</a>
@@ -314,7 +307,7 @@ $is_master = $this->session->userdata('master_yn');
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('DETAIL_FIELD_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-43"
 									   href="<?php echo base_url('detail_field'); ?>">
 										<i class="bi bi-input-cursor-text"></i> 상세필드설정
 									</a>
@@ -322,7 +315,7 @@ $is_master = $this->session->userdata('master_yn');
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ATTENDANCE_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-44"
 									   href="<?php echo base_url('attendance_setting'); ?>">
 										<i class="bi bi-sliders2-vertical"></i> 출석설정
 									</a>
@@ -330,7 +323,7 @@ $is_master = $this->session->userdata('master_yn');
 							<?php endif; ?>
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('USER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1"
+									<a class="nav-link d-flex align-items-center gap-1 menu-45"
 									   href="<?php echo base_url('user_management'); ?>">
 										<i class="bi bi-person-video"></i> 사용자관리
 									</a>
@@ -342,7 +335,7 @@ $is_master = $this->session->userdata('master_yn');
 					<hr class="my-3">
 					<ul class="nav flex-column mb-auto">
 						<li class="nav-item">
-							<a class="nav-link d-flex align-items-center gap-1"
+							<a class="nav-link d-flex align-items-center gap-1 menu-51"
 							   href="<?php echo base_url('login/logout'); ?>">
 								<i class="bi bi-box-arrow-right"></i> 로그아웃
 							</a>
@@ -351,7 +344,7 @@ $is_master = $this->session->userdata('master_yn');
 				</div>
 			</div>
 		</div>
-		<main class="ms-sm-auto col-xl-10 mt-3">
+		<main class="ms-sm-auto mt-3">
 			<?php endif; ?>
 
 

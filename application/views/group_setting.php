@@ -178,4 +178,8 @@ $this->load->view('header');
 		currentOrgId: <?php echo $current_org['org_id']; ?>,
 		currentOrgName: '<?php echo addslashes($current_org['org_name']); ?>'
 	};
+
+	/*출석관리 메뉴 active*/
+	$('.menu-42').addClass('active');
+
 </script>

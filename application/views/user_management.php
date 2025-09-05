@@ -346,7 +346,13 @@ $this->load->view('header'); ?>
 </div>
 
 
+
 <?php $this->load->view('footer'); ?>
+
+<script>
+	/*출석관리 메뉴 active*/
+	$('.menu-45').addClass('active');
+</script>
 <script src="/assets/js/user_management.js?<?php echo date('Ymdhis'); ?>"></script>
 
 
