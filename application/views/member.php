@@ -1,7 +1,7 @@
 <?php $this->load->view('header'); ?>
 
 <!-- Member CSS -->
-<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
+<link rel="stylesheet" href="/assets/css/member.css?20250905">
 
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
@@ -430,4 +430,4 @@
 	/*출석관리 메뉴 active*/
 	$('.menu-21').addClass('active');
 </script>
-<script src="/assets/js/member.js?<?php echo date('Ymdhis'); ?>"></script>
+<script src="/assets/js/member.js?20250905"></script>

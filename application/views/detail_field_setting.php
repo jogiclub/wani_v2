@@ -258,6 +258,6 @@
 	/*출석관리 메뉴 active*/
 	$('.menu-43').addClass('active');
 </script>
-<script src="/assets/js/detail_field.js?<?php echo date('Ymdhis'); ?>"></script>
+<script src="/assets/js/detail_field.js?20250905"></script>
 
 

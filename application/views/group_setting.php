@@ -3,7 +3,7 @@ $this->load->view('header');
 ?>
 
 <!-- Member CSS 재사용 -->
-<link rel="stylesheet" href="/assets/css/member.css?<?php echo date('Ymdhis'); ?>">
+<link rel="stylesheet" href="/assets/css/member.css?20250905">
 
 <!-- Fancytree CSS -->
 <link rel="stylesheet"
@@ -169,7 +169,7 @@ $this->load->view('header');
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
 
 <!-- Group Setting JS -->
-<script src="/assets/js/group_setting.js?<?php echo date('Ymdhis'); ?>"></script>
+<script src="/assets/js/group_setting.js?20250905"></script>
 
 <script>
 	// PHP 데이터를 JavaScript로 전달

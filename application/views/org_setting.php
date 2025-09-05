@@ -252,5 +252,5 @@
 </script>
 
 
-<script src="/assets/js/org_setting.js?<?php echo date('Ymdhis'); ?>"></script>
+<script src="/assets/js/org_setting.js?20250905"></script>
 

@@ -325,7 +325,7 @@
         currentUserMasterYn: '<?php echo $this->session->userdata('master_yn'); ?>'
     };
 </script>
-<script src="/assets/js/mypage.js?<?php echo date('Ymdhis');?>"></script>
+<script src="/assets/js/mypage.js?20250905"></script>
 
 
 
