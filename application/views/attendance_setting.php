@@ -265,4 +265,4 @@
 	/*출석관리 메뉴 active*/
 	$('.menu-44').addClass('active');
 </script>
-<script src="/assets/js/attendance_setting.js?20250906"></script>
+<script src="/assets/js/attendance_setting.js?20250907"></script>

@@ -31,7 +31,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
     <!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">-->
 
-    <link rel="stylesheet" href="/assets/css/common.css?20250906">
+    <link rel="stylesheet" href="/assets/css/common.css?20250907">
 	<header class="pt-3 pb-3 border-bottom d-flex justify-content-center">
 		<div class="logo"><img src="/assets/images/logo.png?2"></div>
 	</header>

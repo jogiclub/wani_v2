@@ -1,7 +1,7 @@
 <?php $this->load->view('header'); ?>
 
 <!-- Member CSS -->
-<link rel="stylesheet" href="/assets/css/member.css?20250906">
+<link rel="stylesheet" href="/assets/css/member.css?20250907">
 
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
@@ -196,6 +196,8 @@
 						</div>
 					</div>
 
+					<!-- 역할: 회원정보 수정 모달에 직위/직분, 직책 필드 추가 -->
+
 					<div class="row">
 						<!-- 개인정보 입력 필드들 -->
 						<div class="col-6 mb-3">
@@ -206,6 +208,22 @@
 						<div class="col-6 mb-3">
 							<label for="member_nick" class="form-label">별명</label>
 							<input type="text" class="form-control" id="member_nick" name="member_nick">
+						</div>
+
+						<!-- 새로 추가되는 직위/직분 필드 -->
+						<div class="col-6 mb-3">
+							<label for="position_name" class="form-label">직위/직분</label>
+							<select class="form-select" id="position_name" name="position_name">
+								<option value="">직위/직분 선택</option>
+							</select>
+						</div>
+
+						<!-- 새로 추가되는 직책 필드 -->
+						<div class="col-6 mb-3">
+							<label for="duty_name" class="form-label">직책(그룹직책)</label>
+							<select class="form-select" id="duty_name" name="duty_name">
+								<option value="">직책 선택</option>
+							</select>
 						</div>
 
 						<div class="col-6 mb-3">
@@ -239,7 +257,6 @@
 								<option value="">소그룹 선택</option>
 							</select>
 						</div>
-
 					</div>
 				</div>
 				<div class="tab-pane fade" id="detail-tab-pane" role="tabpanel" aria-labelledby="detail-tab" tabindex="0">
@@ -430,4 +447,4 @@
 	/*출석관리 메뉴 active*/
 	$('.menu-21').addClass('active');
 </script>
-<script src="/assets/js/member.js?20250906"></script>
+<script src="/assets/js/member.js?20250907"></script>

@@ -16,11 +16,16 @@ class Member_model extends CI_Model
 	}
 
 
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 회원 정보 조회 시 position_name, duty_name 필드 추가
+	 */
+
 	public function get_org_members($org_id, $level = null, $start_date = null, $end_date = null)
 	{
 		$user_id = $this->session->userdata('user_id');
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name,m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name,m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
@@ -63,13 +68,15 @@ class Member_model extends CI_Model
 	}
 
 
+	/**
+	 * 회원 인덱스로 회원 정보 가져오기 (position_name, duty_name 필드 포함)
+	 */
 	public function get_member_by_idx($member_idx)
 	{
 		$this->db->select('m.*, a.area_name');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where('m.member_idx', $member_idx);
-
 
 		$query = $this->db->get();
 
@@ -132,7 +139,7 @@ class Member_model extends CI_Model
 	}
 
 	/**
-	 * 소속 그룹이 없는 회원 목록 조회
+	 * 소속 그룹이 없는 회원 목록 조회 (position_name, duty_name 필드 포함)
 	 */
 	public function get_unassigned_members($org_id)
 	{
@@ -147,6 +154,7 @@ class Member_model extends CI_Model
 		$query = $this->db->get();
 		return $query->result_array();
 	}
+
 
 
 	/**
@@ -187,8 +195,9 @@ class Member_model extends CI_Model
 		return $this->db->count_all_results();
 	}
 
+
 	/**
-	 * 특정 영역과 그 하위 영역들의 모든 회원 조회
+	 * 특정 영역과 그 하위 영역들의 모든 회원 조회 (position_name, duty_name 필드 포함)
 	 */
 	public function get_area_members_with_children($org_id, $area_idx)
 	{
@@ -201,7 +210,7 @@ class Member_model extends CI_Model
 		$area_ids[] = $area_idx; // 자기 자신도 포함
 
 		// 회원 조회
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address,m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address,m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where('m.org_id', $org_id);
@@ -214,8 +223,6 @@ class Member_model extends CI_Model
 		$query = $this->db->get();
 		return $query->result_array();
 	}
-
-
 	/**
 	 * 특정 영역과 그 하위 영역들의 회원 수 조회
 	 */
@@ -264,7 +271,7 @@ class Member_model extends CI_Model
 
 
 	/**
-	 * 회원 인덱스 배열로 회원 정보 가져오기
+	 * 회원 인덱스 배열로 회원 정보 가져오기 (position_name, duty_name 필드 포함)
 	 */
 	public function get_members_by_indices($member_indices)
 	{
@@ -272,7 +279,7 @@ class Member_model extends CI_Model
 			return array();
 		}
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where_in('m.member_idx', $member_indices);

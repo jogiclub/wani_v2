@@ -38,7 +38,7 @@
 	  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"/>
 <!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">-->
 
-<link rel="stylesheet" href="/assets/css/common.css?20250906">
+<link rel="stylesheet" href="/assets/css/common.css?20250907">
 
 <?php if ($this->session->userdata('user_id')): ?>
 <header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start shadow bg-white">

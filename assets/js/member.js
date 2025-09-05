@@ -232,12 +232,18 @@ $(document).ready(function () {
 		}
 	}
 
+
+	/**
+	 * 엑셀 다운로드용 컬럼 설정 (수정된 버전 - 직위/직책 컬럼 추가)
+	 */
 	function getExcelExportColumns() {
 		return [
 			{ dataIndx: "member_idx", title: "회원번호" },
 			{ dataIndx: "area_name", title: "소그룹" },
 			{ dataIndx: "member_name", title: "이름" },
 			{ dataIndx: "member_nick", title: "닉네임" },
+			{ dataIndx: "position_name", title: "직위/직분" },
+			{ dataIndx: "duty_name", title: "직책" },
 			{ dataIndx: "member_phone", title: "휴대폰번호" },
 			{ dataIndx: "member_birth", title: "생년월일" },
 			{ dataIndx: "member_address", title: "주소" },
@@ -709,8 +715,9 @@ $(document).ready(function () {
 		};
 	}
 
+
 	/**
-	 * 컬럼 모델 생성 (체크박스 렌더링 개선)
+	 * ParamQuery Grid 컬럼 모델 생성 (수정된 버전 - 직위/직책 컬럼 추가)
 	 */
 	function createColumnModel() {
 		return [
@@ -725,7 +732,6 @@ $(document).ready(function () {
 				menuIcon: false,
 				frozen: true,
 				render: function (ui) {
-					// 중복 생성 방지를 위한 고유 ID 사용
 					const checkboxId = 'member-checkbox-' + ui.rowData.member_idx;
 					return '<input type="checkbox" class="member-checkbox" id="' + checkboxId + '" data-member-idx="' + ui.rowData.member_idx + '" />';
 				}
@@ -737,7 +743,6 @@ $(document).ready(function () {
 				align: "center",
 				editable: false,
 				frozen: true
-
 			},
 			{
 				title: "사진",
@@ -758,6 +763,20 @@ $(document).ready(function () {
 				editable: false,
 				align: "center",
 				frozen: true
+			},
+			{
+				title: "직위/직분",
+				dataIndx: "position_name",
+				width: 100,
+				editable: false,
+				align: "center"
+			},
+			{
+				title: "직책",
+				dataIndx: "duty_name",
+				width: 100,
+				editable: false,
+				align: "center"
 			},
 			{
 				title: "회원번호",
@@ -842,7 +861,6 @@ $(document).ready(function () {
 					return formatDateTime(ui.cellData);
 				}
 			}
-
 		];
 	}
 
@@ -1474,8 +1492,9 @@ $(document).ready(function () {
 		orgNameElement.text(displayText);
 	}
 
+
 	/**
-	 * 회원 정보 수정 모달 열기
+	 * 회원 정보 수정 모달 열기 (수정된 버전)
 	 */
 	function openMemberOffcanvas(mode, memberData = null) {
 		const offcanvas = $('#memberOffcanvas');
@@ -1490,13 +1509,18 @@ $(document).ready(function () {
 		resetTabsToFirst();
 
 		if (mode === 'edit' && memberData) {
+			// 소그룹 옵션과 직위/직책 옵션을 모두 로드한 후 데이터 채우기
 			loadAreaOptionsWithCallback(selectedOrgId, function() {
-				populateFormData(memberData);
-				// 메모 관련 초기화
-				currentMemberIdx = memberData.member_idx;
+				loadPositionsAndDuties(selectedOrgId, function() {
+					populateFormData(memberData);
+					// 메모 관련 초기화
+					currentMemberIdx = memberData.member_idx;
+				});
 			});
 		} else {
+			// 새 회원 추가 시에도 옵션들 로드
 			loadAreaOptions(selectedOrgId);
+			loadPositionsAndDuties(selectedOrgId);
 		}
 
 		// 사진 이벤트 바인딩
@@ -1601,14 +1625,17 @@ $(document).ready(function () {
 		destroyCroppie();
 	}
 
+
 	/**
-	 * 폼 데이터 채우기
+	 * 폼 데이터 채우기 (수정된 버전 - 직위/직책 필드 포함)
 	 */
 	function populateFormData(memberData) {
 		const fieldMappings = {
 			'member_idx': memberData.member_idx,
 			'member_name': memberData.member_name,
 			'member_nick': memberData.member_nick || '',
+			'position_name': memberData.position_name || '',
+			'duty_name': memberData.duty_name || '',
 			'member_phone': memberData.member_phone || '',
 			'member_birth': memberData.member_birth || '',
 			'member_address': memberData.member_address || '',
@@ -1635,7 +1662,6 @@ $(document).ready(function () {
 			$('#photoUpload').hide();
 		}
 	}
-
 	/**
 	 * Offcanvas 표시 및 정리 이벤트 설정
 	 */
@@ -2752,5 +2778,70 @@ $(document).ready(function () {
 	}
 
 
+	/**
+	 * 조직별 직위/직분 및 직책 옵션 로드
+	 */
+	function loadPositionsAndDuties(orgId, callback) {
+		if (!orgId) {
+			if (typeof callback === 'function') {
+				callback();
+			}
+			return;
+		}
+
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/get_org_positions_duties',
+			method: 'POST',
+			data: { org_id: orgId },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					populatePositionOptions(response.data.positions);
+					populateDutyOptions(response.data.duties);
+				} else {
+					console.error('직위/직책 데이터 로드 실패:', response.message);
+				}
+
+				if (typeof callback === 'function') {
+					callback();
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('직위/직책 데이터 로드 오류:', error);
+
+				if (typeof callback === 'function') {
+					callback();
+				}
+			}
+		});
+	}
+
+	/**
+	 * 직위/직분 선택 옵션 채우기
+	 */
+	function populatePositionOptions(positions) {
+		const positionSelect = $('#position_name');
+		positionSelect.html('<option value="">직위/직분 선택</option>');
+
+		if (positions && Array.isArray(positions)) {
+			positions.forEach(function(position) {
+				positionSelect.append(`<option value="${escapeHtml(position)}">${escapeHtml(position)}</option>`);
+			});
+		}
+	}
+
+	/**
+	 * 직책 선택 옵션 채우기
+	 */
+	function populateDutyOptions(duties) {
+		const dutySelect = $('#duty_name');
+		dutySelect.html('<option value="">직책 선택</option>');
+
+		if (duties && Array.isArray(duties)) {
+			duties.forEach(function(duty) {
+				dutySelect.append(`<option value="${escapeHtml(duty)}">${escapeHtml(duty)}</option>`);
+			});
+		}
+	}
 
 });

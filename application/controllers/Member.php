@@ -432,6 +432,8 @@ class Member extends My_Controller
 				'area_name' => $area_name,
 				'member_name' => $member['member_name'],
 				'member_nick' => $member['member_nick'],
+				'position_name' => isset($member['position_name']) ? $member['position_name'] : '', // 새로 추가
+				'duty_name' => isset($member['duty_name']) ? $member['duty_name'] : '',             // 새로 추가
 				'photo' => $photo_url,
 				'member_phone' => isset($member['member_phone']) ? $member['member_phone'] : '',
 				'member_birth' => isset($member['member_birth']) ? $member['member_birth'] : '',
@@ -609,8 +611,7 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 파일 위치: application/controllers/Member.php
-	 * 역할: 회원 추가 (상세정보 포함)
+	 * 역할: 회원 추가 (상세정보 포함, 직위/직책 필드 추가)
 	 */
 	public function add_member()
 	{
@@ -640,6 +641,8 @@ class Member extends My_Controller
 			'area_idx' => $area_idx ?: null,
 			'member_name' => $member_name,
 			'member_nick' => '',
+			'position_name' => null,  // 새로 추가
+			'duty_name' => null,      // 새로 추가
 			'member_phone' => '',
 			'member_birth' => '',
 			'member_address' => '',
@@ -682,8 +685,7 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 파일 위치: application/controllers/Member.php
-	 * 역할: 회원 정보 수정 (상세정보 포함, 사진 삭제 기능 추가)
+	 * 역할: 회원 정보 수정 (상세정보 포함, 사진 삭제 기능 추가, 직위/직책 필드 추가)
 	 */
 	public function update_member()
 	{
@@ -700,6 +702,8 @@ class Member extends My_Controller
 		$update_data = array(
 			'member_name' => $this->input->post('member_name'),
 			'member_nick' => $this->input->post('member_nick'),
+			'position_name' => $this->input->post('position_name') ?: null,  // 새로 추가
+			'duty_name' => $this->input->post('duty_name') ?: null,          // 새로 추가
 			'member_phone' => $this->input->post('member_phone'),
 			'member_birth' => $this->input->post('member_birth'),
 			'member_address' => $this->input->post('member_address'),
@@ -1282,6 +1286,68 @@ class Member extends My_Controller
 		}
 
 		echo json_encode(array('success' => true, 'members' => $members));
+	}
+
+	/**
+	 * 조직의 직위/직분 및 직책 정보 가져오기
+	 */
+	public function get_org_positions_duties()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 조직 상세 정보 가져오기
+		$org_detail = $this->Org_model->get_org_detail_by_id($org_id);
+
+		$positions = array();
+		$duties = array();
+
+		if ($org_detail) {
+			// position_name JSON 파싱
+			if (!empty($org_detail['position_name'])) {
+				try {
+					$decoded_positions = json_decode($org_detail['position_name'], true);
+					if (is_array($decoded_positions)) {
+						$positions = $decoded_positions;
+					}
+				} catch (Exception $e) {
+					log_message('error', '직위/직분 JSON 파싱 오류: ' . $e->getMessage());
+				}
+			}
+
+			// duty_name JSON 파싱
+			if (!empty($org_detail['duty_name'])) {
+				try {
+					$decoded_duties = json_decode($org_detail['duty_name'], true);
+					if (is_array($decoded_duties)) {
+						$duties = $decoded_duties;
+					}
+				} catch (Exception $e) {
+					log_message('error', '직책 JSON 파싱 오류: ' . $e->getMessage());
+				}
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => array(
+				'positions' => $positions,
+				'duties' => $duties
+			)
+		));
 	}
 
 }
