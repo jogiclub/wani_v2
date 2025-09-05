@@ -1,5 +1,7 @@
 <head>
 	<?php $this->load->view('header'); ?>
+	<!-- Select2 CSS 추가 -->
+	<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 <body>
 
@@ -143,6 +145,31 @@
 								</div>
 							</div>
 
+							<!-- 직위/직분, 직책, 타임라인 설정 추가 -->
+							<div class="row mb-3">
+								<div class="col-md-4">
+									<label for="position_names" class="form-label">직위/직분 설정</label>
+									<select class="form-select" id="position_names" name="position_names[]" multiple>
+										<!-- JavaScript로 기존 데이터 로드 -->
+									</select>
+									<div class="form-text">예: 장로, 권사, 집사, 평신도 등</div>
+								</div>
+								<div class="col-md-4">
+									<label for="duty_names" class="form-label">직책(그룹직책) 설정</label>
+									<select class="form-select" id="duty_names" name="duty_names[]" multiple>
+										<!-- JavaScript로 기존 데이터 로드 -->
+									</select>
+									<div class="form-text">예: 구역장, 조장, 팀장, 총무 등</div>
+								</div>
+								<div class="col-md-4">
+									<label for="timeline_names" class="form-label">타임라인 설정</label>
+									<select class="form-select" id="timeline_names" name="timeline_names[]" multiple>
+										<!-- JavaScript로 기존 데이터 로드 -->
+									</select>
+									<div class="form-text">예: 입교, 세례, 결혼, 직분임명 등</div>
+								</div>
+							</div>
+
 							<!-- 최고관리자 정보 -->
 							<?php if (isset($org_admin) && $org_admin): ?>
 								<div class="row mb-3">
@@ -251,6 +278,9 @@
 	$('.menu-41').addClass('active');
 </script>
 
-
+<!-- Select2 JS 추가 -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="/assets/js/org_setting.js?20250906"></script>
 
+</body>
+</html>

@@ -143,6 +143,19 @@ class Org_model extends CI_Model {
 	 * 조직 정보 업데이트
 	 */
 	public function update_org_info($org_id, $data) {
+		// JSON 데이터 처리
+		if (isset($data['position_name']) && is_array($data['position_name'])) {
+			$data['position_name'] = json_encode($data['position_name'], JSON_UNESCAPED_UNICODE);
+		}
+
+		if (isset($data['duty_name']) && is_array($data['duty_name'])) {
+			$data['duty_name'] = json_encode($data['duty_name'], JSON_UNESCAPED_UNICODE);
+		}
+
+		if (isset($data['timeline_name']) && is_array($data['timeline_name'])) {
+			$data['timeline_name'] = json_encode($data['timeline_name'], JSON_UNESCAPED_UNICODE);
+		}
+
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');
 		return $this->db->update('wb_org', $data);

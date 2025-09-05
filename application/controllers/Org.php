@@ -68,6 +68,11 @@ class Org extends My_Controller
 		$leader_name = $this->input->post('leader_name');
 		$new_name = $this->input->post('new_name');
 
+		// 직위/직분, 직책, 타임라인 데이터 처리
+		$position_names = $this->input->post('position_names');
+		$duty_names = $this->input->post('duty_names');
+		$timeline_names = $this->input->post('timeline_names');
+
 		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
 			return;
@@ -90,6 +95,19 @@ class Org extends My_Controller
 			'new_name' => $new_name,
 			'modi_date' => date('Y-m-d H:i:s')
 		);
+
+		// 배열 형태의 데이터를 처리 (빈 배열이 아닌 경우에만)
+		if (!empty($position_names) && is_array($position_names)) {
+			$update_data['position_name'] = $position_names;
+		}
+
+		if (!empty($duty_names) && is_array($duty_names)) {
+			$update_data['duty_name'] = $duty_names;
+		}
+
+		if (!empty($timeline_names) && is_array($timeline_names)) {
+			$update_data['timeline_name'] = $timeline_names;
+		}
 
 		$result = $this->Org_model->update_org_info($org_id, $update_data);
 
