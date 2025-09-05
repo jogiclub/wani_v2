@@ -1,9 +1,8 @@
-<head>
-	<?php $this->load->view('header'); ?>
-	<!-- Select2 CSS 추가 -->
-	<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-</head>
-<body>
+
+<?php $this->load->view('header'); ?>
+<!-- Select2 CSS 추가 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 
 <div class="container pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -32,18 +31,16 @@
 
 		<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
 			<div class="row">
-				<div class="col-lg-12">
+				<div class="col-lg-8">
 					<div class="card">
 						<div class="card-header">
-							<h5 class="card-title mb-0">
-								<i class="bi bi-people-fill"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?>
-								정보 수정
+							<h5 class="card-title mb-0">								
+								기본 정보
 							</h5>
 						</div>
 						<div class="card-body">
 
-							<input type="hidden" id="org_id" name="org_id"
-								   value="<?php echo $selected_org_detail['org_id']; ?>">
+							<input type="hidden" id="org_id" name="org_id" value="<?php echo $selected_org_detail['org_id']; ?>">
 
 							<!-- 조직 아이콘 -->
 							<div class="row mb-4">
@@ -52,29 +49,17 @@
 									<div class="d-flex align-items-center gap-3">
 										<div class="org-icon-preview">
 											<?php if ($selected_org_detail['org_icon']): ?>
-												<img src="<?php echo $selected_org_detail['org_icon']; ?>"
-													 alt="조직 아이콘"
-													 class="circle"
-													 width="100"
-													 height="100"
-													 style="object-fit: cover; border: 1px solid #ddd;"
-													 id="iconPreview">
+												<img src="<?php echo $selected_org_detail['org_icon']; ?>" alt="조직 아이콘" class="circle" width="100" height="100" style="object-fit: cover; border: 1px solid #ddd;" id="iconPreview">
 											<?php else: ?>
-												<div
-													class="bg-light border circle d-flex align-items-center justify-content-center"
-													style="width: 100px; height: 100px;"
-													id="iconPreview">
+												<div class="bg-light border circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;" id="iconPreview">
 													<i class="bi bi-image text-muted fs-1"></i>
 												</div>
 											<?php endif; ?>
 										</div>
 										<div>
 											<div class="input-group">
-												<input type="file" class="form-control" id="orgIconFile"
-													   accept=".jpg,.jpeg,.png">
-												<button type="button" class="btn btn-primary btn-sm" id="uploadIconBtn">
-													<i class="bi bi-upload"></i> 아이콘 업로드
-												</button>
+												<input type="file" class="form-control" id="orgIconFile" accept=".jpg,.jpeg,.png">
+												<button type="button" class="btn btn-primary btn-sm" id="uploadIconBtn"><i class="bi bi-upload"></i> 아이콘 업로드</button>
 											</div>
 											<div class="form-text d-block">
 												* JPG 또는 PNG 파일만 가능합니다.<br> * 100x100 픽셀 크기를 권장합니다.
@@ -89,37 +74,17 @@
 							<div class="row mb-3">
 								<div class="col-md-6">
 									<label for="org_name" class="form-label">조직명</label>
-									<input type="text" class="form-control" id="org_name" name="org_name"
-										   value="<?php echo htmlspecialchars($selected_org_detail['org_name']); ?>"
-										   required>
+									<input type="text" class="form-control" id="org_name" name="org_name" value="<?php echo htmlspecialchars($selected_org_detail['org_name']); ?>" required>
 								</div>
 								<div class="col-md-6">
 									<label for="org_type" class="form-label">조직 유형</label>
 									<select class="form-select" id="org_type" name="org_type" required>
-										<option
-											value="church" <?php echo ($selected_org_detail['org_type'] == 'church') ? 'selected' : ''; ?>>
-											교회
-										</option>
-										<option
-											value="school" <?php echo ($selected_org_detail['org_type'] == 'school') ? 'selected' : ''; ?>>
-											학교
-										</option>
-										<option
-											value="company" <?php echo ($selected_org_detail['org_type'] == 'company') ? 'selected' : ''; ?>>
-											회사
-										</option>
-										<option
-											value="club" <?php echo ($selected_org_detail['org_type'] == 'club') ? 'selected' : ''; ?>>
-											동아리
-										</option>
-										<option
-											value="community" <?php echo ($selected_org_detail['org_type'] == 'community') ? 'selected' : ''; ?>>
-											커뮤니티
-										</option>
-										<option
-											value="other" <?php echo ($selected_org_detail['org_type'] == 'other') ? 'selected' : ''; ?>>
-											기타
-										</option>
+										<option value="church" <?php echo ($selected_org_detail['org_type'] == 'church') ? 'selected' : ''; ?>>교회</option>
+										<option value="school" <?php echo ($selected_org_detail['org_type'] == 'school') ? 'selected' : ''; ?>>학교</option>
+										<option value="company" <?php echo ($selected_org_detail['org_type'] == 'company') ? 'selected' : ''; ?>>회사</option>
+										<option value="club" <?php echo ($selected_org_detail['org_type'] == 'club') ? 'selected' : ''; ?>>동아리</option>
+										<option value="community" <?php echo ($selected_org_detail['org_type'] == 'community') ? 'selected' : ''; ?>>커뮤니티</option>
+										<option value="other" <?php echo ($selected_org_detail['org_type'] == 'other') ? 'selected' : ''; ?>>기타</option>
 									</select>
 								</div>
 							</div>
@@ -128,46 +93,6 @@
 								<label for="org_desc" class="form-label">조직 설명</label>
 								<textarea class="form-control" id="org_desc" name="org_desc" rows="3"
 										  placeholder="조직에 대한 설명을 입력하세요..."><?php echo htmlspecialchars($selected_org_detail['org_desc'] ?? ''); ?></textarea>
-							</div>
-
-							<div class="row mb-3">
-								<div class="col-md-6">
-									<label for="leader_name" class="form-label">리더 호칭</label>
-									<input type="text" class="form-control" id="leader_name" name="leader_name"
-										   value="<?php echo htmlspecialchars($selected_org_detail['leader_name']); ?>"
-										   placeholder="예: 리더, 팀장, 회장">
-								</div>
-								<div class="col-md-6">
-									<label for="new_name" class="form-label">신규 회원 호칭</label>
-									<input type="text" class="form-control" id="new_name" name="new_name"
-										   value="<?php echo htmlspecialchars($selected_org_detail['new_name']); ?>"
-										   placeholder="예: 새가족, 신입생, 신입사원">
-								</div>
-							</div>
-
-							<!-- 직위/직분, 직책, 타임라인 설정 추가 -->
-							<div class="row mb-3">
-								<div class="col-md-4">
-									<label for="position_names" class="form-label">직위/직분 설정</label>
-									<select class="form-select" id="position_names" name="position_names[]" multiple>
-										<!-- JavaScript로 기존 데이터 로드 -->
-									</select>
-									<div class="form-text">예: 장로, 권사, 집사, 평신도 등</div>
-								</div>
-								<div class="col-md-4">
-									<label for="duty_names" class="form-label">직책(그룹직책) 설정</label>
-									<select class="form-select" id="duty_names" name="duty_names[]" multiple>
-										<!-- JavaScript로 기존 데이터 로드 -->
-									</select>
-									<div class="form-text">예: 구역장, 조장, 팀장, 총무 등</div>
-								</div>
-								<div class="col-md-4">
-									<label for="timeline_names" class="form-label">타임라인 설정</label>
-									<select class="form-select" id="timeline_names" name="timeline_names[]" multiple>
-										<!-- JavaScript로 기존 데이터 로드 -->
-									</select>
-									<div class="form-text">예: 입교, 세례, 결혼, 직분임명 등</div>
-								</div>
 							</div>
 
 							<!-- 최고관리자 정보 -->
@@ -229,12 +154,59 @@
 						</div>
 					</div>
 				</div>
+				<div class="col-lg-4">
+					<div class="card">
+						<div class="card-header">
+							<h5 class="card-title mb-0">
+								호칭설정
+							</h5>
+						</div>
+						<div class="card-body">
+							<!-- 조직 아이콘 -->
+							<div class="row mb-3">
+								<div class="col-md-6">
+									<label for="leader_name" class="form-label">리더 호칭</label>
+									<input type="text" class="form-control" id="leader_name" name="leader_name" value="<?php echo htmlspecialchars($selected_org_detail['leader_name']); ?>" placeholder="예: 리더, 팀장, 회장">
+								</div>
+								<div class="col-md-6">
+									<label for="new_name" class="form-label">신규 회원 호칭</label>
+									<input type="text" class="form-control" id="new_name" name="new_name" value="<?php echo htmlspecialchars($selected_org_detail['new_name']); ?>" placeholder="예: 새가족, 신입생, 신입사원">
+								</div>
+							</div>
+
+							<!-- 직위/직분, 직책, 타임라인 설정 추가 -->
+							<div class="row mb-3">
+								<div class="col-md-12 mb-3">
+									<label for="position_names" class="form-label">직위/직분 호칭</label>
+									<select class="form-select" id="position_names" name="position_names[]" multiple>
+										<!-- JavaScript로 기존 데이터 로드 -->
+									</select>
+									<div class="form-text">예: 장로, 권사, 집사, 평신도 등</div>
+								</div>
+								<div class="col-md-12 mb-3">
+									<label for="duty_names" class="form-label">직책(그룹직책) 호칭</label>
+									<select class="form-select" id="duty_names" name="duty_names[]" multiple>
+										<!-- JavaScript로 기존 데이터 로드 -->
+									</select>
+									<div class="form-text">예: 구역장, 조장, 팀장, 총무 등</div>
+								</div>
+								<div class="col-md-12 mb-3">
+									<label for="timeline_names" class="form-label">타임라인 호칭</label>
+									<select class="form-select" id="timeline_names" name="timeline_names[]" multiple>
+										<!-- JavaScript로 기존 데이터 로드 -->
+									</select>
+									<div class="form-text">예: 입교, 세례, 결혼, 직분임명 등</div>
+								</div>
+							</div>
 
 
-			</div>
-		<?php else: ?>
-			<div class="alert alert-warning">
-				선택된 조직이 없습니다. 조직을 선택해주세요.
+
+
+
+						</div>
+					</div>
+				</div>
+
 			</div>
 		<?php endif; ?>
 	</form>
@@ -282,5 +254,4 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="/assets/js/org_setting.js?20250906"></script>
 
-</body>
-</html>
+
