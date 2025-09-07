@@ -1588,8 +1588,20 @@ $(document).ready(function() {
 	function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
 		var currentWeekRange = $('.current-week').text();
 		var currentDate = getDateFromWeekRange(currentWeekRange);
-		var lastWeekStartDate = getWeekStartDate(new Date(currentDate.setDate(currentDate.getDate() - 7)));
-		var lastWeekEndDate = getWeekEndDate(new Date(currentDate.setDate(currentDate.getDate())));
+
+		// 현재 주차의 일요일 구하기
+		var currentSunday = getSunday(new Date(currentDate));
+
+		// 지난주 일요일 계산 (현재 일요일에서 7일 빼기)
+		var lastWeekSunday = new Date(currentSunday);
+		lastWeekSunday.setDate(lastWeekSunday.getDate() - 7);
+
+		// YYYY-MM-DD 형식으로 포맷
+		var lastWeekSundayFormatted = formatDate(lastWeekSunday);
+
+		console.log('현재 주차 범위:', currentWeekRange);
+		console.log('현재 일요일:', formatDate(currentSunday));
+		console.log('지난주 일요일:', lastWeekSundayFormatted);
 
 		$.ajax({
 			url: '/qrcheck/get_last_week_attendance',
@@ -1598,22 +1610,32 @@ $(document).ready(function() {
 				member_idx: memberIdx,
 				org_id: orgId,
 				area_idx: areaIdx,
-				start_date: lastWeekStartDate,
-				end_date: lastWeekEndDate
+				att_date: lastWeekSundayFormatted  // 지난주 일요일 날짜만 전달
 			},
 			dataType: 'json',
 			success: function(response) {
+				console.log('지난주 출석 데이터 응답:', response);
+
 				if (response.status === 'success') {
 					var attendanceData = response.attendance_data;
 					var attTypes = response.att_types;
-					updateAttendanceSelectbox(attendanceData, attTypes);
-					showToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', 'success');
+
+					console.log('지난주 출석 데이터:', attendanceData);
+					console.log('출석 타입:', attTypes);
+
+					if (Object.keys(attendanceData).length === 0) {
+						showToast('지난주 출석 데이터가 없습니다.', 'warning');
+					} else {
+						updateAttendanceSelectbox(attendanceData, attTypes);
+						showToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', 'success');
+					}
 				} else {
 					var errorMessage = response.message || '지난주 데이터를 가져오는데 실패했습니다.';
 					showToast(errorMessage, 'error');
 				}
 			},
 			error: function(xhr, status, error) {
+				console.error('지난주 출석 데이터 조회 오류:', xhr.responseText);
 				var errorMessage = '지난주 데이터 조회 중 오류가 발생했습니다.';
 				if (xhr.responseJSON && xhr.responseJSON.message) {
 					errorMessage = xhr.responseJSON.message;

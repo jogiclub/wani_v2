@@ -1,7 +1,7 @@
 <?php $this->load->view('header'); ?>
 
 <!-- Attendance CSS -->
-<link rel="stylesheet" href="/assets/css/attendance.css?20250907">
+<link rel="stylesheet" href="/assets/css/attendance.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
@@ -140,4 +140,4 @@
 	$('.menu-22').addClass('active');
 
 </script>
-<script src="/assets/js/attendance.js?20250907"></script>
+<script src="/assets/js/attendance.js?<?php echo WB_VERSION; ?>"></script>

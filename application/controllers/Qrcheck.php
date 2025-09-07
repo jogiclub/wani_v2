@@ -509,8 +509,7 @@ class Qrcheck extends My_Controller
 		if ($this->input->is_ajax_request()) {
 			$org_id = $this->input->post('org_id');
 			$area_idx = $this->input->post('area_idx');
-			$start_date = $this->input->post('start_date');
-			$end_date = $this->input->post('end_date');
+			$att_date = $this->input->post('att_date'); // 지난주 일요일 날짜를 직접 받기
 
 			// 권한 확인
 			$user_id = $this->session->userdata('user_id');
@@ -525,9 +524,17 @@ class Qrcheck extends My_Controller
 				}
 			}
 
+			log_message('debug', 'Last week attendance - Target date: ' . $att_date);
+			log_message('debug', 'Last week attendance - Area IDX: ' . $area_idx);
+			log_message('debug', 'Last week attendance - Org ID: ' . $org_id);
+
 			$this->load->model('Attendance_model');
-			$attendance_data = $this->Attendance_model->get_org_member_attendance($org_id, $area_idx, $start_date, $end_date);
+
+			// 정확한 지난주 일요일 날짜로 조회
+			$attendance_data = $this->Attendance_model->get_org_member_attendance($org_id, $area_idx, $att_date, $att_date);
 			$att_types = $this->Attendance_model->get_attendance_types($org_id);
+
+			log_message('debug', 'Last week attendance data result: ' . json_encode($attendance_data));
 
 			$response = array(
 				'status' => 'success',
@@ -538,7 +545,6 @@ class Qrcheck extends My_Controller
 			echo json_encode($response);
 		}
 	}
-
 	/**
 	 * 역할: 모든 회원의 출석 데이터를 처리하고 불필요한 데이터 정리 - att_date를 일요일로 저장
 	 */

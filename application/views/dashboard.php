@@ -30,5 +30,5 @@
 	/*출석관리 메뉴 active*/
 	$('.menu-11').addClass('active');
 </script>
-<script src="/assets/js/org_setting.js?20250907"></script>
+<script src="/assets/js/org_setting.js?<?php echo WB_VERSION; ?>"></script>
 

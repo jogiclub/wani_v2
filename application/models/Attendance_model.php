@@ -662,7 +662,6 @@ class Attendance_model extends CI_Model {
 	}
 
 	/**
-	 * 파일 위치: application/models/Attendance_model.php
 	 * 역할: 조직의 출석 데이터 조회 - att_date가 일요일 날짜로 변경됨에 따라 조회 로직 수정
 	 */
 	public function get_org_member_attendance($org_id, $area_idx, $start_date, $end_date)
@@ -671,27 +670,46 @@ class Attendance_model extends CI_Model {
 		$sunday_date = $this->get_sunday_of_week($start_date);
 		$att_year = date('Y', strtotime($sunday_date));
 
+		log_message('debug', 'get_org_member_attendance - Sunday date: ' . $sunday_date);
+		log_message('debug', 'get_org_member_attendance - Area IDX: ' . $area_idx);
+		log_message('debug', 'get_org_member_attendance - Org ID: ' . $org_id);
+		log_message('debug', 'get_org_member_attendance - Att year: ' . $att_year);
+
 		$this->db->select('ma.member_idx, GROUP_CONCAT(ma.att_type_idx ORDER BY ma.att_type_idx SEPARATOR ",") AS att_type_idxs', false);
 		$this->db->from('wb_member_att ma');
 		$this->db->join('wb_member m', 'ma.member_idx = m.member_idx', 'inner');
 		$this->db->where('m.org_id', $org_id);
-		$this->db->where('m.area_idx', $area_idx);
+
+		// area_idx 조건 개선 - NULL 체크 추가
+		if (!empty($area_idx) && $area_idx > 0) {
+			$this->db->where('m.area_idx', $area_idx);
+		}
+
 		$this->db->where('ma.att_date', $sunday_date); // 일요일 날짜로 조회
 		$this->db->where('ma.att_year', $att_year);
+		$this->db->where('m.del_yn', 'N'); // 삭제되지 않은 회원만
 		$this->db->group_by('ma.member_idx');
+
 		$query = $this->db->get();
+
+		// 실행된 쿼리 로그
+		log_message('debug', 'get_org_member_attendance - Query: ' . $this->db->last_query());
+
 		$result = $query->result_array();
+
+		log_message('debug', 'get_org_member_attendance - Raw result count: ' . count($result));
 
 		$attendance_data = array();
 		foreach ($result as $row) {
 			$attendance_data[$row['member_idx']] = explode(',', $row['att_type_idxs']);
 		}
 
+		log_message('debug', 'get_org_member_attendance - Final attendance data: ' . json_encode($attendance_data));
+
 		return $attendance_data;
 	}
 
 	/**
-	 * 파일 위치: application/models/Attendance_model.php
 	 * 역할: 조직 출석 데이터 조회 - 일요일 날짜로 조회
 	 */
 	public function get_org_attendance_data($org_id, $start_date, $end_date)
