@@ -184,9 +184,8 @@ function can_access_menu($menu_key, $user_managed_menus, $is_master, $user_level
 $is_master = $this->session->userdata('master_yn');
 ?>
 
-<div class="container-fluid gnb-menu">
-	<div class="row">
-		<div class="sidebar border border-right col-xl-2 p-0 bg-body-tertiary">
+<div class="wrapper d-flex bg-light"></div>
+		<div class="sidebar border border-right p-0 bg-body-tertiary">
 			<div class="offcanvas-xl offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
 				<div class="offcanvas-header">
 					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
@@ -345,7 +344,8 @@ $is_master = $this->session->userdata('master_yn');
 				</div>
 			</div>
 		</div>
-		<main class="ms-sm-auto mt-3">
+
+		<main class="main mt-3">
 			<?php endif; ?>
 
 

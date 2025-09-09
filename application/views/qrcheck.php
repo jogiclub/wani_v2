@@ -1,3 +1,5 @@
+<!-- 파일 위치: application/views/qrcheck.php -->
+<!-- 역할: 드롭다운을 텍스트박스로 변경 -->
 
 <?php $this->load->view('header'); ?>
 <!-- Member CSS -->
@@ -9,12 +11,8 @@
 			<div class="col-lg-5 mb-2">
 				<div class="input-group">
 					<button type="button" class="input-group-text prev-week"><i class="bi bi-chevron-left"></i></button>
-					<button type="button" class="input-group-text dropdown-toggle current-week" data-bs-toggle="dropdown" aria-expanded="false">
-						<!-- 현재 주차 범위는 프론트엔드에서 동적으로 설정됩니다. -->
-					</button>
-					<ul class="dropdown-menu dropdown-current-week">
-						<!-- 주차 범위 드롭다운 메뉴는 프론트엔드에서 동적으로 생성됩니다. -->
-					</ul>
+					<!-- 드롭다운에서 단순 텍스트박스로 변경 -->
+					<input type="text" class="form-control current-week text-center" readonly>
 					<button type="button" class="input-group-text next-week"><i class="bi bi-chevron-right"></i></button>
 				</div>
 			</div>
@@ -62,20 +60,23 @@
 		</div>
 	</div>
 </div>
-<main>
-	<div class="container-fluid">
-		<div class="row">
-			<div class="member-list">
-				<div class="grid">
-					<div class="grid-sizer"></div>
-					<div class="grid-item">
 
-					</div>
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="member-list">
+			<div class="grid">
+				<div class="grid-sizer"></div>
+				<div class="grid-item">
+
 				</div>
 			</div>
 		</div>
 	</div>
-</main>
+</div>
+
+
+
 <footer>
 	<button class="input-group-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
 </footer>
@@ -154,8 +155,6 @@
 		</div>
 	</div>
 </div>
-
-
 
 <audio id="sound-ok" src="/assets/sound/sound_ok.mp3"></audio>
 <audio id="sound-no" src="/assets/sound/sound_no.mp3"></audio>

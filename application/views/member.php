@@ -128,7 +128,7 @@
 					<button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">상세정보</button>
 				</li>
 				<li class="nav-item" role="presentation">
-					<button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">타임라인 <span class="badge badge-sm text-bg-warning">준비중</span></button>
+					<button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">타임라인</button>
 				</li>
 				<li class="nav-item" role="presentation">
 					<button class="nav-link" id="memo-tab" data-bs-toggle="tab" data-bs-target="#memo-tab-pane" type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">회원메모</button>
@@ -275,7 +275,38 @@
 				<div class="tab-pane fade" id="timeline-tab-pane" role="tabpanel" aria-labelledby="timeline-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="col-12">
-							타임라인
+							<!-- 새 타임라인 입력 영역 -->
+							<div class="timeline-input-section pb-3 mb-3 border-bottom">
+								<div class="row align-items-end">
+									<div class="col-3">
+										<select class="form-select form-select-sm" id="newTimelineType">
+											<option value="">항목 선택</option>
+										</select>
+									</div>
+									<div class="col-3">
+
+										<input type="date" class="form-control form-control-sm" id="newTimelineDate">
+									</div>
+									<div class="col-4">
+
+										<input type="text" class="form-control form-control-sm" id="newTimelineContent" placeholder="내용을 입력하세요">
+									</div>
+									<div class="col-2 d-flex align-items-end">
+										<button type="button" class="btn btn-sm btn-outline-primary w-100" id="addTimelineBtn">
+											<i class="bi bi-plus-lg"></i> 추가
+										</button>
+									</div>
+								</div>
+							</div>
+
+							<!-- 타임라인 목록 영역 -->
+							<div class="timeline-list-section">
+								<div id="timelineList">
+									<div class="text-center text-muted py-3" id="emptyTimelineMessage">
+										타임라인을 불러오고 있습니다...
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

@@ -13,6 +13,10 @@ $(document).ready(function () {
 	let currentMemberIdx = null;       // 현재 선택된 회원 ID
 	let editingMemoIdx = null;         // 현재 수정 중인 메모 ID
 
+	// 타임라인 관련 전역 변수 추가
+	let currentMemberTimelineIdx = null;       // 현재 선택된 회원 ID (타임라인용)
+	let editingTimelineIdx = null;             // 현재 수정 중인 타임라인 ID
+	let timelineTypes = [];                    // 조직의 타임라인 호칭 목록
 
 
 	// 초기화 시도 (지연 로딩)
@@ -59,6 +63,7 @@ $(document).ready(function () {
 			setupCleanupEvents();
 			initDetailTab();           // 상세정보 탭 초기화
 			bindMemoTabEvents();       // 메모 탭 이벤트 바인딩 추가
+			bindTimelineTabEvents();
 
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
@@ -66,6 +71,9 @@ $(document).ready(function () {
 			showToast('페이지 초기화 중 오류가 발생했습니다.', 'error');
 		}
 	}
+
+
+
 
 	/**
 	 * Split.js 초기화
@@ -166,6 +174,455 @@ $(document).ready(function () {
 				}
 			}
 		}, 250));
+	}
+
+	/**
+	 * 타임라인 탭 이벤트 바인딩
+	 */
+	function bindTimelineTabEvents() {
+		// 타임라인 탭 클릭 시 타임라인 목록 로드
+		$('#timeline-tab').off('shown.bs.tab').on('shown.bs.tab', function() {
+			const memberIdx = $('#member_idx').val();
+			if (memberIdx) {
+				currentMemberTimelineIdx = memberIdx;
+				loadTimelineTypes();
+				loadTimelineList(memberIdx);
+			}
+		});
+
+		// 타임라인 추가 버튼 클릭
+		$(document).off('click', '#addTimelineBtn').on('click', '#addTimelineBtn', function() {
+			saveTimeline();
+		});
+
+		// 타임라인 목록 내 버튼 이벤트 (동적 요소용 이벤트 위임)
+		$(document).off('click', '.btn-timeline-edit').on('click', '.btn-timeline-edit', function() {
+			const idx = $(this).data('idx');
+			const timelineData = getTimelineDataFromElement($(this).closest('.timeline-item'));
+			startEditTimeline(idx, timelineData);
+		});
+
+		$(document).off('click', '.btn-timeline-delete').on('click', '.btn-timeline-delete', function() {
+			const idx = $(this).data('idx');
+			showDeleteTimelineModal(idx);
+		});
+
+		$(document).off('click', '.btn-timeline-save').on('click', '.btn-timeline-save', function() {
+			const idx = $(this).data('idx');
+			const timelineData = getTimelineDataFromEditForm($(this).closest('.timeline-item'));
+			updateTimeline(idx, timelineData);
+		});
+
+		$(document).off('click', '.btn-timeline-cancel').on('click', '.btn-timeline-cancel', function() {
+			cancelEditTimeline();
+		});
+
+		// Enter 키로 타임라인 추가 기능
+		$(document).off('keydown', '#newTimelineContent').on('keydown', '#newTimelineContent', function(e) {
+			if (e.ctrlKey && e.keyCode === 13) {
+				saveTimeline();
+			}
+		});
+
+		// 타임라인 수정 중 ESC 키로 취소
+		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function(e) {
+			if (e.keyCode === 27) {
+				cancelEditTimeline();
+			}
+		});
+
+		// 타임라인 수정 중 Ctrl + Enter로 저장
+		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function(e) {
+			if (e.ctrlKey && e.keyCode === 13) {
+				const idx = $(this).closest('.timeline-item').data('idx');
+				const timelineData = getTimelineDataFromEditForm($(this).closest('.timeline-item'));
+				updateTimeline(idx, timelineData);
+			}
+		});
+	}
+
+	/**
+	 * 조직의 타임라인 호칭 목록 로드
+	 */
+	function loadTimelineTypes() {
+		if (!selectedOrgId) return;
+
+		$.ajax({
+			url: '/member/get_timeline_types',
+			method: 'POST',
+			data: { org_id: selectedOrgId },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					timelineTypes = response.data || [];
+					populateTimelineTypeSelect();
+				} else {
+					console.error('타임라인 호칭 로드 실패:', response.message);
+					timelineTypes = [];
+					populateTimelineTypeSelect();
+				}
+			},
+			error: function() {
+				console.error('타임라인 호칭 로드 중 오류 발생');
+				timelineTypes = [];
+				populateTimelineTypeSelect();
+			}
+		});
+	}
+
+	/**
+	 * 타임라인 타입 선택박스 채우기
+	 */
+	function populateTimelineTypeSelect() {
+		const select = $('#newTimelineType');
+		select.html('<option value="">항목 선택</option>');
+
+		timelineTypes.forEach(function(type) {
+			select.append(`<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`);
+		});
+	}
+
+	/**
+	 * 타임라인 목록 로드
+	 */
+	function loadTimelineList(memberIdx) {
+		if (!memberIdx) return;
+
+		$.ajax({
+			url: '/member/get_timeline_list',
+			method: 'POST',
+			data: {
+				member_idx: memberIdx,
+				org_id: selectedOrgId,
+				page: 1,
+				limit: 50
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					renderTimelineList(response.data);
+				} else {
+					showToast('타임라인 목록을 불러오는데 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('타임라인 목록을 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 타임라인 목록 렌더링
+	 */
+	function renderTimelineList(timelineList) {
+		const timelineListContainer = $('#timelineList');
+		timelineListContainer.empty();
+
+		if (!timelineList || timelineList.length === 0) {
+			timelineListContainer.html('<div class="text-center text-muted py-3" id="emptyTimelineMessage">등록된 타임라인이 없습니다.</div>');
+			return;
+		}
+
+		// 날짜별로 정렬 (최신순)
+		timelineList.sort(function(a, b) {
+			return new Date(b.timeline_date) - new Date(a.timeline_date);
+		});
+
+		timelineList.forEach(function(timeline, index) {
+			const timelineHtml = createTimelineItemHtml(timeline);
+			timelineListContainer.append(timelineHtml);
+
+			// 타임라인 연결선 추가 (마지막 항목이 아닌 경우)
+			if (index < timelineList.length - 1) {
+				timelineListContainer.append('<div class="timeline-connector">|</div>');
+			}
+		});
+	}
+
+	/**
+	 * 타임라인 아이템 HTML 생성
+	 */
+	function createTimelineItemHtml(timeline) {
+		const formattedDate = formatTimelineDate(timeline.timeline_date);
+		const regDate = formatMemoDateTime(timeline.regi_date);
+
+		return `
+			<div class="timeline-item" data-idx="${timeline.idx}">
+				<div class="row align-items-center">				
+					<div class="col-9">
+						<div class="timeline-content">
+							<span class="timeline-date">${formattedDate}</span>
+							<span class="timeline-type">${escapeHtml(timeline.timeline_type)}</span>
+							<span class="timeline-text">${escapeHtml(timeline.timeline_content || '')}</span>
+						</div>						
+					</div>
+					<div class="col-3 d-flex justify-content-end">
+						<div class="btn-group">
+							<button type="button" class="btn btn-sm btn-outline-secondary btn-timeline-edit" data-idx="${timeline.idx}">수정</button>
+							<button type="button" class="btn btn-sm btn-outline-danger btn-timeline-delete" data-idx="${timeline.idx}">삭제</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	/**
+	 * 타임라인 저장
+	 */
+	function saveTimeline() {
+		const timelineType = $('#newTimelineType').val().trim();
+		const timelineDate = $('#newTimelineDate').val();
+		const timelineContent = $('#newTimelineContent').val().trim();
+
+		if (!timelineType) {
+			showToast('타임라인 항목을 선택해주세요.', 'warning');
+			return;
+		}
+
+		if (!timelineDate) {
+			showToast('날짜를 선택해주세요.', 'warning');
+			return;
+		}
+
+		if (!currentMemberTimelineIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		$.ajax({
+			url: '/member/save_timeline',
+			method: 'POST',
+			data: {
+				member_idx: currentMemberTimelineIdx,
+				timeline_type: timelineType,
+				timeline_date: timelineDate,
+				timeline_content: timelineContent,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					$('#newTimelineType').val('');
+					$('#newTimelineDate').val('');
+					$('#newTimelineContent').val('');
+					loadTimelineList(currentMemberTimelineIdx);
+					showToast('타임라인이 저장되었습니다.', 'success');
+				} else {
+					showToast(response.message || '타임라인 저장에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('타임라인 저장에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 타임라인 수정 시작
+	 */
+	function startEditTimeline(idx, timelineData) {
+		editingTimelineIdx = idx;
+		const timelineItem = $(`.timeline-item[data-idx="${idx}"]`);
+
+		const editHtml = createTimelineEditHtml(timelineData);
+		timelineItem.find('.timeline-content').parent().replaceWith(editHtml);
+		timelineItem.find('.btn-group').hide();
+	}
+
+	/**
+	 * 타임라인 수정 폼 HTML 생성
+	 */
+	function createTimelineEditHtml(timelineData) {
+		let typeOptions = '<option value="">타임라인 항목 선택</option>';
+		timelineTypes.forEach(function(type) {
+			const selected = type === timelineData.timeline_type ? 'selected' : '';
+			typeOptions += `<option value="${escapeHtml(type)}" ${selected}>${escapeHtml(type)}</option>`;
+		});
+
+		return `
+			<div class="col-8">
+				<div class="timeline-edit-form">
+					<div class="row mb-2">
+						<div class="col-4">
+							<select class="form-select form-select-sm timeline-type-edit">
+								${typeOptions}
+							</select>
+						</div>
+						<div class="col-4">
+							<input type="date" class="form-control form-control-sm timeline-date-edit" value="${timelineData.timeline_date}">
+						</div>
+						<div class="col-4">
+							<input type="text" class="form-control form-control-sm timeline-content-edit" value="${escapeHtml(timelineData.timeline_content || '')}" placeholder="내용 입력">
+						</div>
+					</div>
+					<div class="text-end">
+						<button type="button" class="btn btn-sm btn-success btn-timeline-save" data-idx="${editingTimelineIdx}">저장</button>
+						<button type="button" class="btn btn-sm btn-secondary btn-timeline-cancel">취소</button>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	/**
+	 * 타임라인 수정 취소
+	 */
+	function cancelEditTimeline() {
+		if (editingTimelineIdx) {
+			loadTimelineList(currentMemberTimelineIdx);
+			editingTimelineIdx = null;
+		}
+	}
+
+	/**
+	 * 타임라인 업데이트
+	 */
+	function updateTimeline(idx, timelineData) {
+		if (!timelineData.timeline_type.trim()) {
+			showToast('타임라인 항목을 선택해주세요.', 'warning');
+			return;
+		}
+
+		if (!timelineData.timeline_date) {
+			showToast('날짜를 선택해주세요.', 'warning');
+			return;
+		}
+
+		$.ajax({
+			url: '/member/update_timeline',
+			method: 'POST',
+			data: {
+				idx: idx,
+				timeline_type: timelineData.timeline_type.trim(),
+				timeline_date: timelineData.timeline_date,
+				timeline_content: timelineData.timeline_content.trim(),
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					loadTimelineList(currentMemberTimelineIdx);
+					editingTimelineIdx = null;
+					showToast('타임라인이 수정되었습니다.', 'success');
+				} else {
+					showToast(response.message || '타임라인 수정에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('타임라인 수정에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 타임라인 삭제 확인 모달 표시
+	 */
+	function showDeleteTimelineModal(idx) {
+		const modalHtml = `
+			<div class="modal fade" id="deleteTimelineModal" tabindex="-1" aria-labelledby="deleteTimelineModalLabel" aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="deleteTimelineModalLabel">타임라인 삭제</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<p>이 타임라인을 삭제하시겠습니까?</p>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+							<button type="button" class="btn btn-danger" id="confirmDeleteTimelineBtn" data-idx="${idx}">삭제</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
+
+		$('#deleteTimelineModal').remove();
+		$('body').append(modalHtml);
+
+		$('#confirmDeleteTimelineBtn').on('click', function() {
+			const timelineIdx = $(this).data('idx');
+			deleteTimeline(timelineIdx);
+		});
+
+		$('#deleteTimelineModal').modal('show');
+	}
+
+	/**
+	 * 타임라인 삭제 실행
+	 */
+	function deleteTimeline(idx) {
+		$.ajax({
+			url: '/member/delete_timeline',
+			method: 'POST',
+			data: {
+				idx: idx,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					$('#deleteTimelineModal').modal('hide');
+					loadTimelineList(currentMemberTimelineIdx);
+					showToast('타임라인이 삭제되었습니다.', 'success');
+				} else {
+					showToast(response.message || '타임라인 삭제에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('타임라인 삭제에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 타임라인용 날짜 형식화
+	 */
+	function formatTimelineDate(dateString) {
+		if (!dateString) return '';
+
+		const date = new Date(dateString);
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+
+		return `${year}.${month}.${day}`;
+	}
+
+	/**
+	 * 타임라인 요소에서 데이터 추출
+	 */
+	function getTimelineDataFromElement(element) {
+		const content = element.find('.timeline-content');
+		const timelineType = content.find('.timeline-type').text().replace(/[\[\]]/g, '');
+		const timelineDate = content.find('.timeline-date').text().replace(/\./g, '-');
+		const timelineText = content.find('.timeline-text').text();
+
+		// 날짜 형식 변환 (YYYY.MM.DD -> YYYY-MM-DD)
+		const dateParts = timelineDate.split('.');
+		let formattedDate = timelineDate;
+		if (dateParts.length === 3) {
+			formattedDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
+		}
+
+		return {
+			timeline_type: timelineType,
+			timeline_date: formattedDate,
+			timeline_content: timelineText
+		};
+	}
+
+	/**
+	 * 수정 폼에서 타임라인 데이터 추출
+	 */
+	function getTimelineDataFromEditForm(element) {
+		return {
+			timeline_type: element.find('.timeline-type-edit').val(),
+			timeline_date: element.find('.timeline-date-edit').val(),
+			timeline_content: element.find('.timeline-content-edit').val()
+		};
 	}
 
 
@@ -1515,6 +1972,7 @@ $(document).ready(function () {
 					populateFormData(memberData);
 					// 메모 관련 초기화
 					currentMemberIdx = memberData.member_idx;
+					currentMemberTimelineIdx = memberData.member_idx;
 				});
 			});
 		} else {
@@ -1539,6 +1997,7 @@ $(document).ready(function () {
 		$('#profile-tab').addClass('active').attr('aria-selected', 'true');
 		$('#profile-tab-pane').addClass('show active');
 		$('#detail-tab, #memo-tab').attr('aria-selected', 'false');
+		$('#detail-tab, #timeline-tab, #memo-tab').attr('aria-selected', 'false');
 	}
 
 	/**
@@ -1621,6 +2080,15 @@ $(document).ready(function () {
 		editingMemoIdx = null;
 		$('#newMemoContent').val('');
 		$('#memoList').empty();
+
+		// 타임라인 관련 초기화 추가
+		currentMemberTimelineIdx = null;
+		editingTimelineIdx = null;
+		$('#newTimelineType').val('');
+		$('#newTimelineDate').val('');
+		$('#newTimelineContent').val('');
+		$('#timelineList').empty();
+		timelineTypes = [];
 
 		destroyCroppie();
 	}

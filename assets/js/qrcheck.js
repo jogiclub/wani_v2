@@ -672,7 +672,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 				offcanvasBody.empty();
 
 				// 상세 관리용 테이블 생성 (메모를 이름 옆으로 이동)
-				var tableHtml = '<table class="table align-middle" style="min-width: 850px"><thead><tr>' +
+				var tableHtml = '<table class="table align-middle"><thead><tr>' +
 					'<th style="width: 100px">이름</th>' +
 					'<th style="width: 200px">한줄메모</th>';
 
@@ -1010,16 +1010,18 @@ function getDateFromWeekRange(weekRange) {
 	return new Date(startDateStr);
 }
 
+// 주차 범위 생성 함수 수정 - (주차) 정보 제거
 function getWeekRangeFromDate(date) {
 	var currentDate = new Date(date);
 	var sundayTimestamp = getSunday(currentDate).getTime();
 	var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
-	var week = getWeekNumber(currentDate);
 	var startDate = formatDate(new Date(sundayTimestamp));
 	var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
-	return `${startDate}~${endDate} (${week}주차)`;
+	// 주차 정보 제거하여 단순한 날짜 범위만 반환
+	return `${startDate}~${endDate}`;
 }
 
+// 모든 주차 범위 생성 함수 수정 - (주차) 정보 제거
 function generateAllWeekRanges() {
 	var allWeekRanges = [];
 	var startDate = new Date(new Date().getFullYear(), 0, 1);
@@ -1335,6 +1337,7 @@ function updateAttStamps(orgId, startDate, endDate) {
 	});
 }
 
+
 // 주차 범위 업데이트 함수 수정
 function updateWeekRange(weekRange) {
 	$('.current-week').text(weekRange);
@@ -1531,46 +1534,44 @@ $(document).ready(function() {
 	// 페이지 로드 시 input-search에 포커스 설정
 	$('#input-search').focus();
 
-	// 모든 주차 범위 생성
-	var allWeekRanges = generateAllWeekRanges();
-	var weekRangeDropdown = $('.dropdown-current-week');
-	allWeekRanges.forEach(function(weekRange) {
-		var li = $('<li>').append($('<a>').addClass('dropdown-item').attr('href', '#').text(weekRange));
-		weekRangeDropdown.append(li);
-	});
-
 	// 현재 주차 범위 설정
 	var today = new Date();
 	var formattedToday = formatDate(today);
 	var currentWeekRange = getWeekRangeFromDate(formattedToday);
 	updateWeekRange(currentWeekRange);
 
-	$('.current-week').text(currentWeekRange);
+	$('.current-week').val(currentWeekRange);
 
-	// 이전 주 버튼 클릭 이벤트
-	$('.prev-week').click(function() {
+
+	// 이전 주 버튼 클릭 이벤트 - 디버깅 로그 추가
+	$('.prev-week').off('click').on('click', function() {
+		console.log('이전 주 버튼 클릭');
 		var currentWeekRange = $('.current-week').text();
+		console.log('현재 주차:', currentWeekRange);
+
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 		var prevDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
 		var prevWeekRange = getWeekRangeFromDate(prevDate);
+
+		console.log('이전 주차:', prevWeekRange);
 		updateWeekRange(prevWeekRange);
 	});
 
-	// 다음 주 버튼 클릭 이벤트
-	$('.next-week').click(function() {
+	// 다음 주 버튼 클릭 이벤트 - 디버깅 로그 추가
+	$('.next-week').off('click').on('click', function() {
+		console.log('다음 주 버튼 클릭');
 		var currentWeekRange = $('.current-week').text();
+		console.log('현재 주차:', currentWeekRange);
+
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 		var nextDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
 		var nextWeekRange = getWeekRangeFromDate(nextDate);
+
+		console.log('다음 주차:', nextWeekRange);
 		updateWeekRange(nextWeekRange);
 	});
 
-	// 드롭다운 메뉴 항목 클릭 이벤트
-	$('.dropdown-current-week .dropdown-item').click(function(e) {
-		e.preventDefault();
-		var weekRange = $(this).text();
-		updateWeekRange(weekRange);
-	});
+
 
 	// 페이지 로드 시 input-search 상태 업데이트
 	updateInputSearchState();
@@ -1621,7 +1622,7 @@ $(document).ready(function() {
 					var attTypes = response.att_types;
 
 					console.log('지난주 출석 데이터:', attendanceData);
-					console.log('출석 타입:', attTypes);
+					console.log('출석타입:', attTypes);
 
 					if (Object.keys(attendanceData).length === 0) {
 						showToast('지난주 출석 데이터가 없습니다.', 'warning');
@@ -1668,3 +1669,16 @@ $(document).ready(function() {
 		});
 	}
 });
+
+
+
+function getDateFromWeekRange(weekRange) {
+	// "2025.09.07~2025.09.13" 형식에서 시작 날짜 추출
+	var parts = weekRange.split('~');
+	var startDateStr = parts[0].trim();
+
+	// YYYY.MM.DD를 YYYY-MM-DD로 변환
+	var formattedDateStr = startDateStr.replace(/\./g, '-');
+
+	return new Date(formattedDateStr);
+}

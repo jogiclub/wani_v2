@@ -1350,4 +1350,225 @@ class Member extends My_Controller
 		));
 	}
 
+
+
+	/**
+	 * 조직의 타임라인 호칭 목록 가져오기
+	 */
+	public function get_timeline_types()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 조직의 타임라인 호칭 정보 가져오기
+		$org_detail = $this->Org_model->get_org_detail_by_id($org_id);
+		$timeline_types = array();
+
+		if ($org_detail && !empty($org_detail['timeline_name'])) {
+			try {
+				$decoded_timeline = json_decode($org_detail['timeline_name'], true);
+				if (is_array($decoded_timeline)) {
+					$timeline_types = $decoded_timeline;
+				}
+			} catch (Exception $e) {
+				log_message('error', '타임라인 호칭 JSON 파싱 오류: ' . $e->getMessage());
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $timeline_types
+		));
+	}
+
+	/**
+	 * 회원 타임라인 목록 조회
+	 */
+	public function get_timeline_list()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$page = $this->input->post('page') ?: 1;
+		$limit = $this->input->post('limit') ?: 20;
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 회원이 해당 조직에 속하는지 확인
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원입니다.'));
+			return;
+		}
+
+		$offset = ($page - 1) * $limit;
+
+		$this->load->model('Timeline_model');
+		$timeline_list = $this->Timeline_model->get_member_timeline($member_idx, $limit, $offset);
+
+		if ($timeline_list !== false) {
+			echo json_encode(array('success' => true, 'data' => $timeline_list));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '타임라인 목록을 불러오는데 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 타임라인 항목 저장
+	 */
+	public function save_timeline()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$timeline_type = $this->input->post('timeline_type');
+		$timeline_date = $this->input->post('timeline_date');
+		$timeline_content = $this->input->post('timeline_content');
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$member_idx || !$timeline_type || !$timeline_date || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 회원이 해당 조직에 속하는지 확인
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원입니다.'));
+			return;
+		}
+
+		$data = array(
+			'member_idx' => $member_idx,
+			'timeline_type' => $timeline_type,
+			'timeline_date' => $timeline_date,
+			'timeline_content' => $timeline_content ?: '',
+			'regi_date' => date('Y-m-d H:i:s'),
+			'user_id' => $this->session->userdata('user_email')
+		);
+
+		$this->load->model('Timeline_model');
+		$result = $this->Timeline_model->save_timeline($data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '타임라인이 저장되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '타임라인 저장에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 타임라인 항목 수정
+	 */
+	public function update_timeline()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$idx = $this->input->post('idx');
+		$timeline_type = $this->input->post('timeline_type');
+		$timeline_date = $this->input->post('timeline_date');
+		$timeline_content = $this->input->post('timeline_content');
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$idx || !$timeline_type || !$timeline_date || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$update_data = array(
+			'timeline_type' => $timeline_type,
+			'timeline_date' => $timeline_date,
+			'timeline_content' => $timeline_content ?: '',
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->load->model('Timeline_model');
+		$result = $this->Timeline_model->update_timeline($idx, $update_data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '타임라인이 수정되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '타임라인 수정에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 타임라인 항목 삭제
+	 */
+	public function delete_timeline()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$idx = $this->input->post('idx');
+		$org_id = $this->input->post('org_id');
+
+		// 필수 데이터 확인
+		if (!$idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Timeline_model');
+		$result = $this->Timeline_model->delete_timeline($idx);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '타임라인이 삭제되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '타임라인 삭제에 실패했습니다.'));
+		}
+	}
+
+
 }
