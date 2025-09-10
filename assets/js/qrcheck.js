@@ -28,9 +28,9 @@ function initializePastoralGrid() {
 		{
 			title: "한줄메모",
 			dataIndx: "memo_content",
-			width: 250,
-			minWidth: 200,
-			maxWidth: 300,
+			width: 180,
+			minWidth: 120,
+			maxWidth: 250,
 			editable: true,
 			align: "left",
 			resizable: true,
@@ -47,30 +47,35 @@ function initializePastoralGrid() {
 			var columnConfig = {
 				title: attType.att_type_name,
 				dataIndx: "att_type_" + attType.att_type_idx,
-				width: 80,
-				minWidth: 60,
-				maxWidth: 100,
-				editable: true,
+				width: 50,
+				minWidth: 20,
+				maxWidth: 80,
 				align: "center",
 				resizable: true
 			};
 
 			// att_type_input에 따라 컬럼 타입 결정
 			if (attType.att_type_input === 'check') {
-				// checkbox 타입
-				columnConfig.type = 'bool';
-				columnConfig.editor = {
-					type: 'checkbox'
-				};
+				// checkbox 타입을 HTML render로 직접 처리
+				columnConfig.editable = false; // 편집 모드 비활성화
 				columnConfig.render = function(ui) {
-					if (ui.cellData === true || ui.cellData === 'Y' || ui.cellData === '1') {
-						return '<input type="checkbox" checked >';
-					} else {
-						return '<input type="checkbox" >';
-					}
+					var isChecked = ui.cellData === true || ui.cellData === 'Y' || ui.cellData === 1;
+					var checkedAttr = isChecked ? 'checked' : '';
+					var checkboxId = 'checkbox_' + ui.rowIndx + '_' + attType.att_type_idx;
+
+					return '<div style="text-align: center;">' +
+						'<input type="checkbox" ' + checkedAttr + ' ' +
+						'id="' + checkboxId + '" ' +
+						'class="pastoral-checkbox" ' +
+						'data-row-indx="' + ui.rowIndx + '" ' +
+						'data-att-type-idx="' + attType.att_type_idx + '" ' +
+						'data-member-idx="' + ui.rowData.member_idx + '" ' +
+						'style="transform: scale(1.2);">' +
+						'</div>';
 				};
 			} else {
 				// selectbox 타입 (기본)
+				columnConfig.editable = true;
 				var options = [];
 				options.push({value: '', text: '-'});
 				options.push({
@@ -103,7 +108,7 @@ function initializePastoralGrid() {
 		},
 		colModel: colModel,
 		selectionModel: {
-			type: 'none'
+			type: 'cell'
 		},
 		scrollModel: {
 			autoFit: false,
@@ -125,12 +130,43 @@ function initializePastoralGrid() {
 		complete: function() {
 			setTimeout(function() {
 				forceColumnWidths();
+				// 체크박스 이벤트 바인딩
+				bindPastoralCheckboxEvents();
 			}, 100);
 		}
 	};
 
 	// pqgrid 초기화
 	pastoralGrid = $("#pastoralAttendanceGrid").pqGrid(gridOptions);
+}
+
+/**
+ * 목장출석 체크박스 이벤트 바인딩
+ */
+function bindPastoralCheckboxEvents() {
+	// 기존 이벤트 제거 후 새로 바인딩
+	$(document).off('change', '.pastoral-checkbox').on('change', '.pastoral-checkbox', function(e) {
+		e.stopPropagation();
+
+		var checked = $(this).is(':checked');
+		var rowIndx = parseInt($(this).data('row-indx'));
+		var memberIdx = $(this).data('member-idx');
+		var attTypeIdx = $(this).data('att-type-idx');
+
+		// 데이터 모델에 즉시 반영
+		try {
+			var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
+			if (gridData && gridData[rowIndx]) {
+				gridData[rowIndx]["att_type_" + attTypeIdx] = checked;
+				// 데이터 업데이트 후 그리드 새로고침 방지 (무한루프 방지)
+				pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+			}
+
+			console.log('체크박스 변경 완료:', memberIdx, attTypeIdx, checked);
+		} catch (error) {
+			console.error('체크박스 데이터 업데이트 실패:', error);
+		}
+	});
 }
 
 /**
@@ -187,8 +223,9 @@ function forceColumnWidths() {
 	}
 }
 
+
 /**
- * 목장출석 pqgrid용 데이터 준비 (수정된 버전)
+ * 목장출석 pqgrid용 데이터 준비 (checkbox 데이터 처리 개선)
  */
 function preparePastoralGridData(members, attTypes) {
 	var gridData = [];
@@ -208,7 +245,7 @@ function preparePastoralGridData(members, attTypes) {
 		if (attTypes && attTypes.length > 0) {
 			attTypes.forEach(function(attType) {
 				var dataIndx = "att_type_" + attType.att_type_idx;
-				var selectedValue = '';
+				var selectedValue = null;
 
 				if (member.attendance) {
 					var attendanceArr = member.attendance.split('|');
@@ -218,7 +255,7 @@ function preparePastoralGridData(members, attTypes) {
 
 						if (attTypeIdx == attType.att_type_idx) {
 							if (attType.att_type_input === 'check') {
-								selectedValue = true; // checkbox는 true/false
+								selectedValue = true; // checkbox는 boolean true
 							} else {
 								selectedValue = attTypeIdx; // selectbox는 att_type_idx
 							}
@@ -226,9 +263,9 @@ function preparePastoralGridData(members, attTypes) {
 					});
 				}
 
-				// checkbox는 false로 초기화, selectbox는 빈 문자열로 초기화
+				// checkbox는 boolean, selectbox는 string으로 초기화
 				if (attType.att_type_input === 'check') {
-					rowData[dataIndx] = selectedValue || false;
+					rowData[dataIndx] = selectedValue === true;
 				} else {
 					rowData[dataIndx] = selectedValue || '';
 				}
@@ -568,10 +605,23 @@ function loadMemberAttendance(memberIdx, startDate, endDate) {
 	});
 }
 
-// 5. 출석 타입 로드 함수에서 category_idx 제거
+
+// 출석 타입 로드 함수도 수정 (radio button 그룹 구조 개선)
 function loadAttendanceTypes(memberIdx, attendanceData) {
 	var html = '';
 
+	console.log('출석 타입 로드 시작:', {
+		memberIdx: memberIdx,
+		attendanceData: attendanceData,
+		attendanceTypes: attendanceTypes
+	});
+
+	if (!attendanceTypes || attendanceTypes.length === 0) {
+		console.error('attendanceTypes가 비어있습니다.');
+		return;
+	}
+
+	// 각 출석 타입별로 radio button group 생성
 	for (var i = 0; i < attendanceTypes.length; i++) {
 		var type = attendanceTypes[i];
 
@@ -584,15 +634,20 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 			}
 		}
 
+		// radio button group을 btn-group으로 감싸기
+		html += '<div class="btn-group me-2 mb-2" role="group">';
 		html += '<input type="radio" class="btn-check" name="att_type_' + type.att_type_idx + '" id="att_type_' + type.att_type_idx + '" value="' + type.att_type_idx + '" ' + (isChecked ? 'checked' : '') + ' autocomplete="off">';
 		html += '<label class="btn btn-outline-primary" for="att_type_' + type.att_type_idx + '">' + type.att_type_name + '</label>';
+		html += '</div>';
 	}
+
+	console.log('생성된 HTML:', html);
 
 	$('#attendanceTypes').html(html);
 	$('#attendanceModal').modal('show');
 }
 
-// 출석 정보 저장
+// 출석 정보 저장 (수정된 버전)
 $('#saveAttendance').click(function() {
 	var memberIdx = $('#selectedMemberIdx').val();
 	var attendanceData = [];
@@ -609,26 +664,71 @@ $('#saveAttendance').click(function() {
 	var formattedToday = formatDate(today);
 	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
 
-	$('#attendanceTypes .btn-group').each(function() {
-		var selectedType = $(this).find('input[type="radio"]:checked').val();
-		if (selectedType) {
-			attendanceData.push(selectedType);
-		}
-	});
+	console.log('출석 저장 시작 - memberIdx:', memberIdx);
+	console.log('attendanceTypes:', attendanceTypes);
+
+	// 수정된 데이터 수집 로직
+	if (attendanceTypes && attendanceTypes.length > 0) {
+		attendanceTypes.forEach(function(type) {
+			// 각 출석 타입별로 체크된 항목 확인
+			var radioInput = $('#attendanceTypes input[name="att_type_' + type.att_type_idx + '"]:checked');
+
+			console.log('출석타입 ' + type.att_type_idx + ' 체크 상태:', {
+				name: 'att_type_' + type.att_type_idx,
+				checked: radioInput.length > 0,
+				value: radioInput.val()
+			});
+
+			if (radioInput.length > 0) {
+				var selectedValue = radioInput.val();
+				if (selectedValue) {
+					attendanceData.push(selectedValue);
+					console.log('출석 데이터 추가:', selectedValue);
+				}
+			}
+		});
+	} else {
+		// 기존 방식으로 폴백
+		$('#attendanceTypes .btn-group').each(function() {
+			var selectedType = $(this).find('input[type="radio"]:checked').val();
+			if (selectedType) {
+				attendanceData.push(selectedType);
+				console.log('폴백 방식으로 출석 데이터 추가:', selectedType);
+			}
+		});
+	}
+
+	console.log('최종 수집된 출석 데이터:', attendanceData);
+
+	// 출석 데이터가 비어있는지 확인
+	if (attendanceData.length === 0) {
+		console.warn('선택된 출석 타입이 없습니다.');
+		// 빈 데이터라도 서버로 전송 (기존 출석 데이터 삭제 목적)
+	}
+
+	// 서버로 전송할 데이터 확인
+	var requestData = {
+		member_idx: memberIdx,
+		attendance_data: JSON.stringify(attendanceData),
+		org_id: activeOrgId,
+		att_date: attDate,
+		start_date: startDate,
+		end_date: endDate
+	};
+
+	console.log('서버로 전송할 데이터:', requestData);
 
 	$.ajax({
 		url: '/qrcheck/save_attendance',
 		method: 'POST',
-		data: {
-			member_idx: memberIdx,
-			attendance_data: JSON.stringify(attendanceData),
-			org_id: activeOrgId,
-			att_date: attDate,
-			start_date: startDate,
-			end_date: endDate
-		},
+		data: requestData,
 		dataType: 'json',
+		beforeSend: function() {
+			console.log('AJAX 요청 전송 중...');
+		},
 		success: function(response) {
+			console.log('출석 저장 응답:', response);
+
 			if (response.status === 'success') {
 				$('#attendanceModal').modal('hide');
 
@@ -646,6 +746,14 @@ $('#saveAttendance').click(function() {
 			} else {
 				alert('출석 정보 저장에 실패했습니다.');
 			}
+		},
+		error: function(xhr, status, error) {
+			console.error('AJAX 요청 실패:', {
+				status: status,
+				error: error,
+				responseText: xhr.responseText
+			});
+			alert('출석 정보 저장 중 오류가 발생했습니다.');
 		}
 	});
 });
@@ -938,9 +1046,10 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 }
 
 
+
 /**
-* 지난주 출석 데이터 적용 (수정된 버전)
-*/
+ * 지난주 출석 데이터 적용 (checkbox 처리 개선)
+ */
 function updateAttendanceSelectboxForGrid(attendanceData, attTypes) {
 	if (!pastoralGrid || !attendanceData || !attTypes) {
 		return;
@@ -992,7 +1101,6 @@ function updateAttendanceSelectboxForGrid(attendanceData, attTypes) {
 		console.error('지난주 출석 데이터 적용 실패:', error);
 	}
 }
-
 
 /**
  * 메모 데이터 저장 함수 (pqgrid용)
@@ -1658,7 +1766,7 @@ $('#saveAttendanceBtn').off('click').on('click', function() {
 
 
 /**
- * pqgrid에서 출석+메모 데이터 수집 및 저장 (수정된 버전)
+ * pqgrid에서 출석+메모 데이터 수집 및 저장 (checkbox 처리 개선)
  */
 function saveAttendanceAndMemoFromGrid() {
 	console.log('pqgrid에서 출석 및 메모 저장 시작');
@@ -1706,10 +1814,10 @@ function saveAttendanceAndMemoFromGrid() {
 				var dataIndx = "att_type_" + attType.att_type_idx;
 				var cellValue = row[dataIndx];
 
-				// checkbox인 경우 true인지 확인, selectbox인 경우 빈 값이 아닌지 확인
+				// checkbox인 경우 boolean 값 확인, selectbox인 경우 빈 값이 아닌지 확인
 				var hasValue = false;
 				if (attType.att_type_input === 'check') {
-					hasValue = cellValue === true;
+					hasValue = cellValue === true || cellValue === 'true';
 				} else {
 					hasValue = cellValue && cellValue.trim() !== '';
 				}
