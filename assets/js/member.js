@@ -1107,7 +1107,7 @@ $(document).ready(function () {
 				try {
 					memberGrid.pqGrid("destroy");
 				} catch (e) {
-					console.log('기존 그리드 제거 중 오류 (무시 가능):', e);
+
 				}
 			}
 

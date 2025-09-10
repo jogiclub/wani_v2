@@ -1017,4 +1017,240 @@ class Attendance_model extends CI_Model {
 		return $this->db->affected_rows() > 0;
 	}
 
+
+
+	/**
+	 * 출석일자를 일요일로 정리하는 함수
+	 */
+	public function normalize_attendance_dates($org_id, $year, $member_indices = null)
+	{
+		log_message('debug', "Starting normalize_attendance_dates for org: {$org_id}, year: {$year}");
+
+		$this->db->trans_start();
+
+		try {
+			// 조건 설정
+			$this->db->select('att_idx, member_idx, att_date, att_type_idx, att_value, org_id, att_year, regi_date, modi_date');
+			$this->db->from('wb_member_att');
+			$this->db->where('org_id', $org_id);
+			$this->db->where('att_year', $year);
+
+			// 특정 회원들만 처리하는 경우
+			if (!empty($member_indices)) {
+				$this->db->where_in('member_idx', $member_indices);
+			}
+
+			$query = $this->db->get();
+			$attendance_records = $query->result_array();
+
+			$updated_count = 0;
+			$temp_data = array(); // 임시 데이터 저장용
+
+			foreach ($attendance_records as $record) {
+				$current_date = $record['att_date'];
+				$sunday_date = $this->get_sunday_of_week($current_date);
+
+				// 이미 일요일이면 스킵
+				if ($current_date === $sunday_date) {
+					continue;
+				}
+
+				log_message('debug', "Converting date: {$current_date} -> {$sunday_date} for member: {$record['member_idx']}");
+
+				// 임시 데이터에 저장 (나중에 일괄 처리)
+				$temp_data[] = array(
+					'old_record' => $record,
+					'new_date' => $sunday_date
+				);
+			}
+
+			// 기존 레코드 삭제 및 새 레코드 삽입
+			foreach ($temp_data as $data) {
+				$old_record = $data['old_record'];
+				$new_date = $data['new_date'];
+
+				// 기존 레코드 삭제
+				$this->db->where('att_idx', $old_record['att_idx']);
+				$this->db->delete('wb_member_att');
+
+				// 새 일요일 날짜로 레코드 삽입
+				$new_record = array(
+					'member_idx' => $old_record['member_idx'],
+					'att_date' => $new_date,
+					'att_type_idx' => $old_record['att_type_idx'],
+					'org_id' => $old_record['org_id'],
+					'att_year' => $year,
+					'regi_date' => $old_record['regi_date'],
+					'modi_date' => date('Y-m-d H:i:s')
+				);
+
+				// att_value 컬럼이 존재하면 추가
+				if ($this->db->field_exists('att_value', 'wb_member_att') && isset($old_record['att_value'])) {
+					$new_record['att_value'] = $old_record['att_value'];
+				}
+
+				$this->db->insert('wb_member_att', $new_record);
+				$updated_count++;
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				log_message('error', 'Failed to normalize attendance dates');
+				return false;
+			}
+
+			log_message('debug', "Normalized {$updated_count} attendance records");
+			return $updated_count;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Normalize attendance dates error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 통합 출석 통계 재구성 함수 (일자 정리 + 통계 재계산)
+	 */
+	public function rebuild_attendance_stats_with_date_normalization($org_id, $year, $member_indices)
+	{
+		if (empty($member_indices)) {
+			return false;
+		}
+
+		log_message('debug', "Starting comprehensive rebuild for org: {$org_id}, year: {$year}, members: " . implode(',', $member_indices));
+
+		$this->db->trans_start();
+
+		try {
+			// 1단계: 출석일자를 일요일로 정리
+			log_message('debug', 'Step 1: Normalizing attendance dates to Sundays');
+			$normalized_count = $this->normalize_attendance_dates($org_id, $year, $member_indices);
+
+			if ($normalized_count === false) {
+				throw new Exception('Failed to normalize attendance dates');
+			}
+
+			log_message('debug', "Normalized {$normalized_count} attendance records");
+
+			// 2단계: 기존 통계 삭제
+			log_message('debug', 'Step 2: Deleting existing stats');
+
+			// 주별 통계 삭제
+			$this->db->where_in('member_idx', $member_indices);
+			$this->db->where('org_id', $org_id);
+			$this->db->where('att_year', $year);
+			$this->db->delete('wb_attendance_weekly_stats');
+
+			// 연간 통계 삭제
+			$this->db->where_in('member_idx', $member_indices);
+			$this->db->where('org_id', $org_id);
+			$this->db->where('att_year', $year);
+			$this->db->delete('wb_attendance_yearly_stats');
+
+			// 3단계: 해당 연도의 일요일 날짜들 생성
+			log_message('debug', 'Step 3: Generating Sunday dates for the year');
+			$sunday_dates = $this->get_sunday_dates_for_year($year);
+
+			// 4단계: 각 회원, 각 주차별로 통계 재생성
+			log_message('debug', 'Step 4: Rebuilding stats for each member and week');
+			$total_updated = 0;
+
+			foreach ($member_indices as $member_idx) {
+				foreach ($sunday_dates as $sunday_date) {
+					$score = $this->update_weekly_attendance_stats($org_id, $member_idx, $year, $sunday_date);
+					$total_updated++;
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				throw new Exception('Transaction failed during stats rebuild');
+			}
+
+			log_message('debug', "Successfully completed rebuild. Normalized: {$normalized_count}, Stats updated: {$total_updated}");
+
+			return array(
+				'normalized_count' => $normalized_count,
+				'stats_updated' => $total_updated,
+				'members_processed' => count($member_indices)
+			);
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Comprehensive rebuild error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 중복 출석 데이터 정리 함수 (같은 회원의 같은 일요일 중복 제거)
+	 */
+	public function cleanup_duplicate_attendance($org_id, $year, $member_indices = null)
+	{
+		log_message('debug', "Starting duplicate cleanup for org: {$org_id}, year: {$year}");
+
+		$this->db->trans_start();
+
+		try {
+			// 중복 데이터 조회 쿼리
+			$sql = "
+            SELECT member_idx, att_date, att_type_idx, org_id, att_year, 
+                   COUNT(*) as duplicate_count,
+                   MIN(att_idx) as keep_idx,
+                   GROUP_CONCAT(att_idx ORDER BY att_idx DESC) as all_indices
+            FROM wb_member_att 
+            WHERE org_id = ? AND att_year = ?
+        ";
+
+			$params = array($org_id, $year);
+
+			if (!empty($member_indices)) {
+				$sql .= " AND member_idx IN (" . implode(',', array_map('intval', $member_indices)) . ")";
+			}
+
+			$sql .= "
+            GROUP BY member_idx, att_date, att_type_idx, org_id, att_year
+            HAVING COUNT(*) > 1
+        ";
+
+			$query = $this->db->query($sql, $params);
+			$duplicates = $query->result_array();
+
+			$deleted_count = 0;
+
+			foreach ($duplicates as $duplicate) {
+				$all_indices = explode(',', $duplicate['all_indices']);
+				$keep_idx = $duplicate['keep_idx'];
+
+				// 가장 오래된 것을 제외하고 나머지 삭제
+				foreach ($all_indices as $idx) {
+					if ($idx != $keep_idx) {
+						$this->db->where('att_idx', $idx);
+						$this->db->delete('wb_member_att');
+						$deleted_count++;
+					}
+				}
+
+				log_message('debug', "Removed duplicates for member: {$duplicate['member_idx']}, date: {$duplicate['att_date']}, type: {$duplicate['att_type_idx']}");
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				log_message('error', 'Failed to cleanup duplicate attendance');
+				return false;
+			}
+
+			log_message('debug', "Cleaned up {$deleted_count} duplicate records");
+			return $deleted_count;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Cleanup duplicate attendance error: ' . $e->getMessage());
+			return false;
+		}
+	}
 }

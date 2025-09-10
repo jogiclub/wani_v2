@@ -479,7 +479,7 @@
 	}
 	function gd_pickercallback(data) {
 		if (data.action == google.picker.Action.PICKED) {
-			//console.log(data);
+
 			if(data.docs && data.docs.length>0 && data.docs[0].id){
 				var fileId = data.docs[0].id;
 				gd_loadfile(fileId);
@@ -509,7 +509,7 @@
 				function error(s){
 					alert(s);
 				}
-				//console.log(resp);
+
 
 				var downloadurl;
 				if(resp.downloadUrl){

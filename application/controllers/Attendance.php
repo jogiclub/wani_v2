@@ -723,8 +723,9 @@ class Attendance extends My_Controller
 	}
 
 
+
 	/**
-	 * 통계 재계산 (선택된 그룹 대상) - 디버깅 강화
+	 * 통계 재계산 (출석일자 정리 포함) - 선택된 그룹 대상
 	 */
 	public function rebuild_stats()
 	{
@@ -738,7 +739,7 @@ class Attendance extends My_Controller
 		$type = $this->input->post('type');
 		$area_idx = $this->input->post('area_idx');
 
-		log_message('debug', "Rebuild stats request - Org: {$org_id}, Year: {$year}, Type: {$type}, Area: {$area_idx}");
+		log_message('debug', "Rebuild stats with date normalization - Org: {$org_id}, Year: {$year}, Type: {$type}, Area: {$area_idx}");
 
 		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
@@ -821,23 +822,192 @@ class Attendance extends My_Controller
 		log_message('debug', "Members to rebuild: " . implode(',', $member_indices));
 
 		try {
-			$result = $this->Attendance_model->rebuild_attendance_stats_for_members($org_id, $year, $member_indices);
+			// 통합 재구성 실행 (출석일자 정리 + 통계 재계산)
+			$result = $this->Attendance_model->rebuild_attendance_stats_with_date_normalization($org_id, $year, $member_indices);
 
 			if ($result) {
+				$normalized_count = $result['normalized_count'];
+				$stats_updated = $result['stats_updated'];
+				$members_processed = $result['members_processed'];
+
+				$message = $group_name . '의 ' . $members_processed . '명 출석 데이터가 재구성되었습니다.';
+				if ($normalized_count > 0) {
+					$message .= ' (출석일자 ' . $normalized_count . '건 정리 완료)';
+				}
+
 				echo json_encode(array(
 					'success' => true,
-					'message' => $group_name . '의 ' . count($members) . '명 출석 통계가 재계산되었습니다.',
-					'member_count' => count($members),
-					'group_name' => $group_name
+					'message' => $message,
+					'details' => array(
+						'member_count' => $members_processed,
+						'normalized_count' => $normalized_count,
+						'stats_updated' => $stats_updated,
+						'group_name' => $group_name
+					)
 				));
 			} else {
-				echo json_encode(array('success' => false, 'message' => '통계 재계산 중 오류가 발생했습니다.'));
+				echo json_encode(array('success' => false, 'message' => '출석 데이터 재구성 중 오류가 발생했습니다.'));
 			}
 		} catch (Exception $e) {
-			log_message('error', 'Stats rebuild error: ' . $e->getMessage());
-			echo json_encode(array('success' => false, 'message' => '통계 재계산 중 오류가 발생했습니다.'));
+			log_message('error', 'Comprehensive rebuild error: ' . $e->getMessage());
+			echo json_encode(array('success' => false, 'message' => '출석 데이터 재구성 중 오류가 발생했습니다.'));
 		}
 	}
+
+
+
+	/**
+	 * 출석 데이터 검증 및 리포트 생성
+	 */
+	public function validate_attendance_data()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$year = $this->input->post('year', true) ?: date('Y');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
+			return;
+		}
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		try {
+			// 1. 일요일이 아닌 출석 데이터 조회
+			$this->db->select('COUNT(*) as non_sunday_count');
+			$this->db->from('wb_member_att');
+			$this->db->where('org_id', $org_id);
+			$this->db->where('att_year', $year);
+			$this->db->where('DAYOFWEEK(att_date) !=', 1); // 1 = 일요일
+			$non_sunday_result = $this->db->get()->row_array();
+
+			// 2. 중복 데이터 조회
+			$duplicate_sql = "
+            SELECT COUNT(*) as duplicate_count
+            FROM (
+                SELECT member_idx, att_date, att_type_idx, COUNT(*) as cnt
+                FROM wb_member_att 
+                WHERE org_id = ? AND att_year = ?
+                GROUP BY member_idx, att_date, att_type_idx
+                HAVING COUNT(*) > 1
+            ) as duplicates
+        ";
+			$duplicate_result = $this->db->query($duplicate_sql, array($org_id, $year))->row_array();
+
+			// 3. 통계 불일치 조회
+			$stats_sql = "
+            SELECT COUNT(*) as inconsistent_count
+            FROM wb_attendance_weekly_stats ws
+            LEFT JOIN (
+                SELECT member_idx, 
+                       DATE(DATE_SUB(att_date, INTERVAL DAYOFWEEK(att_date)-1 DAY)) as sunday_date,
+                       COUNT(*) as actual_count
+                FROM wb_member_att 
+                WHERE org_id = ? AND att_year = ?
+                GROUP BY member_idx, sunday_date
+            ) actual ON ws.member_idx = actual.member_idx AND ws.sunday_date = actual.sunday_date
+            WHERE ws.org_id = ? AND ws.att_year = ?
+            AND (ws.attendance_count != COALESCE(actual.actual_count, 0))
+        ";
+			$stats_result = $this->db->query($stats_sql, array($org_id, $year, $org_id, $year))->row_array();
+
+			echo json_encode(array(
+				'success' => true,
+				'validation_report' => array(
+					'non_sunday_dates' => intval($non_sunday_result['non_sunday_count']),
+					'duplicate_records' => intval($duplicate_result['duplicate_count']),
+					'inconsistent_stats' => intval($stats_result['inconsistent_count']),
+					'needs_normalization' => (
+						$non_sunday_result['non_sunday_count'] > 0 ||
+						$duplicate_result['duplicate_count'] > 0 ||
+						$stats_result['inconsistent_count'] > 0
+					)
+				)
+			));
+
+		} catch (Exception $e) {
+			log_message('error', 'Attendance validation error: ' . $e->getMessage());
+			echo json_encode(array('success' => false, 'message' => '출석 데이터 검증 중 오류가 발생했습니다.'));
+		}
+	}
+
+
+	/**
+	 * 전체 조직 출석 데이터 일괄 정리 (관리자 전용)
+	 */
+	public function normalize_all_attendance_dates()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 마스터 권한 체크
+		if ($master_yn !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '관리자 권한이 필요합니다.'));
+			return;
+		}
+
+		$org_id = $this->input->post('org_id');
+		$year = $this->input->post('year', true) ?: date('Y');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
+			return;
+		}
+
+		try {
+			log_message('debug', "Starting organization-wide date normalization for org: {$org_id}, year: {$year}");
+
+			// 1단계: 중복 데이터 정리
+			$duplicate_count = $this->Attendance_model->cleanup_duplicate_attendance($org_id, $year);
+
+			// 2단계: 출석일자 정리
+			$normalized_count = $this->Attendance_model->normalize_attendance_dates($org_id, $year);
+
+			if ($normalized_count !== false) {
+				// 3단계: 전체 통계 재계산
+				$stats_result = $this->Attendance_model->rebuild_attendance_stats($org_id, $year);
+
+				if ($stats_result) {
+					$message = "조직 전체 출석 데이터 정리가 완료되었습니다.";
+					if ($duplicate_count > 0) {
+						$message .= " 중복 {$duplicate_count}건 정리,";
+					}
+					if ($normalized_count > 0) {
+						$message .= " 출석일자 {$normalized_count}건 정리,";
+					}
+					$message .= " 통계 재계산 완료";
+
+					echo json_encode(array(
+						'success' => true,
+						'message' => $message,
+						'details' => array(
+							'duplicates_removed' => $duplicate_count,
+							'dates_normalized' => $normalized_count,
+							'stats_rebuilt' => true
+						)
+					));
+				} else {
+					echo json_encode(array('success' => false, 'message' => '통계 재계산 중 오류가 발생했습니다.'));
+				}
+			} else {
+				echo json_encode(array('success' => false, 'message' => '출석일자 정리 중 오류가 발생했습니다.'));
+			}
+		} catch (Exception $e) {
+			log_message('error', 'Organization-wide normalization error: ' . $e->getMessage());
+			echo json_encode(array('success' => false, 'message' => '출석 데이터 정리 중 오류가 발생했습니다.'));
+		}
+	}
+
 
 	/**
 	 * 특정 회원들의 출석 통계 재계산

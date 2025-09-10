@@ -196,9 +196,9 @@ function selectNodeByAreaIdx(areaIdx) {
 		if (nodeToSelect) {
 			nodeToSelect.setActive(true);
 			expandParentNodes(nodeToSelect);
-			console.log('노드 선택됨:', nodeToSelect.title);
+
 		} else {
-			console.log('선택할 노드를 찾을 수 없음:', areaIdx);
+
 			selectOrgNode();
 		}
 	} catch (error) {
@@ -235,9 +235,9 @@ function selectAppropriateNodeAfterDelete(deletedParentIdx, orgId) {
 
 		if (nodeToSelect) {
 			nodeToSelect.setActive(true);
-			console.log('삭제 후 노드 선택됨:', nodeToSelect.title);
+
 		} else {
-			console.log('선택할 노드가 없음, 초기 상태로 리셋');
+
 			resetGroupSelection();
 		}
 	} catch (error) {

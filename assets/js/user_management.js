@@ -413,8 +413,7 @@ function deleteUser(userId, userName, orgId) {
 		},
 		dataType: 'json',
 		beforeSend: function() {
-			// 로딩 상태 표시 (선택사항)
-			console.log('사용자 삭제 요청 시작:', userId);
+
 		},
 		success: function(response) {
 			// 응답이 문자열인 경우 JSON 파싱 시도
@@ -466,7 +465,7 @@ function deleteUser(userId, userName, orgId) {
 			showToast(errorMessage);
 		},
 		complete: function() {
-			console.log('사용자 삭제 요청 완료:', userId);
+
 		}
 	});
 }

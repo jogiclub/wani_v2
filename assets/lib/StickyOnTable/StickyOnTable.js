@@ -128,7 +128,7 @@ const StickyOnTable = {
             });
         }
 
-        // console.log(ta.);
+
         let bottoms = new Array(conf.rowCount);
         for(let i2=conf.rowCount-conf.bottom,m2=conf.rowCount;i2<m2;i2++){
             for(const td of table.rows[i2].cells){

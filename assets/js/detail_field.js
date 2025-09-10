@@ -168,8 +168,7 @@ $(document).ready(function() {
 		var fieldSize = $(this).data('field-size');
 		var fieldSettings = $(this).attr('data-field-settings'); // .data() 대신 .attr() 사용
 
-		console.log('fieldSettings:', fieldSettings); // 디버깅용
-		console.log('fieldType:', fieldType); // 디버깅용
+
 
 		$('#edit_field_idx').val(fieldIdx);
 		$('#edit_field_name').val(fieldName);
@@ -183,11 +182,11 @@ $(document).ready(function() {
 			if (fieldSettings) {
 				try {
 					var settings = JSON.parse(fieldSettings);
-					console.log('Parsed settings:', settings); // 디버깅용
+
 
 					if (settings.options && Array.isArray(settings.options)) {
 						$('#edit_select_options').val(settings.options.join('\n'));
-						console.log('Options set:', settings.options.join('\n')); // 디버깅용
+
 					}
 				} catch (e) {
 					console.error('Failed to parse field settings:', e);

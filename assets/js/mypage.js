@@ -363,7 +363,7 @@ $(document).on('click', '.btn-update-attendance-type', function() {
 // 출석 타입 삭제 버튼 클릭 이벤트
 $(document).on('click', '.btn-delete-attendance-type', function() {
     var attTypeIdx = $(this).data('attendance-type-idx');
-    // console.log(orgId);
+
 
     if (confirm('정말로 출석 타입을 삭제하시겠습니까?')) {
         $.ajax({
@@ -401,7 +401,6 @@ function attendanceTypeSetting(orgId) {
         dataType: 'json',
         success: function(response) {
 
-            // console.log(response);
 
 
             if (response.status === 'success') {
@@ -549,7 +548,7 @@ $(document).on('click', '#startUpload', function() {
 
 
             success: function(response) {
-                console.log(response);
+
                 if (response.status === 'success') {
 
                     alert('엑셀 업로드에 성공하였습니다.');

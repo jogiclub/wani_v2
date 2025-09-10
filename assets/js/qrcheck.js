@@ -162,7 +162,7 @@ function bindPastoralCheckboxEvents() {
 				pastoralGrid.pqGrid("option", "dataModel.data", gridData);
 			}
 
-			console.log('체크박스 변경 완료:', memberIdx, attTypeIdx, checked);
+
 		} catch (error) {
 			console.error('체크박스 데이터 업데이트 실패:', error);
 		}
@@ -418,7 +418,7 @@ function loadSameMembersInAttendanceOffcanvas(memberIdx, memberName, orgId, area
 		},
 		dataType: 'json',
 		success: function(response) {
-			console.log(response);
+
 
 			if (response.status === 'success') {
 				var members = response.members;
@@ -610,11 +610,6 @@ function loadMemberAttendance(memberIdx, startDate, endDate) {
 function loadAttendanceTypes(memberIdx, attendanceData) {
 	var html = '';
 
-	console.log('출석 타입 로드 시작:', {
-		memberIdx: memberIdx,
-		attendanceData: attendanceData,
-		attendanceTypes: attendanceTypes
-	});
 
 	if (!attendanceTypes || attendanceTypes.length === 0) {
 		console.error('attendanceTypes가 비어있습니다.');
@@ -641,7 +636,7 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 		html += '</div>';
 	}
 
-	console.log('생성된 HTML:', html);
+
 
 	$('#attendanceTypes').html(html);
 	$('#attendanceModal').modal('show');
@@ -665,18 +660,18 @@ $('#saveAttendance').off('click').on('click', function() {
 	var formattedToday = formatDate(today);
 	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
 
-	console.log('출석 저장 시작 - memberIdx:', memberIdx);
+
 
 	// 체크된 모든 checkbox의 값을 수집
 	$('#attendanceTypes input[type="checkbox"]:checked').each(function() {
 		var selectedValue = $(this).val();
 		if (selectedValue) {
 			attendanceData.push(selectedValue);
-			console.log('출석 데이터 추가:', selectedValue);
+
 		}
 	});
 
-	console.log('최종 수집된 출석 데이터:', attendanceData);
+
 
 	// 서버로 전송할 데이터 확인
 	var requestData = {
@@ -688,7 +683,7 @@ $('#saveAttendance').off('click').on('click', function() {
 		end_date: endDate
 	};
 
-	console.log('서버로 전송할 데이터:', requestData);
+
 
 	$.ajax({
 		url: '/qrcheck/save_attendance',
@@ -696,10 +691,10 @@ $('#saveAttendance').off('click').on('click', function() {
 		data: requestData,
 		dataType: 'json',
 		beforeSend: function() {
-			console.log('AJAX 요청 전송 중...');
+
 		},
 		success: function(response) {
-			console.log('출석 저장 응답:', response);
+
 
 			if (response.status === 'success') {
 				$('#attendanceModal').modal('hide');
@@ -733,7 +728,7 @@ $('#saveAttendance').off('click').on('click', function() {
 // initialize 버튼을 클릭하면 모든 checkbox가 unchecked
 $('#initialize').off('click').on('click', function() {
 	$('#attendanceTypes input[type="checkbox"]').prop('checked', false);
-	console.log('모든 체크박스 초기화 완료');
+
 });
 
 // 쿠키 설정 함수
@@ -848,7 +843,7 @@ function displayMembers(members) {
 						var attTypeCategoryIdx = attDataArr[2].trim();
 						var attTypeColor = attDataArr[3].trim();
 
-						console.log(attType, attTypeIdx, attTypeCategoryIdx, attTypeColor);
+
 
 						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '" style="background-color: #' + attTypeColor + '">' + attType + '</span>';
 					}).join(' ');
@@ -1091,7 +1086,7 @@ function saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBt
 		},
 		dataType: 'json',
 		success: function(response) {
-			console.log('메모 저장 응답:', response);
+
 
 			if (response.status === 'success') {
 				$('#attendanceOffcanvas').offcanvas('hide');
@@ -1116,7 +1111,7 @@ function saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBt
  * 역할: 출석+메모 저장 시 att_date 포함하여 저장
  */
 function saveAttendanceAndMemo() {
-	console.log('출석 및 메모 저장 시작');
+
 
 	var currentWeekRange = $('.current-week').text();
 	var currentDate = getDateFromWeekRange(currentWeekRange);
@@ -1145,7 +1140,7 @@ function saveAttendanceAndMemo() {
 		}
 	});
 
-	console.log('전체 회원 인덱스:', allMemberIndices);
+
 
 	// 2. 각 회원별로 출석 데이터와 메모 데이터 수집
 	allMemberIndices.forEach(function(memberIdx) {
@@ -1197,8 +1192,6 @@ function saveAttendanceAndMemo() {
 		}
 	});
 
-	console.log('수정된 출석 데이터:', attendanceData);
-	console.log('메모 데이터:', memoData);
 
 	// 저장 버튼 상태 변경
 	var $saveBtn = $('#saveAttendanceBtn');
@@ -1218,7 +1211,7 @@ function saveAttendanceAndMemo() {
 		},
 		dataType: 'json',
 		success: function(response) {
-			console.log('출석 저장 응답:', response);
+
 
 			// 출석 저장 성공 후 메모 저장
 			if (response.status === 'success') {
@@ -1278,7 +1271,7 @@ function saveMemoData(memoData, activeOrgId, startDate, endDate, $saveBtn, origi
 		},
 		dataType: 'json',
 		success: function(response) {
-			console.log('메모 저장 응답:', response);
+
 
 			if (response.status === 'success') {
 				$('#attendanceOffcanvas').offcanvas('hide');
@@ -1754,7 +1747,7 @@ function saveAttendance(memberIdx, attTypeIdx, selectedValue) {
 				updateAttStamps(activeOrgId, startDate, endDate);
 				initializeMasonry()
 			} else {
-				console.log('출석 정보 저장 실패');
+
 			}
 		}
 	});
@@ -1862,7 +1855,7 @@ $('#saveAttendanceBtn').off('click').on('click', function() {
  * pqgrid에서 출석+메모 데이터 수집 및 저장 (checkbox 처리 개선)
  */
 function saveAttendanceAndMemoFromGrid() {
-	console.log('pqgrid에서 출석 및 메모 저장 시작');
+
 
 	if (!pastoralGrid) {
 		console.error('pqgrid가 초기화되지 않았습니다.');
@@ -1946,9 +1939,6 @@ function saveAttendanceAndMemoFromGrid() {
 		});
 	});
 
-	console.log('수집된 출석 데이터:', attendanceData);
-	console.log('메모 데이터:', memoData);
-
 	// 저장 버튼 상태 변경
 	var $saveBtn = $('#saveAttendanceBtn');
 	var originalText = $saveBtn.text();
@@ -1967,7 +1957,7 @@ function saveAttendanceAndMemoFromGrid() {
 		},
 		dataType: 'json',
 		success: function(response) {
-			console.log('출석 저장 응답:', response);
+
 
 			if (response.status === 'success') {
 				saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText);
@@ -2055,7 +2045,7 @@ function saveAttendanceData(attendanceData) {
 			}
 		},
 		error: function(xhr, status, error) {
-			console.log(xhr.responseText);
+
 			showToast('출석 정보 저장 중 오류가 발생했습니다.', 'error');
 		}
 	});
@@ -2145,29 +2135,29 @@ $(document).ready(function() {
 
 	// 이전 주 버튼 클릭 이벤트 - 디버깅 로그 추가
 	$('.prev-week').off('click').on('click', function() {
-		console.log('이전 주 버튼 클릭');
+
 		var currentWeekRange = $('.current-week').text();
-		console.log('현재 주차:', currentWeekRange);
+
 
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 		var prevDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
 		var prevWeekRange = getWeekRangeFromDate(prevDate);
 
-		console.log('이전 주차:', prevWeekRange);
+
 		updateWeekRange(prevWeekRange);
 	});
 
 	// 다음 주 버튼 클릭 이벤트 - 디버깅 로그 추가
 	$('.next-week').off('click').on('click', function() {
-		console.log('다음 주 버튼 클릭');
+
 		var currentWeekRange = $('.current-week').text();
-		console.log('현재 주차:', currentWeekRange);
+
 
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 		var nextDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
 		var nextWeekRange = getWeekRangeFromDate(nextDate);
 
-		console.log('다음 주차:', nextWeekRange);
+
 		updateWeekRange(nextWeekRange);
 	});
 
@@ -2197,9 +2187,7 @@ $(document).ready(function() {
 		lastWeekSunday.setDate(lastWeekSunday.getDate() - 7);
 		var lastWeekSundayFormatted = formatDate(lastWeekSunday);
 
-		console.log('현재 주차 범위:', currentWeekRange);
-		console.log('현재 일요일:', formatDate(currentSunday));
-		console.log('지난주 일요일:', lastWeekSundayFormatted);
+
 
 		$.ajax({
 			url: '/qrcheck/get_last_week_attendance',
@@ -2212,14 +2200,13 @@ $(document).ready(function() {
 			},
 			dataType: 'json',
 			success: function(response) {
-				console.log('지난주 출석 데이터 응답:', response);
+
 
 				if (response.status === 'success') {
 					var attendanceData = response.attendance_data;
 					var attTypes = response.att_types;
 
-					console.log('지난주 출석 데이터:', attendanceData);
-					console.log('출석타입:', attTypes);
+
 
 					if (Object.keys(attendanceData).length === 0) {
 						showToast('지난주 출석 데이터가 없습니다.', 'warning');

@@ -13,9 +13,7 @@ $(document).ready(function () {
 	let attendanceData = {};           // 출석 데이터
 	let currentMembers = [];           // 현재 회원 목록
 
-	// ===== 디버깅 및 초기화 =====
-	console.log('attendance.js 로드됨');
-	console.log('현재 년도:', currentYear);
+
 
 	// 초기화 시도
 	setTimeout(function () {
@@ -26,7 +24,7 @@ $(document).ready(function () {
 	 * 페이지 초기화 메인 함수
 	 */
 	function initializePage() {
-		console.log('출석관리 페이지 초기화 시작');
+
 
 		showAllSpinners();
 
@@ -42,7 +40,7 @@ $(document).ready(function () {
 			initializeParamQuery();
 			bindGlobalEvents();
 			setupCleanupEvents();
-			console.log('출석관리 페이지 초기화 완료');
+
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
 			hideAllSpinners();
@@ -111,7 +109,7 @@ $(document).ready(function () {
 				}
 			}
 
-			console.log('Split.js 초기화 완료');
+
 		} catch (error) {
 			console.error('Split.js 초기화 실패:', error);
 			showToast('화면 분할 기능 초기화에 실패했습니다.', 'error');
@@ -212,7 +210,7 @@ $(document).ready(function () {
 	 * Fancytree 초기화
 	 */
 	function initializeFancytree() {
-		console.log('Fancytree 초기화 시작');
+
 		showTreeSpinner();
 
 		$.ajax({
@@ -220,7 +218,7 @@ $(document).ready(function () {
 			method: 'POST',
 			dataType: 'json',
 			success: function (treeData) {
-				console.log('트리 데이터 로드됨:', treeData);
+
 
 				if (!treeData || treeData.length === 0) {
 					hideTreeSpinner();
@@ -247,14 +245,14 @@ $(document).ready(function () {
 			source: treeData,
 			activate: function (event, data) {
 				const node = data.node;
-				console.log('노드 선택됨:', node.title);
+
 				handleTreeNodeActivate(node);
 			},
 			expand: function (event, data) {
-				console.log('노드 확장:', data.node.title);
+
 			},
 			collapse: function (event, data) {
-				console.log('노드 축소:', data.node.title);
+
 			}
 		});
 
@@ -293,7 +291,7 @@ $(document).ready(function () {
 			};
 
 			localStorage.setItem('member_selected_group', JSON.stringify(selectedGroup));
-			console.log('선택된 그룹 저장됨:', selectedGroup);
+
 		} catch (error) {
 			console.error('localStorage 저장 실패:', error);
 		}
@@ -331,9 +329,9 @@ $(document).ready(function () {
 				nodeToSelect.setActive(true);
 				nodeToSelect.setFocus(true);
 				expandParentNodes(nodeToSelect, groupData);
-				console.log('저장된 그룹 선택 복원됨:', groupData);
+
 			} else {
-				console.log('저장된 그룹을 찾을 수 없음, 첫 번째 조직 선택');
+
 				selectFirstOrganization();
 			}
 
@@ -427,7 +425,7 @@ $(document).ready(function () {
 			});
 
 			hideGridSpinner();
-			console.log('ParamQuery Grid 초기화 완료');
+
 		} catch (error) {
 			console.error('ParamQuery Grid 초기화 실패:', error);
 			hideGridSpinner();
@@ -532,7 +530,7 @@ $(document).ready(function () {
 	 * 그리드 셀 클릭 처리 개선 - 전체 셀 영역에서 이벤트 감지
 	 */
 	function handleGridCellClick(event, ui) {
-		console.log('그리드 셀 클릭:', ui);
+
 
 		// 출석 데이터가 있는 컬럼인지 확인 (week_로 시작하는 데이터 인덱스)
 		if (ui.colIndx >= 4 && ui.dataIndx && ui.dataIndx.startsWith('week_')) {
@@ -542,11 +540,7 @@ $(document).ready(function () {
 
 			const memberIdx = ui.rowData.member_idx;
 
-			console.log('출석상세 열기:', {
-				member_idx: memberIdx,
-				sunday: sunday,
-				member_name: ui.rowData.member_name
-			});
+
 
 			if (memberIdx && sunday) {
 				openAttendanceDetail(sunday);
@@ -562,10 +556,6 @@ $(document).ready(function () {
 			const memberIdx = $clickableParent.data('member-idx');
 			const sunday = $clickableParent.data('sunday');
 
-			console.log('Clickable 요소 클릭:', {
-				member_idx: memberIdx,
-				sunday: sunday
-			});
 
 			if (memberIdx && sunday) {
 				openAttendanceDetail(sunday);
@@ -578,16 +568,11 @@ $(document).ready(function () {
 	 */
 	function loadAttendanceData() {
 		if (!selectedOrgId) {
-			console.log('선택된 조직이 없음');
+
 			return;
 		}
 
-		console.log('출석 데이터 로드:', {
-			type: selectedType,
-			org_id: selectedOrgId,
-			area_idx: selectedAreaIdx,
-			year: currentYear
-		});
+
 
 		showGridSpinner();
 
@@ -605,7 +590,7 @@ $(document).ready(function () {
 			},
 			dataType: 'json',
 			success: function (response) {
-				console.log('출석 데이터 응답:', response);
+
 				handleAttendanceDataResponse(response);
 			},
 			error: function (xhr, status, error) {
@@ -628,7 +613,7 @@ $(document).ready(function () {
 			success: function (response) {
 				if (response.success) {
 					attendanceTypes = response.data || [];
-					console.log('출석 유형 로드됨:', attendanceTypes);
+
 				}
 			},
 			error: function (xhr, status, error) {
@@ -655,8 +640,7 @@ $(document).ready(function () {
 		attendanceData = data.attendance_data || {};
 		currentMembers = data.members || [];
 
-		console.log('일요일 날짜들:', sundayDates);
-		console.log('출석 데이터:', attendanceData);
+
 
 		// 그리드 업데이트
 		updateGrid();
@@ -684,7 +668,7 @@ $(document).ready(function () {
 			attendanceGrid.pqGrid("option", "dataModel.data", gridData);
 			attendanceGrid.pqGrid("refreshDataAndView");
 
-			console.log('그리드 업데이트 완료');
+
 		} catch (error) {
 			console.error('그리드 업데이트 실패:', error);
 			showToast('그리드 업데이트에 실패했습니다.', 'error');
@@ -748,7 +732,7 @@ $(document).ready(function () {
 	 * 출석 상세 정보 열기
 	 */
 	function openAttendanceDetail(sunday) {
-		console.log('출석 상세 열기:', sunday);
+
 
 		const date = new Date(sunday);
 		const formattedDate = date.getFullYear() + '.' + (date.getMonth() + 1) + '.' + date.getDate();
@@ -797,7 +781,7 @@ $(document).ready(function () {
 
 
 	$(document).off('click', '#btnSaveAttendance').on('click', '#btnSaveAttendance', function() {
-		console.log('저장 버튼 클릭됨 - saveAttendanceDetail 호출');
+
 		saveAttendanceDetail();
 	});
 
@@ -806,7 +790,7 @@ $(document).ready(function () {
 	 * 역할: 출석 정보 저장 - 메모 정보도 함께 저장 (수정된 버전)
 	 */
 	function saveAttendanceDetail() {
-		console.log('출석 및 메모 저장 시작 - saveAttendanceDetail 함수 실행됨');
+
 
 		// 제목에서 날짜 추출
 		const titleText = $('#attendanceOffcanvasLabel').text();
@@ -822,7 +806,7 @@ $(document).ready(function () {
 		const day = dateMatch[3].padStart(2, '0');
 		const attendanceDate = `${year}-${month}-${day}`;
 
-		console.log('출석 날짜:', attendanceDate);
+
 
 		// 출석 데이터 수집
 		const attendanceData = [];
@@ -832,18 +816,17 @@ $(document).ready(function () {
 		$('#attendanceDetailContent table tbody tr').each(function() {
 			const row = $(this);
 			const memberIdx = row.data('member-idx');
-			console.log('처리 중인 회원 IDX:', memberIdx);
+
 
 			// 회원 인덱스가 없으면 스킵
 			if (!memberIdx) {
-				console.log('회원 인덱스가 없어서 스킵');
+
 				return;
 			}
 
 			// 회원 인덱스 찾기 (현재 회원목록에서)
 			const member = currentMembers.find(m => m.member_idx == memberIdx);
 			if (!member) {
-				console.log('회원을 찾을 수 없음:', memberIdx);
 				return;
 			}
 
@@ -853,7 +836,6 @@ $(document).ready(function () {
 			row.find('.attendance-checkbox:checked').each(function() {
 				const attTypeIdx = $(this).data('att-type-idx');
 				const attTypeScore = $(this).data('att-type-score');
-				console.log('체크박스 발견:', attTypeIdx, attTypeScore);
 
 				memberAttendanceTypes.push({
 					att_type_idx: attTypeIdx,
@@ -867,7 +849,6 @@ $(document).ready(function () {
 				const value = parseInt($(this).val()) || 0;
 				if (value > 0) {
 					const attTypeIdx = $(this).data('att-type-idx');
-					console.log('텍스트박스 값:', attTypeIdx, value);
 
 					memberAttendanceTypes.push({
 						att_type_idx: attTypeIdx,
@@ -888,19 +869,14 @@ $(document).ready(function () {
 
 			// 메모 데이터 수집 - 디버깅 강화
 			const memoInput = row.find('.attendance-memo');
-			console.log('메모 입력 필드 찾음:', memoInput.length, memberIdx);
+
 
 			if (memoInput.length > 0) {
 				const memoContent = memoInput.val() ? memoInput.val().trim() : '';
 				const attIdx = memoInput.data('att-idx') || null;
 				const isChanged = memoInput.data('changed') || false;
 
-				console.log('메모 정보:', {
-					memberIdx: memberIdx,
-					memoContent: memoContent,
-					attIdx: attIdx,
-					isChanged: isChanged
-				});
+
 
 				// 메모가 변경되었거나 내용이 있는 경우 저장 대상에 추가
 				// 빈 메모도 처리하도록 수정
@@ -909,19 +885,17 @@ $(document).ready(function () {
 					memo_content: memoContent,
 					att_idx: attIdx
 				});
-				console.log('메모 데이터에 추가됨');
+
 			}
 		});
 
-		console.log('수집된 출석 데이터:', attendanceData);
-		console.log('수집된 메모 데이터:', memoData);
 
 		// 저장 버튼 비활성화
 		const $saveBtn = $('#btnSaveAttendance');
 		const originalText = $saveBtn.text();
 		$saveBtn.prop('disabled', true).text('저장중...');
 
-		console.log('AJAX 요청 URL:', window.attendancePageData.baseUrl + 'attendance/save_attendance_with_memo');
+
 
 		// AJAX 요청 - save_attendance_with_memo 호출
 		$.ajax({
@@ -936,10 +910,10 @@ $(document).ready(function () {
 			},
 			dataType: 'json',
 			beforeSend: function() {
-				console.log('AJAX 요청 시작 - save_attendance_with_memo');
+
 			},
 			success: function(response) {
-				console.log('서버 응답:', response);
+
 
 				if (response.success) {
 					showToast('출석 및 메모가 저장되었습니다.', 'success');
@@ -1125,7 +1099,7 @@ $(document).ready(function () {
 		// 메모 입력 필드 변경 이벤트 - 더 정확한 이벤트 감지
 		$(document).off('input change keyup paste', '.attendance-memo').on('input change keyup paste', '.attendance-memo', function() {
 			$(this).data('changed', true);
-			console.log('메모 변경됨:', $(this).data('member-idx'));
+
 		});
 
 		// 포커스 시 원본 값 저장
@@ -1140,7 +1114,7 @@ $(document).ready(function () {
 
 			if (originalValue !== currentValue) {
 				$(this).data('changed', true);
-				console.log('메모 변경 확인됨:', $(this).data('member-idx'), originalValue, '->', currentValue);
+
 			}
 		});
 	}
@@ -1205,20 +1179,20 @@ $(document).ready(function () {
 		// 체크박스 점수 계산 - Number() 강제 변환
 		row.find('.attendance-checkbox:checked').each(function () {
 			const score = Number($(this).data('att-type-score')) || 0;
-			console.log('체크박스 점수:', score, typeof score);
+
 			totalScore += score;
 		});
 
 		// 텍스트박스 점수 계산 - Number() 강제 변환
 		row.find('.attendance-textbox').each(function () {
 			const value = Number($(this).val()) || 0;
-			console.log('텍스트박스 값:', value, typeof value);
+
 			if (value > 0) {
 				totalScore += value;
 			}
 		});
 
-		console.log('최종 계산된 점수:', totalScore, typeof totalScore);
+
 
 		// 점수 표시 업데이트 - Number()로 확실히 숫자 보장
 		scoreCell.text(totalScore);
@@ -1389,18 +1363,18 @@ $(document).ready(function () {
 		// 체크된 체크박스들의 점수 합산 - Number() 사용
 		row.find('.attendance-checkbox:checked').each(function() {
 			const score = Number($(this).data('att-type-score')) || 0;
-			console.log('체크박스 점수:', score, typeof score);
+
 			weekTotal += score;
 		});
 
 		// 텍스트박스 값들의 합산 - Number() 사용
 		row.find('.attendance-textbox').each(function() {
 			const value = Number($(this).val()) || 0;
-			console.log('텍스트박스 값:', value, typeof value);
+
 			weekTotal += value;
 		});
 
-		console.log('계산된 주간 총합:', weekTotal, typeof weekTotal);
+
 
 		// 소계 업데이트 - 숫자만 표시
 		row.find('.week-total').text(weekTotal);
@@ -1415,7 +1389,7 @@ $(document).ready(function () {
 	 */
 	function showTreeSpinner() {
 		$('#treeSpinner').removeClass('d-none').addClass('d-flex');
-		console.log('트리 스피너 표시');
+
 	}
 
 	/**
@@ -1423,7 +1397,7 @@ $(document).ready(function () {
 	 */
 	function hideTreeSpinner() {
 		$('#treeSpinner').removeClass('d-flex').addClass('d-none');
-		console.log('트리 스피너 숨김');
+
 	}
 
 	/**
@@ -1438,7 +1412,7 @@ $(document).ready(function () {
 	 */
 	function hideGridSpinner() {
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
-		console.log('그리드 스피너 숨김');
+
 	}
 
 	/**
@@ -1447,7 +1421,7 @@ $(document).ready(function () {
 	function showAllSpinners() {
 		showTreeSpinner();
 		showGridSpinner();
-		console.log('모든 스피너 표시');
+
 	}
 
 	/**
@@ -1456,7 +1430,7 @@ $(document).ready(function () {
 	function hideAllSpinners() {
 		hideTreeSpinner();
 		hideGridSpinner();
-		console.log('모든 스피너 숨김');
+
 	}
 
 
@@ -1494,7 +1468,7 @@ $(document).ready(function () {
 			},
 			dataType: 'json',
 			success: function (response) {
-				console.log('통계 재계산 응답:', response);
+
 
 				if (response.success) {
 					showToast('출석 통계가 재계산되었습니다.', 'success');
