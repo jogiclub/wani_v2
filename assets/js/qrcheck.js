@@ -1,12 +1,253 @@
 'use strict'
 
+// 전역 변수 추가
+var pastoralGrid = null;
+var pastoralGridData = [];
+
+/**
+ * 목장출석 pqgrid 초기화 (수정된 버전)
+ */
+function initializePastoralGrid() {
+	if (pastoralGrid) {
+		return;
+	}
+
+	// pqgrid 컬럼 모델 생성
+	var colModel = [
+		{
+			title: "이름",
+			dataIndx: "member_name",
+			width: 100,
+			minWidth: 100,
+			maxWidth: 100,
+			editable: false,
+			align: "center",
+			frozen: true,
+			resizable: false
+		},
+		{
+			title: "한줄메모",
+			dataIndx: "memo_content",
+			width: 250,
+			minWidth: 200,
+			maxWidth: 300,
+			editable: true,
+			align: "left",
+			resizable: true,
+			editor: {
+				type: "textbox",
+				attr: "placeholder='메모 입력...'"
+			}
+		}
+	];
+
+	// 출석 타입별 컬럼 동적 추가
+	if (attendanceTypes && attendanceTypes.length > 0) {
+		attendanceTypes.forEach(function(attType) {
+			var columnConfig = {
+				title: attType.att_type_name,
+				dataIndx: "att_type_" + attType.att_type_idx,
+				width: 80,
+				minWidth: 60,
+				maxWidth: 100,
+				editable: true,
+				align: "center",
+				resizable: true
+			};
+
+			// att_type_input에 따라 컬럼 타입 결정
+			if (attType.att_type_input === 'check') {
+				// checkbox 타입
+				columnConfig.type = 'bool';
+				columnConfig.editor = {
+					type: 'checkbox'
+				};
+				columnConfig.render = function(ui) {
+					if (ui.cellData === true || ui.cellData === 'Y' || ui.cellData === '1') {
+						return '<input type="checkbox" checked >';
+					} else {
+						return '<input type="checkbox" >';
+					}
+				};
+			} else {
+				// selectbox 타입 (기본)
+				var options = [];
+				options.push({value: '', text: '-'});
+				options.push({
+					value: attType.att_type_idx,
+					text: attType.att_type_nickname
+				});
+
+				columnConfig.editor = {
+					type: "select",
+					options: options
+				};
+				columnConfig.render = function(ui) {
+					if (!ui.cellData) return '-';
+					var selectedType = attendanceTypes.find(function(type) {
+						return type.att_type_idx == ui.cellData;
+					});
+					return selectedType ? selectedType.att_type_nickname : '-';
+				};
+			}
+
+			colModel.push(columnConfig);
+		});
+	}
+
+	// pqgrid 옵션 설정
+	var gridOptions = {
+		width: "100%",
+		dataModel: {
+			data: []
+		},
+		colModel: colModel,
+		selectionModel: {
+			type: 'none'
+		},
+		scrollModel: {
+			autoFit: false,
+			horizontal: true,
+			vertical: true
+		},
+		freezeCols: 1,
+		numberCell: { show: false },
+		title: false,
+		resizable: false,
+		sortable: false,
+		wrap: false,
+		columnBorders: true,
+		editable: true,
+		editModel: {
+			clicksToEdit: 1,
+			saveKey: $.ui.keyCode.ENTER
+		},
+		complete: function() {
+			setTimeout(function() {
+				forceColumnWidths();
+			}, 100);
+		}
+	};
+
+	// pqgrid 초기화
+	pastoralGrid = $("#pastoralAttendanceGrid").pqGrid(gridOptions);
+}
+
+/**
+ * 컬럼 너비 강제 적용 함수 (수정된 버전)
+ */
+function forceColumnWidths() {
+	if (!pastoralGrid) return;
+
+	try {
+		// CSS로 직접 너비 강제 적용
+		var $grid = pastoralGrid;
+
+		// 헤더 셀들에 너비 강제 적용
+		$grid.find('.pq-grid-header .pq-grid-cell').each(function(index) {
+			var $cell = $(this);
+
+			// 컬럼별 너비 설정
+			switch(index) {
+				case 0: // 이름
+					$cell.css('width', '100px');
+					break;
+				case 1: // 한줄메모
+					$cell.css('width', '250px');
+					break;
+				default: // 출석 타입들
+					$cell.css('width', '120px');
+					break;
+			}
+		});
+
+		// 데이터 셀들에도 너비 강제 적용
+		$grid.find('.pq-grid-row .pq-grid-cell').each(function() {
+			var $cell = $(this);
+			var colIndex = $cell.index();
+
+			switch(colIndex) {
+				case 0: // 이름
+					$cell.css('width', '100px');
+					break;
+				case 1: // 한줄메모
+					$cell.css('width', '250px');
+					break;
+				default: // 출석 타입들
+					$cell.css('width', '120px');
+					break;
+			}
+		});
+
+		// 그리드 레이아웃 새로고침
+		pastoralGrid.pqGrid("refresh");
+
+	} catch (error) {
+		console.error('컬럼 너비 강제 적용 실패:', error);
+	}
+}
+
+/**
+ * 목장출석 pqgrid용 데이터 준비 (수정된 버전)
+ */
+function preparePastoralGridData(members, attTypes) {
+	var gridData = [];
+
+	if (!members || members.length === 0) {
+		return gridData;
+	}
+
+	members.forEach(function(member) {
+		var rowData = {
+			member_idx: member.member_idx,
+			member_name: member.member_name,
+			memo_content: member.memo_content || ''
+		};
+
+		// 각 출석 타입별 선택된 값 설정
+		if (attTypes && attTypes.length > 0) {
+			attTypes.forEach(function(attType) {
+				var dataIndx = "att_type_" + attType.att_type_idx;
+				var selectedValue = '';
+
+				if (member.attendance) {
+					var attendanceArr = member.attendance.split('|');
+					attendanceArr.forEach(function(attendance) {
+						var attData = attendance.split(',');
+						var attTypeIdx = attData[0].trim();
+
+						if (attTypeIdx == attType.att_type_idx) {
+							if (attType.att_type_input === 'check') {
+								selectedValue = true; // checkbox는 true/false
+							} else {
+								selectedValue = attTypeIdx; // selectbox는 att_type_idx
+							}
+						}
+					});
+				}
+
+				// checkbox는 false로 초기화, selectbox는 빈 문자열로 초기화
+				if (attType.att_type_input === 'check') {
+					rowData[dataIndx] = selectedValue || false;
+				} else {
+					rowData[dataIndx] = selectedValue || '';
+				}
+			});
+		}
+
+		gridData.push(rowData);
+	});
+
+	return gridData;
+}
+
 // 첫 번째 출석 유형으로 기본값 설정
 var firstAttType = $('.dropdown-att-type .dropdown-item:first');
 var attTypeName = firstAttType.text();
 var attTypeIdx = firstAttType.data('att-type-idx');
 $('#dropdown-toggle-att-type').text(attTypeName).data('att-type-idx', attTypeIdx);
 
-// dropdown-att-type 항목 클릭 이벤트
+// 4. 드롭다운 이벤트에서 category_idx 제거
 $('.dropdown-att-type .dropdown-item').click(function(e) {
 	e.preventDefault();
 	var attTypeName = $(this).text();
@@ -327,22 +568,12 @@ function loadMemberAttendance(memberIdx, startDate, endDate) {
 	});
 }
 
-// 출석 유형 로드 및 표시
+// 5. 출석 타입 로드 함수에서 category_idx 제거
 function loadAttendanceTypes(memberIdx, attendanceData) {
 	var html = '';
 
-	var currentClass = null;
 	for (var i = 0; i < attendanceTypes.length; i++) {
 		var type = attendanceTypes[i];
-
-		if (type.att_type_category_idx !== currentClass) {
-			if (currentClass !== null) {
-				html += '</div></div>';
-			}
-			html += '<label class="mb-1">' + type.att_type_category_name + '</label>';
-			html += '<div class="att-btn-list"><div class="btn-group" role="group" aria-label="Attendance Type">';
-			currentClass = type.att_type_category_idx;
-		}
 
 		// 현재 선택된 주차 범위 내의 모든 날짜에 대해 출석 정보 확인
 		var isChecked = false;
@@ -353,12 +584,8 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 			}
 		}
 
-		html += '<input type="radio" class="btn-check" name="att_type_' + type.att_type_category_idx + '" id="att_type_' + type.att_type_idx + '" value="' + type.att_type_idx + '" ' + (isChecked ? 'checked' : '') + ' autocomplete="off">';
+		html += '<input type="radio" class="btn-check" name="att_type_' + type.att_type_idx + '" id="att_type_' + type.att_type_idx + '" value="' + type.att_type_idx + '" ' + (isChecked ? 'checked' : '') + ' autocomplete="off">';
 		html += '<label class="btn btn-outline-primary" for="att_type_' + type.att_type_idx + '">' + type.att_type_name + '</label>';
-	}
-
-	if (currentClass !== null) {
-		html += '</div></div>';
 	}
 
 	$('#attendanceTypes').html(html);
@@ -543,6 +770,8 @@ function displayMembers(members) {
 						var attTypeCategoryIdx = attDataArr[2].trim();
 						var attTypeColor = attDataArr[3].trim();
 
+						console.log(attType, attTypeIdx, attTypeCategoryIdx, attTypeColor);
+
 						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '" style="background-color: #' + attTypeColor + '">' + attType + '</span>';
 					}).join(' ');
 
@@ -643,7 +872,9 @@ $(document).on('click', '.btn-area-attendance-memo', function() {
 	loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId);
 });
 
-// 출석관리화면의 상세 offcanvas 로드 함수
+/**
+ * 목장출석 offcanvas 로드 함수 수정
+ */
 function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 	var currentWeekRange = $('.current-week').text();
 	var currentDate = getDateFromWeekRange(currentWeekRange);
@@ -651,10 +882,10 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 	var endDate = getWeekEndDate(currentDate);
 
 	$.ajax({
-		url: '/qrcheck/get_same_members', // 동일한 엔드포인트 사용
+		url: '/qrcheck/get_same_members',
 		method: 'POST',
 		data: {
-			member_idx: 0, // 임시값
+			member_idx: 0,
 			org_id: orgId,
 			area_idx: areaIdx,
 			start_date: startDate,
@@ -668,75 +899,24 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 
 				var offcanvasTitle = $('#attendanceOffcanvasLabel');
 				var offcanvasBody = $('#attendanceOffcanvas .offcanvas-body');
+
 				offcanvasTitle.text(areaName + ' 목장출석');
 				offcanvasBody.empty();
 
-				// 상세 관리용 테이블 생성 (메모를 이름 옆으로 이동)
-				var tableHtml = '<table class="table align-middle"><thead><tr>' +
-					'<th style="width: 100px">이름</th>' +
-					'<th style="width: 200px">한줄메모</th>';
+				// pqgrid 컨테이너 추가
+				var gridHtml = '<div id="pastoralAttendanceGrid"></div>';
+				offcanvasBody.append(gridHtml);
 
-				// 출석 타입 헤더 추가
-				if (attTypes && attTypes.length > 0) {
-					var attTypeCategories = {};
-					attTypes.forEach(function(attType) {
-						if (!attTypeCategories[attType.att_type_category_idx]) {
-							attTypeCategories[attType.att_type_category_idx] = attType.att_type_category_name;
-						}
-					});
+				// pqgrid 초기화
+				initializePastoralGrid();
 
-					for (var categoryIdx in attTypeCategories) {
-						tableHtml += '<th style="width: 120px">' + attTypeCategories[categoryIdx] + '</th>';
-					}
+				// 데이터 준비 및 설정
+				pastoralGridData = preparePastoralGridData(members, attTypes);
+
+				if (pastoralGrid) {
+					pastoralGrid.pqGrid("option", "dataModel.data", pastoralGridData);
+					pastoralGrid.pqGrid("refreshDataAndView");
 				}
-
-				tableHtml += '</tr></thead><tbody class="table-group-divider">';
-
-				if (members && members.length > 0) {
-					members.forEach(function(member) {
-						tableHtml += '<tr><td>' + member.member_name + '</td>';
-
-						// 메모 입력 필드 추가 (이름 바로 옆)
-						var existingMemo = member.memo_content || ''; // 기존 메모가 있으면 표시
-						tableHtml += '<td><input type="text" class="form-control memo-input" data-member-idx="' + member.member_idx + '" placeholder="메모 입력..." value="' + existingMemo.replace(/"/g, '&quot;') + '"></td>';
-
-						// 각 회원의 출석 타입 selectbox 추가
-						if (attTypes && attTypes.length > 0) {
-							var attTypeCategoryIdxs = Object.keys(attTypeCategories);
-							attTypeCategoryIdxs.forEach(function(categoryIdx) {
-								var attTypesByCategoryIdx = attTypes.filter(function(attType) {
-									return attType.att_type_category_idx == categoryIdx;
-								});
-
-								tableHtml += '<td><select class="form-select att-type-select" data-member-idx="' + member.member_idx + '" data-att-type-category-idx="' + categoryIdx + '">';
-								tableHtml += '<option value="">-</option>';
-
-								attTypesByCategoryIdx.forEach(function(attType) {
-									var selectedValue = '';
-									if (member.attendance) {
-										var attendanceArr = member.attendance.split('|');
-										attendanceArr.forEach(function(attendance) {
-											var attData = attendance.split(',');
-											var attTypeIdx = attData[0].trim();
-											if (attTypeIdx == attType.att_type_idx) {
-												selectedValue = attTypeIdx;
-											}
-										});
-									}
-									var isSelected = selectedValue == attType.att_type_idx ? ' selected' : '';
-									tableHtml += '<option value="' + attType.att_type_idx + '"' + isSelected + '>' + attType.att_type_nickname + '</option>';
-								});
-
-								tableHtml += '</select></td>';
-							});
-						}
-
-						tableHtml += '</tr>';
-					});
-				}
-
-				tableHtml += '</tbody></table>';
-				offcanvasBody.append(tableHtml);
 
 				// offcanvas 버튼 텍스트 변경
 				$('#saveAttendanceBtn').text('저장');
@@ -757,6 +937,102 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 	});
 }
 
+
+/**
+* 지난주 출석 데이터 적용 (수정된 버전)
+*/
+function updateAttendanceSelectboxForGrid(attendanceData, attTypes) {
+	if (!pastoralGrid || !attendanceData || !attTypes) {
+		return;
+	}
+
+	try {
+		// 현재 그리드 데이터 가져오기
+		var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
+
+		if (!gridData || gridData.length === 0) {
+			return;
+		}
+
+		// 각 회원의 지난주 출석 데이터 적용
+		gridData.forEach(function(row, index) {
+			var memberIdx = row.member_idx;
+			var memberAttendance = attendanceData[memberIdx] || [];
+
+			// 각 출석 타입별로 지난주 출석 데이터 설정
+			if (attTypes && attTypes.length > 0) {
+				attTypes.forEach(function(attType) {
+					var dataIndx = "att_type_" + attType.att_type_idx;
+					var hasAttendance = false;
+
+					// 해당 출석 타입이 지난주 데이터에 있는지 확인
+					for (var i = 0; i < memberAttendance.length; i++) {
+						var attTypeIdx = parseInt(memberAttendance[i].trim());
+						if (attTypeIdx === parseInt(attType.att_type_idx)) {
+							hasAttendance = true;
+							break;
+						}
+					}
+
+					// 출석 타입에 따라 값 설정
+					if (attType.att_type_input === 'check') {
+						gridData[index][dataIndx] = hasAttendance;
+					} else {
+						gridData[index][dataIndx] = hasAttendance ? attType.att_type_idx.toString() : '';
+					}
+				});
+			}
+		});
+
+		// 그리드 새로고침
+		pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+		pastoralGrid.pqGrid("refreshDataAndView");
+
+	} catch (error) {
+		console.error('지난주 출석 데이터 적용 실패:', error);
+	}
+}
+
+
+/**
+ * 메모 데이터 저장 함수 (pqgrid용)
+ */
+function saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText) {
+	if (memoData.length === 0) {
+		$saveBtn.prop('disabled', false).text(originalText);
+		showToast('저장할 데이터가 없습니다.', 'success');
+		return;
+	}
+
+	$.ajax({
+		url: '/qrcheck/save_memo_data',
+		method: 'POST',
+		data: {
+			memo_data: JSON.stringify(memoData),
+			org_id: activeOrgId
+		},
+		dataType: 'json',
+		success: function(response) {
+			console.log('메모 저장 응답:', response);
+
+			if (response.status === 'success') {
+				$('#attendanceOffcanvas').offcanvas('hide');
+				updateAttStamps(activeOrgId, startDate, endDate);
+				var areaName = $('#attendanceOffcanvasLabel').text().split(' ')[0];
+				showToast(areaName + ' 목장의 출석을 성공적으로 저장했습니다.', 'success');
+			} else {
+				showToast(response.message || '메모 저장에 실패했습니다.', 'error');
+			}
+		},
+		error: function(xhr, status, error) {
+			console.error('메모 저장 오류:', xhr.responseText);
+			showToast('메모 저장 중 오류가 발생했습니다.', 'error');
+		},
+		complete: function() {
+			$saveBtn.prop('disabled', false).text(originalText);
+		}
+	});
+}
 
 /**
  * 역할: 출석+메모 저장 시 att_date 포함하여 저장
@@ -1175,12 +1451,13 @@ $('#btn-submit').on('click', function() {
 	addAttStamp();
 });
 
+
+// 1. addAttStamp 함수 수정
 function addAttStamp() {
 	var memberIdx = $('#input-search').val().trim();
 	if (/^\d+$/.test(memberIdx)) {
 		var attTypeIdx = $('#dropdown-toggle-att-type').data('att-type-idx');
 		var attTypeNickname = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-nickname');
-		var attTypeCategoryIdx = $('.dropdown-att-type .dropdown-item[data-att-type-idx="' + attTypeIdx + '"]').data('att-type-category-idx');
 
 		// 해당 member-idx를 가진 회원에게 att-stamp 추가
 		var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
@@ -1193,17 +1470,11 @@ function addAttStamp() {
 				return;
 			}
 
-			// 동일한 att_type_category_idx를 가진 모든 att-stamp 삭제
-			var existingCategoryStamps = memberCard.find('.att-stamp[data-att-type-category-idx="' + attTypeCategoryIdx + '"]');
-			if (existingCategoryStamps.length > 0) {
-				existingCategoryStamps.remove();
-			}
-
-			var attStamp = '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '">' + attTypeNickname + '</span>';
+			var attStamp = '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '">' + attTypeNickname + '</span>';
 			memberCard.find('.att-stamp-warp').append(attStamp);
 
 			// 서버에 출석 정보 저장
-			saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx);
+			saveAttendance(memberIdx, attTypeIdx);
 
 			// 토스트 띄우기
 			attComplete(memberIdx);
@@ -1241,7 +1512,8 @@ function playBirthSound() {
 
 
 
-function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue) {
+// 2. saveAttendance 함수 수정
+function saveAttendance(memberIdx, attTypeIdx, selectedValue) {
 	var activeOrgId = getCookie('activeOrg');
 	var today = new Date();
 	var attDate = formatDate(today);
@@ -1266,7 +1538,6 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 		data: {
 			member_idx: memberIdx,
 			att_type_idx: attTypeIdx,
-			att_type_category_idx: attTypeCategoryIdx,
 			org_id: activeOrgId,
 			att_date: attDate,
 			selected_value: selectedValue
@@ -1293,9 +1564,9 @@ function saveAttendance(memberIdx, attTypeIdx, attTypeCategoryIdx, selectedValue
 var attend_type_color_map = {};
 var attend_type_order_map = {};
 
-/**
- * 역할: 출석 스탬프 업데이트 함수 수정 - 화면 기반 카운트 적용
- */
+
+
+// 3. updateAttStamps 함수에서 category_idx 제거
 function updateAttStamps(orgId, startDate, endDate) {
 	// 시작일에 해당하는 일요일 날짜 계산
 	var sundayDate = getSundayOfWeek(startDate);
@@ -1321,10 +1592,14 @@ function updateAttStamps(orgId, startDate, endDate) {
 						var attTypeArr = attTypeData.split('|');
 						var attTypeNickname = attTypeArr[0].trim();
 						var attTypeIdx = attTypeArr[1].trim();
-						var attTypeCategoryIdx = attTypeArr[2].trim();
 						var attTypeColor = attTypeArr[3].trim();
 
-						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" data-att-type-category-idx="' + attTypeCategoryIdx + '" style="background-color: #' + attTypeColor + '">' + attTypeNickname + '</span>';
+						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" style="background-color: #' + attTypeColor + '">' + attTypeNickname + '</span>';
+
+
+
+
+
 					}).join(' ');
 
 					attStampsContainer.append(attStamps);
@@ -1336,8 +1611,6 @@ function updateAttStamps(orgId, startDate, endDate) {
 		}
 	});
 }
-
-
 // 주차 범위 업데이트 함수 수정
 function updateWeekRange(weekRange) {
 	$('.current-week').text(weekRange);
@@ -1375,14 +1648,140 @@ function updateInputSearchState() {
 	}
 }
 
-// saveAttendanceBtn 클릭 이벤트 수정
+// 1. saveAttendanceBtn 클릭 이벤트 수정
 $('#saveAttendanceBtn').off('click').on('click', function() {
 	const buttonText = $(this).text();
-
-		saveAttendanceAndMemo();
-
+	// pqgrid 방식으로 저장
+	saveAttendanceAndMemoFromGrid();
 });
 
+
+
+/**
+ * pqgrid에서 출석+메모 데이터 수집 및 저장 (수정된 버전)
+ */
+function saveAttendanceAndMemoFromGrid() {
+	console.log('pqgrid에서 출석 및 메모 저장 시작');
+
+	if (!pastoralGrid) {
+		console.error('pqgrid가 초기화되지 않았습니다.');
+		return;
+	}
+
+	var currentWeekRange = $('.current-week').text();
+	var currentDate = getDateFromWeekRange(currentWeekRange);
+	var startDate = getWeekStartDate(currentDate);
+	var endDate = getWeekEndDate(currentDate);
+	var activeOrgId = getCookie('activeOrg');
+
+	// 오늘 날짜가 현재 주차에 속하는지 확인하여 출석 날짜 결정
+	var today = new Date();
+	var formattedToday = formatDate(today);
+	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
+
+	// 일요일 날짜 계산
+	var sundayDate = getSundayOfWeek(attDate);
+
+	// pqgrid에서 데이터 가져오기
+	var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
+
+	if (!gridData || gridData.length === 0) {
+		showToast('저장할 데이터가 없습니다.', 'warning');
+		return;
+	}
+
+	// 저장할 데이터 수집
+	var attendanceData = [];
+	var memoData = [];
+
+	gridData.forEach(function(row) {
+		var memberIdx = row.member_idx;
+		var memoContent = row.memo_content ? row.memo_content.trim() : '';
+
+		// 출석 데이터 수집
+		var hasAttendanceData = false;
+
+		if (attendanceTypes && attendanceTypes.length > 0) {
+			attendanceTypes.forEach(function(attType) {
+				var dataIndx = "att_type_" + attType.att_type_idx;
+				var cellValue = row[dataIndx];
+
+				// checkbox인 경우 true인지 확인, selectbox인 경우 빈 값이 아닌지 확인
+				var hasValue = false;
+				if (attType.att_type_input === 'check') {
+					hasValue = cellValue === true;
+				} else {
+					hasValue = cellValue && cellValue.trim() !== '';
+				}
+
+				if (hasValue) {
+					attendanceData.push({
+						member_idx: memberIdx,
+						att_type_idx: attType.att_type_idx,
+						att_date: sundayDate,
+						has_data: true
+					});
+					hasAttendanceData = true;
+				}
+			});
+		}
+
+		// 출석 데이터가 없는 회원도 삭제 처리를 위해 포함
+		if (!hasAttendanceData) {
+			attendanceData.push({
+				member_idx: memberIdx,
+				att_type_idx: null,
+				att_date: sundayDate,
+				has_data: false
+			});
+		}
+
+		// 메모 데이터 수집
+		memoData.push({
+			member_idx: memberIdx,
+			memo_content: memoContent,
+			memo_date: sundayDate,
+			org_id: activeOrgId
+		});
+	});
+
+	console.log('수집된 출석 데이터:', attendanceData);
+	console.log('메모 데이터:', memoData);
+
+	// 저장 버튼 상태 변경
+	var $saveBtn = $('#saveAttendanceBtn');
+	var originalText = $saveBtn.text();
+	$saveBtn.prop('disabled', true).text('저장 중...');
+
+	// 출석 데이터 저장
+	$.ajax({
+		url: '/qrcheck/save_attendance_data_with_cleanup',
+		method: 'POST',
+		data: {
+			attendance_data: JSON.stringify(attendanceData),
+			org_id: activeOrgId,
+			start_date: startDate,
+			end_date: endDate,
+			att_date: sundayDate
+		},
+		dataType: 'json',
+		success: function(response) {
+			console.log('출석 저장 응답:', response);
+
+			if (response.status === 'success') {
+				saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText);
+			} else {
+				$saveBtn.prop('disabled', false).text(originalText);
+				showToast('출석 정보 저장에 실패했습니다.', 'error');
+			}
+		},
+		error: function(xhr, status, error) {
+			console.error('출석 저장 오류:', xhr.responseText);
+			$saveBtn.prop('disabled', false).text(originalText);
+			showToast('출석 정보 저장 중 오류가 발생했습니다.', 'error');
+		}
+	});
+}
 
 /**
  * 역할: 출석 데이터 저장 함수 수정 - 일요일 날짜로 저장
@@ -1586,18 +1985,15 @@ $(document).ready(function() {
 	});
 
 
+
+// 4. 지난주 데이터 로드 함수에서 updateAttendanceSelectbox 호출 부분 수정
 	function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
 		var currentWeekRange = $('.current-week').text();
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 
-		// 현재 주차의 일요일 구하기
 		var currentSunday = getSunday(new Date(currentDate));
-
-		// 지난주 일요일 계산 (현재 일요일에서 7일 빼기)
 		var lastWeekSunday = new Date(currentSunday);
 		lastWeekSunday.setDate(lastWeekSunday.getDate() - 7);
-
-		// YYYY-MM-DD 형식으로 포맷
 		var lastWeekSundayFormatted = formatDate(lastWeekSunday);
 
 		console.log('현재 주차 범위:', currentWeekRange);
@@ -1611,7 +2007,7 @@ $(document).ready(function() {
 				member_idx: memberIdx,
 				org_id: orgId,
 				area_idx: areaIdx,
-				att_date: lastWeekSundayFormatted  // 지난주 일요일 날짜만 전달
+				att_date: lastWeekSundayFormatted
 			},
 			dataType: 'json',
 			success: function(response) {
@@ -1627,7 +2023,8 @@ $(document).ready(function() {
 					if (Object.keys(attendanceData).length === 0) {
 						showToast('지난주 출석 데이터가 없습니다.', 'warning');
 					} else {
-						updateAttendanceSelectbox(attendanceData, attTypes);
+						// pqgrid용 함수 호출
+						updateAttendanceSelectboxForGrid(attendanceData, attTypes);
 						showToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', 'success');
 					}
 				} else {
@@ -1645,6 +2042,28 @@ $(document).ready(function() {
 			}
 		});
 	}
+
+
+
+// offcanvas 정리 함수 추가
+	function cleanupPastoralGrid() {
+		if (pastoralGrid) {
+			try {
+				pastoralGrid.pqGrid("destroy");
+				pastoralGrid = null;
+				pastoralGridData = [];
+			} catch (error) {
+				console.error('pqgrid 정리 실패:', error);
+			}
+		}
+	}
+
+
+// offcanvas 숨김 이벤트에 정리 함수 바인딩
+	$('#attendanceOffcanvas').on('hidden.bs.offcanvas', function() {
+		cleanupPastoralGrid();
+	});
+
 
 	function updateAttendanceSelectbox(attendanceData, attTypes) {
 		$('.att-type-select').each(function() {

@@ -1,9 +1,12 @@
 <!-- 파일 위치: application/views/qrcheck.php -->
-<!-- 역할: 드롭다운을 텍스트박스로 변경 -->
+<!-- 역할: pqgrid CSS 및 JavaScript 라이브러리 추가 -->
 
 <?php $this->load->view('header'); ?>
 <!-- Member CSS -->
 <link rel="stylesheet" href="/assets/css/qrcheck.css?<?php echo WB_VERSION; ?>">
+
+<!-- ParamQuery CSS 및 JavaScript 추가 -->
+<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
 
 <div class="pt-3 pb-2 ">
 	<div class="container-fluid">
@@ -138,14 +141,14 @@
 	</div>
 </div>
 
-<!-- 출석체크 offcanvas -->
-<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel">
+<!-- 출석체크 offcanvas (pqgrid용으로 수정) -->
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel" style="width: 800px;">
 	<div class="offcanvas-header text-start">
 		<h5 class="offcanvas-title" id="attendanceOffcanvasLabel"></h5>
 		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">
-		<!-- 출석체크 내용 -->
+		<!-- pqgrid가 여기에 동적으로 추가됩니다 -->
 	</div>
 	<div class="offcanvas-footer">
 		<div class="input-group">
@@ -162,6 +165,8 @@
 
 <?php $this->load->view('footer'); ?>
 
+<!-- ParamQuery JavaScript 라이브러리 추가 -->
+<script src="http://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
 <script src="/assets/js/qrcheck.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
 <script>

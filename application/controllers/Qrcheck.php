@@ -76,7 +76,6 @@ class Qrcheck extends My_Controller
 		if ($this->input->is_ajax_request()) {
 			$member_idx = $this->input->post('member_idx');
 			$att_type_idx = $this->input->post('att_type_idx');
-			$att_type_category_idx = $this->input->post('att_type_category_idx');
 			$org_id = $this->input->post('org_id');
 			$att_date = $this->input->post('att_date');
 			$selected_value = $this->input->post('selected_value');
@@ -85,20 +84,20 @@ class Qrcheck extends My_Controller
 			$sunday_date = $this->get_sunday_of_week($att_date);
 			$att_year = date('Y', strtotime($sunday_date));
 
-			// 해당 회원의 해당 카테고리 출석 데이터 먼저 삭제
+			// 기존 출석 데이터 삭제 (필요시)
 			$this->load->model('Attendance_model');
-			$this->Attendance_model->delete_attendance_by_category($member_idx, $att_type_category_idx, $sunday_date, $att_year);
+			$this->Attendance_model->delete_attendance_by_member_and_type($member_idx, $att_type_idx, $sunday_date, $att_year);
 
 			// 새로운 출석 데이터 저장
 			$data = array(
-				'att_date' => $sunday_date, // 일요일 날짜로 저장
+				'att_date' => $sunday_date,
 				'att_type_idx' => $att_type_idx,
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
-				'att_year' => $att_year, // att_year 추가
+				'att_year' => $att_year,
 				'att_value' => $selected_value ?: 0,
-				'regi_date' => date('Y-m-d H:i:s'), // 등록일 추가
-				'modi_date' => date('Y-m-d') // 변경일 추가
+				'regi_date' => date('Y-m-d H:i:s'),
+				'modi_date' => date('Y-m-d')
 			);
 
 			$result = $this->Attendance_model->save_single_attendance($data);
@@ -205,7 +204,6 @@ class Qrcheck extends My_Controller
 			} else {
 				// 일반 관리자인 경우 관리 가능한 그룹의 회원만 조회
 				$accessible_areas = $this->User_management_model->get_user_managed_areas_with_children($user_id, $org_id);
-
 
 
 				if (!empty($accessible_areas)) {
@@ -338,9 +336,8 @@ class Qrcheck extends My_Controller
 	}
 
 
-
 	/**
-	* 역할: 권한 확인 후 같은 그룹 회원 조회
+	 * get_same_members 함수 수정 - category_idx 제거
 	 */
 	public function get_same_members()
 	{
@@ -351,7 +348,7 @@ class Qrcheck extends My_Controller
 			$start_date = $this->input->post('start_date');
 			$end_date = $this->input->post('end_date');
 
-			// 권한 확인 - 해당 그룹에 접근할 권한이 있는지 확인
+			// 권한 확인
 			$user_id = $this->session->userdata('user_id');
 			$master_yn = $this->session->userdata('master_yn');
 			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
@@ -504,6 +501,10 @@ class Qrcheck extends My_Controller
 		}
 	}
 
+
+	/**
+	 * get_last_week_attendance 함수 수정
+	 */
 	public function get_last_week_attendance()
 	{
 		if ($this->input->is_ajax_request()) {
@@ -524,17 +525,11 @@ class Qrcheck extends My_Controller
 				}
 			}
 
-			log_message('debug', 'Last week attendance - Target date: ' . $att_date);
-			log_message('debug', 'Last week attendance - Area IDX: ' . $area_idx);
-			log_message('debug', 'Last week attendance - Org ID: ' . $org_id);
-
 			$this->load->model('Attendance_model');
 
 			// 정확한 지난주 일요일 날짜로 조회
 			$attendance_data = $this->Attendance_model->get_org_member_attendance($org_id, $area_idx, $att_date, $att_date);
 			$att_types = $this->Attendance_model->get_attendance_types($org_id);
-
-			log_message('debug', 'Last week attendance data result: ' . json_encode($attendance_data));
 
 			$response = array(
 				'status' => 'success',
@@ -545,8 +540,9 @@ class Qrcheck extends My_Controller
 			echo json_encode($response);
 		}
 	}
+
 	/**
-	 * 역할: 모든 회원의 출석 데이터를 처리하고 불필요한 데이터 정리 - att_date를 일요일로 저장
+	 * save_attendance_data_with_cleanup 함수 수정
 	 */
 	public function save_attendance_data_with_cleanup()
 	{

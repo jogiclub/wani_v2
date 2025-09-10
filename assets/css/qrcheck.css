@@ -20,5 +20,6 @@
 	justify-content: space-between;
 }
 
-#attendanceOffcanvas .offcanvas-body table{table-layout: fixed;}
+
+#pastoralAttendanceGrid{height: calc(100vh - 150px)!important;}
 
