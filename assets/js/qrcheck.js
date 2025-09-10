@@ -1689,6 +1689,7 @@ function updateAttStamps(orgId, startDate, endDate) {
 		}
 	});
 }
+
 // 주차 범위 업데이트 함수 수정
 function updateWeekRange(weekRange) {
 	$('.current-week').text(weekRange);
@@ -1701,9 +1702,9 @@ function updateWeekRange(weekRange) {
 	if (activeOrgId) {
 		updateBirthBg(startDate, endDate);
 		var selectedMode = $('.mode-list .btn-check:checked').attr('id');
-		if (selectedMode === 'mode-1') {
-			updateAttStamps(activeOrgId, startDate, endDate);
-		}
+
+		// 모든 모드에서 출석 스탬프 업데이트
+		updateAttStamps(activeOrgId, startDate, endDate);
 	}
 
 	updateInputSearchState();
