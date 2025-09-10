@@ -58,8 +58,7 @@
 				</button>
 			<?php endif; ?>
 
-			<button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown"
-					aria-expanded="false">
+			<button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
 				<span class="visually-hidden">Toggle Dropdown</span>
 			</button>
 
