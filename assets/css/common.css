@@ -2,7 +2,7 @@
 
 
 /*기본*/
-html, body{font-family: 'Pretendard'; font-size: 16px;}
+html, body{font-family: 'font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;'; font-size: 16px;}
 a{text-decoration: none; color: #0b0b0b}
 ul, dl{}
 
@@ -346,7 +346,7 @@ ul.fancytree-container{border: 0!important;}
 /* Fancytree 커스텀 스타일 */
 .ui-fancytree {
 	border: none;
-	font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+	font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 .fancytree-container {
@@ -390,7 +390,7 @@ span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font
 
 /* ParamQuery Grid 커스텀 스타일 */
 .pq-grid {
-	font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+	font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 .pq-grid-header {

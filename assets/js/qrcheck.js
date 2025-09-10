@@ -1237,14 +1237,28 @@ function saveAttendanceAndMemo() {
 }
 
 /**
- * 역할: 일요일 날짜 계산 유틸리티 함수
+ * 일요일 날짜 계산 (안전성 강화)
  */
 function getSundayOfWeek(date) {
-	var dateObj = new Date(date);
-	var day = dateObj.getDay(); // 0=일요일, 1=월요일...
-	var diff = dateObj.getDate() - day;
-	var sunday = new Date(dateObj.setDate(diff));
-	return formatDate(sunday);
+	try {
+		var dateObj;
+		if (typeof date === 'string') {
+			dateObj = parseCompatibleDate(date);
+		} else if (date instanceof Date) {
+			dateObj = new Date(date.getTime());
+		} else {
+			dateObj = new Date();
+		}
+
+		var day = dateObj.getDay(); // 0=일요일, 1=월요일...
+		var diff = dateObj.getDate() - day;
+		var sunday = new Date(dateObj.setDate(diff));
+
+		return formatDate(sunday);
+	} catch (error) {
+		console.error('Error getting Sunday of week:', error);
+		return formatDate(new Date());
+	}
 }
 
 // 메모 데이터 저장 함수
@@ -1330,24 +1344,59 @@ function applySelectedMode() {
 	}
 }
 
+/**
+ * 주 시작일 계산 (안전성 강화)
+ */
 function getWeekStartDate(date) {
-	if (typeof date === 'string') {
-		date = new Date(date);
-	}
-	var day = date.getDay();
-	var diff = date.getDate() - day;
-	var startDate = new Date(date.setDate(diff));
-	return formatDate(startDate);
-}
+	try {
+		var workingDate;
 
-function getWeekEndDate(date) {
-	if (typeof date === 'string') {
-		date = new Date(date);
+		if (!date) {
+			workingDate = new Date();
+		} else if (typeof date === 'string') {
+			workingDate = parseCompatibleDate(date);
+		} else if (date instanceof Date) {
+			workingDate = new Date(date.getTime());
+		} else {
+			workingDate = new Date();
+		}
+
+		var day = workingDate.getDay();
+		var diff = workingDate.getDate() - day;
+		var startDate = new Date(workingDate.setDate(diff));
+
+		return formatDate(startDate);
+	} catch (error) {
+		console.error('Error getting week start date:', error);
+		return formatDate(new Date());
 	}
-	var day = date.getDay();
-	var diff = date.getDate() - day + 6;
-	var endDate = new Date(date.setDate(diff));
-	return formatDate(endDate);
+}
+/**
+ * 주 종료일 계산 (안전성 강화)
+ */
+function getWeekEndDate(date) {
+	try {
+		var workingDate;
+
+		if (!date) {
+			workingDate = new Date();
+		} else if (typeof date === 'string') {
+			workingDate = parseCompatibleDate(date);
+		} else if (date instanceof Date) {
+			workingDate = new Date(date.getTime());
+		} else {
+			workingDate = new Date();
+		}
+
+		var day = workingDate.getDay();
+		var diff = workingDate.getDate() - day + 6;
+		var endDate = new Date(workingDate.setDate(diff));
+
+		return formatDate(endDate);
+	} catch (error) {
+		console.error('Error getting week end date:', error);
+		return formatDate(new Date());
+	}
 }
 
 function getWeekNumber(date) {
@@ -1363,16 +1412,43 @@ function getDateFromWeekRange(weekRange) {
 	var startDateStr = parts[0].trim().replace('년', '-').replace('월', '-').replace('일', '').replace(/\(\d+주차\)/, '').trim();
 	return new Date(startDateStr);
 }
+/**
+ * 주차 범위 생성 (사파리 호환)
+ */
 
-// 주차 범위 생성 함수 수정 - (주차) 정보 제거
+
 function getWeekRangeFromDate(date) {
-	var currentDate = new Date(date);
-	var sundayTimestamp = getSunday(currentDate).getTime();
-	var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
-	var startDate = formatDate(new Date(sundayTimestamp));
-	var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
-	// 주차 정보 제거하여 단순한 날짜 범위만 반환
-	return `${startDate}~${endDate}`;
+	try {
+		// Date 객체 유효성 검사
+		if (!date || isNaN(date.getTime())) {
+			console.warn('Invalid date for week range:', date);
+			date = new Date();
+		}
+
+		var currentDate = new Date(date.getTime()); // 원본 날짜 보존
+		var sunday = getSunday(new Date(currentDate.getTime()));
+
+		if (isNaN(sunday.getTime())) {
+			console.error('Failed to get Sunday date');
+			sunday = new Date();
+		}
+
+		var sundayTimestamp = sunday.getTime();
+		var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
+
+		var startDate = formatDate(new Date(sundayTimestamp));
+		var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
+
+		return `${startDate}~${endDate}`;
+	} catch (error) {
+		console.error('Error creating week range:', error);
+		// 폴백: 현재 주차 반환
+		var today = new Date();
+		var sunday = getSunday(new Date(today.getTime()));
+		var startDate = formatDate(sunday);
+		var endDate = formatDate(new Date(sunday.getTime() + 6 * 24 * 60 * 60 * 1000));
+		return `${startDate}~${endDate}`;
+	}
 }
 
 // 모든 주차 범위 생성 함수 수정 - (주차) 정보 제거
@@ -1390,17 +1466,63 @@ function generateAllWeekRanges() {
 	return allWeekRanges.reverse();
 }
 
+/**
+ * 일요일 계산 (안전성 강화)
+ */
 function getSunday(date) {
-	var day = date.getDay();
-	var diff = date.getDate() - day;
-	return new Date(date.setDate(diff));
+	try {
+		if (!date || isNaN(date.getTime())) {
+			date = new Date();
+		}
+
+		var workingDate = new Date(date.getTime()); // 원본 보존
+		var day = workingDate.getDay();
+		var diff = workingDate.getDate() - day;
+		var sunday = new Date(workingDate.setDate(diff));
+
+		if (isNaN(sunday.getTime())) {
+			console.error('Failed to calculate Sunday');
+			return new Date();
+		}
+
+		return sunday;
+	} catch (error) {
+		console.error('Error getting Sunday:', error);
+		return new Date();
+	}
 }
 
+
+/**
+ * 날짜 포맷팅 (안전성 강화)
+ */
 function formatDate(date) {
-	var year = date.getFullYear();
-	var month = String(date.getMonth() + 1).padStart(2, '0');
-	var day = String(date.getDate()).padStart(2, '0');
-	return `${year}.${month}.${day}`;
+	if (!date || isNaN(date.getTime())) {
+		console.warn('Invalid date for formatting:', date, '-> fallback to today');
+		date = new Date();
+	}
+
+	try {
+		var year = date.getFullYear();
+		var month = String(date.getMonth() + 1).padStart(2, '0');
+		var day = String(date.getDate()).padStart(2, '0');
+
+		// NaN 체크
+		if (isNaN(year) || isNaN(month) || isNaN(day)) {
+			console.error('Date formatting failed, using fallback');
+			var fallback = new Date();
+			return formatDate(fallback);
+		}
+
+		return `${year}.${month}.${day}`;
+	} catch (error) {
+		console.error('Error formatting date:', error);
+		var fallback = new Date();
+		var year = fallback.getFullYear();
+		var month = String(fallback.getMonth() + 1).padStart(2, '0');
+		var day = String(fallback.getDate()).padStart(2, '0');
+		return `${year}.${month}.${day}`;
+	}
 }
 
 
@@ -2168,15 +2290,60 @@ $(document).ready(function() {
 	}
 });
 
+/**
+ * 사파리 호환 날짜 파싱 함수
+ */
+function parseCompatibleDate(dateStr) {
+	if (!dateStr) {
+		return new Date();
+	}
+
+	// YYYY.MM.DD 형식을 YYYY-MM-DD로 변환
+	var normalizedDate = dateStr.replace(/\./g, '-');
+
+	// 날짜 유효성 검사
+	var date = new Date(normalizedDate);
+
+	// Invalid Date 체크
+	if (isNaN(date.getTime())) {
+		console.warn('Invalid date string:', dateStr, '-> fallback to today');
+		return new Date();
+	}
+
+	return date;
+}
 
 
+/**
+ * 주차 범위에서 날짜 추출 (사파리 호환)
+ */
 function getDateFromWeekRange(weekRange) {
-	// "2025.09.07~2025.09.13" 형식에서 시작 날짜 추출
-	var parts = weekRange.split('~');
-	var startDateStr = parts[0].trim();
+	if (!weekRange || typeof weekRange !== 'string') {
+		console.warn('Invalid weekRange:', weekRange, '-> fallback to today');
+		return new Date();
+	}
 
-	// YYYY.MM.DD를 YYYY-MM-DD로 변환
-	var formattedDateStr = startDateStr.replace(/\./g, '-');
+	try {
+		// "2025.09.07~2025.09.13" 형식에서 시작 날짜 추출
+		var parts = weekRange.split('~');
+		if (parts.length < 2) {
+			console.warn('Invalid weekRange format:', weekRange);
+			return new Date();
+		}
 
-	return new Date(formattedDateStr);
+		var startDateStr = parts[0].trim();
+
+		// 한글 제거 (년, 월, 일, 주차 정보 등)
+		startDateStr = startDateStr
+			.replace('년', '')
+			.replace('월', '')
+			.replace('일', '')
+			.replace(/\(\d+주차\)/, '')
+			.trim();
+
+		return parseCompatibleDate(startDateStr);
+	} catch (error) {
+		console.error('Error parsing weekRange:', weekRange, error);
+		return new Date();
+	}
 }
