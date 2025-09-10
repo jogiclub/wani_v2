@@ -63,7 +63,7 @@
 						<div class="col-lg-5 col-8 d-flex justify-content-end">
 
 							<!-- 점수재계산 버튼 추가 -->
-							<button class="btn btn-sm btn-outline-warning me-3 justify-content-end d-none d-lg-flex" type="button" id="btnRecalculateStats">
+							<button class="btn btn-sm btn-outline-warning me-3 justify-content-end d-none d-lg-flex align-items-center" type="button" id="btnRecalculateStats">
 								<i class="bi bi-arrow-clockwise"></i> 포인트재계산
 							</button>
 
