@@ -606,7 +606,7 @@ function loadMemberAttendance(memberIdx, startDate, endDate) {
 }
 
 
-// 출석 타입 로드 함수도 수정 (radio button 그룹 구조 개선)
+// 출석 타입 로드 함수 - checkbox 형태로 변경
 function loadAttendanceTypes(memberIdx, attendanceData) {
 	var html = '';
 
@@ -621,7 +621,7 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 		return;
 	}
 
-	// 각 출석 타입별로 radio button group 생성
+	// 각 출석 타입별로 checkbox 생성
 	for (var i = 0; i < attendanceTypes.length; i++) {
 		var type = attendanceTypes[i];
 
@@ -634,9 +634,9 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 			}
 		}
 
-		// radio button group을 btn-group으로 감싸기
-		html += '<div class="btn-group me-2 mb-2" role="group">';
-		html += '<input type="radio" class="btn-check" name="att_type_' + type.att_type_idx + '" id="att_type_' + type.att_type_idx + '" value="' + type.att_type_idx + '" ' + (isChecked ? 'checked' : '') + ' autocomplete="off">';
+		// checkbox를 개별적으로 생성 (독립적인 선택 가능)
+		html += '<div class="form-check form-check-inline mb-2 ps-0 me-2">';
+		html += '<input type="checkbox" class="btn-check" id="att_type_' + type.att_type_idx + '" value="' + type.att_type_idx + '" ' + (isChecked ? 'checked' : '') + ' autocomplete="off">';
 		html += '<label class="btn btn-outline-primary" for="att_type_' + type.att_type_idx + '">' + type.att_type_name + '</label>';
 		html += '</div>';
 	}
@@ -647,8 +647,9 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 	$('#attendanceModal').modal('show');
 }
 
-// 출석 정보 저장 (수정된 버전)
-$('#saveAttendance').click(function() {
+
+// 출석 정보 저장 - checkbox 다중 선택 지원
+$('#saveAttendance').off('click').on('click', function() {
 	var memberIdx = $('#selectedMemberIdx').val();
 	var attendanceData = [];
 	var activeOrgId = getCookie('activeOrg');
@@ -665,46 +666,17 @@ $('#saveAttendance').click(function() {
 	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
 
 	console.log('출석 저장 시작 - memberIdx:', memberIdx);
-	console.log('attendanceTypes:', attendanceTypes);
 
-	// 수정된 데이터 수집 로직
-	if (attendanceTypes && attendanceTypes.length > 0) {
-		attendanceTypes.forEach(function(type) {
-			// 각 출석 타입별로 체크된 항목 확인
-			var radioInput = $('#attendanceTypes input[name="att_type_' + type.att_type_idx + '"]:checked');
-
-			console.log('출석타입 ' + type.att_type_idx + ' 체크 상태:', {
-				name: 'att_type_' + type.att_type_idx,
-				checked: radioInput.length > 0,
-				value: radioInput.val()
-			});
-
-			if (radioInput.length > 0) {
-				var selectedValue = radioInput.val();
-				if (selectedValue) {
-					attendanceData.push(selectedValue);
-					console.log('출석 데이터 추가:', selectedValue);
-				}
-			}
-		});
-	} else {
-		// 기존 방식으로 폴백
-		$('#attendanceTypes .btn-group').each(function() {
-			var selectedType = $(this).find('input[type="radio"]:checked').val();
-			if (selectedType) {
-				attendanceData.push(selectedType);
-				console.log('폴백 방식으로 출석 데이터 추가:', selectedType);
-			}
-		});
-	}
+	// 체크된 모든 checkbox의 값을 수집
+	$('#attendanceTypes input[type="checkbox"]:checked').each(function() {
+		var selectedValue = $(this).val();
+		if (selectedValue) {
+			attendanceData.push(selectedValue);
+			console.log('출석 데이터 추가:', selectedValue);
+		}
+	});
 
 	console.log('최종 수집된 출석 데이터:', attendanceData);
-
-	// 출석 데이터가 비어있는지 확인
-	if (attendanceData.length === 0) {
-		console.warn('선택된 출석 타입이 없습니다.');
-		// 빈 데이터라도 서버로 전송 (기존 출석 데이터 삭제 목적)
-	}
 
 	// 서버로 전송할 데이터 확인
 	var requestData = {
@@ -758,12 +730,10 @@ $('#saveAttendance').click(function() {
 	});
 });
 
-// initialize 버튼을 클릭하면 모든 btn-check가 unchecked
-$('#initialize').on('click', function() {
-	var checkboxes = document.querySelectorAll('#attendanceTypes .btn-check');
-	checkboxes.forEach(function(checkbox) {
-		checkbox.checked = false;
-	});
+// initialize 버튼을 클릭하면 모든 checkbox가 unchecked
+$('#initialize').off('click').on('click', function() {
+	$('#attendanceTypes input[type="checkbox"]').prop('checked', false);
+	console.log('모든 체크박스 초기화 완료');
 });
 
 // 쿠키 설정 함수
