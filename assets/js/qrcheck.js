@@ -876,8 +876,6 @@ function displayMembers(members) {
 	// 출석 타입별 숫자 계산 (화면에 표시된 스탬프들만 계산)
 	updateAttTypeCountFromDOM();
 
-	// Masonry 초기화 및 지연 실행
-	initializeMasonry();
 }
 
 /**
@@ -1421,10 +1419,10 @@ function getWeekRangeFromDate(date) {
 		var currentDate = new Date(date.getTime()); // 원본 날짜 보존
 		var sunday = getSunday(new Date(currentDate.getTime()));
 
-		if (isNaN(sunday.getTime())) {
-			console.error('Failed to get Sunday date');
-			sunday = new Date();
-		}
+		// if (isNaN(sunday.getTime())) {
+		// 	console.error('Failed to get Sunday date');
+		// 	sunday = new Date();
+		// }
 
 		var sundayTimestamp = sunday.getTime();
 		var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
@@ -1786,28 +1784,24 @@ function updateAttStamps(orgId, startDate, endDate) {
 						var attTypeNickname = attTypeArr[0].trim();
 						var attTypeIdx = attTypeArr[1].trim();
 						var attTypeColor = attTypeArr[3].trim();
-
 						return '<span class="att-stamp" data-att-type-idx="' + attTypeIdx + '" style="background-color: #' + attTypeColor + '">' + attTypeNickname + '</span>';
-
-
-
-
-
 					}).join(' ');
-
 					attStampsContainer.append(attStamps);
 				}
 			});
-
 			// 화면에 표시된 스탬프를 기반으로 카운트 업데이트
 			updateAttTypeCountFromDOM();
+			initializeMasonry();
 		}
+
 	});
 }
 
 // 주차 범위 업데이트 함수 수정
 function updateWeekRange(weekRange) {
-	$('.current-week').text(weekRange);
+	// input 태그이므로 .val()을 사용해야 함
+	$('.current-week').val(weekRange);
+
 	var currentDate = getDateFromWeekRange(weekRange);
 	var startDate = getWeekStartDate(currentDate);
 	var endDate = getWeekEndDate(currentDate);
@@ -1821,13 +1815,12 @@ function updateWeekRange(weekRange) {
 		// 모든 모드에서 출석 스탬프 업데이트
 		updateAttStamps(activeOrgId, startDate, endDate);
 	}
-
 	updateInputSearchState();
 }
 
 // 오늘 날짜가 current-week의 기간 안에 있는지 확인하고 input-search 활성화/비활성화
 function updateInputSearchState() {
-	var currentWeekRange = $('.current-week').text();
+	var currentWeekRange = $('.current-week').val(); // .text() -> .val()로 변경
 	var currentDate = getDateFromWeekRange(currentWeekRange);
 	var startDate = getWeekStartDate(currentDate);
 	var endDate = getWeekEndDate(currentDate);
@@ -1835,14 +1828,15 @@ function updateInputSearchState() {
 	var formattedToday = formatDate(today);
 
 	if (formattedToday >= startDate && formattedToday <= endDate) {
-		$('#input-search').prop('disabled', false).val('').attr('placeholder', '이름검색 또는 QR체크!').focus();
+		$('#input-search').prop('disabled', false).val('').attr('placeholder', '이름검색 또는 QR체크!');
 	} else {
 		$('#input-search').prop('disabled', true).val('검색중...').attr('placeholder', '');
 		resetMemberList();
 	}
 }
 
-// 1. saveAttendanceBtn 클릭 이벤트 수정
+
+// saveAttendanceBtn 클릭 이벤트 수정
 $('#saveAttendanceBtn').off('click').on('click', function() {
 	const buttonText = $(this).text();
 	// pqgrid 방식으로 저장
@@ -2135,29 +2129,19 @@ $(document).ready(function() {
 
 	// 이전 주 버튼 클릭 이벤트 - 디버깅 로그 추가
 	$('.prev-week').off('click').on('click', function() {
-
-		var currentWeekRange = $('.current-week').text();
-
-
+		var currentWeekRange = $('.current-week').val(); // .text() -> .val()로 변경
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 		var prevDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
 		var prevWeekRange = getWeekRangeFromDate(prevDate);
-
-
 		updateWeekRange(prevWeekRange);
 	});
 
 	// 다음 주 버튼 클릭 이벤트 - 디버깅 로그 추가
 	$('.next-week').off('click').on('click', function() {
-
-		var currentWeekRange = $('.current-week').text();
-
-
+		var currentWeekRange = $('.current-week').val();
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 		var nextDate = new Date(currentDate.setDate(currentDate.getDate() + 7));
 		var nextWeekRange = getWeekRangeFromDate(nextDate);
-
-
 		updateWeekRange(nextWeekRange);
 	});
 
