@@ -46,32 +46,34 @@
 		<div class="split-pane" id="right-pane">
 			<div class="card h-100">
 				<div class="card-header">
-					<div class="row">
-						<div class="col-lg-4 col-3 d-flex align-items-center">
+					<div class="row flex-column flex-lg-row">
+						<div class="col-12 col-lg-4 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								조직을 선택해주세요
 							</h5>
 						</div>
 
-						<div class="col-lg-3 col-1 d-flex justify-content-end">
-							<div class="input-group input-group-sm d-none d-lg-flex">
+						<div class="col-12 col-lg-3 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+							<div class="input-group input-group-sm">
 								<input type="text" class="form-control" placeholder="회원명 검색" aria-label="Member's name" aria-describedby="button-search">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
 							</div>
 						</div>
 
-						<div class="col-lg-5 col-8 d-flex justify-content-end">
+						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 
 							<!-- 점수재계산 버튼 추가 -->
-							<button class="btn btn-sm btn-outline-warning me-3 justify-content-end d-none d-lg-flex align-items-center" type="button" id="btnRecalculateStats">
+							<button class="btn btn-sm btn-outline-warning me-md-2 justify-content-end align-items-center d-none d-lg-flex" type="button" id="btnRecalculateStats">
 								<i class="bi bi-arrow-clockwise"></i> 포인트재계산
 							</button>
 
 							<!-- 연도 선택 컨트롤 -->
-							<div class="input-group input-group-sm year-selector justify-content-end">
+							<div>
+							<div class="input-group input-group-sm year-selector justify-content-start justify-content-lg-end">
 								<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
 								<label class="input-group-text year-display " id="currentYear">2025</label>
 								<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
+							</div>
 							</div>
 
 

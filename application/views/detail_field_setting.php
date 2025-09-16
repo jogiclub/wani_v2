@@ -37,11 +37,11 @@
 					<div class="card-body">
 						<?php if (isset($detail_fields) && !empty($detail_fields)): ?>
 							<div class="table-responsive">
-								<table class="table align-middle">
+								<table class="table align-middle" style="min-width: 800px">
 									<thead>
 									<tr>
 										<th style="width: 50px;">순서</th>
-										<th style="width: 50px;">번호</th>
+										<th style="width: 50px;" class="d-none d-md-table-cell">번호</th>
 										<th style="width: 150px;">필드명</th>
 										<th style="width: 100px;">타입</th>
 										<th>옵션</th>
@@ -58,7 +58,7 @@
 												<i class="bi bi-grip-vertical text-muted handle"
 												   style="cursor: move; font-size: 1.2em;"></i>
 											</td>
-											<td class="text-center">
+											<td class="text-center d-none d-md-table-cell">
 												<span
 													class="order-number ms-2"><?php echo $field['display_order']; ?></span>
 											</td>

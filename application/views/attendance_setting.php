@@ -35,17 +35,17 @@
 					<div class="card-body">
 						<?php if (isset($attendance_types) && !empty($attendance_types)): ?>
 							<div class="table-responsive">
-								<table class="table align-middle">
+								<table class="table align-middle" style="min-width: 600px;">
 									<thead>
 									<tr>
 										<th style="width: 50px;">순서</th>
-										<th style="width: 50px;">번호</th>
+										<th style="width: 50px;" class="d-none d-md-table-cell">번호</th>
 										<th>타입명</th>
 										<th style="width: 100px;">별칭</th>
-										<th style="width: 120px;">카테고리</th>
+<!--										<th style="width: 120px;">카테고리</th>-->
 										<th style="width: 80px;">포인트</th>
 										<th style="width: 90px;">입력타입</th>
-										<th style="width: 80px;">색상</th>
+										<th style="width: 80px;" class="d-none d-md-table-cell">색상</th>
 										<th style="width: 120px;">관리</th>
 									</tr>
 									</thead>
@@ -55,7 +55,7 @@
 											<td class="text-center">
 												<i class="bi bi-grip-vertical text-muted handle" style="cursor: move; font-size: 1.2em;"></i>
 											</td>
-											<td class="text-center">
+											<td class="text-center d-none d-md-table-cell">
 												<span class="order-number ms-2"><?php echo $attendance_type['att_type_order']; ?></span>
 											</td>
 											<td>
@@ -67,7 +67,7 @@
 													<?php echo htmlspecialchars($attendance_type['att_type_nickname']); ?>
 												</span>
 											</td>
-											<td>
+											<td class="d-none">
 												<small class="text-muted">
 													<?php echo htmlspecialchars($attendance_type['att_type_category_name'] ?: '기본'); ?>
 												</small>
@@ -80,7 +80,7 @@
 													<?php echo $attendance_type['att_type_input'] === 'text' ? '텍스트' : '체크'; ?>
 												</span>
 											</td>
-											<td class="text-center">
+											<td class="text-center d-none d-md-table-cell">
 												<div class="color-preview"
 													 style="width: 30px; height: 30px; background-color: #<?php echo $attendance_type['att_type_color']; ?>; border-radius: 4px; border: 1px solid #ddd; margin: auto;">
 												</div>

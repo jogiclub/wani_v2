@@ -47,7 +47,8 @@
 								<div class="col-12">
 									<label class="form-label">조직 아이콘</label>
 									<div class="d-flex align-items-center gap-3">
-										<div class="org-icon-preview">
+										<div class="row">
+										<div class="org-icon-preview col-md-3">
 											<?php if ($selected_org_detail['org_icon']): ?>
 												<img src="<?php echo $selected_org_detail['org_icon']; ?>" alt="조직 아이콘" class="circle" width="100" height="100" style="object-fit: cover; border: 1px solid #ddd;" id="iconPreview">
 											<?php else: ?>
@@ -56,7 +57,7 @@
 												</div>
 											<?php endif; ?>
 										</div>
-										<div>
+										<div class="col-md-9 mt-3">
 											<div class="input-group">
 												<input type="file" class="form-control" id="orgIconFile" accept=".jpg,.jpeg,.png">
 												<button type="button" class="btn btn-primary btn-sm" id="uploadIconBtn"><i class="bi bi-upload"></i> 아이콘 업로드</button>
@@ -65,7 +66,7 @@
 												* JPG 또는 PNG 파일만 가능합니다.<br> * 100x100 픽셀 크기를 권장합니다.
 											</div>
 										</div>
-
+										</div>
 									</div>
 
 								</div>
@@ -154,7 +155,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="col-lg-4">
+				<div class="col-lg-4 mt-4 mt-md-0">
 					<div class="card">
 						<div class="card-header">
 							<h5 class="card-title mb-0">

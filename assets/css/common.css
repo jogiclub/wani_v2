@@ -134,6 +134,7 @@ main{height: 85vh; width: calc(100% - 200px)!important;     margin-left: 200px;}
 @media screen and (max-width: 1200px){
 	.sidebar{height: 0!important;}
 	main{width: 100%!important; margin-left: 0;	}
+
 }
 
 
@@ -267,6 +268,7 @@ footer .btn-add-org i{font-size:30px}
 
 @media screen and (max-width: 1200px){
 	 .sidebar{position: initial}
+	.card .card-body{height: auto!important;}
 }
 
 

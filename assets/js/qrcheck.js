@@ -3,6 +3,7 @@
 // 전역 변수 추가
 var pastoralGrid = null;
 var pastoralGridData = [];
+var attendanceTypes = [];
 
 /**
  * 목장출석 pqgrid 초기화 (수정된 버전)
@@ -944,7 +945,7 @@ $(document).on('click', '.btn-area-attendance-memo', function() {
 });
 
 /**
- * 목장출석 offcanvas 로드 함수 수정
+ * 역할: 목장출석 offcanvas 로드 함수 수정 - 지난주 버튼 데이터 속성 설정
  */
 function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 	var currentWeekRange = $('.current-week').text();
@@ -991,6 +992,18 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 
 				// offcanvas 버튼 텍스트 변경
 				$('#saveAttendanceBtn').text('저장');
+
+				// 지난주 버튼에 필요한 데이터 속성 설정
+				$('#loadLastWeekBtn')
+					.data('member-idx', 0) // 목장출석의 경우 member_idx는 0
+					.data('area-idx', areaIdx)
+					.data('area-name', areaName);
+
+				console.log('지난주 버튼 데이터 설정:', {
+					'member-idx': 0,
+					'area-idx': areaIdx,
+					'area-name': areaName
+				});
 
 				$('#attendanceOffcanvas').offcanvas('show');
 			} else {
@@ -1404,25 +1417,38 @@ function getDateFromWeekRange(weekRange) {
 	return new Date(startDateStr);
 }
 /**
- * 주차 범위 생성 (사파리 호환)
+ * 파일 위치: assets/js/qrcheck.js
+ * 역할: 날짜에서 주차 범위를 생성하는 함수 수정 - 안전성 강화
  */
-
-
 function getWeekRangeFromDate(date) {
 	try {
-		// Date 객체 유효성 검사
-		if (!date || isNaN(date.getTime())) {
-			console.warn('Invalid date for week range:', date);
-			date = new Date();
+		var workingDate;
+
+		// Date 객체 유효성 검사 및 변환
+		if (!date) {
+			workingDate = new Date();
+		} else if (typeof date === 'string') {
+			workingDate = parseCompatibleDate(date);
+		} else if (date instanceof Date) {
+			// Date 객체가 유효한지 확인
+			if (isNaN(date.getTime())) {
+				console.warn('Invalid Date object:', date);
+				workingDate = new Date();
+			} else {
+				workingDate = new Date(date.getTime()); // 원본 날짜 보존
+			}
+		} else {
+			console.warn('Unknown date type:', typeof date, date);
+			workingDate = new Date();
 		}
 
-		var currentDate = new Date(date.getTime()); // 원본 날짜 보존
-		var sunday = getSunday(new Date(currentDate.getTime()));
+		var sunday = getSunday(new Date(workingDate.getTime()));
 
-		// if (isNaN(sunday.getTime())) {
-		// 	console.error('Failed to get Sunday date');
-		// 	sunday = new Date();
-		// }
+		// Sunday 계산 결과 검증
+		if (!sunday || isNaN(sunday.getTime())) {
+			console.error('Failed to get Sunday date from:', workingDate);
+			sunday = new Date();
+		}
 
 		var sundayTimestamp = sunday.getTime();
 		var nextSundayTimestamp = sundayTimestamp + (7 * 24 * 60 * 60 * 1000);
@@ -1430,7 +1456,7 @@ function getWeekRangeFromDate(date) {
 		var startDate = formatDate(new Date(sundayTimestamp));
 		var endDate = formatDate(new Date(nextSundayTimestamp - (24 * 60 * 60 * 1000)));
 
-		return `${startDate}~${endDate}`;
+		return startDate + '~' + endDate;
 	} catch (error) {
 		console.error('Error creating week range:', error);
 		// 폴백: 현재 주차 반환
@@ -1438,9 +1464,10 @@ function getWeekRangeFromDate(date) {
 		var sunday = getSunday(new Date(today.getTime()));
 		var startDate = formatDate(sunday);
 		var endDate = formatDate(new Date(sunday.getTime() + 6 * 24 * 60 * 60 * 1000));
-		return `${startDate}~${endDate}`;
+		return startDate + '~' + endDate;
 	}
 }
+
 
 // 모든 주차 범위 생성 함수 수정 - (주차) 정보 제거
 function generateAllWeekRanges() {
@@ -2112,8 +2139,6 @@ function attComplete(memberIdx) {
 }
 
 
-var attendanceTypes = [];
-
 $(document).ready(function() {
 	// 페이지 로드 시 input-search에 포커스 설정
 	$('#input-search').focus();
@@ -2126,17 +2151,16 @@ $(document).ready(function() {
 
 	$('.current-week').val(currentWeekRange);
 
-
-	// 이전 주 버튼 클릭 이벤트 - 디버깅 로그 추가
+	// 이전 주 버튼 클릭 이벤트
 	$('.prev-week').off('click').on('click', function() {
-		var currentWeekRange = $('.current-week').val(); // .text() -> .val()로 변경
+		var currentWeekRange = $('.current-week').val();
 		var currentDate = getDateFromWeekRange(currentWeekRange);
 		var prevDate = new Date(currentDate.setDate(currentDate.getDate() - 7));
 		var prevWeekRange = getWeekRangeFromDate(prevDate);
 		updateWeekRange(prevWeekRange);
 	});
 
-	// 다음 주 버튼 클릭 이벤트 - 디버깅 로그 추가
+	// 다음 주 버튼 클릭 이벤트
 	$('.next-week').off('click').on('click', function() {
 		var currentWeekRange = $('.current-week').val();
 		var currentDate = getDateFromWeekRange(currentWeekRange);
@@ -2145,79 +2169,30 @@ $(document).ready(function() {
 		updateWeekRange(nextWeekRange);
 	});
 
-
-
 	// 페이지 로드 시 input-search 상태 업데이트
 	updateInputSearchState();
 
-	// 지난주 데이터 불러오기 권한 체크
+	// 지난주 데이터 불러오기 버튼 클릭 이벤트 - 디버깅 로그 추가
 	$('#loadLastWeekBtn').on('click', function() {
 		var memberIdx = $(this).data('member-idx');
 		var orgId = getCookie('activeOrg');
 		var areaIdx = $(this).data('area-idx');
 		var memberName = $('#attendanceOffcanvasLabel').text().split(' ')[0];
+
+		console.log('지난주 버튼 클릭 - 데이터 확인:', {
+			memberIdx: memberIdx,
+			orgId: orgId,
+			areaIdx: areaIdx,
+			memberName: memberName
+		});
+
 		loadLastWeekData(memberIdx, orgId, areaIdx, memberName);
 	});
 
 
 
-// 4. 지난주 데이터 로드 함수에서 updateAttendanceSelectbox 호출 부분 수정
-	function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
-		var currentWeekRange = $('.current-week').text();
-		var currentDate = getDateFromWeekRange(currentWeekRange);
-
-		var currentSunday = getSunday(new Date(currentDate));
-		var lastWeekSunday = new Date(currentSunday);
-		lastWeekSunday.setDate(lastWeekSunday.getDate() - 7);
-		var lastWeekSundayFormatted = formatDate(lastWeekSunday);
 
 
-
-		$.ajax({
-			url: '/qrcheck/get_last_week_attendance',
-			method: 'POST',
-			data: {
-				member_idx: memberIdx,
-				org_id: orgId,
-				area_idx: areaIdx,
-				att_date: lastWeekSundayFormatted
-			},
-			dataType: 'json',
-			success: function(response) {
-
-
-				if (response.status === 'success') {
-					var attendanceData = response.attendance_data;
-					var attTypes = response.att_types;
-
-
-
-					if (Object.keys(attendanceData).length === 0) {
-						showToast('지난주 출석 데이터가 없습니다.', 'warning');
-					} else {
-						// pqgrid용 함수 호출
-						updateAttendanceSelectboxForGrid(attendanceData, attTypes);
-						showToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', 'success');
-					}
-				} else {
-					var errorMessage = response.message || '지난주 데이터를 가져오는데 실패했습니다.';
-					showToast(errorMessage, 'error');
-				}
-			},
-			error: function(xhr, status, error) {
-				console.error('지난주 출석 데이터 조회 오류:', xhr.responseText);
-				var errorMessage = '지난주 데이터 조회 중 오류가 발생했습니다.';
-				if (xhr.responseJSON && xhr.responseJSON.message) {
-					errorMessage = xhr.responseJSON.message;
-				}
-				showToast(errorMessage, 'error');
-			}
-		});
-	}
-
-
-
-// offcanvas 정리 함수 추가
 	function cleanupPastoralGrid() {
 		if (pastoralGrid) {
 			try {
@@ -2230,35 +2205,12 @@ $(document).ready(function() {
 		}
 	}
 
-
-// offcanvas 숨김 이벤트에 정리 함수 바인딩
+	// offcanvas 숨김 이벤트에 정리 함수 바인딩
 	$('#attendanceOffcanvas').on('hidden.bs.offcanvas', function() {
 		cleanupPastoralGrid();
 	});
 
 
-	function updateAttendanceSelectbox(attendanceData, attTypes) {
-		$('.att-type-select').each(function() {
-			var memberIdx = $(this).data('member-idx');
-			var attTypeCategoryIdx = parseInt($(this).data('att-type-category-idx'));
-			var attTypeIdxs = attendanceData[memberIdx] || [];
-
-			// 현재 selectbox의 att_type_category_idx에 해당하는 att_type_idx 찾기
-			var selectedAttTypeIdx = '';
-			for (var i = 0; i < attTypeIdxs.length; i++) {
-				var attTypeIdx = parseInt(attTypeIdxs[i].trim());
-				var attType = attTypes.find(function(type) {
-					return parseInt(type.att_type_idx) === attTypeIdx;
-				});
-				if (attType && parseInt(attType.att_type_category_idx) === attTypeCategoryIdx) {
-					selectedAttTypeIdx = attTypeIdx.toString();
-					break;
-				}
-			}
-
-			$(this).val(selectedAttTypeIdx);
-		});
-	}
 });
 
 /**
@@ -2283,6 +2235,96 @@ function parseCompatibleDate(dateStr) {
 
 	return date;
 }
+
+
+
+
+/**
+ * 지난주 출석 데이터 로드 함수 - 전역 함수로 정의
+ */
+function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
+	// 파라미터 검증 추가
+	console.log('loadLastWeekData 호출됨:', {
+		memberIdx: memberIdx,
+		orgId: orgId,
+		areaIdx: areaIdx,
+		memberName: memberName
+	});
+
+	if (!orgId || !areaIdx) {
+		console.error('loadLastWeekData - 필수 파라미터 누락:', {
+			memberIdx: memberIdx,
+			orgId: orgId,
+			areaIdx: areaIdx,
+			memberName: memberName
+		});
+		showToast('필수 정보가 누락되었습니다.', 'error');
+		return;
+	}
+
+	var currentWeekRange = $('.current-week').val(); // .val() 사용
+
+	if (!currentWeekRange) {
+		console.error('currentWeekRange가 비어있습니다.');
+		showToast('현재 주차 정보를 가져올 수 없습니다.', 'error');
+		return;
+	}
+
+	var currentDate = getDateFromWeekRange(currentWeekRange);
+	var currentSunday = getSunday(new Date(currentDate));
+	var lastWeekSunday = new Date(currentSunday);
+	lastWeekSunday.setDate(lastWeekSunday.getDate() - 7);
+	var lastWeekSundayFormatted = formatDate(lastWeekSunday);
+
+	var requestData = {
+		member_idx: memberIdx || 0, // 기본값 설정
+		org_id: orgId,
+		area_idx: areaIdx,
+		att_date: lastWeekSundayFormatted  // 이 부분이 중요!
+	};
+
+	console.log('지난주 출석 데이터 요청:', requestData);
+
+	$.ajax({
+		url: '/qrcheck/get_last_week_attendance',
+		method: 'POST',
+		data: requestData,
+		dataType: 'json',
+		success: function(response) {
+			console.log('지난주 출석 데이터 응답:', response);
+
+			if (response.status === 'success') {
+				var attendanceData = response.attendance_data;
+				var attTypes = response.att_types;
+
+				if (Object.keys(attendanceData).length === 0) {
+					showToast('지난주 출석 데이터가 없습니다.', 'warning');
+				} else {
+					// pqgrid용 함수 호출
+					updateAttendanceSelectboxForGrid(attendanceData, attTypes);
+					showToast(memberName + ' 목장의 지난 주 정보를 불러왔습니다.', 'success');
+				}
+			} else {
+				var errorMessage = response.message || '지난주 데이터를 가져오는데 실패했습니다.';
+				showToast(errorMessage, 'error');
+			}
+		},
+		error: function(xhr, status, error) {
+			console.error('지난주 출석 데이터 조회 오류:', {
+				status: status,
+				error: error,
+				responseText: xhr.responseText,
+				requestData: requestData
+			});
+			var errorMessage = '지난주 데이터 조회 중 오류가 발생했습니다.';
+			if (xhr.responseJSON && xhr.responseJSON.message) {
+				errorMessage = xhr.responseJSON.message;
+			}
+			showToast(errorMessage, 'error');
+		}
+	});
+}
+
 
 
 /**

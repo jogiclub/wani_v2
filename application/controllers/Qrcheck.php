@@ -503,7 +503,8 @@ class Qrcheck extends My_Controller
 
 
 	/**
-	 * get_last_week_attendance 함수 수정
+	 * 파일 위치: application/controllers/Qrcheck.php
+	 * 역할: 지난주 출석 데이터 조회 함수 - 권한 체크 제거
 	 */
 	public function get_last_week_attendance()
 	{
@@ -512,7 +513,15 @@ class Qrcheck extends My_Controller
 			$area_idx = $this->input->post('area_idx');
 			$att_date = $this->input->post('att_date'); // 지난주 일요일 날짜를 직접 받기
 
-			// 권한 확인
+			// 기본 파라미터 검증
+			if (!$org_id || !$area_idx || !$att_date) {
+				echo json_encode(array('status' => 'error', 'message' => '필수 정보가 누락되었습니다.'));
+				return;
+			}
+
+			// 권한 확인 제거 - 목장출석 화면에 접근할 수 있는 사용자는 누구나 지난주 출석 조회 가능
+			// 기존 권한 체크 코드 주석처리 또는 제거
+			/*
 			$user_id = $this->session->userdata('user_id');
 			$master_yn = $this->session->userdata('master_yn');
 			$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
@@ -524,6 +533,7 @@ class Qrcheck extends My_Controller
 					return;
 				}
 			}
+			*/
 
 			$this->load->model('Attendance_model');
 

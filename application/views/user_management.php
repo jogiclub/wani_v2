@@ -27,15 +27,18 @@ $this->load->view('header'); ?>
 				<div class="card">
 					<div class="card-header">
 						<div class="row">
-							<h5 class="card-title col-6 mb-0 d-flex align-items-center">
-								<i class="bi bi-people"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?>
-								사용자 목록
+							<h5 class="card-title col-md-6 mb-0 align-items-center">
+								<i class="bi bi-people"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?> 사용자 목록
 							</h5>
 							<!-- 선택 권한 수정 버튼 -->
-							<div class="col-6 d-flex justify-content-end align-items-center">
-								<div class="me-3"><small class="text-muted ">선택된 사용자 <span id="selectedCount">0</span>명</small></div>
-								<button type="button" class="btn btn-outline-primary me-3" id="bulkEditBtn" disabled><i class="bi bi-pencil-square"></i> 선택 권한 수정</button>
-								<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteUserModal"><i class="bi bi-person-plus"></i> 사용자 초대</button>
+							<div class="col-md-6 d-flex flex-column flex-md-row justify-content-start justify-content-md-end mt-2 mt-md-0 align-items-start align-items-md-center">
+								<small class="text-muted me-2 d-flex justify-content-start justify-content-md-end">선택된 사용자 <span id="selectedCount">0</span>명</small>
+
+								<div class="btn-group d-flex justify-content-start justify-content-md-end mt-2 mt-md-0">
+									<button type="button" class="btn btn-outline-primary" id="bulkEditBtn" disabled><i class="bi bi-pencil-square"></i> 선택 권한 수정</button>
+									<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#inviteUserModal"><i class="bi bi-person-plus"></i> 사용자 초대</button>
+								</div>
+
 							</div>
 						</div>
 					</div>
@@ -45,7 +48,7 @@ $this->load->view('header'); ?>
 
 
 							<div class="table-responsive">
-								<table class="table align-middle">
+								<table class="table align-middle" style="min-width: 1000px;">
 									<thead>
 									<tr>
 										<th style="width: 40px;">

@@ -51,21 +51,21 @@
 		<div class="split-pane" id="right-pane">
 			<div class="card h-100">
 				<div class="card-header">
-					<div class="row">
-						<div class="col-lg-4 col-3 d-flex align-items-center">
+					<div class="row flex-column flex-lg-row">
+						<div class="col-12 col-lg-4 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
 						</div>
 
-						<div class="col-lg-3 col-1 d-flex justify-content-end">
-							<div class="input-group input-group-sm d-none d-lg-flex">
+						<div class="col-12 col-lg-3 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+							<div class="input-group input-group-sm">
 								<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
 							</div>
 						</div>
 
-						<div class="col-lg-5 col-8 d-flex justify-content-end">
+						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
 								<button type="button" class="btn btn-sm btn-outline-success d-none d-md-block" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
