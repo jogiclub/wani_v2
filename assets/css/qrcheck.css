@@ -24,3 +24,4 @@
 #pastoralAttendanceGrid{height: calc(100vh - 200px)!important;}
 #pastoralAttendanceGrid table.pq-grid-header-table div.pq-td-div{line-height: 20px!important;}
 
+.pq-grid-table .pq-grid-cell{padding: 5px;}

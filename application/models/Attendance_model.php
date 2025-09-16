@@ -1266,4 +1266,19 @@ class Attendance_model extends CI_Model {
 			return false;
 		}
 	}
+
+	/**
+	 * 역할: 특정 회원의 특정 출석타입 기록 삭제
+	 */
+	public function delete_attendance_by_member_and_type($member_idx, $att_type_idx, $att_date, $att_year)
+	{
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('att_type_idx', $att_type_idx);
+		$this->db->where('att_date', $att_date);
+		$this->db->where('att_year', $att_year);
+		$this->db->delete('wb_member_att');
+
+		return $this->db->affected_rows() > 0;
+	}
+
 }
