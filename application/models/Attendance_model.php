@@ -513,7 +513,7 @@ class Attendance_model extends CI_Model {
 	}
 
 	/**
-	 * 특정 연도의 모든 일요일 날짜 반환
+	 * 역할: 특정 연도의 모든 일요일 날짜 반환 - 다음주 이후 날짜는 제외하도록 수정
 	 */
 	private function get_sunday_dates_for_year($year)
 	{
@@ -525,8 +525,21 @@ class Attendance_model extends CI_Model {
 			$date->add(new DateInterval('P1D'));
 		}
 
-		// 해당 연도의 모든 일요일 수집
-		while ($date->format('Y') == $year) {
+		// 현재 주의 일요일까지 표시 (현재 주가 시작되면 바로 표시)
+		$today = new DateTime();
+		$current_week_sunday = clone $today;
+
+		// 현재 주의 일요일 날짜 계산
+		$days_from_sunday = $today->format('w'); // 0=일요일, 1=월요일...
+		if ($days_from_sunday > 0) {
+			$current_week_sunday->sub(new DateInterval('P' . $days_from_sunday . 'D'));
+		}
+
+		// 현재 주의 일요일까지 표시 (다음주는 표시하지 않음)
+		$last_sunday_to_show = $current_week_sunday;
+
+		// 해당 연도의 일요일 수집 (현재 주까지만)
+		while ($date->format('Y') == $year && $date <= $last_sunday_to_show) {
 			$sunday_dates[] = $date->format('Y-m-d');
 			$date->add(new DateInterval('P7D'));
 		}

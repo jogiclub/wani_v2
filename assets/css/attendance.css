@@ -1,3 +1,8 @@
+/* 현재 주 셀 하이라이트 */
+
+.pq-grid .pq-grid-col{cursor: pointer;}
+
+
 .attendance-detail{}
 #attendanceDetailContent{overflow: auto;}
 #attendanceOffcanvas table{width: 100%; table-layout: fixed;}

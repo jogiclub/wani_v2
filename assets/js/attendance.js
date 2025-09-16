@@ -467,7 +467,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 동적 컬럼 생성 - 셀 클릭 개선 적용
+	 * 역할: 동적 컬럼 생성 시 현재 주 일요일 컬럼에 배경색 적용
 	 */
 	function createDynamicColumns() {
 		let columns = getInitialColumns();
@@ -485,25 +485,52 @@ $(document).ready(function () {
 			}
 		});
 
-		// 일요일 날짜 컬럼들 추가 - 전체 셀 클릭 가능하도록 수정
+		// 현재 주의 일요일 날짜 계산
+		const today = new Date();
+		const currentWeekSunday = getCurrentWeekSunday(today);
+
+		// 일요일 날짜 컬럼들 추가 - 현재 주 하이라이트 적용
 		sundayDates.forEach(function (sunday) {
 			const date = new Date(sunday);
 			const month = date.getMonth() + 1;
 			const day = date.getDate();
+
+			// 현재 주 일요일인지 확인
+			const isCurrentWeek = sunday === currentWeekSunday;
 
 			columns.push({
 				title: month + '/' + day,
 				dataIndx: 'week_' + sunday.replace(/-/g, ''),
 				width: 70,
 				align: "center",
+				// 현재 주인 경우 배경색 적용
+				style: isCurrentWeek ? 'background-color: #fff3cd;' : '',
+				cls: isCurrentWeek ? 'current-week-column' : '',
 				render: function (ui) {
-					return createAttendanceCellHtml(ui.rowData.member_idx, sunday);
+					return createAttendanceCellHtml(ui.rowData.member_idx, sunday, isCurrentWeek);
 				}
 			});
 		});
 
 		return columns;
 	}
+
+
+	/**
+	 * 역할: 현재 주의 일요일 날짜 계산 함수
+	 */
+	function getCurrentWeekSunday(today) {
+		const currentDate = new Date(today);
+		const daysFromSunday = currentDate.getDay(); // 0=일요일, 1=월요일...
+
+		if (daysFromSunday > 0) {
+			currentDate.setDate(currentDate.getDate() - daysFromSunday);
+		}
+
+		return currentDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+	}
+
+
 
 	/**
 	 * 출석셀 HTML 생성 - 실제 포인트 표시
@@ -674,6 +701,8 @@ $(document).ready(function () {
 			showToast('그리드 업데이트에 실패했습니다.', 'error');
 		}
 	}
+
+
 
 
 	/**
