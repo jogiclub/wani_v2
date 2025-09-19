@@ -95,15 +95,15 @@
 			function countOrgs(items) {
 				for (let item of items) {
 					if (item.data && item.data.org_count) {
-						total += parseInt(item.data.org_count) || 0;
+						total += parseInt(item.data.org_count);
 					}
 					if (item.children && item.children.length >= 0) {
 						countOrgs(item.children);
 					}
 				}
 			}
-
 			countOrgs(categories);
+
 			return total;
 		},
 
@@ -243,7 +243,7 @@
 				requestData.category_idx = this.selectedCategoryIdx;
 			}
 
-			console.log('Loading org list with data:', requestData); // 디버깅용
+
 
 			$.ajax({
 				url: '/mng/mng_org/get_org_list',
@@ -252,11 +252,7 @@
 				dataType: 'json',
 				success: function(response) {
 					self.showGridSpinner(false);
-
-					console.log('API Response:', response); // 디버깅용
-
 					if (response.success) {
-						console.log('Received org count:', response.data.length); // 디버깅용
 						self.grid.pqGrid('option', 'dataModel.data', response.data);
 						self.grid.pqGrid('refreshDataAndView');
 					} else {
@@ -273,28 +269,6 @@
 
 		bindEvents: function() {
 			const self = this;
-
-			// 새로고침 버튼
-			// $('#refreshBtn').on('click', function() {
-			// 	if (self.selectedCategoryIdx !== null) {
-			// 		self.loadOrgList();
-			// 	}
-			// });
-
-			// 트리 컨텍스트 메뉴
-			$('#categoryTree').on('contextmenu', 'span.fancytree-title', function(e) {
-				const categoryIdx = $(this).attr('data-category-idx');
-				const categoryName = $(this).attr('data-category-name');
-
-				if (categoryIdx) {
-					e.preventDefault();
-					self.showContextMenu(e.pageX, e.pageY, categoryIdx, categoryName);
-				}
-			});
-
-			// 카테고리 추가/수정 모달 이벤트
-			$('#saveCategoryBtn').on('click', function() { self.saveCategory(); });
-			$('#saveRenameBtn').on('click', function() { self.saveRenameCategory(); });
 		},
 
 		updateSelectedTitle: function() {
@@ -311,143 +285,10 @@
 			return types[orgType] || orgType;
 		},
 
-		showContextMenu: function(x, y, categoryIdx, categoryName) {
-			const self = this;
-			$('.context-menu').remove();
 
-			const contextMenu = $(`
-                <div class="context-menu" style="position: fixed; top: ${y}px; left: ${x}px; z-index: 1000;">
-                    <div class="card shadow-sm">
-                        <div class="list-group list-group-flush">
-                            <a href="#" class="list-group-item list-group-item-action" onclick="MngOrgListInstance.renameCategory(${categoryIdx}, '${categoryName}')">
-                                <i class="bi bi-pencil me-2"></i>이름 변경
-                            </a>
-                            <a href="#" class="list-group-item list-group-item-action text-danger" onclick="MngOrgListInstance.deleteCategory(${categoryIdx}, '${categoryName}')">
-                                <i class="bi bi-trash me-2"></i>삭제
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `);
 
-			$('body').append(contextMenu);
 
-			$(document).one('click', function() {
-				$('.context-menu').remove();
-			});
-		},
 
-		renameCategory: function(categoryIdx, categoryName) {
-			$('.context-menu').remove();
-			$('#renameCategoryModal').data('category-idx', categoryIdx);
-			$('#renameCategoryName').val(categoryName);
-			$('#renameCategoryModal').modal('show');
-		},
-
-		deleteCategory: function(categoryIdx, categoryName) {
-			const self = this;
-			$('.context-menu').remove();
-
-			this.showConfirm(
-				'카테고리 삭제',
-				`'${categoryName}' 카테고리를 삭제하시겠습니까?<br><small class="text-muted">하위 카테고리나 조직이 있으면 삭제할 수 없습니다.</small>`,
-				function() {
-					$.ajax({
-						url: '/mng/mng_org/delete_category',
-						type: 'POST',
-						data: { category_idx: categoryIdx },
-						dataType: 'json',
-						success: function(response) {
-							if (response.success) {
-								self.showToast(response.message, 'success');
-								self.initCategoryTree();
-
-								if (self.selectedCategoryIdx == categoryIdx) {
-									self.selectedCategoryIdx = null;
-									self.selectedCategoryName = '';
-									self.updateSelectedTitle();
-									self.grid.pqGrid('option', 'dataModel.data', []);
-									self.grid.pqGrid('refreshDataAndView');
-								}
-							} else {
-								self.showToast(response.message, 'error');
-							}
-						},
-						error: function() {
-							self.showToast('카테고리 삭제에 실패했습니다', 'error');
-						}
-					});
-				}
-			);
-		},
-
-		saveCategory: function() {
-			const self = this;
-			const categoryName = $('#categoryName').val().trim();
-			const parentIdx = $('#parentCategory').val() || null;
-
-			if (!categoryName) {
-				this.showToast('카테고리명을 입력해주세요', 'error');
-				return;
-			}
-
-			$.ajax({
-				url: '/mng/mng_org/add_category',
-				type: 'POST',
-				data: {
-					category_name: categoryName,
-					parent_idx: parentIdx
-				},
-				dataType: 'json',
-				success: function(response) {
-					if (response.success) {
-						self.showToast(response.message, 'success');
-						$('#addCategoryModal').modal('hide');
-						$('#categoryName').val('');
-						$('#parentCategory').val('');
-						self.initCategoryTree();
-					} else {
-						self.showToast(response.message, 'error');
-					}
-				},
-				error: function() {
-					self.showToast('카테고리 추가에 실패했습니다', 'error');
-				}
-			});
-		},
-
-		saveRenameCategory: function() {
-			const self = this;
-			const categoryIdx = $('#renameCategoryModal').data('category-idx');
-			const newName = $('#renameCategoryName').val().trim();
-
-			if (!newName) {
-				this.showToast('카테고리명을 입력해주세요', 'error');
-				return;
-			}
-
-			$.ajax({
-				url: '/mng/mng_org/rename_category',
-				type: 'POST',
-				data: {
-					category_idx: categoryIdx,
-					category_name: newName
-				},
-				dataType: 'json',
-				success: function(response) {
-					if (response.success) {
-						self.showToast(response.message, 'success');
-						$('#renameCategoryModal').modal('hide');
-						self.initCategoryTree();
-					} else {
-						self.showToast(response.message, 'error');
-					}
-				},
-				error: function() {
-					self.showToast('카테고리명 수정에 실패했습니다', 'error');
-				}
-			});
-		},
 
 
 		// 유틸리티 함수들
@@ -466,74 +307,6 @@
 				$('#gridSpinner').removeClass('d-flex').addClass('d-none');
 			}
 		},
-
-		showToast: function(message, type = 'info') {
-			if ($('#toastContainer').length === 0) {
-				$('body').append('<div id="toastContainer" class="position-fixed top-0 end-0 p-3"></div>');
-			}
-
-			const toastId = 'toast_' + Date.now();
-			let bgClass = 'bg-info';
-
-			if (type === 'success') {
-				bgClass = 'bg-success';
-			} else if (type === 'error') {
-				bgClass = 'bg-danger';
-			}
-
-			const toastHtml = `
-                <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert">
-                    <div class="d-flex">
-                        <div class="toast-body">${message}</div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                    </div>
-                </div>
-            `;
-
-			$('#toastContainer').append(toastHtml);
-
-			const toastElement = document.getElementById(toastId);
-			const toast = new bootstrap.Toast(toastElement);
-			toast.show();
-
-			toastElement.addEventListener('hidden.bs.toast', function() {
-				$(toastElement).remove();
-			});
-		},
-
-		showConfirm: function(title, message, callback) {
-			const modalId = 'confirmModal_' + Date.now();
-
-			const modal = $(`
-                <div class="modal fade" id="${modalId}" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">${title}</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">${message}</div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                                <button type="button" class="btn btn-danger" id="confirmBtn">확인</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `);
-
-			modal.find('#confirmBtn').on('click', function() {
-				modal.modal('hide');
-				if (callback) callback();
-			});
-
-			modal.on('hidden.bs.modal', function() {
-				modal.remove();
-			});
-
-			$('body').append(modal);
-			modal.modal('show');
-		}
 	};
 
 	// 전역 인스턴스 생성 (onclick 이벤트에서 사용하기 위해)
