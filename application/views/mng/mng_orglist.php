@@ -25,11 +25,6 @@ $this->load->view('mng/header');
 			<!-- 왼쪽: 그룹 트리 -->
 			<div class="split-pane" id="left-pane">
 				<div class="card h-100">
-					<div class="card-header">
-						<div class="d-flex justify-content-between align-items-center">
-							<h5 class="mb-0">조직 카테고리</h5>
-						</div>
-					</div>
 					<div class="card-body p-0 position-relative">
 						<!-- 트리 스피너 -->
 						<div id="treeSpinner" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">

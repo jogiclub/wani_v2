@@ -22,11 +22,12 @@
 
 <body>
 <!-- 상단 네비게이션 -->
-<nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-	<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-4 d-flex align-items-center" href="/mng/mng_org">
-		<img src="/assets/images/logo.png" alt="왔니" class="me-2" style="height: 20px"> 관리자
-	</a>
-
+<header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start shadow bg-dark">
+	<div class="header-start col-xl-6 col-10">
+		<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-4 d-flex align-items-center text-white" href="/mng/mng_org">
+			<img src="/assets/images/logo.png" alt="왔니" class="me-2" style="height: 20px"> 관리자
+		</a>
+	</div>
 
 	<div class="header-end col-xl-6 col-2 d-flex justify-content-end px-3 gap-3 align-items-center">
 		<ul class="navbar-nav flex-row d-xl-none fs-1">
@@ -45,7 +46,7 @@
 			</div>
 		</div>
 	</div>
-</nav>
+</header>
 
 <div class="wrapper d-flex bg-light"></div>
 <div class="sidebar border border-right p-0 bg-body-tertiary">
