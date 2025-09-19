@@ -6,9 +6,9 @@
  */
 
 // 즉시 실행 함수로 전역 오염 방지
-(function() {
 
-	// 전역 변수들
+
+// 전역 변수들
 	let orgGrid = null;
 	let treeInstance = null;
 	let splitInstance = null;
@@ -16,7 +16,7 @@
 	let selectedCategoryName = '';
 	let checkedOrgIds = new Set();
 
-	// DOM 준비 완료 시 초기화
+// DOM 준비 완료 시 초기화
 	$(document).ready(function() {
 		initializePage();
 	});
@@ -84,6 +84,14 @@
 	 */
 	function initSplitJS() {
 		// 약간의 지연 후 초기화 (DOM 정리 시간 확보)
+
+		// 💡 Split.js 인스턴스 초기화 전, 기존에 생성되었을 수 있는 gutter 요소를 명시적으로 제거합니다.
+		//    이렇게 하면 cleanupExistingInstances() 함수가 호출되지 않고 initSplitJS()가 단독으로 실행되는 경우에도
+		//    gutter가 중복 생성되는 문제를 방지할 수 있습니다.
+		const existingGutter = document.querySelector('.gutter');
+		if (existingGutter) {
+			existingGutter.remove();
+		}
 
 		setTimeout(function() {
 			try {
@@ -293,8 +301,8 @@
 						return `<img src="${ui.rowData.org_icon}" class="rounded" width="40" height="40" alt="조직 아이콘">`;
 					}
 					return `<div class="d-inline-block" style="width:40px;height:40px; border-radius: 20px;padding: 5px; color: #ccc; background: #eee">
-                        <i class="bi bi-people-fill" style="font-size: 20px"></i>
-                    </div>`;
+                    <i class="bi bi-people-fill" style="font-size: 20px"></i>
+                </div>`;
 				}
 			},
 			{
@@ -613,14 +621,14 @@
 
 		// 삭제할 조직 목록 HTML 생성
 		const deleteListHtml = selectedOrgs.map(org => `
-			<li class="list-group-item d-flex justify-content-between align-items-center">
-				<div>
-					<strong>${org.org_name || '이름 없음'}</strong>
-					<br><small class="text-muted">${org.org_code || '코드 없음'}</small>
-				</div>
-				<span class="badge bg-info rounded-pill">${org.member_count || 0}명</span>
-			</li>
-		`).join('');
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+         <div>
+            <strong>${org.org_name || '이름 없음'}</strong>
+            <br><small class="text-muted">${org.org_code || '코드 없음'}</small>
+         </div>
+         <span class="badge bg-info rounded-pill">${org.member_count || 0}명</span>
+      </li>
+   `).join('');
 
 		$('#deleteOrgList').html(`<ul class="list-group list-group-flush">${deleteListHtml}</ul>`);
 		$('#deleteOrgModal').modal('show');
@@ -768,4 +776,3 @@
 		};
 	}
 
-})(); // 즉시 실행 함수 종료
