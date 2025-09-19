@@ -85,13 +85,7 @@
 	function initSplitJS() {
 		// 약간의 지연 후 초기화 (DOM 정리 시간 확보)
 
-		// 💡 Split.js 인스턴스 초기화 전, 기존에 생성되었을 수 있는 gutter 요소를 명시적으로 제거합니다.
-		//    이렇게 하면 cleanupExistingInstances() 함수가 호출되지 않고 initSplitJS()가 단독으로 실행되는 경우에도
-		//    gutter가 중복 생성되는 문제를 방지할 수 있습니다.
-		const existingGutter = document.querySelector('.gutter');
-		if (existingGutter) {
-			existingGutter.remove();
-		}
+
 
 		setTimeout(function() {
 			try {
@@ -283,6 +277,7 @@
 				title: '카테고리',
 				width: 120,
 				frozen: true,
+				editable: false,
 				render: function(ui) {
 					if (ui.cellData) {
 						return `<span class="badge bg-secondary">${ui.cellData}</span>`;
@@ -295,6 +290,7 @@
 				title: '아이콘',
 				width: 60,
 				align: 'center',
+				editable: false,
 				frozen: true,
 				render: function(ui) {
 					if (ui.rowData.org_icon) {
@@ -309,6 +305,7 @@
 				dataIndx: 'org_name',
 				title: '조직명',
 				width: 150,
+				editable: false,
 				render: function(ui) {
 					return `<strong>${ui.cellData || ''}</strong>`;
 				}
@@ -317,6 +314,7 @@
 				dataIndx: 'org_code',
 				title: '조직코드',
 				width: 150,
+				editable: false,
 				render: function(ui) {
 					return `<code>${ui.cellData || ''}</code>`;
 				}
@@ -326,6 +324,7 @@
 				title: '대표자',
 				width: 100,
 				align: 'center',
+				editable: false,
 				render: function(ui) {
 					return ui.cellData || '<span class="text-muted">-</span>';
 				}
@@ -335,6 +334,7 @@
 				title: '담당자',
 				width: 100,
 				align: 'center',
+				editable: false,
 				render: function(ui) {
 					return ui.cellData || '<span class="text-muted">-</span>';
 				}
@@ -344,6 +344,7 @@
 				title: '연락처',
 				width: 120,
 				align: 'center',
+				editable: false,
 				render: function(ui) {
 					return ui.cellData || '<span class="text-muted">-</span>';
 				}
@@ -352,6 +353,7 @@
 				dataIndx: 'org_address',
 				title: '주소',
 				width: 280,
+				editable: false,
 				render: function(ui) {
 					const address = ui.cellData || '';
 					const addressDetail = ui.rowData.org_address_detail || '';
@@ -373,6 +375,7 @@
 				dataIndx: 'org_tag',
 				title: '태그',
 				width: 150,
+				editable: false,
 				render: function(ui) {
 					if (ui.cellData) {
 						const tags = ui.cellData.split(',').map(tag => tag.trim()).filter(tag => tag);
@@ -387,6 +390,7 @@
 				dataIndx: 'org_desc',
 				title: '설명',
 				width: 200,
+				editable: false,
 				render: function(ui) {
 					if (ui.cellData) {
 						const shortDesc = ui.cellData.length > 50 ? ui.cellData.substring(0, 50) + '...' : ui.cellData;
@@ -400,6 +404,7 @@
 				title: '유형',
 				width: 100,
 				align: 'center',
+				editable: false,
 				render: function(ui) {
 					return getOrgTypeText(ui.cellData);
 				}
@@ -409,6 +414,7 @@
 				title: '회원수',
 				width: 80,
 				align: 'center',
+				editable: false,
 				render: function(ui) {
 					const count = ui.cellData || 0;
 					return `<span class="badge bg-info">${count}명</span>`;
@@ -419,6 +425,7 @@
 				title: '등록일',
 				width: 120,
 				align: 'center',
+				editable: false,
 				render: function(ui) {
 					if (ui.cellData) {
 						return new Date(ui.cellData).toLocaleDateString();
