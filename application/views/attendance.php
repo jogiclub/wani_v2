@@ -4,11 +4,10 @@
 <link rel="stylesheet" href="/assets/css/attendance.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS -->
-<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
 
 <!-- Fancytree CSS -->
-<link rel="stylesheet"
-	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
 
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">

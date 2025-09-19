@@ -5,10 +5,9 @@
  * 역할: 관리자 조직관리 화면의 메인 JavaScript 파일
  */
 
-// 즉시 실행 함수로 전역 오염 방지
-
-
-// 전역 변수들
+// 즉시 실행 함수로 전역 오염 방지 및 중복 선언 방지
+(function() {
+	// 전역 변수들
 	let orgGrid = null;
 	let treeInstance = null;
 	let splitInstance = null;
@@ -16,7 +15,7 @@
 	let selectedCategoryName = '';
 	let checkedOrgIds = new Set();
 
-// DOM 준비 완료 시 초기화
+	// DOM 준비 완료 시 초기화
 	$(document).ready(function() {
 		initializePage();
 	});
@@ -84,9 +83,6 @@
 	 */
 	function initSplitJS() {
 		// 약간의 지연 후 초기화 (DOM 정리 시간 확보)
-
-
-
 		setTimeout(function() {
 			try {
 				splitInstance = Split(['#left-pane', '#right-pane'], {
@@ -297,8 +293,8 @@
 						return `<img src="${ui.rowData.org_icon}" class="rounded" width="40" height="40" alt="조직 아이콘">`;
 					}
 					return `<div class="d-inline-block" style="width:40px;height:40px; border-radius: 20px;padding: 5px; color: #ccc; background: #eee">
-                    <i class="bi bi-people-fill" style="font-size: 20px"></i>
-                </div>`;
+                        <i class="bi bi-people-fill" style="font-size: 20px"></i>
+                    </div>`;
 				}
 			},
 			{
@@ -628,14 +624,14 @@
 
 		// 삭제할 조직 목록 HTML 생성
 		const deleteListHtml = selectedOrgs.map(org => `
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-         <div>
-            <strong>${org.org_name || '이름 없음'}</strong>
-            <br><small class="text-muted">${org.org_code || '코드 없음'}</small>
-         </div>
-         <span class="badge bg-info rounded-pill">${org.member_count || 0}명</span>
-      </li>
-   `).join('');
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+             <div>
+                <strong>${org.org_name || '이름 없음'}</strong>
+                <br><small class="text-muted">${org.org_code || '코드 없음'}</small>
+             </div>
+             <span class="badge bg-info rounded-pill">${org.member_count || 0}명</span>
+          </li>
+       `).join('');
 
 		$('#deleteOrgList').html(`<ul class="list-group list-group-flush">${deleteListHtml}</ul>`);
 		$('#deleteOrgModal').modal('show');
@@ -783,3 +779,4 @@
 		};
 	}
 
+})(); // 즉시 실행 함수 종료

@@ -20,7 +20,7 @@
 
 
 <script src="/assets/js/common.js?<?php echo WB_VERSION; ?>"></script>
-<script src="/assets/js/mng_orglist.js?<?php echo WB_VERSION; ?>"></script>
+
 
 </body>
 </html>
