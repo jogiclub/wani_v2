@@ -293,15 +293,17 @@ class Org_model extends CI_Model {
 	{
 		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code, o.category_idx');
 		$this->db->select('COUNT(DISTINCT ou.user_id) as member_count');
-		$this->db->select('COUNT(DISTINCT m.member_idx) as total_members');
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
-		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
 
-		if ($category_idx === null || $category_idx === 'uncategorized') {
-			// 미분류 조직 조회
-			$this->db->where('(o.category_idx IS NULL OR o.category_idx = 0)', null, false);
+		// 카테고리 필터링 (빈 문자열도 전체로 처리)
+		if (empty($category_idx)) {
+			// null이거나 빈 문자열이면 전체 조직 조회 (카테고리 조건 없음)
+		} else if ($category_idx === 'uncategorized') {
+			// 미분류 조직만 조회
+			$this->db->where('(o.category_idx IS NULL OR o.category_idx = 0 OR o.category_idx = "")', null, false);
 		} else {
+			// 특정 카테고리의 조직만 조회
 			$this->db->where('o.category_idx', $category_idx);
 		}
 
