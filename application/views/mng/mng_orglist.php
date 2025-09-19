@@ -55,6 +55,9 @@ $this->load->view('mng/header');
 <!--								<button type="button" class="btn btn-sm btn-outline-secondary me-2" id="refreshBtn">-->
 <!--									<i class="bi bi-arrow-clockwise"></i> 새로고침-->
 <!--								</button>-->
+								<div class="btn-group">
+									<button type="button" class="btn btn-sm btn-outline-danger d-none d-md-block" id="btnDeleteOrg" disabled><i class="bi bi-trash"></i> 선택삭제</button>
+								</div>
 							</div>
 						</div>
 					</div>
