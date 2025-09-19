@@ -16,7 +16,7 @@
 	<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 
 	<link rel="stylesheet" href="/assets/css/common.css?<?php echo WB_VERSION; ?>">
-	<link rel="stylesheet" href="/assets/css/mng_common.css?<?php echo WB_VERSION; ?>">
+
 
 </head>
 

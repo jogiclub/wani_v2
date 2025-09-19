@@ -1,12 +1,13 @@
 <?php
 $this->load->view('mng/header');
 ?>
-
+	<link rel="stylesheet" href="/assets/css/mng_common.css?<?php echo WB_VERSION; ?>">
 	<!-- ParamQuery CSS -->
 	<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
 
 	<!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
+
 
 	<div class="container-fluid pt-2 pb-2">
 		<nav class="mb-3" aria-label="breadcrumb">
@@ -51,9 +52,9 @@ $this->load->view('mng/header');
 								</h5>
 							</div>
 							<div class="col-12 col-lg-8 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
-								<button type="button" class="btn btn-sm btn-outline-secondary me-2" id="refreshBtn">
-									<i class="bi bi-arrow-clockwise"></i> 새로고침
-								</button>
+<!--								<button type="button" class="btn btn-sm btn-outline-secondary me-2" id="refreshBtn">-->
+<!--									<i class="bi bi-arrow-clockwise"></i> 새로고침-->
+<!--								</button>-->
 							</div>
 						</div>
 					</div>
@@ -215,27 +216,5 @@ $this->load->view('mng/footer');
 	};
 </script>
 
-<!-- Split.js 스타일 추가 -->
-<style>
-	.split-container {
-		display: flex;
-		height: 600px;
-	}
-
-	.split-pane {
-		overflow: hidden;
-	}
-
-	.gutter {
-		background-color: #eee;
-		background-repeat: no-repeat;
-		background-position: 50%;
-	}
-
-	.gutter.gutter-horizontal {
-		cursor: col-resize;
-		background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+YMGxAGNjY2hjcQaCAS2wWGO4v8gB8mXJsJ6IFEJgAAAABJRU5ErkJggg==');
-	}
-</style>
 
 <script src="/assets/js/mng_orglist.js?<?php echo WB_VERSION; ?>"></script>

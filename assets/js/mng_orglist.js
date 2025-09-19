@@ -16,11 +16,20 @@
 		},
 
 		setupSplitView: function() {
-			Split(['#left-pane', '#right-pane'], {
-				sizes: [30, 70],
-				minSize: [250, 400],
-				gutterSize: 8,
-				cursor: 'col-resize'
+			// 기존 Split 인스턴스가 있으면 제거
+			if (this.splitInstance) {
+				this.splitInstance.destroy();
+			}
+
+			// 기존 gutter 요소들 제거
+			$('.gutter').remove();
+
+			this.splitInstance = Split(['#left-pane', '#right-pane'], {
+				sizes: [15, 85],
+				minSize: [50, 50],
+				gutterSize: 7,
+				cursor: 'col-resize',
+				direction: 'horizontal'
 			});
 		},
 
@@ -88,7 +97,7 @@
 					if (item.data && item.data.org_count) {
 						total += parseInt(item.data.org_count) || 0;
 					}
-					if (item.children && item.children.length > 0) {
+					if (item.children && item.children.length >= 0) {
 						countOrgs(item.children);
 					}
 				}
@@ -124,6 +133,20 @@
 		initOrgGrid: function() {
 			const self = this;
 			const colModel = [
+
+				{
+					dataIndx: 'category_name',
+					title: '카테고리',
+					width: 120,
+					render: function(ui) {
+						const data = ui.rowData;
+						if (data.category_name) {
+							return `<span class="badge bg-secondary">${data.category_name}</span>`;
+						} else {
+							return `<span class="badge bg-light text-dark">미분류</span>`;
+						}
+					}
+				},
 				{
 					dataIndx: 'org_icon',
 					title: '아이콘',
@@ -134,17 +157,9 @@
 						if (data.org_icon) {
 							return `<img src="${data.org_icon}" class="rounded" width="40" height="40">`;
 						}
-						return `<div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                            <i class="bi bi-building text-white"></i>
+						return `<div class="d-inline-block" style="width:40px;height:40px; border-radius: 20px;padding: 5px; color: #ccc; background: #eee">
+                            <i class="bi bi-people-fill" style="font-size: 20px"></i>
                         </div>`;
-					}
-				},
-				{
-					dataIndx: 'org_code',
-					title: '조직코드',
-					width: 120,
-					render: function(ui) {
-						return `<code>${ui.cellData}</code>`;
 					}
 				},
 				{
@@ -152,12 +167,24 @@
 					title: '조직명',
 					minWidth: 200,
 					render: function(ui) {
-						const data = ui.rowData;
-						let html = `<strong>${data.org_name}</strong>`;
-						if (data.org_desc) {
-							html += `<br><small class="text-muted">${data.org_desc}</small>`;
-						}
-						return html;
+						return `<strong>${ui.cellData}</strong>`;
+					}
+				},
+
+				{
+					dataIndx: 'org_code',
+					title: '조직코드',
+					width: 200,
+					render: function(ui) {
+						return `<code>${ui.cellData}</code>`;
+					}
+				},
+				{
+					dataIndx: 'org_desc',
+					title: '설명',
+					minWidth: 300,
+					render: function(ui) {
+						return ui.cellData || '<span class="text-muted">설명 없음</span>';
 					}
 				},
 				{
@@ -187,24 +214,6 @@
 						return new Date(ui.cellData).toLocaleDateString();
 					}
 				},
-				{
-					dataIndx: '',
-					title: '관리',
-					width: 100,
-					align: 'center',
-					sortable: false,
-					render: function(ui) {
-						const data = ui.rowData;
-						return `
-                            <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="MngOrgListInstance.viewOrgDetail(${data.org_id})">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="MngOrgListInstance.deleteOrg(${data.org_id}, '${data.org_name}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        `;
-					}
-				}
 			];
 
 			this.grid = $('#orgGrid').pqGrid({
@@ -212,10 +221,11 @@
 				height: '100%',
 				dataModel: { data: [] },
 				colModel: colModel,
+				freezeCols: 3,
 				numberCell: { show: false },
 				hoverMode: 'row',
 				selectionModel: { type: 'row', mode: 'single' },
-				pageModel: { type: 'local', rPP: 20 },
+				// pageModel: { type: 'local', rPP: 20 },
 				resizable: true,
 				wrap: false,
 				hwrap: false,
@@ -265,11 +275,11 @@
 			const self = this;
 
 			// 새로고침 버튼
-			$('#refreshBtn').on('click', function() {
-				if (self.selectedCategoryIdx !== null) {
-					self.loadOrgList();
-				}
-			});
+			// $('#refreshBtn').on('click', function() {
+			// 	if (self.selectedCategoryIdx !== null) {
+			// 		self.loadOrgList();
+			// 	}
+			// });
 
 			// 트리 컨텍스트 메뉴
 			$('#categoryTree').on('contextmenu', 'span.fancytree-title', function(e) {
@@ -288,7 +298,7 @@
 		},
 
 		updateSelectedTitle: function() {
-			$('#selectedOrgName').html(`<i class="bi bi-building"></i> ${this.selectedCategoryName}`);
+			$('#selectedOrgName').html(`${this.selectedCategoryName}`);
 		},
 
 		getOrgTypeText: function(orgType) {
@@ -439,102 +449,6 @@
 			});
 		},
 
-		viewOrgDetail: function(orgId) {
-			const self = this;
-			$.ajax({
-				url: '/mng/mng_org/get_org_detail',
-				type: 'GET',
-				data: { org_id: orgId },
-				dataType: 'json',
-				success: function(response) {
-					if (response.success) {
-						const org = response.data;
-						const adminInfo = org.admin_info;
-
-						const iconHtml = org.org_icon ?
-							`<img src="${org.org_icon}" class="rounded me-3" width="60" height="60">` :
-							`<div class="bg-secondary rounded d-flex align-items-center justify-content-center me-3" style="width:60px;height:60px;">
-                                <i class="bi bi-building text-white fs-4"></i>
-                            </div>`;
-
-						const content = `
-                            <div class="d-flex align-items-center mb-4">
-                                ${iconHtml}
-                                <div>
-                                    <h4 class="mb-1">${org.org_name}</h4>
-                                    <p class="text-muted mb-0">${org.org_desc || '설명이 없습니다'}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>기본 정보</h6>
-                                    <table class="table table-sm">
-                                        <tr><th width="120">조직 코드</th><td><code>${org.org_code}</code></td></tr>
-                                        <tr><th>조직 유형</th><td>${self.getOrgTypeText(org.org_type)}</td></tr>
-                                        <tr><th>초대 코드</th><td><code>${org.invite_code}</code></td></tr>
-                                        <tr><th>리더 호칭</th><td>${org.leader_name}</td></tr>
-                                        <tr><th>새가족 호칭</th><td>${org.new_name}</td></tr>
-                                        <tr><th>회원 수</th><td><span class="badge bg-info">${org.member_count}명</span></td></tr>
-                                        <tr><th>등록일</th><td>${new Date(org.regi_date).toLocaleString()}</td></tr>
-                                    </table>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6>관리자 정보</h6>
-                                    ${adminInfo ? `
-                                        <div class="d-flex align-items-center">
-                                            <img src="${adminInfo.user_profile_image || '/assets/images/photo_no.png'}" class="rounded-circle me-2" width="40" height="40">
-                                            <div>
-                                                <div><strong>${adminInfo.user_name}</strong></div>
-                                                <small class="text-muted">${adminInfo.user_mail}</small>
-                                            </div>
-                                        </div>
-                                    ` : `
-                                        <p class="text-muted">관리자 정보가 없습니다</p>
-                                    `}
-                                </div>
-                            </div>
-                        `;
-
-						$('#orgDetailContent').html(content);
-						$('#orgDetailModal').modal('show');
-					} else {
-						self.showToast(response.message, 'error');
-					}
-				},
-				error: function() {
-					self.showToast('조직 정보 로딩에 실패했습니다', 'error');
-				}
-			});
-		},
-
-		deleteOrg: function(orgId, orgName) {
-			const self = this;
-			this.showConfirm(
-				'조직 삭제',
-				`'${orgName}' 조직을 삭제하시겠습니까?<br><small class="text-muted">조직에 회원이 있으면 삭제할 수 없습니다.</small>`,
-				function() {
-					$.ajax({
-						url: '/mng/mng_org/delete_org',
-						type: 'POST',
-						data: { org_id: orgId },
-						dataType: 'json',
-						success: function(response) {
-							if (response.success) {
-								self.showToast(response.message, 'success');
-								self.loadOrgList();
-								self.initCategoryTree();
-							} else {
-								self.showToast(response.message, 'error');
-							}
-						},
-						error: function() {
-							self.showToast('조직 삭제에 실패했습니다', 'error');
-						}
-					});
-				}
-			);
-		},
 
 		// 유틸리티 함수들
 		showTreeSpinner: function(show) {

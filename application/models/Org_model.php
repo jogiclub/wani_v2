@@ -292,9 +292,11 @@ class Org_model extends CI_Model {
 	public function get_orgs_by_category_detailed($category_idx = null)
 	{
 		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code, o.category_idx');
+		$this->db->select('c.category_name');
 		$this->db->select('COUNT(DISTINCT ou.user_id) as member_count');
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
+		$this->db->join('wb_org_category c', 'o.category_idx = c.category_idx', 'left');
 
 		// 카테고리 필터링 (빈 문자열도 전체로 처리)
 		if (empty($category_idx)) {
@@ -308,8 +310,9 @@ class Org_model extends CI_Model {
 		}
 
 		$this->db->where('o.del_yn', 'N');
-		$this->db->group_by('o.org_id');
-		$this->db->order_by('o.regi_date', 'DESC');
+		$this->db->group_by('o.org_id, c.category_name');
+		$this->db->order_by('c.category_name', 'ASC');
+		$this->db->order_by('o.org_name', 'ASC');
 
 		$query = $this->db->get();
 		return $query->result_array();
