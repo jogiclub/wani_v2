@@ -351,4 +351,49 @@ class Org_model extends CI_Model {
 		$query = $this->db->get();
 		return $query->result_array();
 	}
+
+
+	/**
+	 * 조직 다중 삭제 (soft delete)
+	 */
+	public function bulk_delete_orgs($org_ids)
+	{
+		if (!is_array($org_ids) || empty($org_ids)) {
+			return false;
+		}
+
+		$data = array(
+			'del_yn' => 'Y',
+			'del_date' => date('Y-m-d H:i:s'),
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where_in('org_id', $org_ids);
+		return $this->db->update('wb_org', $data);
+	}
+
+	/**
+	 * 조직 ID로 조직명 가져오기
+	 */
+	public function get_org_names_by_ids($org_ids)
+	{
+		if (!is_array($org_ids) || empty($org_ids)) {
+			return array();
+		}
+
+		$this->db->select('org_id, org_name');
+		$this->db->from('wb_org');
+		$this->db->where_in('org_id', $org_ids);
+		$this->db->where('del_yn', 'N');
+
+		$query = $this->db->get();
+		$result = array();
+
+		foreach ($query->result_array() as $row) {
+			$result[$row['org_id']] = $row['org_name'];
+		}
+
+		return $result;
+	}
+
 }

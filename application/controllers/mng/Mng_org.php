@@ -232,4 +232,70 @@ class Mng_org extends CI_Controller
 			echo json_encode(array('success' => false, 'message' => '조직 삭제에 실패했습니다.'));
 		}
 	}
+
+	/**
+	 * 조직 다중 삭제 (AJAX)
+	 */
+	public function bulk_delete_orgs()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_ids = $this->input->post('org_ids');
+
+		if (!$org_ids || !is_array($org_ids)) {
+			echo json_encode(array('success' => false, 'message' => '삭제할 조직을 선택해주세요.'));
+			return;
+		}
+
+		$success_count = 0;
+		$error_messages = array();
+
+		foreach ($org_ids as $org_id) {
+			// 조직에 회원이 있는지 확인
+			$member_count = $this->Org_model->get_org_member_count($org_id);
+			if ($member_count > 0) {
+				// 조직명 가져오기
+				$org_detail = $this->Org_model->get_org_detail_by_id($org_id);
+				$org_name = $org_detail ? $org_detail['org_name'] : "조직 ID: {$org_id}";
+				$error_messages[] = "{$org_name}에 {$member_count}명의 회원이 있어서 삭제할 수 없습니다.";
+				continue;
+			}
+
+			$result = $this->Org_model->delete_org($org_id);
+			if ($result) {
+				$success_count++;
+			}
+		}
+
+		$total_count = count($org_ids);
+		$failed_count = $total_count - $success_count;
+
+		if ($success_count > 0 && $failed_count == 0) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => "{$success_count}개의 조직이 삭제되었습니다."
+			));
+		} else if ($success_count > 0 && $failed_count > 0) {
+			$message = "{$success_count}개 삭제 완료, {$failed_count}개 실패";
+			if (!empty($error_messages)) {
+				$message .= "\n실패 사유:\n" . implode("\n", $error_messages);
+			}
+			echo json_encode(array(
+				'success' => false,
+				'message' => $message
+			));
+		} else {
+			$message = "조직 삭제에 실패했습니다.";
+			if (!empty($error_messages)) {
+				$message .= "\n" . implode("\n", $error_messages);
+			}
+			echo json_encode(array(
+				'success' => false,
+				'message' => $message
+			));
+		}
+	}
+
 }
