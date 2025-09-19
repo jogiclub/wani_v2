@@ -58,7 +58,7 @@ $this->load->view('header');
 				<div class="card-body d-flex flex-column justify-content-center align-items-center">
 
 						<div class="btn-group-vertical" role="group" aria-label="Vertical button group" id="groupManagementButtons" style="display: none;">
-							<div class="btn-group" role="group">
+
 								<button type="button" class="btn btn-primary " id="btnAddGroup">
 									<i class="bi bi-folder-plus"></i> 그룹생성
 								</button>
@@ -73,7 +73,8 @@ $this->load->view('header');
 								<button type="button" class="btn btn-success " id="btnMoveGroup" disabled>
 									<i class="bi bi-arrow-right-square"></i> 그룹이동
 								</button>
-							</div>
+
+
 
 					</div>
 
