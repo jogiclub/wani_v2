@@ -519,7 +519,7 @@ class Qrcheck extends My_Controller
 				return;
 			}
 
-			// 권한 확인 제거 - 목장출석 화면에 접근할 수 있는 사용자는 누구나 지난주 출석 조회 가능
+			// 권한 확인 제거 - 그룹출석 화면에 접근할 수 있는 사용자는 누구나 지난주 출석 조회 가능
 			// 기존 권한 체크 코드 주석처리 또는 제거
 			/*
 			$user_id = $this->session->userdata('user_id');
