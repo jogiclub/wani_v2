@@ -198,4 +198,152 @@ class Org_model extends CI_Model {
 	}
 
 
+	/**
+	 * 카테고리별 조직 목록 조회
+	 */
+	public function get_orgs_by_category($category_idx = null)
+	{
+		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code, COUNT(ou.user_id) as member_count');
+		$this->db->from('wb_org o');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
+
+		if ($category_idx === null || $category_idx === 'uncategorized') {
+			// 미분류 조직 조회
+			$this->db->where('(o.category_idx IS NULL OR o.category_idx = 0)', null, false);
+		} else {
+			$this->db->where('o.category_idx', $category_idx);
+		}
+
+		$this->db->where('o.del_yn', 'N');
+		$this->db->group_by('o.org_id');
+		$this->db->order_by('o.regi_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 조직 회원 수 조회
+	 */
+	public function get_org_member_count($org_id)
+	{
+		$this->db->from('wb_org_user');
+		$this->db->where('org_id', $org_id);
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 카테고리에 조직이 있는지 확인
+	 */
+	public function has_orgs_in_category($category_idx)
+	{
+		$this->db->from('wb_org');
+		$this->db->where('category_idx', $category_idx);
+		$this->db->where('del_yn', 'N');
+		return $this->db->count_all_results() > 0;
+	}
+
+	/**
+	 * 조직 삭제 (soft delete)
+	 */
+	public function delete_org($org_id)
+	{
+		$data = array(
+			'del_yn' => 'Y',
+			'del_date' => date('Y-m-d H:i:s'),
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_org', $data);
+	}
+
+	/**
+	 * 조직을 카테고리에 할당
+	 */
+	public function assign_org_to_category($org_id, $category_idx)
+	{
+		$data = array(
+			'category_idx' => $category_idx,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_org', $data);
+	}
+
+	/**
+	 * 조직의 카테고리 할당 해제
+	 */
+	public function unassign_org_from_category($org_id)
+	{
+		$data = array(
+			'category_idx' => null,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_org', $data);
+	}
+
+	/**
+	 * 특정 카테고리의 조직 목록 조회 (상세 정보 포함)
+	 */
+	public function get_orgs_by_category_detailed($category_idx = null)
+	{
+		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code, o.category_idx');
+		$this->db->select('COUNT(DISTINCT ou.user_id) as member_count');
+		$this->db->select('COUNT(DISTINCT m.member_idx) as total_members');
+		$this->db->from('wb_org o');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
+		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+
+		if ($category_idx === null || $category_idx === 'uncategorized') {
+			// 미분류 조직 조회
+			$this->db->where('(o.category_idx IS NULL OR o.category_idx = 0)', null, false);
+		} else {
+			$this->db->where('o.category_idx', $category_idx);
+		}
+
+		$this->db->where('o.del_yn', 'N');
+		$this->db->group_by('o.org_id');
+		$this->db->order_by('o.regi_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 조직 검색
+	 */
+	public function search_orgs($keyword, $category_idx = null)
+	{
+		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code');
+		$this->db->select('COUNT(ou.user_id) as member_count');
+		$this->db->from('wb_org o');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
+
+		// 검색 조건
+		$this->db->group_start();
+		$this->db->like('o.org_name', $keyword);
+		$this->db->or_like('o.org_code', $keyword);
+		$this->db->or_like('o.org_desc', $keyword);
+		$this->db->group_end();
+
+		// 카테고리 필터
+		if ($category_idx !== null && $category_idx !== 'all') {
+			if ($category_idx === 'uncategorized') {
+				$this->db->where('(o.category_idx IS NULL OR o.category_idx = 0)', null, false);
+			} else {
+				$this->db->where('o.category_idx', $category_idx);
+			}
+		}
+
+		$this->db->where('o.del_yn', 'N');
+		$this->db->group_by('o.org_id');
+		$this->db->order_by('o.org_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 }

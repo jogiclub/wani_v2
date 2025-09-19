@@ -130,3 +130,9 @@ $route['attendance_setting/add_attendance_type'] = 'attendance_setting/add_atten
 $route['attendance_setting/update_attendance_type'] = 'attendance_setting/update_attendance_type';
 $route['attendance_setting/delete_attendance_type'] = 'attendance_setting/delete_attendance_type';
 $route['attendance_setting/update_orders'] = 'attendance_setting/update_orders';
+
+
+// 관리자 페이지 라우팅
+$route['mng'] = 'mng/mng_org';
+$route['mng/mng_org'] = 'mng/mng_org';
+$route['mng/mng_org/(:any)'] = 'mng/mng_org/$1';

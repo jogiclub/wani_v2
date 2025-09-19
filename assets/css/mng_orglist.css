@@ -1,0 +1,43 @@
+.context-menu {
+	min-width: 150px;
+}
+
+.context-menu .list-group-item {
+	border: none;
+	padding: 8px 16px;
+	font-size: 14px;
+}
+
+.context-menu .list-group-item:hover {
+	background-color: #f8f9fa;
+}
+
+#categoryTree .fancytree-node {
+	padding: 2px 0;
+}
+
+#categoryTree .fancytree-title {
+	padding: 4px 8px;
+	border-radius: 4px;
+}
+
+#categoryTree .fancytree-title:hover {
+	background-color: #f8f9fa;
+}
+
+#categoryTree .fancytree-active .fancytree-title {
+	background-color: #e3f2fd;
+	color: #1976d2;
+}
+
+.table th {
+	background-color: #f8f9fa;
+	font-weight: 600;
+}
+
+code {
+	background-color: #f8f9fa;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 85%;
+}
