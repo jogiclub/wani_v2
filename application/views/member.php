@@ -7,8 +7,7 @@
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
 <!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
-<link rel="stylesheet"
-	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
+<link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
 
 <!-- Croppie CSS -->
 <link href="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.css" rel="stylesheet">
@@ -465,9 +464,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.2/split.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
+<script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.js"></script>
 
 <script>

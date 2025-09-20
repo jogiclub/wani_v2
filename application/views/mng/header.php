@@ -49,8 +49,8 @@
 </header>
 
 <div class="wrapper d-flex bg-light"></div>
-<div class="sidebar border border-right p-0 bg-body-tertiary">
-	<div class="offcanvas-xl offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+<div class="sidebar border border-right p-0 bg-primary-subtle">
+	<div class="offcanvas-xl offcanvas-end bg-primary-subtle" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
 		<div class="offcanvas-header">
 			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
 		</div>

@@ -6,8 +6,7 @@ $this->load->view('header');
 <link rel="stylesheet" href="/assets/css/member.css?<?php echo WB_VERSION; ?>">
 
 <!-- Fancytree CSS -->
-<link rel="stylesheet"
-	  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
+<link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
 
 <div class="container pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">

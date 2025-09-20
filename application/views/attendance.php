@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
 <!-- Fancytree CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">
+<link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
 
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-3" aria-label="breadcrumb">
@@ -127,9 +127,10 @@
 
 <?php $this->load->view('footer'); ?>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.2/split.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
+
+<script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 
 <script>
 	window.attendancePageData = {
