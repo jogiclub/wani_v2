@@ -3,7 +3,7 @@ $this->load->view('mng/header');
 ?>
 <link rel="stylesheet" href="/assets/css/mng_common.css?<?php echo WB_VERSION; ?>">
 <!-- ParamQuery CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
 <!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/skin-vista/ui.fancytree.min.css">

@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="/assets/css/member.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
 <!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 <link rel="stylesheet"

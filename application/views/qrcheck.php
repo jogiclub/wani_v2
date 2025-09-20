@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="/assets/css/qrcheck.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS 및 JavaScript 추가 -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.css">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
 <div class="pt-3 pb-2 ">
 	<div class="container-fluid">
@@ -166,10 +166,11 @@
 <?php $this->load->view('footer'); ?>
 
 <!-- ParamQuery JavaScript 라이브러리 추가 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
 
-<script src="/assets/js/qrcheck.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" integrity="sha512-JRlcvSZAXT8+5SQQAvklXGJuxXTouyq8oIMaYERZQasB8SBDHZaUbeASsJWpk0UUrf89DP3/aefPPrlMR1h1yQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="/assets/js/qrcheck.js?<?php echo WB_VERSION; ?>"></script>
 <script>
 
 	/*출석관리 메뉴 active*/
