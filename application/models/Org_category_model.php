@@ -32,14 +32,35 @@ class Org_category_model extends CI_Model
 		$categories = $this->get_all_categories();
 
 		if (empty($categories)) {
-			return array();
+			$tree_data = array();
+		} else {
+			// 각 카테고리별 조직 수 계산
+			$category_org_counts = $this->get_category_org_counts();
+			$tree_data = $this->build_category_tree($categories, $category_org_counts, null);
 		}
 
-		// 각 카테고리별 조직 수 계산
-		$category_org_counts = $this->get_category_org_counts();
+		// 미분류 조직을 최상위 레벨에 추가 (전체와 동일한 depth)
+		$uncategorized_count = $this->get_uncategorized_org_count();
+		if ($uncategorized_count > 0) {
+			$uncategorized_node = array(
+				'key' => 'uncategorized',
+				'title' => '미분류 (' . $uncategorized_count . '개)',
+				'folder' => false,
+				'data' => array(
+					'type' => 'uncategorized',
+					'category_idx' => 'uncategorized',
+					'category_name' => '미분류',
+					'org_count' => $uncategorized_count
+				)
+			);
 
-		return $this->build_category_tree($categories, $category_org_counts, null);
+			// 트리 데이터에 미분류 추가
+			$tree_data[] = $uncategorized_node;
+		}
+
+		return $tree_data;
 	}
+
 
 	/**
 	 * 각 카테고리별 조직 수 계산
@@ -62,18 +83,22 @@ class Org_category_model extends CI_Model
 		return $counts;
 	}
 
+	/**
+	 * 전체 카테고리 목록 조회 (플랫)
+	 */
 	public function get_all_categories_flat()
 	{
 		$this->db->select('category_idx, category_name, parent_idx');
 		$this->db->from('wb_org_category');
-		$this->db->where('del_yn', 'N');
 		$this->db->order_by('category_order', 'ASC');
 		$query = $this->db->get();
 		return $query->result_array();
 	}
 
+
+
 	/**
-	 * 재귀적으로 카테고리 트리 생성
+	 * 재귀적으로 카테고리 트리 생성 (미분류는 여기서 제외)
 	 */
 	private function build_category_tree($categories, $category_org_counts, $parent_idx, $depth = 0)
 	{
@@ -109,23 +134,6 @@ class Org_category_model extends CI_Model
 				);
 
 				$tree[] = $node;
-			}
-		}
-
-		// 최상위 레벨에만 미분류 조직 추가
-		if ($parent_idx === null) {
-			$uncategorized_count = $this->get_uncategorized_org_count();
-			if ($uncategorized_count > 0) {
-				$tree[] = array(
-					'key' => 'uncategorized',
-					'title' => '미분류 (' . $uncategorized_count . '개)',
-					'folder' => false,
-					'data' => array(
-						'type' => 'uncategorized',
-						'category_idx' => null,
-						'org_count' => $uncategorized_count
-					)
-				);
 			}
 		}
 

@@ -185,9 +185,14 @@
 	function handleTreeNodeActivate(node) {
 		const nodeData = node.data;
 
-		if (nodeData.type === 'category' || nodeData.type === 'all') {
-			selectedCategoryIdx = nodeData.category_idx;
-			selectedCategoryName = nodeData.type === 'all' ? '전체' : nodeData.category_name;
+		if (nodeData.type === 'category' || nodeData.type === 'all' || nodeData.type === 'uncategorized') {
+			if (nodeData.type === 'uncategorized') {
+				selectedCategoryIdx = 'uncategorized';
+				selectedCategoryName = '미분류';
+			} else {
+				selectedCategoryIdx = nodeData.category_idx;
+				selectedCategoryName = nodeData.type === 'all' ? '전체' : nodeData.category_name;
+			}
 			updateSelectedTitle();
 			loadOrgList();
 		}
@@ -334,6 +339,76 @@
 				dataIndx: 'org_type',
 				title: '유형',
 				width: 100,
+				align: 'center',
+				editable: false,
+				render: function(ui) {
+					return getOrgTypeText(ui.cellData);
+				}
+			},
+			{
+				dataIndx: 'org_desc',
+				title: '조직설명',
+				width: 200,
+				align: 'center',
+				editable: false,
+				render: function(ui) {
+					return getOrgTypeText(ui.cellData);
+				}
+			},
+			{
+				dataIndx: 'org_rep',
+				title: '대표자',
+				width: 80,
+				align: 'center',
+				editable: false,
+				render: function(ui) {
+					return getOrgTypeText(ui.cellData);
+				}
+			},
+			{
+				dataIndx: 'org_manager',
+				title: '담당자',
+				width: 80,
+				align: 'center',
+				editable: false,
+				render: function(ui) {
+					return getOrgTypeText(ui.cellData);
+				}
+			},
+			{
+				dataIndx: 'org_phone',
+				title: '연락처',
+				width: 80,
+				align: 'center',
+				editable: false,
+				render: function(ui) {
+					return getOrgTypeText(ui.cellData);
+				}
+			},
+			{
+				dataIndx: 'org_address_postno',
+				title: '우편번호',
+				width: 80,
+				align: 'center',
+				editable: false,
+				render: function(ui) {
+					return getOrgTypeText(ui.cellData);
+				}
+			},
+			{
+				dataIndx: 'org_address',
+				title: '주소',
+				width: 150,
+				align: 'center',
+				editable: false,
+				render: function(ui) {
+					return getOrgTypeText(ui.cellData);
+				}
+			},
+			{
+				dataIndx: 'org_address_detail',
+				title: '상세주소',
+				width: 150,
 				align: 'center',
 				editable: false,
 				render: function(ui) {
@@ -625,6 +700,12 @@
 		formData.append('org_type', $('#edit_org_type').val());
 		formData.append('org_desc', $('#edit_org_desc').val());
 		formData.append('category_idx', $('#edit_category_idx').val());
+		formData.append('org_rep', $('#edit_org_rep').val());
+		formData.append('org_manager', $('#edit_org_manager').val());
+		formData.append('org_phone', $('#edit_org_phone').val());
+		formData.append('org_address_postno', $('#edit_org_address_postno').val());
+		formData.append('org_address', $('#edit_org_address').val());
+		formData.append('org_address_detail', $('#edit_org_address_detail').val());
 
 		const selectedTags = $('#edit_org_tag').val() || [];
 		formData.append('org_tag', JSON.stringify(selectedTags));
@@ -739,6 +820,7 @@
 		$('#btnDeleteOrg').prop('disabled', count === 0);
 	}
 
+
 	/**
 	 * 조직 목록 로드
 	 */
@@ -747,8 +829,12 @@
 		checkedOrgIds.clear();
 
 		const requestData = {};
-		if (selectedCategoryIdx !== null) {
+
+		// 미분류 처리
+		if (selectedCategoryIdx !== null && selectedCategoryIdx !== 'uncategorized') {
 			requestData.category_idx = selectedCategoryIdx;
+		} else if (selectedCategoryIdx === 'uncategorized') {
+			requestData.category_idx = 'uncategorized';
 		}
 
 		$.ajax({

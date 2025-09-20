@@ -52,6 +52,7 @@ class Mng_org extends CI_Controller
 		echo json_encode($tree_data);
 	}
 
+
 	/**
 	 * 조직 목록 조회 (AJAX)
 	 */
@@ -62,6 +63,12 @@ class Mng_org extends CI_Controller
 		}
 
 		$category_idx = $this->input->get('category_idx');
+
+		// 미분류 타입 처리
+		if ($category_idx === 'uncategorized') {
+			$category_idx = null;
+		}
+
 		$orgs = $this->Org_model->get_orgs_by_category_detailed($category_idx);
 
 		header('Content-Type: application/json; charset=utf-8');
@@ -288,15 +295,267 @@ class Mng_org extends CI_Controller
 			show_404();
 		}
 
-		$categories = $this->Org_category_model->get_all_categories();
+		try {
+			$categories = $this->Org_category_model->get_all_categories_flat();
 
-		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode(array(
-			'success' => true,
-			'data' => $categories
-		));
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => true,
+				'data' => $categories
+			));
+		} catch (Exception $e) {
+			log_message('error', '카테고리 목록 조회 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '카테고리 목록 조회 중 오류가 발생했습니다.'
+			));
+		}
 	}
 
+
+	/**
+	 * 새 조직 생성 폼 표시
+	 */
+	public function create()
+	{
+		$data['user'] = $this->User_model->get_user_by_id($this->session->userdata('user_id'));
+		$data['categories'] = $this->Org_category_model->get_all_categories_flat();
+		$this->load->view('mng/mng_org_create', $data);
+	}
+
+
+	/**
+	 * 새 조직 저장 (AJAX)
+	 */
+	public function store()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		// 폼 데이터 수집
+		$data = array(
+			'org_name' => trim($this->input->post('org_name')),
+			'org_type' => $this->input->post('org_type') ?: 'church',
+			'org_desc' => trim($this->input->post('org_desc')),
+			'org_rep' => trim($this->input->post('org_rep')),
+			'org_manager' => trim($this->input->post('org_manager')),
+			'org_phone' => trim($this->input->post('org_phone')),
+			'org_address_postno' => trim($this->input->post('org_address_postno')),
+			'org_address' => trim($this->input->post('org_address')),
+			'org_address_detail' => trim($this->input->post('org_address_detail')),
+			'category_idx' => $this->input->post('category_idx') ?: null,
+			'leader_name' => $this->input->post('leader_name') ?: '리더',
+			'new_name' => $this->input->post('new_name') ?: '새가족'
+		);
+
+		// 필수 필드 검증
+		if (empty($data['org_name'])) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array('success' => false, 'message' => '조직명은 필수입니다.'));
+			return;
+		}
+
+		// 태그 처리
+		$org_tag = $this->input->post('org_tag');
+		if (!empty($org_tag)) {
+			if (is_string($org_tag)) {
+				$org_tag = json_decode($org_tag, true);
+			}
+			$data['org_tag'] = $org_tag;
+		}
+
+		// 빈 값 제거
+		$data = array_filter($data, function($value) {
+			return $value !== '' && $value !== null;
+		});
+
+		try {
+			$result = $this->Org_model->insert_org($data);
+
+			if ($result) {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => true,
+					'message' => '조직이 성공적으로 생성되었습니다.'
+				));
+			} else {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => false,
+					'message' => '조직 생성에 실패했습니다.'
+				));
+			}
+		} catch (Exception $e) {
+			log_message('error', '조직 생성 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 생성 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+
+	/**
+	 * 단일 조직 삭제 (AJAX)
+	 */
+	public function delete()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array('success' => false, 'message' => '삭제할 조직 ID가 누락되었습니다.'));
+			return;
+		}
+
+		try {
+			$result = $this->Org_model->delete_org($org_id);
+
+			if ($result) {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => true,
+					'message' => '조직이 성공적으로 삭제되었습니다.'
+				));
+			} else {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => false,
+					'message' => '조직 삭제에 실패했습니다.'
+				));
+			}
+		} catch (Exception $e) {
+			log_message('error', '조직 삭제 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 삭제 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+
+
+	/**
+	 * 조직 검색 (AJAX)
+	 */
+	public function search()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$keyword = trim($this->input->get('keyword'));
+		$category_idx = $this->input->get('category_idx');
+
+		if (empty($keyword)) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array('success' => false, 'message' => '검색어를 입력해주세요.'));
+			return;
+		}
+
+		try {
+			$orgs = $this->Org_model->search_orgs($keyword, $category_idx);
+
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => true,
+				'data' => $orgs
+			));
+		} catch (Exception $e) {
+			log_message('error', '조직 검색 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 검색 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+
+	/**
+	 * 조직 카테고리 이동 (AJAX)
+	 */
+	public function move_to_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_ids = $this->input->post('org_ids');
+		$category_idx = $this->input->post('category_idx');
+
+		if (!is_array($org_ids) || empty($org_ids)) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array('success' => false, 'message' => '이동할 조직을 선택해주세요.'));
+			return;
+		}
+
+		try {
+			$success_count = 0;
+			foreach ($org_ids as $org_id) {
+				if ($category_idx === 'uncategorized' || $category_idx === '') {
+					$result = $this->Org_model->unassign_org_from_category($org_id);
+				} else {
+					$result = $this->Org_model->assign_org_to_category($org_id, $category_idx);
+				}
+
+				if ($result) {
+					$success_count++;
+				}
+			}
+
+			if ($success_count > 0) {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => true,
+					'message' => "{$success_count}개의 조직이 성공적으로 이동되었습니다."
+				));
+			} else {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => false,
+					'message' => '조직 이동에 실패했습니다.'
+				));
+			}
+		} catch (Exception $e) {
+			log_message('error', '조직 이동 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 이동 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+	/**
+	 * 엑셀 다운로드
+	 */
+	public function excel_download()
+	{
+		$category_idx = $this->input->get('category_idx');
+
+		// 미분류 타입 처리
+		if ($category_idx === 'uncategorized') {
+			$category_idx = null;
+		}
+
+		$orgs = $this->Org_model->get_orgs_by_category_detailed($category_idx);
+
+		// PHPSpreadsheet 라이브러리 로드 (라이브러리가 설치되어 있다고 가정)
+		$this->load->library('excel');
+
+		$filename = '조직목록_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+		$this->excel->download_orgs($orgs, $filename);
+	}
 
 	/**
 	 * 조직 정보 업데이트 (AJAX)
@@ -309,60 +568,64 @@ class Mng_org extends CI_Controller
 
 		$org_id = $this->input->post('org_id');
 		if (!$org_id) {
+			header('Content-Type: application/json; charset=utf-8');
 			echo json_encode(array('success' => false, 'message' => '조직 ID가 누락되었습니다.'));
 			return;
 		}
 
-		// 업데이트할 데이터 준비
-		$update_data = array();
-
-		// 각 필드가 존재하고 공백이 아닌 경우에만 업데이트 데이터에 추가
-		$fields = array(
-			'org_name', 'org_type', 'org_desc', 'org_rep', 'org_manager',
-			'org_phone', 'org_address_postno', 'org_address', 'org_address_detail',
-			'category_idx'
+		// 폼 데이터 수집
+		$data = array(
+			'org_name' => trim($this->input->post('org_name')),
+			'org_type' => $this->input->post('org_type'),
+			'org_desc' => trim($this->input->post('org_desc')),
+			'org_rep' => trim($this->input->post('org_rep')),
+			'org_manager' => trim($this->input->post('org_manager')),
+			'org_phone' => trim($this->input->post('org_phone')),
+			'org_address_postno' => trim($this->input->post('org_address_postno')),
+			'org_address' => trim($this->input->post('org_address')),
+			'org_address_detail' => trim($this->input->post('org_address_detail')),
+			'category_idx' => $this->input->post('category_idx') ?: null
 		);
 
-		foreach ($fields as $field) {
-			$value = $this->input->post($field);
-			if ($value !== null && $value !== '') {
-				$update_data[$field] = $value;
-			}
-		}
-
-		// 태그 처리 (JSON 형태로 저장)
+		// 태그 처리
 		$org_tag = $this->input->post('org_tag');
-		if ($org_tag !== null) {
-			// 이미 JSON 문자열인지 확인
+		if (!empty($org_tag)) {
 			if (is_string($org_tag)) {
-				// JSON 유효성 검사
-				$decoded = json_decode($org_tag, true);
-				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-					$update_data['org_tag'] = $org_tag; // 이미 유효한 JSON
-				} else {
-					// JSON이 아닌 경우 빈 배열로 저장
-					$update_data['org_tag'] = '[]';
-				}
-			} else {
-				// 배열인 경우 JSON으로 변환
-				$update_data['org_tag'] = json_encode($org_tag, JSON_UNESCAPED_UNICODE);
+				$org_tag = json_decode($org_tag, true);
 			}
-		}
-
-		// category_idx가 빈 문자열인 경우 null로 설정
-		if (isset($update_data['category_idx']) && $update_data['category_idx'] === '') {
-			$update_data['category_idx'] = null;
-		}
-
-		// 수정일시 추가
-		$update_data['modi_date'] = date('Y-m-d H:i:s');
-
-		$result = $this->Org_model->update_org($org_id, $update_data);
-
-		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '조직 정보가 수정되었습니다.'));
+			$data['org_tag'] = $org_tag;
 		} else {
-			echo json_encode(array('success' => false, 'message' => '조직 정보 수정에 실패했습니다.'));
+			$data['org_tag'] = null;
+		}
+
+		// 빈 값 제거
+		$data = array_filter($data, function($value) {
+			return $value !== '';
+		});
+
+		try {
+			$result = $this->Org_model->update_org($org_id, $data);
+
+			if ($result) {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => true,
+					'message' => '조직 정보가 성공적으로 업데이트되었습니다.'
+				));
+			} else {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => false,
+					'message' => '조직 정보 업데이트에 실패했습니다.'
+				));
+			}
+		} catch (Exception $e) {
+			log_message('error', '조직 업데이트 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 정보 업데이트 중 오류가 발생했습니다.'
+			));
 		}
 	}
 
@@ -377,56 +640,35 @@ class Mng_org extends CI_Controller
 
 		$org_ids = $this->input->post('org_ids');
 
-		if (!$org_ids || !is_array($org_ids)) {
+		if (!is_array($org_ids) || empty($org_ids)) {
+			header('Content-Type: application/json; charset=utf-8');
 			echo json_encode(array('success' => false, 'message' => '삭제할 조직을 선택해주세요.'));
 			return;
 		}
 
-		$success_count = 0;
-		$error_messages = array();
+		try {
+			$result = $this->Org_model->bulk_delete_orgs($org_ids);
 
-		foreach ($org_ids as $org_id) {
-			// 조직에 회원이 있는지 확인
-			$member_count = $this->Org_model->get_org_member_count($org_id);
-			if ($member_count > 0) {
-				// 조직명 가져오기
-				$org_detail = $this->Org_model->get_org_detail_by_id($org_id);
-				$org_name = $org_detail ? $org_detail['org_name'] : "조직 ID: {$org_id}";
-				$error_messages[] = "{$org_name}에 {$member_count}명의 회원이 있어서 삭제할 수 없습니다.";
-				continue;
-			}
-
-			$result = $this->Org_model->delete_org($org_id);
 			if ($result) {
-				$success_count++;
+				$count = count($org_ids);
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => true,
+					'message' => "{$count}개의 조직이 성공적으로 삭제되었습니다."
+				));
+			} else {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => false,
+					'message' => '조직 삭제에 실패했습니다.'
+				));
 			}
-		}
-
-		$total_count = count($org_ids);
-		$failed_count = $total_count - $success_count;
-
-		if ($success_count > 0 && $failed_count == 0) {
-			echo json_encode(array(
-				'success' => true,
-				'message' => "{$success_count}개의 조직이 삭제되었습니다."
-			));
-		} else if ($success_count > 0 && $failed_count > 0) {
-			$message = "{$success_count}개 삭제 완료, {$failed_count}개 실패";
-			if (!empty($error_messages)) {
-				$message .= "\n실패 사유:\n" . implode("\n", $error_messages);
-			}
-			echo json_encode(array(
-				'success' => false,
-				'message' => $message
-			));
-		} else {
-			$message = "조직 삭제에 실패했습니다.";
-			if (!empty($error_messages)) {
-				$message .= "\n" . implode("\n", $error_messages);
-			}
+		} catch (Exception $e) {
+			log_message('error', '조직 삭제 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
 			echo json_encode(array(
 				'success' => false,
-				'message' => $message
+				'message' => '조직 삭제 중 오류가 발생했습니다.'
 			));
 		}
 	}
