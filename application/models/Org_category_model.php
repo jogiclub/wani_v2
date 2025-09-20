@@ -62,6 +62,16 @@ class Org_category_model extends CI_Model
 		return $counts;
 	}
 
+	public function get_all_categories_flat()
+	{
+		$this->db->select('category_idx, category_name, parent_idx');
+		$this->db->from('wb_org_category');
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('category_order', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
 	/**
 	 * 재귀적으로 카테고리 트리 생성
 	 */

@@ -131,7 +131,7 @@ class Org_model extends CI_Model {
 	 * 조직 상세 정보 가져오기 (아이콘 필드 포함)
 	 */
 	public function get_org_detail_by_id($org_id) {
-		$this->db->select('org_id, org_name, org_type, org_desc, org_icon, leader_name, new_name, invite_code, position_name, duty_name, timeline_name, regi_date, modi_date');
+		$this->db->select('org_id, org_code, org_name, org_type, org_desc, org_rep, org_manager, org_phone, org_address_postno, org_address, org_address_detail, org_tag, org_icon, leader_name, new_name, invite_code, position_name, duty_name, timeline_name, category_idx, regi_date, modi_date');
 		$this->db->from('wb_org');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');
@@ -291,7 +291,7 @@ class Org_model extends CI_Model {
 	 */
 	public function get_orgs_by_category_detailed($category_idx = null)
 	{
-		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code, o.category_idx');
+		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.org_rep, o.org_manager, o.org_phone, o.org_address_postno, o.org_address, o.org_address_detail, o.org_tag, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code, o.category_idx');
 		$this->db->select('c.category_name');
 		$this->db->select('COUNT(DISTINCT ou.user_id) as member_count');
 		$this->db->from('wb_org o');
@@ -394,6 +394,55 @@ class Org_model extends CI_Model {
 		}
 
 		return $result;
+	}
+
+
+	/**
+	 * 조직 정보 업데이트
+	 */
+	public function update_org($org_id, $data)
+	{
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		return $this->db->update('wb_org', $data);
+	}
+
+	/**
+	 * 기존 태그 목록 조회
+	 */
+	public function get_existing_tags()
+	{
+		$this->db->select('org_tag');
+		$this->db->from('wb_org');
+		$this->db->where('del_yn', 'N');
+		$this->db->where('org_tag IS NOT NULL');
+		$this->db->where('org_tag != ""');
+		$query = $this->db->get();
+
+		$tags = array();
+		$results = $query->result_array();
+
+		foreach ($results as $row) {
+			$orgTags = $row['org_tag'];
+
+			// JSON 형태인지 확인
+			$decoded = json_decode($orgTags, true);
+			if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+				$tags = array_merge($tags, $decoded);
+			} else {
+				// JSON이 아닌 경우 쉼표로 분리
+				$splitTags = explode(',', $orgTags);
+				$splitTags = array_map('trim', $splitTags);
+				$splitTags = array_filter($splitTags);
+				$tags = array_merge($tags, $splitTags);
+			}
+		}
+
+		// 중복 제거 및 정렬
+		$tags = array_unique($tags);
+		sort($tags);
+
+		return array_values($tags);
 	}
 
 }

@@ -7,6 +7,8 @@ $this->load->view('mng/header');
 
 <!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 
 
 <div class="container-fluid pt-2 pb-2">
@@ -55,10 +57,24 @@ $this->load->view('mng/header');
 							<!-- 선택된 조직 수 표시 -->
 							<small class="text-muted me-2">선택된 조직 <span id="selectedCount">0</span>개</small>
 
+							<div class="btn-group" role="group" aria-label="Basic example">
 							<!-- 선택삭제 버튼 -->
 							<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteOrg" disabled>
 								<i class="bi bi-trash"></i> 선택삭제
 							</button>
+
+
+							<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+								더보기
+							</button>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveOrg">선택이동</a></li>
+								<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteOrg">선택삭제</a></li>
+								<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
+								<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
+							</ul>
+							</div>
+
 						</div>
 					</div>
 				</div>
@@ -105,6 +121,136 @@ $this->load->view('mng/header');
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
 				<button type="button" class="btn btn-primary" id="saveCategoryBtn">추가</button>
 			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 조직 정보 수정 offcanvas -->
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="orgOffcanvas" aria-labelledby="orgOffcanvasLabel" style="width: 600px;">
+	<div class="offcanvas-header text-start">
+		<h5 class="offcanvas-title" id="orgOffcanvasLabel">조직 정보 수정</h5>
+		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div id="orgOffcanvasSpinner" class="justify-content-center align-items-center" style="height: 200px;">
+			<div class="text-center">
+				<div class="spinner-border text-primary mb-2" role="status">
+					<span class="visually-hidden">로딩 중...</span>
+				</div>
+				<div class="small text-muted">조직 정보를 불러오는 중...</div>
+			</div>
+		</div>
+
+		<form id="orgForm" style="display: none;">
+			<input type="hidden" id="edit_org_id" name="org_id">
+
+			<!-- 기본 정보 -->
+			<div class="row mb-4">
+				<div class="col-12">
+					<h6 class="border-bottom pb-2 mb-3">기본 정보</h6>
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="edit_category_idx" class="form-label">카테고리</label>
+					<select class="form-select" id="edit_category_idx" name="category_idx">
+						<option value="">카테고리 선택</option>
+					</select>
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="edit_org_name" class="form-label">조직명 <span class="text-danger">*</span></label>
+					<input type="text" class="form-control" id="edit_org_name" name="org_name" required>
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="edit_org_code" class="form-label">조직코드</label>
+					<input type="text" class="form-control" id="edit_org_code" name="org_code" readonly>
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="edit_org_type" class="form-label">조직 유형</label>
+					<select class="form-select" id="edit_org_type" name="org_type">
+						<option value="church">교회</option>
+						<option value="school">학교</option>
+						<option value="company">회사</option>
+						<option value="organization">단체</option>
+					</select>
+				</div>
+
+				<div class="col-12 mb-3">
+					<label for="edit_org_desc" class="form-label">조직 설명</label>
+					<textarea class="form-control" id="edit_org_desc" name="org_desc" rows="3"></textarea>
+				</div>
+			</div>
+
+			<!-- 담당자 정보 -->
+			<div class="row mb-4">
+				<div class="col-12">
+					<h6 class="border-bottom pb-2 mb-3">담당자 정보</h6>
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="edit_org_rep" class="form-label">대표자</label>
+					<input type="text" class="form-control" id="edit_org_rep" name="org_rep">
+				</div>
+
+				<div class="col-6 mb-3">
+					<label for="edit_org_manager" class="form-label">담당자</label>
+					<input type="text" class="form-control" id="edit_org_manager" name="org_manager">
+				</div>
+
+				<div class="col-12 mb-3">
+					<label for="edit_org_phone" class="form-label">연락처</label>
+					<input type="text" class="form-control" id="edit_org_phone" name="org_phone">
+				</div>
+			</div>
+
+			<!-- 주소 정보 -->
+			<div class="row mb-4">
+				<div class="col-12">
+					<h6 class="border-bottom pb-2 mb-3">주소 정보</h6>
+				</div>
+
+				<div class="col-4 mb-3">
+					<label for="edit_org_address_postno" class="form-label">우편번호</label>
+					<input type="text" class="form-control" id="edit_org_address_postno" name="org_address_postno">
+				</div>
+
+				<div class="col-8 mb-3">
+					<label for="edit_org_address" class="form-label">주소</label>
+					<input type="text" class="form-control" id="edit_org_address" name="org_address">
+				</div>
+
+				<div class="col-12 mb-3">
+					<label for="edit_org_address_detail" class="form-label">상세주소</label>
+					<input type="text" class="form-control" id="edit_org_address_detail" name="org_address_detail">
+				</div>
+			</div>
+
+			<!-- 기타 정보 -->
+			<div class="row mb-4">
+				<div class="col-12">
+					<h6 class="border-bottom pb-2 mb-3">기타 정보</h6>
+				</div>
+
+				<div class="col-12 mb-3">
+					<label for="edit_org_tag" class="form-label">태그</label>
+					<select class="form-select" id="edit_org_tag" name="org_tag[]" multiple="multiple">
+						<!-- 동적으로 옵션이 추가됩니다 -->
+					</select>
+					<div class="form-text">태그를 선택하거나 새로 입력하세요</div>
+				</div>
+
+
+			</div>
+		</form>
+	</div>
+
+	<!-- 하단 고정 버튼 영역 -->
+	<div class="offcanvas-footer">
+		<div class="d-flex gap-2 p-3 border-top bg-light">
+			<button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="offcanvas">취소</button>
+			<button type="button" class="btn btn-primary flex-fill" id="saveOrgBtn">저장</button>
 		</div>
 	</div>
 </div>
@@ -195,4 +341,5 @@ $this->load->view('mng/footer');
 	};
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="/assets/js/mng_orglist.js?<?php echo WB_VERSION; ?>"></script>

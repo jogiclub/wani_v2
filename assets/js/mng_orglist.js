@@ -5,9 +5,8 @@
  * 역할: 관리자 조직관리 화면의 메인 JavaScript 파일
  */
 
-// 즉시 실행 함수로 전역 오염 방지 및 중복 선언 방지
 (function() {
-	// 전역 변수들
+	// 전역 변수
 	let orgGrid = null;
 	let treeInstance = null;
 	let splitInstance = null;
@@ -26,7 +25,6 @@
 	function initializePage() {
 		console.log('조직관리 페이지 초기화 시작');
 
-		// 순서대로 초기화
 		cleanupExistingInstances();
 		initSplitJS();
 		initFancytree();
@@ -37,10 +35,9 @@
 	}
 
 	/**
-	 * 기존 인스턴스들 완전 정리
+	 * 기존 인스턴스 정리
 	 */
 	function cleanupExistingInstances() {
-		// Split.js 정리
 		if (splitInstance) {
 			try {
 				splitInstance.destroy();
@@ -50,11 +47,9 @@
 			splitInstance = null;
 		}
 
-		// 모든 gutter 요소 제거
 		$('.gutter, .gutter-horizontal, .gutter-vertical').remove();
 		$('[class*="gutter"]').remove();
 
-		// Fancytree 정리
 		if (treeInstance) {
 			try {
 				$("#categoryTree").fancytree("destroy");
@@ -64,7 +59,6 @@
 			treeInstance = null;
 		}
 
-		// ParamQuery Grid 정리
 		if (orgGrid) {
 			try {
 				orgGrid.pqGrid("destroy");
@@ -74,15 +68,13 @@
 			orgGrid = null;
 		}
 
-		// 체크박스 상태 초기화
 		checkedOrgIds.clear();
 	}
 
 	/**
-	 * Split.js 초기화 (완전 새로운 방식)
+	 * Split.js 초기화
 	 */
 	function initSplitJS() {
-		// 약간의 지연 후 초기화 (DOM 정리 시간 확보)
 		setTimeout(function() {
 			try {
 				splitInstance = Split(['#left-pane', '#right-pane'], {
@@ -92,7 +84,6 @@
 					cursor: 'col-resize',
 					direction: 'horizontal',
 					onDragEnd: function(sizes) {
-						// 크기 조정 후 그리드 리프레시
 						if (orgGrid) {
 							setTimeout(function() {
 								try {
@@ -147,7 +138,6 @@
 
 					hideTreeSpinner();
 
-					// 첫 번째 노드 활성화
 					const tree = $.ui.fancytree.getTree('#categoryTree');
 					const firstNode = tree.getNodeByKey('all');
 					if (firstNode) {
@@ -217,7 +207,7 @@
 				height: "100%",
 				dataModel: { data: [] },
 				colModel: colModel,
-				freezeCols: 3,
+				freezeCols: 4,
 				numberCell: { show: false },
 				hoverMode: 'row',
 				selectionModel: { type: 'cell', mode: 'single' },
@@ -229,7 +219,6 @@
 					handleCellClick(event, ui);
 				},
 				complete: function() {
-					// 렌더링 완료 후 체크박스 이벤트 바인딩
 					setTimeout(function() {
 						bindCheckboxEvents();
 						updateCheckboxStates();
@@ -307,74 +296,24 @@
 				}
 			},
 			{
-				dataIndx: 'org_code',
-				title: '조직코드',
-				width: 150,
-				editable: false,
-				render: function(ui) {
-					return `<code>${ui.cellData || ''}</code>`;
-				}
-			},
-			{
-				dataIndx: 'org_rep',
-				title: '대표자',
-				width: 100,
-				align: 'center',
-				editable: false,
-				render: function(ui) {
-					return ui.cellData || '<span class="text-muted">-</span>';
-				}
-			},
-			{
-				dataIndx: 'org_manager',
-				title: '담당자',
-				width: 100,
-				align: 'center',
-				editable: false,
-				render: function(ui) {
-					return ui.cellData || '<span class="text-muted">-</span>';
-				}
-			},
-			{
-				dataIndx: 'org_phone',
-				title: '연락처',
-				width: 120,
-				align: 'center',
-				editable: false,
-				render: function(ui) {
-					return ui.cellData || '<span class="text-muted">-</span>';
-				}
-			},
-			{
-				dataIndx: 'org_address',
-				title: '주소',
-				width: 280,
-				editable: false,
-				render: function(ui) {
-					const address = ui.cellData || '';
-					const addressDetail = ui.rowData.org_address_detail || '';
-					const postNo = ui.rowData.org_address_postno || '';
-
-					if (!address && !addressDetail && !postNo) {
-						return '<span class="text-muted">주소 정보 없음</span>';
-					}
-
-					let fullAddress = '';
-					if (postNo) fullAddress += `(${postNo}) `;
-					if (address) fullAddress += address;
-					if (addressDetail) fullAddress += ` ${addressDetail}`;
-
-					return `<small title="${fullAddress}">${fullAddress}</small>`;
-				}
-			},
-			{
 				dataIndx: 'org_tag',
 				title: '태그',
 				width: 150,
 				editable: false,
 				render: function(ui) {
 					if (ui.cellData) {
-						const tags = ui.cellData.split(',').map(tag => tag.trim()).filter(tag => tag);
+						let tags = [];
+						try {
+							const parsed = JSON.parse(ui.cellData);
+							if (Array.isArray(parsed)) {
+								tags = parsed;
+							} else {
+								tags = ui.cellData.split(',').map(tag => tag.trim()).filter(tag => tag);
+							}
+						} catch(e) {
+							tags = ui.cellData.split(',').map(tag => tag.trim()).filter(tag => tag);
+						}
+
 						if (tags.length > 0) {
 							return tags.map(tag => `<span class="badge bg-primary me-1">${tag}</span>`).join('');
 						}
@@ -383,16 +322,12 @@
 				}
 			},
 			{
-				dataIndx: 'org_desc',
-				title: '설명',
-				width: 200,
+				dataIndx: 'org_code',
+				title: '조직코드',
+				width: 150,
 				editable: false,
 				render: function(ui) {
-					if (ui.cellData) {
-						const shortDesc = ui.cellData.length > 50 ? ui.cellData.substring(0, 50) + '...' : ui.cellData;
-						return `<span title="${ui.cellData}">${shortDesc}</span>`;
-					}
-					return '<span class="text-muted">설명 없음</span>';
+					return `<code>${ui.cellData || ''}</code>`;
 				}
 			},
 			{
@@ -436,11 +371,8 @@
 	 * 셀 클릭 처리
 	 */
 	function handleCellClick(event, ui) {
-		// 체크박스 컬럼(첫 번째 컬럼) 클릭 시
 		if (ui.colIndx === 0) {
 			const target = event.originalEvent.target;
-
-			// 체크박스를 직접 클릭하지 않은 경우 체크박스 토글
 			if (!$(target).hasClass('org-checkbox')) {
 				const orgId = ui.rowData.org_id;
 				const checkbox = $(`.org-checkbox[data-org-id="${orgId}"]`);
@@ -448,35 +380,300 @@
 					checkbox.prop('checked', !checkbox.prop('checked')).trigger('change');
 				}
 			}
+		} else {
+			const orgId = ui.rowData.org_id;
+			if (orgId) {
+				openOrgOffcanvas(orgId);
+			}
 		}
+	}
+
+	/**
+	 * 조직 정보 수정 offcanvas 열기
+	 */
+	function openOrgOffcanvas(orgId) {
+		console.log('openOrgOffcanvas 호출, orgId:', orgId);
+		showOffcanvasSpinner();
+
+		// 단계별로 처리
+		loadOrgDetail(orgId)
+			.then(function(orgData) {
+				return Promise.all([
+					loadCategoryOptions(),
+					initializeTagSelect(),
+					Promise.resolve(orgData)
+				]);
+			})
+			.then(function(results) {
+				const orgData = results[2];
+				populateOrgForm(orgData);
+				hideOffcanvasSpinner();
+				$('#orgOffcanvas').offcanvas('show');
+			})
+			.catch(function(error) {
+				console.error('offcanvas 로드 실패:', error);
+				hideOffcanvasSpinner();
+				showToast('조직 정보를 불러오는 중 오류가 발생했습니다', 'error');
+			});
+	}
+
+	/**
+	 * 조직 상세 정보 로드
+	 */
+	function loadOrgDetail(orgId) {
+		return new Promise(function(resolve, reject) {
+			$.ajax({
+				url: '/mng/mng_org/get_org_detail',
+				type: 'GET',
+				data: { org_id: orgId },
+				dataType: 'json',
+				success: function(response) {
+					console.log('조직 상세 정보 응답:', response);
+					if (response && response.success && response.data) {
+						resolve(response.data);
+					} else {
+						reject(new Error(response.message || '조직 정보를 불러올 수 없습니다'));
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('조직 상세 정보 로드 실패:', {
+						status: status,
+						error: error,
+						responseText: xhr.responseText,
+						statusCode: xhr.status
+					});
+					reject(new Error('조직 정보 로드 중 서버 오류가 발생했습니다'));
+				}
+			});
+		});
+	}
+
+	/**
+	 * 카테고리 옵션 로드
+	 */
+	function loadCategoryOptions() {
+		return new Promise(function(resolve, reject) {
+			$.ajax({
+				url: '/mng/mng_org/get_category_list',
+				type: 'GET',
+				dataType: 'json',
+				success: function(response) {
+					console.log('카테고리 목록 응답:', response);
+					const categorySelect = $('#edit_category_idx');
+					categorySelect.empty().append('<option value="">카테고리 선택</option>');
+
+					if (response && response.success && response.data && Array.isArray(response.data)) {
+						response.data.forEach(function(category) {
+							categorySelect.append(`<option value="${category.category_idx}">${category.category_name}</option>`);
+						});
+					}
+					resolve();
+				},
+				error: function(xhr, status, error) {
+					console.warn('카테고리 목록 로드 실패:', error);
+					resolve(); // 카테고리 로드 실패해도 계속 진행
+				}
+			});
+		});
+	}
+
+	/**
+	 * 태그 Select2 초기화
+	 */
+	function initializeTagSelect() {
+		return new Promise(function(resolve, reject) {
+			// 기존 Select2 인스턴스 제거
+			if ($('#edit_org_tag').hasClass('select2-hidden-accessible')) {
+				$('#edit_org_tag').select2('destroy');
+			}
+
+			// 기존 태그 목록 로드
+			loadExistingTags()
+				.then(function() {
+					// Select2 초기화
+					$('#edit_org_tag').select2({
+						width: '100%',
+						placeholder: '태그를 선택하거나 입력하세요',
+						allowClear: true,
+						tags: true,
+						tokenSeparators: [',', ' '],
+						createTag: function(params) {
+							const term = $.trim(params.term);
+							if (term === '' || term.length < 2) {
+								return null;
+							}
+							return {
+								id: term,
+								text: term,
+								newTag: true
+							};
+						},
+						templateResult: function(tag) {
+							if (tag.newTag) {
+								return $('<span class="text-primary"><i class="bi bi-plus-circle me-1"></i>' + tag.text + ' (새 태그)</span>');
+							}
+							return tag.text;
+						},
+						templateSelection: function(tag) {
+							return tag.text;
+						}
+					});
+					resolve();
+				})
+				.catch(function(error) {
+					console.warn('태그 초기화 실패:', error);
+					resolve(); // 태그 초기화 실패해도 계속 진행
+				});
+		});
+	}
+
+	/**
+	 * 기존 태그 목록 로드
+	 */
+	function loadExistingTags() {
+		return new Promise(function(resolve, reject) {
+			$.ajax({
+				url: '/mng/mng_org/get_existing_tags',
+				type: 'GET',
+				dataType: 'json',
+				success: function(response) {
+					console.log('태그 목록 응답:', response);
+					if (response && response.success && response.data) {
+						const tagSelect = $('#edit_org_tag');
+						tagSelect.empty();
+
+						response.data.forEach(function(tag) {
+							tagSelect.append(`<option value="${tag}">${tag}</option>`);
+						});
+					}
+					resolve();
+				},
+				error: function(xhr, status, error) {
+					console.warn('기존 태그 목록 로드 실패:', error);
+					resolve(); // 태그 로드 실패해도 계속 진행
+				}
+			});
+		});
+	}
+
+	/**
+	 * 조직 정보를 폼에 채우기
+	 */
+	function populateOrgForm(orgData) {
+		console.log('populateOrgForm 시작:', orgData);
+
+		// 기본 필드들
+		$('#edit_org_id').val(orgData.org_id || '');
+		$('#edit_org_name').val(orgData.org_name || '');
+		$('#edit_org_code').val(orgData.org_code || '');
+		$('#edit_org_type').val(orgData.org_type || '');
+		$('#edit_org_desc').val(orgData.org_desc || '');
+
+		// 카테고리 선택
+		setTimeout(function() {
+			if (orgData.category_idx) {
+				$('#edit_category_idx').val(orgData.category_idx);
+			}
+		}, 100);
+
+		// 태그 처리
+		setTimeout(function() {
+			if (orgData.org_tag) {
+				let tags = [];
+				try {
+					const parsed = JSON.parse(orgData.org_tag);
+					if (Array.isArray(parsed)) {
+						tags = parsed;
+					} else {
+						tags = orgData.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag);
+					}
+				} catch(e) {
+					tags = orgData.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag);
+				}
+
+				if (tags.length > 0) {
+					// 존재하지 않는 태그들 추가
+					tags.forEach(function(tag) {
+						if ($('#edit_org_tag option[value="' + tag + '"]').length === 0) {
+							$('#edit_org_tag').append(`<option value="${tag}">${tag}</option>`);
+						}
+					});
+
+					$('#edit_org_tag').val(tags).trigger('change');
+				}
+			}
+		}, 200);
+
+		// 제목 업데이트
+		$('#orgOffcanvasLabel').text(`조직 정보 수정 - ${orgData.org_name}`);
+	}
+
+	/**
+	 * 조직 정보 저장
+	 */
+	function saveOrgInfo() {
+		const orgName = $('#edit_org_name').val().trim();
+		if (!orgName) {
+			showToast('조직명을 입력해주세요', 'warning');
+			$('#edit_org_name').focus();
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append('org_id', $('#edit_org_id').val());
+		formData.append('org_name', $('#edit_org_name').val());
+		formData.append('org_type', $('#edit_org_type').val());
+		formData.append('org_desc', $('#edit_org_desc').val());
+		formData.append('category_idx', $('#edit_category_idx').val());
+
+		const selectedTags = $('#edit_org_tag').val() || [];
+		formData.append('org_tag', JSON.stringify(selectedTags));
+
+		$('#saveOrgBtn').prop('disabled', true);
+
+		$.ajax({
+			url: '/mng/mng_org/update_org',
+			type: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			dataType: 'json',
+			success: function(response) {
+				$('#saveOrgBtn').prop('disabled', false);
+				showToast(response.message, response.success ? 'success' : 'error');
+
+				if (response.success) {
+					$('#orgOffcanvas').offcanvas('hide');
+					loadOrgList();
+				}
+			},
+			error: function() {
+				$('#saveOrgBtn').prop('disabled', false);
+				showToast('조직 정보 저장 중 오류가 발생했습니다', 'error');
+			}
+		});
 	}
 
 	/**
 	 * 체크박스 이벤트 바인딩
 	 */
 	function bindCheckboxEvents() {
-		// 기존 이벤트 제거
 		$(document).off('change', '#selectAllOrgs');
 		$(document).off('change', '.org-checkbox');
 
-		// 전체 선택 체크박스 이벤트
 		$(document).on('change', '#selectAllOrgs', function(e) {
 			e.stopPropagation();
-
 			const isChecked = $(this).is(':checked');
 			const wasIndeterminate = $(this).prop('indeterminate');
 
-			// indeterminate 상태에서는 전체 선택으로
 			if (wasIndeterminate) {
 				$(this).prop('indeterminate', false);
 				$(this).prop('checked', true);
 			}
 
-			// 모든 개별 체크박스 상태 변경
 			$('.org-checkbox').each(function() {
 				const orgId = parseInt($(this).data('org-id'));
 				const shouldCheck = wasIndeterminate || isChecked;
-
 				$(this).prop('checked', shouldCheck);
 
 				if (shouldCheck) {
@@ -489,10 +686,8 @@
 			updateSelectedCount();
 		});
 
-		// 개별 체크박스 이벤트
 		$(document).on('change', '.org-checkbox', function(e) {
 			e.stopPropagation();
-
 			const orgId = parseInt($(this).data('org-id'));
 			const isChecked = $(this).is(':checked');
 
@@ -508,7 +703,7 @@
 	}
 
 	/**
-	 * 전체 선택 체크박스 상태 업데이트 (indeterminate 포함)
+	 * 전체 선택 체크박스 상태 업데이트
 	 */
 	function updateSelectAllCheckboxState() {
 		const totalCheckboxes = $('.org-checkbox').length;
@@ -528,7 +723,7 @@
 	}
 
 	/**
-	 * 체크박스 상태들 업데이트
+	 * 체크박스 상태 업데이트
 	 */
 	function updateCheckboxStates() {
 		updateSelectAllCheckboxState();
@@ -549,8 +744,6 @@
 	 */
 	function loadOrgList() {
 		showGridSpinner();
-
-		// 체크박스 상태 초기화
 		checkedOrgIds.clear();
 
 		const requestData = {};
@@ -567,16 +760,13 @@
 				hideGridSpinner();
 
 				if (response.success) {
-					// 데이터 업데이트
 					orgGrid.pqGrid("option", "dataModel.data", response.data || []);
 					orgGrid.pqGrid("refreshDataAndView");
 
-					// 체크박스 상태 초기화
 					setTimeout(function() {
 						$('#selectAllOrgs').prop('checked', false).prop('indeterminate', false);
 						updateSelectedCount();
 					}, 100);
-
 				} else {
 					showToast('조직 목록 로딩에 실패했습니다', 'error');
 				}
@@ -593,13 +783,10 @@
 	 * 전역 이벤트 바인딩
 	 */
 	function bindGlobalEvents() {
-		// 선택삭제 버튼
 		$('#btnDeleteOrg').on('click', showDeleteModal);
-
-		// 삭제 확인 버튼
 		$('#confirmDeleteOrgBtn').on('click', executeDelete);
+		$('#saveOrgBtn').on('click', saveOrgInfo);
 
-		// 윈도우 리사이즈 이벤트
 		$(window).on('resize', debounce(function() {
 			if (orgGrid) {
 				try {
@@ -622,7 +809,6 @@
 			return;
 		}
 
-		// 삭제할 조직 목록 HTML 생성
 		const deleteListHtml = selectedOrgs.map(org => `
           <li class="list-group-item d-flex justify-content-between align-items-center">
              <div>
@@ -645,7 +831,6 @@
 
 		if (orgGrid) {
 			const gridData = orgGrid.pqGrid('option', 'dataModel.data');
-
 			checkedOrgIds.forEach(orgId => {
 				const orgData = gridData.find(row => row.org_id === orgId);
 				if (orgData) {
@@ -675,11 +860,10 @@
 			dataType: 'json',
 			success: function(response) {
 				$('#deleteOrgModal').modal('hide');
-
 				showToast(response.message, response.success ? 'success' : 'error');
 
 				if (response.success) {
-					loadOrgList(); // 목록 새로고침
+					loadOrgList();
 				}
 			},
 			error: function() {
@@ -762,6 +946,16 @@
 
 	function hideGridSpinner() {
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
+	}
+
+	function showOffcanvasSpinner() {
+		$('#orgOffcanvasSpinner').show();
+		$('#orgForm').hide();
+	}
+
+	function hideOffcanvasSpinner() {
+		$('#orgOffcanvasSpinner').hide();
+		$('#orgForm').show();
 	}
 
 	/**
