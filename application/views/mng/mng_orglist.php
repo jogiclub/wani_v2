@@ -183,9 +183,10 @@ $this->load->view('mng/footer');
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-<script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
-<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
-<script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.2/split.min.js"></script>
+<!-- Fancytree 라이브러리를 무결성 검증 없이 로드 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pqGrid/3.5.1/pqgrid.min.js"></script>
 
 <!-- baseUrl 설정을 위한 스크립트 -->
 <script>
