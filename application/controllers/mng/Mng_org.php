@@ -54,7 +54,7 @@ class Mng_org extends CI_Controller
 
 
 	/**
-	 * 조직 목록 조회 (AJAX)
+	 * 조직 목록 조회 (AJAX) - 하위 카테고리 포함
 	 */
 	public function get_org_list()
 	{
@@ -64,12 +64,18 @@ class Mng_org extends CI_Controller
 
 		$category_idx = $this->input->get('category_idx');
 
-		// 미분류 타입 처리
-		if ($category_idx === 'uncategorized') {
-			$category_idx = null;
+		// 전체 선택인 경우 (category_idx가 없음) - 미분류 제외하고 모든 조직 조회
+		if ($category_idx === null || $category_idx === '') {
+			$orgs = $this->Org_model->get_all_orgs_except_uncategorized();
 		}
-
-		$orgs = $this->Org_model->get_orgs_by_category_detailed($category_idx);
+		// 미분류 선택인 경우
+		else if ($category_idx === 'uncategorized') {
+			$orgs = $this->Org_model->get_orgs_by_category_detailed(null);
+		}
+		// 특정 카테고리 선택인 경우 - 하위 카테고리 포함
+		else {
+			$orgs = $this->Org_model->get_orgs_by_category_with_children($category_idx);
+		}
 
 		header('Content-Type: application/json; charset=utf-8');
 		echo json_encode(array(
@@ -287,7 +293,7 @@ class Mng_org extends CI_Controller
 	}
 
 	/**
-	 * 카테고리 목록 조회 (AJAX)
+	 * 카테고리 목록 조회 (AJAX) - 선택박스용 계층구조
 	 */
 	public function get_category_list()
 	{
@@ -296,7 +302,8 @@ class Mng_org extends CI_Controller
 		}
 
 		try {
-			$categories = $this->Org_category_model->get_all_categories_flat();
+			// 계층구조가 표현된 카테고리 목록 조회
+			$categories = $this->Org_category_model->get_categories_for_select();
 
 			header('Content-Type: application/json; charset=utf-8');
 			echo json_encode(array(
@@ -671,6 +678,24 @@ class Mng_org extends CI_Controller
 				'message' => '조직 삭제 중 오류가 발생했습니다.'
 			));
 		}
+	}
+
+	/**
+	 * 전체 조직 수 조회 (AJAX)
+	 */
+	public function get_total_org_count()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$total_count = $this->Org_category_model->get_total_categorized_org_count();
+
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(array(
+			'success' => true,
+			'total_count' => $total_count
+		));
 	}
 
 }

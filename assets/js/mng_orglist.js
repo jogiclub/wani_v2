@@ -108,14 +108,25 @@
 	function initFancytree() {
 		showTreeSpinner();
 
-		$.ajax({
-			url: '/mng/mng_org/get_category_tree',
-			type: 'GET',
-			dataType: 'json',
-			success: function(response) {
-				try {
-					const totalOrgCount = calculateTotalOrgs(response);
-					const treeData = [{
+		// 전체 조직 수와 카테고리 트리를 별도로 조회
+		Promise.all([
+			$.get('/mng/mng_org/get_category_tree'),
+			$.get('/mng/mng_org/get_total_org_count')
+		]).then(function(results) {
+			const treeResponse = results[0];
+			const totalCountResponse = results[1];
+
+			try {
+				// 미분류 노드를 별도로 추출
+				const uncategorizedNode = treeResponse.find(node => node.data && node.data.type === 'uncategorized');
+				const categoryNodes = treeResponse.filter(node => !node.data || node.data.type !== 'uncategorized');
+
+				// 서버에서 계산된 전체 조직 수 사용
+				const totalOrgCount = totalCountResponse.total_count || 0;
+
+				// 트리 데이터 구성
+				const treeData = [
+					{
 						key: 'all',
 						title: `전체 (${totalOrgCount}개)`,
 						folder: true,
@@ -125,57 +136,68 @@
 							category_idx: null,
 							category_name: '전체'
 						},
-						children: response
-					}];
-
-					treeInstance = $("#categoryTree").fancytree({
-						source: treeData,
-						activate: function(event, data) {
-							handleTreeNodeActivate(data.node);
-						},
-						selectMode: 1
-					});
-
-					hideTreeSpinner();
-
-					const tree = $.ui.fancytree.getTree('#categoryTree');
-					const firstNode = tree.getNodeByKey('all');
-					if (firstNode) {
-						firstNode.setActive();
+						children: categoryNodes
 					}
+				];
 
-					console.log('Fancytree 초기화 완료');
-				} catch(error) {
-					hideTreeSpinner();
-					console.error('Fancytree 데이터 처리 실패:', error);
-					showToast('카테고리 트리 초기화에 실패했습니다', 'error');
+				// 미분류는 항상 추가
+				if (uncategorizedNode) {
+					treeData.push(uncategorizedNode);
 				}
-			},
-			error: function(xhr, status, error) {
+
+				treeInstance = $("#categoryTree").fancytree({
+					source: treeData,
+					activate: function(event, data) {
+						handleTreeNodeActivate(data.node);
+					},
+					selectMode: 1
+				});
+
 				hideTreeSpinner();
-				console.error('카테고리 트리 로드 실패:', error);
-				showToast('카테고리 목록을 불러올 수 없습니다', 'error');
+
+				const tree = $.ui.fancytree.getTree('#categoryTree');
+				const firstNode = tree.getNodeByKey('all');
+				if (firstNode) {
+					firstNode.setActive();
+				}
+
+				console.log('Fancytree 초기화 완료');
+			} catch(error) {
+				hideTreeSpinner();
+				console.error('Fancytree 데이터 처리 실패:', error);
+				showToast('카테고리 트리 초기화에 실패했습니다', 'error');
 			}
+		}).catch(function(error) {
+			hideTreeSpinner();
+			console.error('카테고리 트리 로드 실패:', error);
+			showToast('카테고리 목록을 불러올 수 없습니다', 'error');
 		});
 	}
 
 	/**
-	 * 전체 조직 수 계산
+	 * 전체 조직 수 계산 (미분류 제외, 중복 제거)
 	 */
 	function calculateTotalOrgs(categories) {
+		// 단순히 직접 속한 조직만 합산 (하위 카테고리는 제외)
 		let total = 0;
-		function countOrgs(items) {
+		function countDirectOrgs(items) {
 			if (!items || !Array.isArray(items)) return;
 			items.forEach(item => {
-				if (item.data && item.data.org_count) {
+				// 미분류 타입은 제외하고, 직접 속한 조직 수만 합산
+				if (item.data && item.data.type !== 'uncategorized' && item.data.direct_org_count !== undefined) {
+					total += parseInt(item.data.direct_org_count) || 0;
+				} else if (item.data && item.data.type !== 'uncategorized' && item.data.org_count !== undefined) {
+					// direct_org_count가 없으면 org_count 사용 (하위 포함이 아닌 직접 조직 수)
 					total += parseInt(item.data.org_count) || 0;
 				}
+
+				// 하위 카테고리도 재귀적으로 처리
 				if (item.children) {
-					countOrgs(item.children);
+					countDirectOrgs(item.children);
 				}
 			});
 		}
-		countOrgs(categories);
+		countDirectOrgs(categories);
 		return total;
 	}
 
@@ -189,9 +211,12 @@
 			if (nodeData.type === 'uncategorized') {
 				selectedCategoryIdx = 'uncategorized';
 				selectedCategoryName = '미분류';
+			} else if (nodeData.type === 'all') {
+				selectedCategoryIdx = null; // 전체 선택 시 null로 설정 (미분류 제외)
+				selectedCategoryName = '전체';
 			} else {
 				selectedCategoryIdx = nodeData.category_idx;
-				selectedCategoryName = nodeData.type === 'all' ? '전체' : nodeData.category_name;
+				selectedCategoryName = nodeData.category_name;
 			}
 			updateSelectedTitle();
 			loadOrgList();
@@ -463,6 +488,7 @@
 		}
 	}
 
+
 	/**
 	 * 조직 정보 수정 offcanvas 열기
 	 */
@@ -473,6 +499,7 @@
 		// 단계별로 처리
 		loadOrgDetail(orgId)
 			.then(function(orgData) {
+				console.log('조직 데이터 로드 완료:', orgData);
 				return Promise.all([
 					loadCategoryOptions(),
 					initializeTagSelect(),
@@ -480,10 +507,17 @@
 				]);
 			})
 			.then(function(results) {
+				console.log('모든 옵션 로드 완료');
 				const orgData = results[2];
+
+				// 폼 데이터 설정
 				populateOrgForm(orgData);
+
+				// 스피너 숨기고 offcanvas 표시
 				hideOffcanvasSpinner();
 				$('#orgOffcanvas').offcanvas('show');
+
+				console.log('offcanvas 표시 완료');
 			})
 			.catch(function(error) {
 				console.error('offcanvas 로드 실패:', error);
@@ -539,6 +573,7 @@
 
 					if (response && response.success && response.data && Array.isArray(response.data)) {
 						response.data.forEach(function(category) {
+							// 계층구조가 이미 category_name에 포함되어 있음 (들여쓰기 적용됨)
 							categorySelect.append(`<option value="${category.category_idx}">${category.category_name}</option>`);
 						});
 					}
@@ -637,50 +672,111 @@
 	function populateOrgForm(orgData) {
 		console.log('populateOrgForm 시작:', orgData);
 
-		// 기본 필드들
-		$('#edit_org_id').val(orgData.org_id || '');
-		$('#edit_org_name').val(orgData.org_name || '');
-		$('#edit_org_code').val(orgData.org_code || '');
-		$('#edit_org_type').val(orgData.org_type || '');
-		$('#edit_org_desc').val(orgData.org_desc || '');
+		try {
+			// 기본 필드들 - 안전하게 값 설정
+			const setFieldValue = (id, value) => {
+				const element = $(`#${id}`);
+				if (element.length > 0) {
+					element.val(value || '');
+					console.log(`${id} 설정:`, value);
+				} else {
+					console.warn(`요소를 찾을 수 없음: ${id}`);
+				}
+			};
 
-		// 카테고리 선택
-		setTimeout(function() {
-			if (orgData.category_idx) {
-				$('#edit_category_idx').val(orgData.category_idx);
+			// 기본 정보 설정
+			setFieldValue('edit_org_id', orgData.org_id);
+			setFieldValue('edit_org_name', orgData.org_name);
+			setFieldValue('edit_org_code', orgData.org_code);
+			setFieldValue('edit_org_type', orgData.org_type);
+			setFieldValue('edit_org_desc', orgData.org_desc);
+
+			// 담당자 정보 - API 응답에 있는 필드들만 설정
+			setFieldValue('edit_org_rep', orgData.org_rep);
+			setFieldValue('edit_org_manager', orgData.org_manager);
+			setFieldValue('edit_org_phone', orgData.org_phone);
+
+			// 주소 정보
+			setFieldValue('edit_org_address_postno', orgData.org_address_postno);
+			setFieldValue('edit_org_address', orgData.org_address);
+			setFieldValue('edit_org_address_detail', orgData.org_address_detail);
+
+			// 카테고리 선택 - 지연 처리
+			setTimeout(function() {
+				if (orgData.category_idx) {
+					$('#edit_category_idx').val(orgData.category_idx);
+					console.log('카테고리 설정:', orgData.category_idx);
+				}
+			}, 100);
+
+			// 태그 처리 - 지연 처리
+			setTimeout(function() {
+				handleTagPopulation(orgData.org_tag);
+			}, 300);
+
+			// 제목 업데이트
+			$('#orgOffcanvasLabel').text(`조직 정보 수정 - ${orgData.org_name || '알 수 없음'}`);
+
+			console.log('populateOrgForm 완료');
+
+		} catch (error) {
+			console.error('populateOrgForm 오류:', error);
+			showToast('폼 데이터 설정 중 오류가 발생했습니다', 'error');
+		}
+	}
+
+
+	/**
+	 * 태그 설정 처리
+	 */
+	function handleTagPopulation(orgTagData) {
+		console.log('태그 설정 시작:', orgTagData);
+
+		try {
+			if (!orgTagData) {
+				console.log('태그 데이터 없음');
+				return;
 			}
-		}, 100);
 
-		// 태그 처리
-		setTimeout(function() {
-			if (orgData.org_tag) {
-				let tags = [];
+			let tags = [];
+
+			// JSON 문자열인 경우 파싱
+			if (typeof orgTagData === 'string') {
 				try {
-					const parsed = JSON.parse(orgData.org_tag);
+					const parsed = JSON.parse(orgTagData);
 					if (Array.isArray(parsed)) {
 						tags = parsed;
 					} else {
-						tags = orgData.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag);
+						// 콤마로 분리된 문자열인 경우
+						tags = orgTagData.split(',').map(tag => tag.trim()).filter(tag => tag);
 					}
 				} catch(e) {
-					tags = orgData.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag);
+					console.warn('JSON 파싱 실패, 문자열로 처리:', e);
+					tags = orgTagData.split(',').map(tag => tag.trim()).filter(tag => tag);
 				}
-
-				if (tags.length > 0) {
-					// 존재하지 않는 태그들 추가
-					tags.forEach(function(tag) {
-						if ($('#edit_org_tag option[value="' + tag + '"]').length === 0) {
-							$('#edit_org_tag').append(`<option value="${tag}">${tag}</option>`);
-						}
-					});
-
-					$('#edit_org_tag').val(tags).trigger('change');
-				}
+			} else if (Array.isArray(orgTagData)) {
+				tags = orgTagData;
 			}
-		}, 200);
 
-		// 제목 업데이트
-		$('#orgOffcanvasLabel').text(`조직 정보 수정 - ${orgData.org_name}`);
+			console.log('처리된 태그 배열:', tags);
+
+			if (tags.length > 0) {
+				// 존재하지 않는 태그들을 옵션에 추가
+				tags.forEach(function(tag) {
+					if ($(`#edit_org_tag option[value="${tag}"]`).length === 0) {
+						$('#edit_org_tag').append(`<option value="${tag}">${tag}</option>`);
+						console.log('태그 옵션 추가:', tag);
+					}
+				});
+
+				// 태그 선택
+				$('#edit_org_tag').val(tags).trigger('change');
+				console.log('태그 선택 완료:', tags);
+			}
+
+		} catch (error) {
+			console.error('태그 설정 오류:', error);
+		}
 	}
 
 	/**
@@ -963,7 +1059,7 @@
 	 * 선택된 제목 업데이트
 	 */
 	function updateSelectedTitle() {
-		$('#selectedOrgName').html(`<i class="bi bi-building"></i> ${selectedCategoryName}`);
+		$('#selectedOrgName').html(`${selectedCategoryName}`);
 	}
 
 	/**

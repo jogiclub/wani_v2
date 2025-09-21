@@ -1003,19 +1003,33 @@ function initializePastoralGrid() {
  * 그룹출석 체크박스 이벤트 바인딩
  */
 function bindPastoralCheckboxEvents() {
-	$(document).off('change', '.pastoral-checkbox').on('change', '.pastoral-checkbox', function(e) {
-		e.stopPropagation();
+	// 기존 이벤트 제거
+	$(document).off('change click touchend', '.pastoral-checkbox');
 
-		var checked = $(this).is(':checked');
-		var rowIndx = parseInt($(this).data('row-indx'));
-		var memberIdx = $(this).data('member-idx');
-		var attTypeIdx = $(this).data('att-type-idx');
+	// 다중 이벤트 바인딩으로 모바일 호환성 개선
+	$(document).on('change click touchend', '.pastoral-checkbox', function(e) {
+		e.stopPropagation();
+		e.preventDefault();
+
+		var $checkbox = $(this);
+		var checked = !$checkbox.is(':checked'); // 토글 상태
+		var rowIndx = parseInt($checkbox.data('row-indx'));
+		var memberIdx = $checkbox.data('member-idx');
+		var attTypeIdx = $checkbox.data('att-type-idx');
+
+		// 체크박스 상태 직접 변경
+		$checkbox.prop('checked', checked);
 
 		try {
 			var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
 			if (gridData && gridData[rowIndx]) {
 				gridData[rowIndx]["att_type_" + attTypeIdx] = checked;
 				pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+
+				// 그리드 새로고침 (모바일에서 UI 업데이트 보장)
+				setTimeout(function() {
+					pastoralGrid.pqGrid("refreshDataAndView");
+				}, 50);
 			}
 		} catch (error) {
 			console.error('체크박스 데이터 업데이트 실패:', error);

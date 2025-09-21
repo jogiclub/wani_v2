@@ -387,7 +387,6 @@ $(document).ready(function () {
 	 * ParamQuery Grid 초기화 - 세로 hover 적용
 	 */
 	function initializeParamQuery() {
-
 		showGridSpinner();
 
 		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -401,16 +400,25 @@ $(document).ready(function () {
 				colModel: getInitialColumns(),
 				selectionModel: {type: '', mode: 'single'},
 				scrollModel: {autoFit: false, horizontal: true, vertical: true},
-				freezeCols: isMobile ? 0 : 3,  // 모바일에서는 0, 데스크톱에서는 4
+				freezeCols: isMobile ? 0 : 3,  // 모바일에서는 0, 데스크톱에서는 3
 				numberCell: {show: false},
 				title: false,
 				resizable: true,
 				sortable: false,
-				hoverMode: 'cell',  // 'row' → 'column'으로 변경
+				hoverMode: 'cell',
 				wrap: false,
 				columnBorders: true,
+				// 모바일 터치 개선을 위한 이벤트 추가
 				cellClick: function (event, ui) {
 					handleGridCellClick(event, ui);
+				},
+				// 터치 디바이스를 위한 추가 이벤트
+				touch: isMobile,
+				cellDblClick: function(event, ui) {
+					// 더블 클릭도 단일 클릭과 동일하게 처리 (모바일에서 실수 방지)
+					if (isMobile) {
+						handleGridCellClick(event, ui);
+					}
 				},
 				// 마우스오버 시 커서 변경을 위한 이벤트 추가
 				cellMouseEnter: function(event, ui) {
@@ -703,7 +711,7 @@ $(document).ready(function () {
 	}
 
 
-
+	
 
 	/**
 	 * 그리드 데이터 준비 - 실제 포인트 합계 계산

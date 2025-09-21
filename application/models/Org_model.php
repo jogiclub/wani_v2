@@ -171,6 +171,98 @@ class Org_model extends CI_Model {
 
 
 
+
+	/**
+	 * 미분류를 제외한 모든 조직 조회 (전체 선택용)
+	 */
+	public function get_all_orgs_except_uncategorized()
+	{
+		$this->db->select('
+        o.org_id,
+        o.org_code,
+        o.org_name,
+        o.org_type,
+        o.org_desc,
+        o.org_rep,
+        o.org_manager,
+        o.org_phone,
+        o.org_address_postno,
+        o.org_address,
+        o.org_address_detail,
+        o.org_tag,
+        o.org_icon,
+        o.category_idx,
+        o.regi_date,
+        o.modi_date,
+        oc.category_name,
+        COUNT(m.member_idx) as member_count
+    ');
+
+		$this->db->from('wb_org o');
+		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
+		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->where('o.del_yn', 'N');
+
+		// 미분류 제외 (category_idx가 null이 아닌 조직들만)
+		$this->db->where('o.category_idx IS NOT NULL');
+		$this->db->where('o.category_idx >', 0);
+
+		$this->db->group_by('o.org_id');
+		$this->db->order_by('o.regi_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+
+	/**
+	 * 특정 카테고리와 모든 하위 카테고리의 조직 목록 조회
+	 */
+	public function get_orgs_by_category_with_children($category_idx)
+	{
+		// 모든 하위 카테고리 ID 조회
+		$this->load->model('Org_category_model');
+		$child_category_ids = $this->Org_category_model->get_all_child_category_ids($category_idx);
+
+		// 현재 카테고리도 포함
+		$category_ids = array_merge(array($category_idx), $child_category_ids);
+
+		$this->db->select('
+        o.org_id,
+        o.org_code,
+        o.org_name,
+        o.org_type,
+        o.org_desc,
+        o.org_rep,
+        o.org_manager,
+        o.org_phone,
+        o.org_address_postno,
+        o.org_address,
+        o.org_address_detail,
+        o.org_tag,
+        o.org_icon,
+        o.category_idx,
+        o.regi_date,
+        o.modi_date,
+        oc.category_name,
+        COUNT(m.member_idx) as member_count
+    ');
+
+		$this->db->from('wb_org o');
+		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
+		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where_in('o.category_idx', $category_ids);
+
+		$this->db->group_by('o.org_id');
+		$this->db->order_by('o.regi_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
 	/**
 	 * 카테고리별 조직 목록 조회 (상세 정보 포함)
 	 */
