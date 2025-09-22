@@ -1129,7 +1129,6 @@ $(document).ready(function () {
 	 * 그리드 옵션 생성 (개선된 버전)
 	 */
 	function createGridOptions() {
-
 		showGridSpinner();
 
 		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -1152,7 +1151,7 @@ $(document).ready(function () {
 				horizontal: true,
 				vertical: true
 			},
-			freezeCols: isMobile ? 0 : 4,  // 모바일에서는 0, 데스크톱에서는 4
+			freezeCols: isMobile ? 0 : 4,
 			numberCell: { show: false },
 			title: false,
 			resizable: true,
@@ -1163,15 +1162,76 @@ $(document).ready(function () {
 			cellClick: function(event, ui) {
 				handleGridCellClick(event, ui);
 			},
-			// 렌더링 완료 후 중복 체크박스 처리
+			// 모바일 터치 지원을 위한 추가 이벤트
+			cellDblClick: function(event, ui) {
+				// 더블클릭도 동일하게 처리
+				handleGridCellClick(event, ui);
+			},
+			// 그리드 렌더링 완료 후 모바일 터치 이벤트 바인딩
 			complete: function() {
 				setTimeout(function() {
 					removeDuplicateCheckboxes();
+					bindMobileTouchEvents(); // 모바일 터치 이벤트 추가
 				}, 100);
 			}
 		};
 	}
 
+	/**
+	 * 모바일 터치 이벤트 바인딩 - ParamQuery Grid 우회
+	 */
+	function bindMobileTouchEvents() {
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+			|| window.innerWidth <= 768;
+
+		if (!isMobile) return;
+
+		// 그리드 컨테이너에 직접 터치 이벤트 바인딩
+		$('#memberGrid').off('touchend.mobile click.mobile')
+			.on('touchend.mobile click.mobile', 'td', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				const $cell = $(this);
+				const $row = $cell.closest('tr');
+
+				// 행 인덱스 찾기
+				const rowIndex = $row.index();
+				if (rowIndex < 0) return;
+
+				// 컬럼 인덱스 찾기
+				const cellIndex = $cell.index();
+
+				try {
+					// 그리드 데이터에서 해당 행 정보 가져오기
+					const gridData = memberGrid.pqGrid("option", "dataModel.data");
+					const rowData = gridData[rowIndex];
+
+					if (rowData) {
+						console.log('Mobile touch event triggered:', {
+							cellIndex: cellIndex,
+							rowIndex: rowIndex,
+							memberIdx: rowData.member_idx
+						});
+
+						// 체크박스 컬럼인 경우 (첫 번째 컬럼)
+						if (cellIndex === 0) {
+							handleCheckboxColumnClick(e, rowData.member_idx);
+						} else {
+							// 일반 셀인 경우 회원 정보 수정 창 열기
+							clearTimeout(window.memberCellClickTimeout);
+							window.memberCellClickTimeout = setTimeout(function() {
+								openMemberOffcanvas('edit', rowData);
+							}, 200);
+						}
+					}
+				} catch (error) {
+					console.error('모바일 터치 이벤트 처리 오류:', error);
+				}
+			});
+
+		console.log('Mobile touch events bound');
+	}
 
 	/**
 	 * ParamQuery Grid 컬럼 모델 생성 (수정된 버전 - 직위/직책 컬럼 추가)
@@ -1339,12 +1399,26 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 그리드 셀 클릭 처리 (수정된 버전)
+	 * 그리드 셀 클릭 처리 - 모바일/PC 통합 개선
 	 */
 	function handleGridCellClick(event, ui) {
+		console.log('Grid cell click triggered:', {
+			colIndx: ui.colIndx,
+			eventType: event.type || 'unknown',
+			originalEventType: event.originalEvent ? event.originalEvent.type : 'no originalEvent',
+			isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+		});
+
 		const colIndx = ui.colIndx;
 		const rowData = ui.rowData;
 		const memberIdx = rowData.member_idx;
+
+		// 모바일에서는 직접 터치 이벤트로 처리되므로 중복 실행 방지
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+		if (isMobile && event.originalEvent && event.originalEvent.type === 'touchend') {
+			console.log('Skipping duplicate mobile event');
+			return;
+		}
 
 		// 체크박스 컬럼인 경우
 		if (colIndx === 0) {
@@ -1360,24 +1434,36 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 체크박스 컬럼 클릭 처리 (수정된 버전)
+	 * 체크박스 컬럼 클릭 처리 - 모바일 터치 지원 강화
 	 */
 	function handleCheckboxColumnClick(event, memberIdx) {
+		console.log('Checkbox column clicked:', {
+			memberIdx: memberIdx,
+			eventType: event.type || 'unknown',
+			target: event.target ? event.target.tagName : 'no target'
+		});
+
 		// 직접 체크박스를 클릭한 경우가 아니라면 체크박스 토글
-		if (!$(event.originalEvent.target).hasClass('member-checkbox')) {
-			const checkbox = $('.member-checkbox[data-member-idx="' + memberIdx + '"]');
-			const isCurrentlyChecked = checkbox.is(':checked');
-			checkbox.prop('checked', !isCurrentlyChecked);
+		const isDirectCheckboxClick = $(event.target).hasClass('member-checkbox') ||
+			$(event.originalEvent?.target).hasClass('member-checkbox');
 
-			// 체크박스 상태 업데이트
-			updateSelectAllCheckbox();
-			updateSelectedMemberButtons();
+		if (!isDirectCheckboxClick) {
+			const checkbox = $('.member-checkbox[data-member-idx="' + memberIdx + '"]').first();
+			if (checkbox.length > 0) {
+				const isCurrentlyChecked = checkbox.is(':checked');
+				checkbox.prop('checked', !isCurrentlyChecked);
+
+				console.log('Toggled checkbox:', {
+					memberIdx: memberIdx,
+					newState: !isCurrentlyChecked
+				});
+			}
 		}
+
+		// 체크박스 상태 업데이트
+		updateSelectAllCheckbox();
+		updateSelectedMemberButtons();
 	}
-
-	// ===== 체크박스 관련 함수들 =====
-
-
 
 	/**
 	 * 체크박스 이벤트 바인딩 (최종 개선 버전)
@@ -1854,7 +1940,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 회원 데이터 응답 처리 (중복 렌더링 방지 버전)
+	 * 회원 데이터 응답 처리 - 모바일 터치 이벤트 재바인딩 포함
 	 */
 	function handleMemberDataResponse(response) {
 		if (response.success) {
@@ -1869,7 +1955,7 @@ $(document).ready(function () {
 						memberGrid.pqGrid("option", "dataModel.data", response.data || []);
 						memberGrid.pqGrid("refreshDataAndView");
 
-						// 추가 대기 후 체크박스 처리
+						// 추가 대기 후 이벤트 처리
 						setTimeout(function() {
 							// 중복 체크박스 제거
 							removeDuplicateCheckboxes();
@@ -1881,7 +1967,8 @@ $(document).ready(function () {
 							// 체크박스 이벤트 바인딩
 							bindCheckboxEvents();
 
-
+							// 모바일 터치 이벤트 재바인딩
+							bindMobileTouchEvents();
 
 						}, 100);
 					}, 50);

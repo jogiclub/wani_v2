@@ -1,7 +1,7 @@
 <?php $this->load->view('header'); ?>
 
 <!-- Attendance CSS -->
-<link rel="stylesheet" href="/assets/css/attendance.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/weekly_statics.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
@@ -14,11 +14,11 @@
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">MEMBER</a></li>
-			<li class="breadcrumb-item active">출석관리</li>
+			<li class="breadcrumb-item active">주별통계</li>
 		</ol>
 	</nav>
 	<div class="row align-items-center justify-content-between g-3 mb-3">
-		<h3 class="page-title col-12 my-1">출석관리</h3>
+		<h3 class="page-title col-12 my-1">주별통계</h3>
 	</div>
 
 	<!-- Split.js를 위한 단일 컨테이너 -->
@@ -138,8 +138,8 @@
 		currentYear: <?php echo date('Y'); ?>
 	};
 
-	/*출석관리 메뉴 active*/
-	$('.menu-22').addClass('active');
+	/*주별통계 메뉴 active*/
+	$('.menu-31').addClass('active');
 
 </script>
-<script src="/assets/js/attendance.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/weekly_statics.js?<?php echo WB_VERSION; ?>"></script>

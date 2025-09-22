@@ -1035,6 +1035,7 @@ function bindPastoralCheckboxEvents() {
 			console.error('체크박스 데이터 업데이트 실패:', error);
 		}
 	});
+
 }
 
 /**
