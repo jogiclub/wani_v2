@@ -1,5 +1,8 @@
 'use strict'
 
+
+
+
 $(document).ready(function () {
 	// ===== 전역 변수 영역 =====
 	let attendanceGrid;                // ParamQuery Grid 인스턴스
@@ -384,7 +387,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * ParamQuery Grid 초기화 - 세로 hover 적용
+	 * ParamQuery Grid 초기화
 	 */
 	function initializeParamQuery() {
 		showGridSpinner();
@@ -395,12 +398,11 @@ $(document).ready(function () {
 		try {
 			attendanceGrid = $("#attendanceGrid").pqGrid({
 				width: "100%",
-				height: "100%",
 				dataModel: {data: []},
 				colModel: getInitialColumns(),
 				selectionModel: {type: '', mode: 'single'},
 				scrollModel: {autoFit: false, horizontal: true, vertical: true},
-				freezeCols: isMobile ? 0 : 3,  // 모바일에서는 0, 데스크톱에서는 3
+				freezeCols: isMobile ? 0 : 3,
 				numberCell: {show: false},
 				title: false,
 				resizable: true,
@@ -408,21 +410,14 @@ $(document).ready(function () {
 				hoverMode: 'cell',
 				wrap: false,
 				columnBorders: true,
-				// 모바일 터치 개선을 위한 이벤트 추가
-				cellClick: function (event, ui) {
-					handleGridCellClick(event, ui);
+
+
+				// 그리드 완성 후 직접 이벤트 바인딩
+				complete: function() {
+					// 모바일을 위한 직접 터치 이벤트 바인딩
+					bindDirectTouchEvents();
 				},
-				// 터치 디바이스를 위한 추가 이벤트
-				touch: isMobile,
-				cellDblClick: function(event, ui) {
-					// 더블 클릭도 단일 클릭과 동일하게 처리 (모바일에서 실수 방지)
-					if (isMobile) {
-						handleGridCellClick(event, ui);
-					}
-				},
-				// 마우스오버 시 커서 변경을 위한 이벤트 추가
 				cellMouseEnter: function(event, ui) {
-					// 출석 데이터 컬럼인지 확인
 					if (ui.colIndx >= 4 && ui.dataIndx && ui.dataIndx.startsWith('week_')) {
 						$(ui.$cell).css('cursor', 'pointer');
 					}
@@ -439,6 +434,66 @@ $(document).ready(function () {
 			hideGridSpinner();
 			showToast('그리드 초기화에 실패했습니다.', 'error');
 		}
+	}
+
+
+	/**
+	 * 직접 터치 이벤트 바인딩 - ParamQuery Grid 우회
+	 */
+	function bindDirectTouchEvents() {
+
+
+		// 그리드 컨테이너에 직접 터치 이벤트 바인딩
+		$('#attendanceGrid').off('touchend.attendance click.attendance')
+			.on('touchend.attendance click.attendance', 'td', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+
+				const $cell = $(this);
+				const $row = $cell.closest('tr');
+
+				// 행 인덱스 찾기
+				const rowIndex = $row.index();
+				if (rowIndex < 0) return;
+
+				// 컬럼 인덱스 찾기
+				const cellIndex = $cell.index();
+
+				// 출석 데이터 컬럼인지 확인 (4번째 컬럼부터)
+				if (cellIndex >= 4) {
+					// 그리드 데이터에서 해당 행 정보 가져오기
+					try {
+						const gridData = attendanceGrid.pqGrid("option", "dataModel.data");
+						const rowData = gridData[rowIndex];
+
+						if (rowData && rowData.member_idx) {
+							// 컬럼 모델에서 해당 컬럼의 dataIndx 찾기
+							const colModel = attendanceGrid.pqGrid("option", "colModel");
+							const colData = colModel[cellIndex];
+
+							if (colData && colData.dataIndx && colData.dataIndx.startsWith('week_')) {
+								// 일요일 날짜 추출
+								const sundayDateStr = colData.dataIndx.replace('week_', '');
+								const sunday = sundayDateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+
+								console.log('Direct touch event triggered:', {
+									memberIdx: rowData.member_idx,
+									sunday: sunday,
+									cellIndex: cellIndex,
+									rowIndex: rowIndex
+								});
+
+								// 출석 상세 열기
+								openAttendanceDetail(sunday);
+							}
+						}
+					} catch (error) {
+						console.error('직접 터치 이벤트 처리 오류:', error);
+					}
+				}
+			});
+
+		console.log('Direct touch events bound for mobile');
 	}
 
 	/**
@@ -561,42 +616,73 @@ $(document).ready(function () {
 		}
 	}
 
+
 	/**
-	 * 그리드 셀 클릭 처리 개선 - 전체 셀 영역에서 이벤트 감지
+	 * 그리드 셀 클릭 처리 - 로깅 추가
 	 */
 	function handleGridCellClick(event, ui) {
-
+		console.log('handleGridCellClick triggered:', {
+			colIndx: ui.colIndx,
+			dataIndx: ui.dataIndx,
+			memberIdx: ui.rowData ? ui.rowData.member_idx : 'no rowData',
+			eventType: event.type || 'unknown',
+			originalEventType: event.originalEvent ? event.originalEvent.type : 'no originalEvent'
+		});
 
 		// 출석 데이터가 있는 컬럼인지 확인 (week_로 시작하는 데이터 인덱스)
 		if (ui.colIndx >= 4 && ui.dataIndx && ui.dataIndx.startsWith('week_')) {
 			// 일요일 날짜 추출 (week_20250105 -> 2025-01-05)
 			const sundayDateStr = ui.dataIndx.replace('week_', '');
 			const sunday = sundayDateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
-
 			const memberIdx = ui.rowData.member_idx;
 
-
+			console.log('Week column clicked:', {
+				memberIdx: memberIdx,
+				sunday: sunday,
+				sundayDateStr: sundayDateStr
+			});
 
 			if (memberIdx && sunday) {
+				// 모든 이벤트 타입에 대해 preventDefault 적용
+				if (event.originalEvent) {
+					event.originalEvent.preventDefault();
+					event.originalEvent.stopPropagation();
+				}
+				event.preventDefault();
+				event.stopPropagation();
+
+				// 즉시 실행하여 이벤트 충돌 방지
 				openAttendanceDetail(sunday);
+				return;
 			}
-			return;
 		}
 
 		// 기존 clickable 요소가 클릭된 경우도 처리 (하위 호환성)
-		const $target = $(event.originalEvent.target);
+		const $target = $(event.originalEvent ? event.originalEvent.target : event.target);
 		const $clickableParent = $target.closest('.clickable');
 
 		if ($clickableParent.length > 0) {
 			const memberIdx = $clickableParent.data('member-idx');
 			const sunday = $clickableParent.data('sunday');
 
+			console.log('Clickable element clicked:', {
+				memberIdx: memberIdx,
+				sunday: sunday
+			});
 
 			if (memberIdx && sunday) {
+				if (event.originalEvent) {
+					event.originalEvent.preventDefault();
+					event.originalEvent.stopPropagation();
+				}
+				event.preventDefault();
+				event.stopPropagation();
+
 				openAttendanceDetail(sunday);
 			}
 		}
 	}
+
 
 	/**
 	 * 출석 데이터 로드
@@ -682,8 +768,9 @@ $(document).ready(function () {
 		hideGridSpinner();
 	}
 
+
 	/**
-	 * 그리드 업데이트
+	 * 그리드 업데이트 시 터치 이벤트 재바인딩
 	 */
 	function updateGrid() {
 		if (!attendanceGrid) {
@@ -703,6 +790,10 @@ $(document).ready(function () {
 			attendanceGrid.pqGrid("option", "dataModel.data", gridData);
 			attendanceGrid.pqGrid("refreshDataAndView");
 
+			// 그리드 업데이트 후 터치 이벤트 재바인딩
+			setTimeout(function() {
+				bindDirectTouchEvents();
+			}, 100);
 
 		} catch (error) {
 			console.error('그리드 업데이트 실패:', error);
@@ -766,29 +857,33 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 출석 상세 정보 열기
+	 * 역할: 전역 변수에 attendance detail grid 추가
+	 */
+	let attendanceDetailGrid = null;
+	let attendanceDetailGridData = [];
+
+	/**
+	 * 역할: 출석 상세 정보 열기 - pqgrid 방식으로 변경
 	 */
 	function openAttendanceDetail(sunday) {
-
-
 		const date = new Date(sunday);
 		const formattedDate = date.getFullYear() + '.' + (date.getMonth() + 1) + '.' + date.getDate();
 
-		$('#attendanceOffcanvasLabel').text(formattedDate + ' 출석 상세');
+		$('#attendanceOffcanvasLabel').text(formattedDate + ' 출석상세');
 
-		// 로딩 상태로 초기화
-		$('#attendanceDetailContent').html(getLoadingHtml());
+		// offcanvas body 초기화
+		$('#attendanceDetailContent').html('<div id="attendanceDetailGrid"></div>');
 
 		// offcanvas 표시
 		const offcanvas = new bootstrap.Offcanvas($('#attendanceOffcanvas')[0]);
 		offcanvas.show();
 
-		// 출석 상세 데이터 로드
+		// 출석상세 데이터 로드
 		loadAttendanceDetail(sunday);
 	}
 
 	/**
-	 * 출석 상세 데이터 로드
+	 * 역할: 출석상세 데이터 로드 - 기존 유지
 	 */
 	function loadAttendanceDetail(sunday) {
 		const memberIndices = currentMembers.map(member => member.member_idx);
@@ -804,17 +899,355 @@ $(document).ready(function () {
 			dataType: 'json',
 			success: function (response) {
 				if (response.success) {
-					renderAttendanceDetail(response.data, sunday);
+					renderAttendanceDetailGrid(response.data, sunday);
 				} else {
-					$('#attendanceDetailContent').html('<div class="alert alert-danger">출석 상세 정보를 불러올 수 없습니다.</div>');
+					$('#attendanceDetailContent').html('<div class="alert alert-danger">출석상세 정보를 불러올 수 없습니다.</div>');
 				}
 			},
 			error: function (xhr, status, error) {
-				console.error('출석 상세 데이터 로드 실패:', error);
-				$('#attendanceDetailContent').html('<div class="alert alert-danger">출석 상세 정보를 불러오는 중 오류가 발생했습니다.</div>');
+				console.error('출석상세 데이터 로드 실패:', error);
+				$('#attendanceDetailContent').html('<div class="alert alert-danger">출석상세 정보를 불러오는 중 오류가 발생했습니다.</div>');
 			}
 		});
 	}
+
+
+	/**
+	 * 역할: pqgrid 기반 출석상세 화면 렌더링
+	 */
+	function renderAttendanceDetailGrid(data, sunday) {
+		const {attendance_types, attendance_records, members_info, memo_records = {}} = data;
+
+		// 그리드 초기화
+		initializeAttendanceDetailGrid(attendance_types);
+
+		// 그리드 데이터 준비
+		attendanceDetailGridData = prepareAttendanceDetailGridData(members_info, attendance_types, attendance_records, memo_records);
+
+		// 그리드에 데이터 설정
+		if (attendanceDetailGrid) {
+			attendanceDetailGrid.pqGrid("option", "dataModel.data", attendanceDetailGridData);
+			attendanceDetailGrid.pqGrid("refreshDataAndView");
+		}
+	}
+
+
+
+	/**
+	 * 역할: 출석상세 pqgrid 초기화
+	 */
+	function initializeAttendanceDetailGrid(attendanceTypes) {
+		if (attendanceDetailGrid) {
+			attendanceDetailGrid.pqGrid("destroy");
+			attendanceDetailGrid = null;
+		}
+
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+			|| window.innerWidth <= 768;
+
+		let colModel = [
+			{
+				title: "이름",
+				dataIndx: "member_name",
+				width: isMobile ? 80 : 100,
+				minWidth: 80,
+				maxWidth: 120,
+				editable: false,
+				align: "center",
+				frozen: true,
+				resizable: false
+			},
+			{
+				title: "한줄메모",
+				dataIndx: "memo_content",
+				width: isMobile ? 120 : 180,
+				minWidth: 100,
+				maxWidth: 250,
+				editable: true,
+				align: "left",
+				resizable: true,
+				editor: {
+					type: "textbox",
+					attr: "placeholder='메모 입력...'"
+				}
+			},
+			{
+				title: "소계",
+				dataIndx: "week_total",
+				width: 60,
+				minWidth: 50,
+				maxWidth: 80,
+				editable: false,
+				align: "center",
+				resizable: false,
+				render: function(ui) {
+					const totalScore = parseInt(ui.cellData) || 0;
+					const color = totalScore > 0 ? '#0d6efd' : '#6c757d';
+					return '<span style="font-weight: bold; color: ' + color + ';">' + totalScore + '</span>';
+				}
+			}
+		];
+
+		// 출석유형별 컬럼 동적 추가
+		if (attendanceTypes && attendanceTypes.length > 0) {
+			attendanceTypes.forEach(function(attType) {
+				const inputType = attType.att_type_input || 'check';
+				const typePoint = Number(attType.att_type_point) || 10;
+				const typeName = attType.att_type_nickname || attType.att_type_name;
+
+				const columnConfig = {
+					title: attType.att_type_nickname,
+					dataIndx: "att_type_" + attType.att_type_idx,
+					width: 50,
+					minWidth: 20,
+					maxWidth: 80,
+					align: "center",
+					resizable: true
+				};
+
+				if (inputType === 'check') {
+					columnConfig.editable = false;
+					columnConfig.render = function(ui) {
+						const isChecked = ui.cellData === true || ui.cellData === 'Y' || ui.cellData === 1;
+						const checkedAttr = isChecked ? 'checked' : '';
+						const checkboxId = 'checkbox_' + ui.rowIndx + '_' + attType.att_type_idx;
+
+						return '<div style="text-align: center;">' +
+							'<input type="checkbox" ' + checkedAttr + ' ' +
+							'id="' + checkboxId + '" ' +
+							'class="attendance-detail-checkbox" ' +
+							'data-row-indx="' + ui.rowIndx + '" ' +
+							'data-att-type-idx="' + attType.att_type_idx + '" ' +
+							'data-att-type-score="' + typePoint + '" ' +
+							'data-member-idx="' + ui.rowData.member_idx + '" ' +
+							'style="transform: scale(1.2); ">' +
+							'</div>';
+					};
+				} else {
+					columnConfig.editable = true;
+					columnConfig.editor = {
+						type: "textbox",
+						attr: "type='number' min='0' max='999' style='text-align: center;'"
+					};
+					columnConfig.render = function(ui) {
+						const value = parseInt(ui.cellData) || 0;
+						return '<input type="number" class="form-control form-control-sm attendance-detail-textbox text-center" ' +
+							'value="' + value + '" min="0" max="999" ' +
+							'data-att-type-idx="' + attType.att_type_idx + '" ' +
+							'data-att-type-default-point="' + typePoint + '" ' +
+							'data-member-idx="' + ui.rowData.member_idx + '" ' +
+							'style="width: 100%; border: none; background: transparent;">';
+					};
+				}
+
+				colModel.push(columnConfig);
+			});
+		}
+
+		const gridOptions = {
+			width: "100%",
+			dataModel: {
+				data: []
+			},
+			colModel: colModel,
+			selectionModel: {
+				type: 'cell'
+			},
+			scrollModel: {
+				autoFit: false,
+				horizontal: true,
+				vertical: true
+			},
+			freezeCols: 1,
+			numberCell: { show: false },
+			title: false,
+			resizable: false,
+			sortable: false,
+			wrap: false,
+			columnBorders: true,
+			editable: true,
+			editModel: {
+				clicksToEdit: 1,
+				saveKey: $.ui.keyCode.ENTER
+			},
+
+			complete: function() {
+				setTimeout(function() {
+					bindAttendanceDetailEvents();
+				}, 100);
+			},
+
+		};
+
+		attendanceDetailGrid = $("#attendanceDetailGrid").pqGrid(gridOptions);
+	}
+
+
+	/**
+	 * 역할: 출석상세 그리드 데이터 준비
+	 */
+	function prepareAttendanceDetailGridData(members_info, attendance_types, attendance_records, memo_records) {
+		const gridData = [];
+
+		if (!members_info || members_info.length === 0) {
+			return gridData;
+		}
+
+		members_info.forEach(function(member) {
+			const memberIdx = member.member_idx;
+			const memberMemo = memo_records[memberIdx] || {};
+
+			const rowData = {
+				member_idx: memberIdx,
+				member_name: member.member_name,
+				memo_content: memberMemo.memo_content || '',
+				att_idx: memberMemo.att_idx || null,
+				week_total: 0
+			};
+
+			let weekTotalScore = 0;
+
+			// 출석유형별 데이터 설정
+			if (attendance_types && attendance_types.length > 0) {
+				attendance_types.forEach(function(attType) {
+					const dataIndx = "att_type_" + attType.att_type_idx;
+
+					// 해당 회원의 출석기록 필터링
+					const memberAttendanceRecords = attendance_records.filter(record =>
+						record.member_idx == memberIdx && record.att_type_idx == attType.att_type_idx
+					);
+
+					if (attType.att_type_input === 'check') {
+						const isChecked = memberAttendanceRecords.length > 0;
+						rowData[dataIndx] = isChecked;
+
+						if (isChecked) {
+							const scoreValue = Number(memberAttendanceRecords[0].att_value) || Number(attType.att_type_point) || 10;
+							weekTotalScore += scoreValue;
+						}
+					} else {
+						const currentValue = memberAttendanceRecords.length > 0 ?
+							(Number(memberAttendanceRecords[0].att_value) || 0) : 0;
+						rowData[dataIndx] = currentValue;
+						weekTotalScore += currentValue;
+					}
+				});
+			}
+
+			rowData.week_total = weekTotalScore;
+			gridData.push(rowData);
+		});
+
+		return gridData;
+	}
+
+	/**
+	 * 역할: 출석상세 그리드 이벤트 바인딩
+	 */
+	function bindAttendanceDetailEvents() {
+		// 체크박스 이벤트 - 모바일 터치 지원 강화
+		$(document).off('change click touchend', '.attendance-detail-checkbox');
+		$(document).on('change click touchend', '.attendance-detail-checkbox', function(e) {
+				e.stopPropagation();
+				e.preventDefault();
+
+				const $checkbox = $(this);
+				const rowIndx = parseInt($checkbox.data('row-indx'));
+				const memberIdx = $checkbox.data('member-idx');
+				const attTypeIdx = $checkbox.data('att-type-idx');
+				const attTypeScore = parseInt($checkbox.data('att-type-score')) || 10;
+
+				// 터치 이벤트의 경우 체크박스 상태 토글
+				if (e.type === 'touchend') {
+					e.preventDefault();
+					setTimeout(function() {
+						const checked = !$checkbox.prop('checked');
+						$checkbox.prop('checked', checked);
+						updateGridCellData(rowIndx, attTypeIdx, checked);
+						recalculateGridRowTotal(rowIndx);
+					}, 10);
+				} else if (e.type === 'change') {
+					const checked = $checkbox.is(':checked');
+					updateGridCellData(rowIndx, attTypeIdx, checked);
+					recalculateGridRowTotal(rowIndx);
+				}
+			});
+
+		// 텍스트박스 이벤트
+		$(document).off('input change', '.attendance-detail-textbox')
+			.on('input change', '.attendance-detail-textbox', function() {
+				const $textbox = $(this);
+				const value = parseInt($textbox.val()) || 0;
+				const rowIndx = $textbox.closest('tr').index();
+				const attTypeIdx = $textbox.data('att-type-idx');
+
+				updateGridCellData(rowIndx, attTypeIdx, value);
+				recalculateGridRowTotal(rowIndx);
+			});
+
+		// 메모 변경 이벤트 표시
+		$(document).off('input change', 'input[data-indx="memo_content"]')
+			.on('input change', 'input[data-indx="memo_content"]', function() {
+				$(this).data('changed', true);
+			});
+	}
+
+
+	/**
+	 * 역할: 그리드 셀 데이터 업데이트
+	 */
+	function updateGridCellData(rowIndx, attTypeIdx, value) {
+		if (!attendanceDetailGrid) return;
+
+		try {
+			const gridData = attendanceDetailGrid.pqGrid("option", "dataModel.data");
+			if (gridData && gridData[rowIndx]) {
+				gridData[rowIndx]["att_type_" + attTypeIdx] = value;
+				attendanceDetailGrid.pqGrid("option", "dataModel.data", gridData);
+			}
+		} catch (error) {
+			console.error('그리드 데이터 업데이트 실패:', error);
+		}
+	}
+
+	/**
+	 * 역할: 그리드 행별 소계 재계산
+	 */
+	function recalculateGridRowTotal(rowIndx) {
+		if (!attendanceDetailGrid) return;
+
+		try {
+			const gridData = attendanceDetailGrid.pqGrid("option", "dataModel.data");
+			if (!gridData || !gridData[rowIndx]) return;
+
+			let total = 0;
+			const rowData = gridData[rowIndx];
+
+			// 출석유형별 점수 합계 계산
+			attendanceTypes.forEach(function(attType) {
+				const dataIndx = "att_type_" + attType.att_type_idx;
+				const cellValue = rowData[dataIndx];
+				const typePoint = Number(attType.att_type_point) || 10;
+
+				if (attType.att_type_input === 'check') {
+					if (cellValue === true || cellValue === 'Y' || cellValue === 1) {
+						total += typePoint;
+					}
+				} else {
+					total += (Number(cellValue) || 0);
+				}
+			});
+
+			// 소계 업데이트
+			rowData.week_total = total;
+			attendanceDetailGrid.pqGrid("option", "dataModel.data", gridData);
+			attendanceDetailGrid.pqGrid("refreshRow", {rowIndx: rowIndx});
+
+		} catch (error) {
+			console.error('소계 재계산 실패:', error);
+		}
+	}
+
 
 
 	$(document).off('click', '#btnSaveAttendance').on('click', '#btnSaveAttendance', function() {
@@ -823,11 +1256,15 @@ $(document).ready(function () {
 	});
 
 
+
 	/**
-	 * 역할: 출석 정보 저장 - 메모 정보도 함께 저장 (수정된 버전)
+	 * 역할: 출석 정보 저장 - pqgrid 데이터 기반으로 수정
 	 */
 	function saveAttendanceDetail() {
-
+		if (!attendanceDetailGrid) {
+			showToast('출석 데이터를 찾을 수 없습니다.', 'error');
+			return;
+		}
 
 		// 제목에서 날짜 추출
 		const titleText = $('#attendanceOffcanvasLabel').text();
@@ -843,55 +1280,39 @@ $(document).ready(function () {
 		const day = dateMatch[3].padStart(2, '0');
 		const attendanceDate = `${year}-${month}-${day}`;
 
-
-
-		// 출석 데이터 수집
+		// 그리드에서 데이터 수집
+		const gridData = attendanceDetailGrid.pqGrid("option", "dataModel.data");
 		const attendanceData = [];
-		const memoData = []; // 메모 데이터 수집용
+		const memoData = [];
 
-		// 각 회원별로 출석 정보 및 메모 수집
-		$('#attendanceDetailContent table tbody tr').each(function() {
-			const row = $(this);
-			const memberIdx = row.data('member-idx');
-
-
-			// 회원 인덱스가 없으면 스킵
-			if (!memberIdx) {
-
-				return;
-			}
-
-			// 회원 인덱스 찾기 (현재 회원목록에서)
-			const member = currentMembers.find(m => m.member_idx == memberIdx);
-			if (!member) {
-				return;
-			}
+		gridData.forEach(function(row) {
+			const memberIdx = row.member_idx;
+			if (!memberIdx) return;
 
 			const memberAttendanceTypes = [];
 
-			// 체크박스 처리
-			row.find('.attendance-checkbox:checked').each(function() {
-				const attTypeIdx = $(this).data('att-type-idx');
-				const attTypeScore = $(this).data('att-type-score');
+			// 출석유형별 데이터 수집
+			attendanceTypes.forEach(function(attType) {
+				const dataIndx = "att_type_" + attType.att_type_idx;
+				const cellValue = row[dataIndx];
 
-				memberAttendanceTypes.push({
-					att_type_idx: attTypeIdx,
-					att_value: attTypeScore || 10,
-					input_type: 'check'
-				});
-			});
-
-			// 텍스트박스 처리
-			row.find('.attendance-textbox').each(function() {
-				const value = parseInt($(this).val()) || 0;
-				if (value > 0) {
-					const attTypeIdx = $(this).data('att-type-idx');
-
-					memberAttendanceTypes.push({
-						att_type_idx: attTypeIdx,
-						att_value: value,
-						input_type: 'text'
-					});
+				if (attType.att_type_input === 'check') {
+					if (cellValue === true || cellValue === 'Y' || cellValue === 1) {
+						memberAttendanceTypes.push({
+							att_type_idx: attType.att_type_idx,
+							att_value: Number(attType.att_type_point) || 10,
+							input_type: 'check'
+						});
+					}
+				} else {
+					const value = Number(cellValue) || 0;
+					if (value > 0) {
+						memberAttendanceTypes.push({
+							att_type_idx: attType.att_type_idx,
+							att_value: value,
+							input_type: 'text'
+						});
+					}
 				}
 			});
 
@@ -904,37 +1325,23 @@ $(document).ready(function () {
 				});
 			}
 
-			// 메모 데이터 수집 - 디버깅 강화
-			const memoInput = row.find('.attendance-memo');
+			// 메모 데이터 수집
+			const memoContent = row.memo_content ? row.memo_content.trim() : '';
+			const attIdx = row.att_idx || null;
 
-
-			if (memoInput.length > 0) {
-				const memoContent = memoInput.val() ? memoInput.val().trim() : '';
-				const attIdx = memoInput.data('att-idx') || null;
-				const isChanged = memoInput.data('changed') || false;
-
-
-
-				// 메모가 변경되었거나 내용이 있는 경우 저장 대상에 추가
-				// 빈 메모도 처리하도록 수정
-				memoData.push({
-					member_idx: memberIdx,
-					memo_content: memoContent,
-					att_idx: attIdx
-				});
-
-			}
+			memoData.push({
+				member_idx: memberIdx,
+				memo_content: memoContent,
+				att_idx: attIdx
+			});
 		});
-
 
 		// 저장 버튼 비활성화
 		const $saveBtn = $('#btnSaveAttendance');
 		const originalText = $saveBtn.text();
 		$saveBtn.prop('disabled', true).text('저장중...');
 
-
-
-		// AJAX 요청 - save_attendance_with_memo 호출
+		// AJAX 요청
 		$.ajax({
 			url: window.attendancePageData.baseUrl + 'attendance/save_attendance_with_memo',
 			method: 'POST',
@@ -946,12 +1353,7 @@ $(document).ready(function () {
 				year: currentYear
 			},
 			dataType: 'json',
-			beforeSend: function() {
-
-			},
 			success: function(response) {
-
-
 				if (response.success) {
 					showToast('출석 및 메모가 저장되었습니다.', 'success');
 
@@ -972,13 +1374,9 @@ $(document).ready(function () {
 			},
 			error: function(xhr, status, error) {
 				console.error('AJAX 오류:', xhr.responseText);
-				console.error('상태:', status);
-				console.error('오류:', error);
-
 				showToast('출석 및 메모 저장 중 오류가 발생했습니다.', 'error');
 			},
 			complete: function() {
-				// 저장 버튼 복원
 				$saveBtn.prop('disabled', false).text(originalText);
 			}
 		});
@@ -992,250 +1390,6 @@ $(document).ready(function () {
 		div.textContent = text;
 		return div.innerHTML;
 	}
-
-	/**
-	 * 역할: text 타입 출석유형도 헤더에 포인트 표시하도록 수정
-	 */
-
-	function renderAttendanceDetail(data, sunday) {
-		const {attendance_types, attendance_records, members_info, memo_records = {}} = data;
-
-		let html = `
-<div class="attendance-detail simple-table">
-	<table class="table table-sm table-bordered">
-		<thead class="table-light">
-			<tr>
-				<th style="width: 80px;">이름</th>
-				<th style="width: 140px;">한줄메모</th>
-				<th style="width: 60px;">소계</th>
-`;
-
-		// 출석유형 헤더 추가 - text 타입도 포인트 표시하도록 수정
-		attendance_types.forEach(function (type) {
-			const typeName = type.att_type_nickname || type.att_type_name;
-			const inputType = type.att_type_input || 'check';
-			const typePoint = Number(type.att_type_point) || 10;
-
-
-
-			html += `<th class="text-center" style="width: 80px;">${typeName}<br/><span class='att-point'>(${typePoint})</span></th>`;
-		});
-
-		html += `
-			</tr>
-		</thead>
-		<tbody>
-`;
-
-		// 회원별 데이터 처리
-		members_info.forEach(function (member) {
-			const memberIdx = member.member_idx;
-			const memberName = member.member_name;
-
-			// 해당 회원의 메모 조회
-			const memberMemo = memo_records[memberIdx] || {};
-			const memoContent = memberMemo.memo_content || '';
-			const attIdx = memberMemo.att_idx || null;
-
-			// 해당 회원의 출석기록 필터링
-			const memberAttendanceRecords = attendance_records.filter(record =>
-				record.member_idx == memberIdx
-			);
-
-			// 출석 유형별 그룹핑
-			const attendanceByType = {};
-			let weekTotalScore = 0;
-
-			memberAttendanceRecords.forEach(function (record) {
-				const typeIdx = record.att_type_idx;
-				if (!attendanceByType[typeIdx]) {
-					attendanceByType[typeIdx] = [];
-				}
-				attendanceByType[typeIdx].push(record);
-
-				// att_value가 있으면 그 값을 사용, 없으면 att_type_point 사용
-				const scoreValue = Number(record.att_value) || Number(record.att_type_point) || 10;
-				weekTotalScore += scoreValue;
-			});
-
-			html += `<tr data-member-idx="${memberIdx}">`;
-			html += `<td class="member-name">${memberName}</td>`;
-
-			// 메모 입력 필드 추가
-			html += `
-		<td>
-			<input type="text" class="form-control form-control-sm attendance-memo" 
-				   value="${escapeHtml(memoContent)}" 
-				   data-member-idx="${memberIdx}"
-				   data-att-idx="${attIdx || ''}"
-				   placeholder="메모 입력">
-		</td>
-	`;
-
-			// 소계
-			html += `<td class="text-center week-total">${weekTotalScore}</td>`;
-
-			// 각 출석유형별 체크박스/입력박스 생성
-			attendance_types.forEach(function (type) {
-				const typeIdx = type.att_type_idx;
-				const inputType = type.att_type_input || 'check';
-				const typeRecords = attendanceByType[typeIdx] || [];
-
-				html += '<td class="text-center">';
-
-				if (inputType === 'text') {
-					// 텍스트박스인 경우 실제 값 표시
-					const currentValue = typeRecords.length > 0 ? (Number(typeRecords[0].att_value) || 0) : 0;
-					const defaultPoint = Number(type.att_type_point) || 10;
-					html += `<input type="number" class="form-control form-control-sm attendance-textbox text-center" 
-					 value="${currentValue}" min="0" max="999" 
-					 data-att-type-idx="${typeIdx}" 
-					 data-att-type-default-point="${defaultPoint}"
-					 data-member-idx="${memberIdx}"
-					 placeholder="${defaultPoint}"
-					 style="width: 60px;">`;
-				} else {
-					// 체크박스인 경우
-					const isChecked = typeRecords.length > 0;
-					const typeScore = Number(type.att_type_point) || 10;
-					html += `<div class="form-check d-flex justify-content-center">
-					<input class="form-check-input attendance-checkbox" type="checkbox" 
-						   ${isChecked ? 'checked' : ''} 
-						   data-att-type-idx="${typeIdx}"
-						   data-att-type-score="${typeScore}"
-						   data-member-idx="${memberIdx}">
-					</div>`;
-				}
-
-				html += '</td>';
-			});
-
-			html += '</tr>';
-		});
-
-		html += `
-		</tbody>
-	</table>
-</div>
-`;
-
-		// 콘텐츠 업데이트
-		$('#attendanceDetailContent').html(html);
-
-		// 출석상태 변경 시 소계 재계산 이벤트 바인딩
-		bindAttendanceChangeEvents();
-
-		// 메모 입력 이벤트 바인딩
-		bindMemoEvents();
-	}
-
-	/**
-	 * 역할: 메모 관련 이벤트 바인딩
-	 */
-	function bindMemoEvents() {
-		// 메모 입력 필드 변경 이벤트 - 더 정확한 이벤트 감지
-		$(document).off('input change keyup paste', '.attendance-memo').on('input change keyup paste', '.attendance-memo', function() {
-			$(this).data('changed', true);
-
-		});
-
-		// 포커스 시 원본 값 저장
-		$(document).off('focus', '.attendance-memo').on('focus', '.attendance-memo', function() {
-			$(this).data('original-value', $(this).val());
-		});
-
-		// 포커스 아웃 시 변경 여부 확인
-		$(document).off('blur', '.attendance-memo').on('blur', '.attendance-memo', function() {
-			const originalValue = $(this).data('original-value') || '';
-			const currentValue = $(this).val() || '';
-
-			if (originalValue !== currentValue) {
-				$(this).data('changed', true);
-
-			}
-		});
-	}
-
-	/**
-	 * 역할: 출석상세 모달에서 입력 변경 시 소계 실시간 업데이트
-	 */
-	function updateDetailTotalScores() {
-		// 각 회원별로 소계 계산
-		$('#attendanceDetailContent tbody tr').each(function() {
-			const $row = $(this);
-			let totalScore = 0;
-
-			// 해당 행의 모든 입력 요소 확인
-			$row.find('.attendance-checkbox, .attendance-textbox').each(function() {
-				const $input = $(this);
-				const typeScore = Number($input.data('att-type-score')) || 10;
-
-				if ($input.hasClass('attendance-checkbox')) {
-					// 체크박스인 경우
-					if ($input.is(':checked')) {
-						totalScore += typeScore;
-					}
-				} else if ($input.hasClass('attendance-textbox')) {
-					// 텍스트박스인 경우
-					const inputValue = Number($input.val()) || 0;
-					totalScore += inputValue;
-				}
-			});
-
-			// 소계 업데이트
-			$row.find('td:nth-child(2)').html(`${totalScore}점`).addClass('fw-bold text-primary');
-		});
-	}
-
-	/**
-	 * 출석입력 이벤트 바인딩 - checkbox와 textbox 모두 처리
-	 */
-	function bindAttendanceInputEvents() {
-		// 체크박스 이벤트
-		$('.attendance-checkbox').off('change').on('change', function () {
-			updateMemberScoreFromInputs($(this));
-		});
-
-		// 텍스트박스 이벤트
-		$('.attendance-textbox').off('input').on('input', function () {
-			updateMemberScoreFromInputs($(this));
-		});
-	}
-
-
-
-	/**
-	 * 회원 점수 업데이트 - 숫자 타입 강제 변환
-	 */
-	function updateMemberScoreFromInputs($input) {
-		const row = $input.closest('tr');
-		const scoreCell = row.find('.week-total');
-
-		let totalScore = 0; // 숫자 0으로 초기화
-
-		// 체크박스 점수 계산 - Number() 강제 변환
-		row.find('.attendance-checkbox:checked').each(function () {
-			const score = Number($(this).data('att-type-score')) || 0;
-
-			totalScore += score;
-		});
-
-		// 텍스트박스 점수 계산 - Number() 강제 변환
-		row.find('.attendance-textbox').each(function () {
-			const value = Number($(this).val()) || 0;
-
-			if (value > 0) {
-				totalScore += value;
-			}
-		});
-
-
-
-		// 점수 표시 업데이트 - Number()로 확실히 숫자 보장
-		scoreCell.text(totalScore);
-	}
-
-
 
 	/**
 	 * 그리드 필터링
@@ -1317,17 +1471,37 @@ $(document).ready(function () {
 		orgNameElement.html(displayText);
 	}
 
+
 	/**
-	 * 정리 이벤트 설정
+	 * 역할: offcanvas 정리 이벤트에 그리드 정리 추가
 	 */
 	function setupCleanupEvents() {
 		$(window).off('beforeunload.attendance').on('beforeunload.attendance', function () {
 			destroySplitJS();
+			cleanupAttendanceDetailGrid();
 		});
 
 		$('#attendanceOffcanvas').off('hidden.bs.offcanvas.attendance').on('hidden.bs.offcanvas.attendance', function () {
+			cleanupAttendanceDetailGrid();
 			$('#attendanceDetailContent').html(getLoadingHtml());
 		});
+	}
+
+
+
+	/**
+	 * 역할: 출석상세 그리드 정리
+	 */
+	function cleanupAttendanceDetailGrid() {
+		if (attendanceDetailGrid) {
+			try {
+				attendanceDetailGrid.pqGrid("destroy");
+				attendanceDetailGrid = null;
+				attendanceDetailGridData = [];
+			} catch (error) {
+				console.error('출석상세 그리드 정리 실패:', error);
+			}
+		}
 	}
 
 	/**
@@ -1377,13 +1551,25 @@ $(document).ready(function () {
 	 * 출석상태 변경 이벤트 바인딩 - 숫자 처리 확실히 하기
 	 */
 	function bindAttendanceChangeEvents() {
-		// 체크박스 변경 이벤트
-		$(document).off('change', '.attendance-checkbox').on('change', '.attendance-checkbox', function() {
-			const row = $(this).closest('tr');
-			recalculateWeekTotal(row);
+		// 체크박스 변경 이벤트 - 이벤트 위임 사용
+		$(document).off('change touchend', '.attendance-checkbox').on('change touchend', '.attendance-checkbox', function(event) {
+			// 터치 이벤트의 경우 중복 실행 방지
+			if (event.type === 'touchend') {
+				event.preventDefault();
+				// 체크박스 상태 토글
+				const $checkbox = $(this);
+				setTimeout(function() {
+					$checkbox.prop('checked', !$checkbox.prop('checked'));
+					const row = $checkbox.closest('tr');
+					recalculateWeekTotal(row);
+				}, 10);
+			} else if (event.type === 'change') {
+				const row = $(this).closest('tr');
+				recalculateWeekTotal(row);
+			}
 		});
 
-		// 텍스트박스 변경 이벤트
+		// 텍스트박스 변경 이벤트 - 이벤트 위임 사용
 		$(document).off('input', '.attendance-textbox').on('input', '.attendance-textbox', function() {
 			const row = $(this).closest('tr');
 			recalculateWeekTotal(row);
