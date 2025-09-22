@@ -18,7 +18,18 @@
 		</ol>
 	</nav>
 	<div class="row align-items-center justify-content-between g-3 mb-3">
-		<h3 class="page-title col-12 my-1">주별통계</h3>
+		<div class="col-12 my-1">
+			<h3 class="page-title d-inline-block">주별통계</h3>
+
+			<div class="page-tabs d-inline-block">
+				<ul class="nav nav-pills mb-3" id="attendance-type-tabs" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link active" id="tab-all" data-bs-toggle="pill" data-att-type-idx="all" type="button" role="tab" aria-selected="true">전체</button>
+					</li>
+					<!-- 동적으로 출석유형 탭이 여기에 추가됩니다 -->
+				</ul>
+			</div>
+		</div>
 	</div>
 
 	<!-- Split.js를 위한 단일 컨테이너 -->
@@ -60,22 +71,17 @@
 						</div>
 
 						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
-
-							<!-- 점수재계산 버튼 추가 -->
+							<!-- 점수재계산 버튼 -->
 							<button class="btn btn-sm btn-outline-warning me-md-2 justify-content-end align-items-center d-none d-lg-flex" type="button" id="btnRecalculateStats">
 								<i class="bi bi-arrow-clockwise"></i> 포인트재계산
 							</button>
 
 							<!-- 연도 선택 컨트롤 -->
-							<div>
 							<div class="input-group input-group-sm year-selector justify-content-start justify-content-lg-end">
 								<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
-								<label class="input-group-text year-display " id="currentYear">2025</label>
+								<label class="input-group-text year-display" id="currentYear">2025</label>
 								<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
 							</div>
-							</div>
-
-
 						</div>
 					</div>
 				</div>
@@ -97,36 +103,7 @@
 	</div>
 </div>
 
-<!-- 출석 상세 정보 offcanvas -->
-<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel">
-	<div class="offcanvas-header text-start">
-		<h5 class="offcanvas-title" id="attendanceOffcanvasLabel"></h5>
-		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-	</div>
-	<div class="offcanvas-body">
-		<div id="attendanceDetailContent">
-			<!-- 동적으로 출석 상세 내용이 로드됩니다 -->
-			<div class="text-center py-5">
-				<div class="spinner-border text-primary" role="status">
-					<span class="visually-hidden">로딩중...</span>
-				</div>
-				<div class="mt-2 text-muted">출석 정보를 불러오는 중...</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- 하단 고정 버튼 영역 -->
-	<div class="offcanvas-footer">
-		<div class="d-flex gap-2 p-3 border-top bg-light">
-			<button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="offcanvas">닫기</button>
-			<button type="button" class="btn btn-primary flex-fill" id="btnSaveAttendance">저장</button>
-		</div>
-	</div>
-</div>
-
-
 <?php $this->load->view('footer'); ?>
-
 
 <script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
@@ -138,8 +115,7 @@
 		currentYear: <?php echo date('Y'); ?>
 	};
 
-	/*주별통계 메뉴 active*/
+	// 주별통계 메뉴 active
 	$('.menu-31').addClass('active');
-
 </script>
 <script src="/assets/js/weekly_statics.js?<?php echo WB_VERSION; ?>"></script>
