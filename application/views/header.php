@@ -251,8 +251,9 @@ $is_master = $this->session->userdata('master_yn');
 						<ul class="nav flex-column mb-auto">
 							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master, $current_user_level)): ?>
 								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-31" href="<?php echo base_url('weekly_statics'); ?>">
-										<i class="bi bi-graph-up-arrow"></i> 주별통계
+<!--									<a class="nav-link d-flex align-items-center gap-1 menu-31" href="--><?php //echo base_url('weekly_statics'); ?><!--">-->
+									<a class="nav-link d-flex align-items-center gap-1 menu-31" href="#">
+										<i class="bi bi-graph-up-arrow"></i> 주별통계 <span class="badge badge-sm text-bg-warning">준비중</span>
 									</a>
 								</li>
 							<?php endif; ?>

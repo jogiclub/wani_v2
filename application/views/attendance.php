@@ -17,9 +17,21 @@
 			<li class="breadcrumb-item active">출석관리</li>
 		</ol>
 	</nav>
-	<div class="row align-items-center justify-content-between g-3 mb-3">
-		<h3 class="page-title col-12 my-1">출석관리</h3>
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between">
+		<h3 class="page-title  mb-0">출석관리</h3>
+
+		<div class="page-tabs ">
+			<ul class="nav nav-pills" id="attendance-type-tabs" role="tablist">
+				<li class="nav-item" role="presentation">
+					<button class="nav-link active" id="tab-all" data-bs-toggle="pill" data-att-type-idx="all" type="button" role="tab" aria-selected="true">전체</button>
+				</li>
+				<!-- 동적으로 출석유형 탭이 여기에 추가됩니다 -->
+			</ul>
+		</div>
 	</div>
+	
+	
+	
 
 	<!-- Split.js를 위한 단일 컨테이너 -->
 	<div class="split-container">
@@ -62,9 +74,16 @@
 						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 
 							<!-- 점수재계산 버튼 추가 -->
-							<button class="btn btn-sm btn-outline-warning me-md-2 justify-content-end align-items-center d-none d-lg-flex" type="button" id="btnRecalculateStats">
-								<i class="bi bi-arrow-clockwise"></i> 포인트재계산
-							</button>
+
+							<div class="btn-group justify-content-end ">
+								<button class="btn btn-sm btn-outline-warning align-items-center d-none d-lg-flex" type="button" id="btnRecalculateStats">
+									<i class="bi bi-arrow-clockwise"></i> 포인트재계산
+								</button>
+								<button class="btn btn-sm btn-outline-success me-md-2 align-items-center d-none d-lg-flex" type="button" id="btnExcelDownload">
+									<i class="bi bi-file-earmark-spreadsheet"></i> 엑셀다운로드
+								</button>
+
+							</div>
 
 							<!-- 연도 선택 컨트롤 -->
 							<div>
@@ -127,7 +146,7 @@
 
 <?php $this->load->view('footer'); ?>
 
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>

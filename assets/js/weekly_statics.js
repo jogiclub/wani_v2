@@ -121,10 +121,6 @@ $(document).ready(function () {
 			changeYear(1);
 		});
 
-		// 점수재계산 버튼
-		$('#btnRecalculateStats').off('click').on('click', function () {
-			recalculateAttendanceStats();
-		});
 
 		// 출석유형별 탭 이벤트
 		bindAttendanceTypeTabEvents();
@@ -572,8 +568,7 @@ $(document).ready(function () {
 					<button class="nav-link" id="tab-${attType.att_type_idx}" 
 							data-bs-toggle="pill" 
 							data-att-type-idx="${attType.att_type_idx}" 
-							type="button" role="tab" 
-							style="background-color: ${backgroundColor}; color: white; border: none; margin-right: 2px;"
+							type="button" role="tab"							
 							aria-selected="false">
 						${attType.att_type_nickname || attType.att_type_name}
 					</button>
@@ -876,6 +871,22 @@ $(document).ready(function () {
 	 */
 	function hideGridSpinner() {
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
+	}
+
+	/**
+	 * 모든 스피너 표시
+	 */
+	function showAllSpinners() {
+		showTreeSpinner();
+		showGridSpinner();
+	}
+
+	/**
+	 * 모든 스피너 숨김
+	 */
+	function hideAllSpinners() {
+		hideTreeSpinner();
+		hideGridSpinner();
 	}
 
 })

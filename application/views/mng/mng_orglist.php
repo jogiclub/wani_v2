@@ -58,21 +58,28 @@ $this->load->view('mng/header');
 							<small class="text-muted me-2">선택된 조직 <span id="selectedCount">0</span>개</small>
 
 							<div class="btn-group" role="group" aria-label="Basic example">
-							<!-- 선택삭제 버튼 -->
-							<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteOrg" disabled>
-								<i class="bi bi-trash"></i> 선택삭제
-							</button>
+								<button type="button" class="btn btn-sm btn-outline-primary" id="btnMoveOrg" disabled>
+									<i class="bi bi-geo-alt"></i> 선택지도
+								</button>
+								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveOrg" disabled>
+									<i class="bi bi-arrow-right-square"></i> 선택이동
+								</button>
+								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteOrg" disabled>
+									<i class="bi bi-trash"></i> 선택삭제
+								</button>
 
 
-							<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-								더보기
-							</button>
-							<ul class="dropdown-menu">
-								<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveOrg">선택이동</a></li>
-								<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteOrg">선택삭제</a></li>
-								<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
-								<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
-							</ul>
+
+
+								<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+									더보기
+								</button>
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveOrg">선택이동</a></li>
+									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteOrg">선택삭제</a></li>
+									<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
+									<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
+								</ul>
 							</div>
 
 						</div>

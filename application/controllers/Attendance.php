@@ -666,7 +666,7 @@ class Attendance extends My_Controller
 			);
 		}
 
-		// 각 회원, 각 주별로 실제 포인트 계산
+		// 각 회원, 각 주별로 실제 포인트 및 출석유형별 상세 정보 계산
 		$stats = array();
 
 		foreach ($member_indices as $member_idx) {
@@ -689,8 +689,10 @@ class Attendance extends My_Controller
 				$query = $this->db->get();
 				$records = $query->result_array();
 
-				// 실제 포인트 계산
+				// 실제 포인트 및 출석유형별 상세 정보 계산
 				$total_points = 0;
+				$attendance_types_data = array();
+
 				foreach ($records as $record) {
 					$att_type_idx = $record['att_type_idx'];
 					$att_value = $record['att_value'];
@@ -700,20 +702,44 @@ class Attendance extends My_Controller
 
 						if ($type_info['input_type'] === 'text' && !empty($att_value)) {
 							// 텍스트박스인 경우 실제 입력값 사용
-							$total_points += intval($att_value);
+							$point_value = intval($att_value);
 						} else {
 							// 체크박스인 경우 출석유형의 기본 포인트 사용
-							$total_points += $type_info['point'];
+							$point_value = $type_info['point'];
 						}
+
+						$total_points += $point_value;
+
+						// 출석유형별 데이터 저장
+						if (!isset($attendance_types_data[$att_type_idx])) {
+							$attendance_types_data[$att_type_idx] = array(
+								'count' => 0,
+								'total_points' => 0
+							);
+						}
+
+						$attendance_types_data[$att_type_idx]['count'] += 1;
+						$attendance_types_data[$att_type_idx]['total_points'] += $point_value;
 					} else {
 						// 출석유형 정보가 없으면 기본 10점
 						$total_points += 10;
+
+						if (!isset($attendance_types_data[$att_type_idx])) {
+							$attendance_types_data[$att_type_idx] = array(
+								'count' => 0,
+								'total_points' => 0
+							);
+						}
+
+						$attendance_types_data[$att_type_idx]['count'] += 1;
+						$attendance_types_data[$att_type_idx]['total_points'] += 10;
 					}
 				}
 
 				$stats[$member_idx][$sunday] = array(
 					'total_score' => $total_points,
-					'attendance_count' => count($records)
+					'attendance_count' => count($records),
+					'attendance_types' => $attendance_types_data // 출석유형별 상세 정보 추가
 				);
 			}
 		}

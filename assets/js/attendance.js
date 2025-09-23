@@ -15,6 +15,7 @@ $(document).ready(function () {
 	let sundayDates = [];              // 일요일 날짜 목록
 	let attendanceData = {};           // 출석 데이터
 	let currentMembers = [];           // 현재 회원 목록
+	let selectedAttTypeIdx = 'all';    // 선택된 출석유형 (기본: 전체)
 
 
 
@@ -137,18 +138,25 @@ $(document).ready(function () {
 			recalculateAttendanceStats();
 		});
 
-		// 출석 등록 버튼
+		// 출석등록 버튼
 		$('#btnAddAttendance').off('click').on('click', function () {
-			showToast('출석 등록 기능은 추후 구현 예정입니다.', 'info');
+			showToast('출석등록 기능은 추후 구현 예정입니다.', 'info');
 		});
 
-		// 출석 저장 버튼 - saveAttendanceDetail 함수로 수정
+		// 출석저장 버튼 - saveAttendanceDetail 함수로 수정
 		$('#btnSaveAttendance').off('click').on('click', function () {
 			saveAttendanceDetail();
 		});
 
+		// 출석유형별 탭 이벤트 추가
+		bindAttendanceTypeTabEvents();
+
 		// 검색 기능
 		bindSearchEvents();
+
+		$('#btnExcelDownload').off('click').on('click', function () {
+			downloadAttendanceExcel();
+		});
 
 		// 윈도우 리사이즈
 		$(window).off('resize.attendance').on('resize.attendance', debounce(function () {
@@ -188,6 +196,75 @@ $(document).ready(function () {
 				clearGridFilter();
 			}
 		});
+	}
+
+
+
+
+	function bindAttendanceTypeTabEvents() {
+		$(document).off('click', '#attendance-type-tabs button[data-att-type-idx]').on('click', '#attendance-type-tabs button[data-att-type-idx]', function () {
+			const newAttTypeIdx = $(this).data('att-type-idx');
+
+			if (newAttTypeIdx !== selectedAttTypeIdx) {
+				selectedAttTypeIdx = newAttTypeIdx;
+
+				// 탭 활성화 상태 업데이트
+				$('#attendance-type-tabs button').removeClass('active');
+				$(this).addClass('active');
+
+				// 그리드 데이터 업데이트
+				updateGridWithSelectedAttendanceType();
+			}
+		});
+	}
+
+
+	/**
+	 * 선택된 출석유형에 따라 그리드 업데이트
+	 */
+	function updateGridWithSelectedAttendanceType() {
+		if (!attendanceGrid) {
+			return;
+		}
+
+		try {
+			const gridData = prepareGridData();
+			attendanceGrid.pqGrid("option", "dataModel.data", gridData);
+			attendanceGrid.pqGrid("refreshDataAndView");
+		} catch (error) {
+			console.error('출석유형별 그리드 업데이트 실패:', error);
+		}
+	}
+
+	/**
+	 * 출석유형 목록 로드 및 탭 생성
+	 */
+	function createAttendanceTypeTabs() {
+		const $tabContainer = $('#attendance-type-tabs');
+
+		// 기존 동적 탭 제거 (전체 탭은 유지)
+		$tabContainer.find('li:not(:first)').remove();
+
+		// 출석유형별 탭 추가
+		attendanceTypes.forEach(function (attType) {
+			const backgroundColor = attType.att_type_color ? '#' + attType.att_type_color : '#6c757d';
+			const tabHtml = `
+			<li class="nav-item" role="presentation">
+				<button class="nav-link" id="tab-${attType.att_type_idx}" 
+						data-bs-toggle="pill" 
+						data-att-type-idx="${attType.att_type_idx}" 
+						type="button" role="tab"						
+						aria-selected="false">
+					${attType.att_type_nickname || attType.att_type_name}
+				</button>
+			</li>
+		`;
+			$tabContainer.append(tabHtml);
+		});
+
+		// 첫 번째 탭(전체) 활성화
+		selectedAttTypeIdx = 'all';
+		$('#tab-all').addClass('active');
 	}
 
 	/**
@@ -734,11 +811,11 @@ $(document).ready(function () {
 			success: function (response) {
 				if (response.success) {
 					attendanceTypes = response.data || [];
-
+					createAttendanceTypeTabs(); // 탭 생성 함수 호출 추가
 				}
 			},
 			error: function (xhr, status, error) {
-				console.error('출석 유형 로드 실패:', error);
+				console.error('출석유형 로드 실패:', error);
 			}
 		});
 	}
@@ -852,8 +929,16 @@ $(document).ready(function () {
 
 		const weekData = attendanceData[memberIdx][sunday];
 
-		// 서버에서 계산된 실제 포인트 합계 반환
-		return weekData.total_score || 0;
+		if (selectedAttTypeIdx === 'all') {
+			// 전체: 모든 출석유형의 점수 합계 반환
+			return weekData.total_score || 0;
+		} else {
+			// 특정 출석유형만: 해당 출석유형의 점수만 반환
+			if (weekData.attendance_types && weekData.attendance_types[selectedAttTypeIdx]) {
+				return weekData.attendance_types[selectedAttTypeIdx].total_points || 0;
+			}
+			return 0;
+		}
 	}
 
 	/**
@@ -1721,6 +1806,183 @@ $(document).ready(function () {
 				$btn.prop('disabled', false).html(originalHtml);
 			}
 		});
+	}
+
+	/**
+	 * 역할: 현재 표시된 출석 목록을 엑셀 파일로 다운로드
+	 */
+	function downloadAttendanceExcel() {
+		if (!attendanceGrid || !currentMembers || currentMembers.length === 0) {
+			showToast('다운로드할 출석 데이터가 없습니다.', 'warning');
+			return;
+		}
+
+		if (!selectedOrgId) {
+			showToast('조직을 먼저 선택해주세요.', 'warning');
+			return;
+		}
+
+		// 버튼 비활성화 및 로딩 표시
+		const $btn = $('#btnExcelDownload');
+		const originalHtml = $btn.html();
+		$btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 생성중...');
+
+		try {
+			// 엑셀 데이터 준비
+			const excelData = prepareExcelData();
+
+			// 엑셀 파일 생성 및 다운로드
+			createAndDownloadExcel(excelData);
+
+			showToast('엑셀 파일이 다운로드되었습니다.', 'success');
+
+		} catch (error) {
+			console.error('엑셀 다운로드 오류:', error);
+			showToast('엑셀 파일 생성 중 오류가 발생했습니다.', 'error');
+		} finally {
+			// 버튼 복원
+			$btn.prop('disabled', false).html(originalHtml);
+		}
+	}
+
+
+	/**
+	 * 역할: 그리드 데이터를 엑셀 형식으로 변환
+	 */
+	function prepareExcelData() {
+		const gridData = attendanceGrid.pqGrid("option", "dataModel.data");
+		const colModel = attendanceGrid.pqGrid("option", "colModel");
+
+		// 헤더 생성
+		const headers = [];
+		colModel.forEach(function(col) {
+			if (col.dataIndx !== 'photo') { // 사진 컬럼 제외
+				headers.push(col.title);
+			}
+		});
+
+		// 데이터 행 생성
+		const rows = [];
+		gridData.forEach(function(row) {
+			const dataRow = [];
+			colModel.forEach(function(col) {
+				if (col.dataIndx !== 'photo') { // 사진 컬럼 제외
+					let cellValue = row[col.dataIndx];
+
+					// 데이터 타입별 처리
+					if (col.dataIndx === 'total_score') {
+						cellValue = parseInt(cellValue) || 0;
+					} else if (col.dataIndx.startsWith('week_')) {
+						// 주별 출석 점수
+						const sunday = col.dataIndx.replace('week_', '').replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+						cellValue = getWeekScore(row.member_idx, sunday);
+					} else {
+						cellValue = cellValue || '';
+					}
+
+					dataRow.push(cellValue);
+				}
+			});
+			rows.push(dataRow);
+		});
+
+		return {
+			headers: headers,
+			data: rows
+		};
+	}
+
+	/**
+	 * 역할: XLSX 라이브러리를 사용하여 엑셀 파일 생성 및 다운로드
+	 */
+	function createAndDownloadExcel(excelData) {
+		// SheetJS가 로드되어 있는지 확인
+		if (typeof XLSX === 'undefined') {
+			console.error('XLSX 라이브러리가 로드되지 않았습니다.');
+			showToast('엑셀 라이브러리를 불러올 수 없습니다.', 'error');
+			return;
+		}
+
+		// 워크시트 데이터 준비
+		const wsData = [excelData.headers, ...excelData.data];
+
+		// 워크시트 생성
+		const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+		// 컬럼 너비 설정
+		const colWidths = [];
+		excelData.headers.forEach(function(header, index) {
+			if (header === '이름') {
+				colWidths.push({wch: 12});
+			} else if (header === '소그룹') {
+				colWidths.push({wch: 15});
+			} else if (header === '합계') {
+				colWidths.push({wch: 8});
+			} else {
+				colWidths.push({wch: 8}); // 주별 날짜 컬럼
+			}
+		});
+		ws['!cols'] = colWidths;
+
+		// 헤더 스타일 설정
+		const headerRange = XLSX.utils.decode_range(ws['!ref']);
+		for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+			const headerCell = XLSX.utils.encode_cell({r: 0, c: C});
+			if (!ws[headerCell]) continue;
+
+			ws[headerCell].s = {
+				font: { bold: true, color: { rgb: "FFFFFF" } },
+				fill: { fgColor: { rgb: "4472C4" } },
+				alignment: { horizontal: "center", vertical: "center" },
+				border: {
+					top: { style: "thin", color: { rgb: "000000" } },
+					bottom: { style: "thin", color: { rgb: "000000" } },
+					left: { style: "thin", color: { rgb: "000000" } },
+					right: { style: "thin", color: { rgb: "000000" } }
+				}
+			};
+		}
+
+		// 워크북 생성
+		const wb = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, "출석현황");
+
+		// 파일명 생성
+		const orgNameElement = $('#selectedOrgName');
+		let orgName = '출석현황';
+		if (orgNameElement.length > 0) {
+			const orgText = orgNameElement.text().trim();
+			if (orgText && orgText !== '조직을 선택해주세요') {
+				orgName = orgText.replace(/[<>:"/\\|?*]/g, ''); // 파일명에 사용할 수 없는 문자 제거
+			}
+		}
+
+		// 현재 선택된 출석유형 정보 추가
+		let attTypeText = '';
+		if (selectedAttTypeIdx === 'all') {
+			attTypeText = '_전체';
+		} else {
+			const selectedAttType = attendanceTypes.find(type => type.att_type_idx == selectedAttTypeIdx);
+			if (selectedAttType) {
+				attTypeText = '_' + (selectedAttType.att_type_nickname || selectedAttType.att_type_name);
+			}
+		}
+
+		const fileName = `${orgName}${attTypeText}_${currentYear}년_${getCurrentDateString()}.xlsx`;
+
+		// 파일 다운로드
+		XLSX.writeFile(wb, fileName);
+	}
+
+	/**
+	 * 역할: YYYYMMDD 형식의 날짜 문자열 반환
+	 */
+	function getCurrentDateString() {
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = String(now.getMonth() + 1).padStart(2, '0');
+		const day = String(now.getDate()).padStart(2, '0');
+		return `${year}${month}${day}`;
 	}
 
 });

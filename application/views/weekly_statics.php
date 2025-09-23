@@ -18,11 +18,11 @@
 		</ol>
 	</nav>
 	<div class="row align-items-center justify-content-between g-3 mb-3">
-		<div class="col-12 my-1">
-			<h3 class="page-title d-inline-block">주별통계</h3>
+		<div class="col-12 my-1 d-flex align-items-center justify-content-between">
+			<h3 class="page-title  mb-0">주별통계</h3>
 
-			<div class="page-tabs d-inline-block">
-				<ul class="nav nav-pills mb-3" id="attendance-type-tabs" role="tablist">
+			<div class="page-tabs ">
+				<ul class="nav nav-pills" id="attendance-type-tabs" role="tablist">
 					<li class="nav-item" role="presentation">
 						<button class="nav-link active" id="tab-all" data-bs-toggle="pill" data-att-type-idx="all" type="button" role="tab" aria-selected="true">전체</button>
 					</li>
@@ -71,10 +71,8 @@
 						</div>
 
 						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
-							<!-- 점수재계산 버튼 -->
-							<button class="btn btn-sm btn-outline-warning me-md-2 justify-content-end align-items-center d-none d-lg-flex" type="button" id="btnRecalculateStats">
-								<i class="bi bi-arrow-clockwise"></i> 포인트재계산
-							</button>
+
+
 
 							<!-- 연도 선택 컨트롤 -->
 							<div class="input-group input-group-sm year-selector justify-content-start justify-content-lg-end">
