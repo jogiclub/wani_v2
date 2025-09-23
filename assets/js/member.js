@@ -1154,6 +1154,7 @@ $(document).ready(function () {
 			freezeCols: isMobile ? 0 : 4,
 			numberCell: { show: false },
 			title: false,
+			strNoRows: '회원 정보가 없습니다',
 			resizable: true,
 			sortable: false,
 			hoverMode: 'row',

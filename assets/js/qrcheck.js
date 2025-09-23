@@ -972,6 +972,7 @@ function initializePastoralGrid() {
 		selectionModel: {
 			type: 'cell'
 		},
+		strNoRows: '출석 정보가 없습니다',
 		scrollModel: {
 			autoFit: false,
 			horizontal: true,

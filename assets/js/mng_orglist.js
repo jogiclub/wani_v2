@@ -105,10 +105,27 @@
 	/**
 	 * Fancytree 초기화
 	 */
-	function initFancytree() {
+	/**
+	 * 파일 위치: assets/js/mng_orglist.js
+	 * 역할: 트리 카운트 업데이트 수정
+	 */
+
+	/**
+	 * 트리와 그리드 새로고침 (수정된 버전)
+	 */
+	function refreshTreeAndGrid() {
+		console.log('트리와 그리드 새로고침 시작');
+
+		// 체크된 조직 ID 초기화
+		checkedOrgIds.clear();
+
+		// 현재 선택된 카테고리 정보 임시 저장
+		const currentSelectedIdx = selectedCategoryIdx;
+		const currentSelectedName = selectedCategoryName;
+
+		// 트리 새로고침 - 서버에서 최신 데이터 가져와서 재구성
 		showTreeSpinner();
 
-		// 전체 조직 수와 카테고리 트리를 별도로 조회
 		Promise.all([
 			$.get('/mng/mng_org/get_category_tree'),
 			$.get('/mng/mng_org/get_total_org_count')
@@ -117,6 +134,16 @@
 			const totalCountResponse = results[1];
 
 			try {
+				// 기존 트리 인스턴스 제거
+				if (treeInstance) {
+					try {
+						$("#categoryTree").fancytree("destroy");
+					} catch(e) {
+						console.warn('기존 Fancytree 제거 실패:', e);
+					}
+					treeInstance = null;
+				}
+
 				// 미분류 노드를 별도로 추출
 				const uncategorizedNode = treeResponse.find(node => node.data && node.data.type === 'uncategorized');
 				const categoryNodes = treeResponse.filter(node => !node.data || node.data.type !== 'uncategorized');
@@ -143,6 +170,163 @@
 				// 미분류는 항상 추가
 				if (uncategorizedNode) {
 					treeData.push(uncategorizedNode);
+				}
+
+				// 새 트리 인스턴스 생성
+				treeInstance = $("#categoryTree").fancytree({
+					source: treeData,
+					activate: function(event, data) {
+						handleTreeNodeActivate(data.node);
+					},
+					selectMode: 1
+				});
+
+				hideTreeSpinner();
+
+				// 이전에 선택되어 있던 노드 복원
+				setTimeout(function() {
+					const tree = $.ui.fancytree.getTree('#categoryTree');
+					let nodeToActivate = null;
+
+					if (currentSelectedIdx === 'uncategorized') {
+						// 미분류였다면 미분류 노드 찾기
+						nodeToActivate = tree.getNodeByKey('uncategorized');
+					} else if (currentSelectedIdx === null) {
+						// 전체였다면 전체 노드 찾기
+						nodeToActivate = tree.getNodeByKey('all');
+					} else {
+						// 특정 카테고리였다면 해당 노드 찾기
+						nodeToActivate = tree.getNodeByKey('category_' + currentSelectedIdx);
+					}
+
+					if (nodeToActivate) {
+						nodeToActivate.setActive();
+						console.log('이전 선택 노드 복원:', nodeToActivate.title);
+					} else {
+						// 노드를 찾지 못했다면 전체 선택
+						const allNode = tree.getNodeByKey('all');
+						if (allNode) {
+							allNode.setActive();
+						}
+					}
+				}, 100);
+
+				console.log('트리 새로고침 완료 - 카운트 업데이트됨');
+
+			} catch(error) {
+				hideTreeSpinner();
+				console.error('트리 새로고침 실패:', error);
+				showToast('트리 새로고침 중 오류가 발생했습니다', 'error');
+			}
+		}).catch(function(error) {
+			hideTreeSpinner();
+			console.error('트리 데이터 로드 실패:', error);
+			showToast('트리 데이터를 새로고침할 수 없습니다', 'error');
+
+			// 실패 시 현재 그리드만이라도 새로고침
+			loadOrgList();
+		});
+	}
+
+	/**
+	 * 조직 이동 실행 (성공 후 처리 개선)
+	 */
+	function executeMoveOrgs() {
+		const selectedOrgs = getSelectedOrgs();
+		const targetCategoryIdx = $('#moveToCategory').val();
+
+		if (selectedOrgs.length === 0) {
+			showToast('이동할 조직을 선택해주세요', 'warning');
+			return;
+		}
+
+		if (!targetCategoryIdx) {
+			showToast('이동할 카테고리를 선택해주세요', 'warning');
+			$('#moveToCategory').focus();
+			return;
+		}
+
+		const orgIds = selectedOrgs.map(org => org.org_id);
+
+		// 이동 버튼 비활성화
+		$('#confirmMoveOrgBtn').prop('disabled', true);
+
+		$.ajax({
+			url: '/mng/mng_org/move_to_category',
+			type: 'POST',
+			data: {
+				org_ids: orgIds,
+				category_idx: targetCategoryIdx === 'uncategorized' ? 'uncategorized' : targetCategoryIdx
+			},
+			dataType: 'json',
+			success: function(response) {
+				$('#confirmMoveOrgBtn').prop('disabled', false);
+				$('#moveOrgModal').modal('hide');
+
+				showToast(response.message, response.success ? 'success' : 'error');
+
+				if (response.success) {
+					console.log('조직 이동 성공 - 트리와 그리드 새로고침 시작');
+
+					// 트리와 그리드 새로고침 - 카운트 업데이트 포함
+					refreshTreeAndGrid();
+				}
+			},
+			error: function() {
+				$('#confirmMoveOrgBtn').prop('disabled', false);
+				$('#moveOrgModal').modal('hide');
+				showToast('조직 이동 중 오류가 발생했습니다', 'error');
+			}
+		});
+	}
+
+	/**
+	 * Fancytree 초기화 함수에서도 로그 추가 (디버깅용)
+	 */
+	function initFancytree() {
+		console.log('Fancytree 초기화 시작');
+		showTreeSpinner();
+
+		// 전체 조직 수와 카테고리 트리를 별도로 조회
+		Promise.all([
+			$.get('/mng/mng_org/get_category_tree'),
+			$.get('/mng/mng_org/get_total_org_count')
+		]).then(function(results) {
+			const treeResponse = results[0];
+			const totalCountResponse = results[1];
+
+			console.log('트리 응답:', treeResponse);
+			console.log('전체 카운트 응답:', totalCountResponse);
+
+			try {
+				// 미분류 노드를 별도로 추출
+				const uncategorizedNode = treeResponse.find(node => node.data && node.data.type === 'uncategorized');
+				const categoryNodes = treeResponse.filter(node => !node.data || node.data.type !== 'uncategorized');
+
+				// 서버에서 계산된 전체 조직 수 사용
+				const totalOrgCount = totalCountResponse.total_count || 0;
+				console.log('총 조직 수:', totalOrgCount);
+
+				// 트리 데이터 구성
+				const treeData = [
+					{
+						key: 'all',
+						title: `전체 (${totalOrgCount}개)`,
+						folder: true,
+						expanded: true,
+						data: {
+							type: 'all',
+							category_idx: null,
+							category_name: '전체'
+						},
+						children: categoryNodes
+					}
+				];
+
+				// 미분류는 항상 추가
+				if (uncategorizedNode) {
+					treeData.push(uncategorizedNode);
+					console.log('미분류 노드 추가:', uncategorizedNode.title);
 				}
 
 				treeInstance = $("#categoryTree").fancytree({
@@ -174,32 +358,6 @@
 		});
 	}
 
-	/**
-	 * 전체 조직 수 계산 (미분류 제외, 중복 제거)
-	 */
-	function calculateTotalOrgs(categories) {
-		// 단순히 직접 속한 조직만 합산 (하위 카테고리는 제외)
-		let total = 0;
-		function countDirectOrgs(items) {
-			if (!items || !Array.isArray(items)) return;
-			items.forEach(item => {
-				// 미분류 타입은 제외하고, 직접 속한 조직 수만 합산
-				if (item.data && item.data.type !== 'uncategorized' && item.data.direct_org_count !== undefined) {
-					total += parseInt(item.data.direct_org_count) || 0;
-				} else if (item.data && item.data.type !== 'uncategorized' && item.data.org_count !== undefined) {
-					// direct_org_count가 없으면 org_count 사용 (하위 포함이 아닌 직접 조직 수)
-					total += parseInt(item.data.org_count) || 0;
-				}
-
-				// 하위 카테고리도 재귀적으로 처리
-				if (item.children) {
-					countDirectOrgs(item.children);
-				}
-			});
-		}
-		countDirectOrgs(categories);
-		return total;
-	}
 
 	/**
 	 * 트리 노드 활성화 처리
@@ -268,6 +426,9 @@
 
 	/**
 	 * 그리드 컬럼 모델 생성
+	 */
+	/**
+	 * 그리드 컬럼 모델 생성 (render 함수 수정)
 	 */
 	function createColumnModel() {
 		return [
@@ -835,9 +996,11 @@
 	 * 체크박스 이벤트 바인딩
 	 */
 	function bindCheckboxEvents() {
+		// 기존 이벤트 제거
 		$(document).off('change', '#selectAllOrgs');
 		$(document).off('change', '.org-checkbox');
 
+		// 전체 선택 체크박스
 		$(document).on('change', '#selectAllOrgs', function(e) {
 			e.stopPropagation();
 			const isChecked = $(this).is(':checked');
@@ -863,6 +1026,7 @@
 			updateSelectedCount();
 		});
 
+		// 개별 체크박스
 		$(document).on('change', '.org-checkbox', function(e) {
 			e.stopPropagation();
 			const orgId = parseInt($(this).data('org-id'));
@@ -907,14 +1071,7 @@
 		updateSelectedCount();
 	}
 
-	/**
-	 * 선택된 조직 수 업데이트
-	 */
-	function updateSelectedCount() {
-		const count = checkedOrgIds.size;
-		$('#selectedCount').text(count);
-		$('#btnDeleteOrg').prop('disabled', count === 0);
-	}
+
 
 
 	/**
@@ -926,7 +1083,6 @@
 
 		const requestData = {};
 
-		// 미분류 처리
 		if (selectedCategoryIdx !== null && selectedCategoryIdx !== 'uncategorized') {
 			requestData.category_idx = selectedCategoryIdx;
 		} else if (selectedCategoryIdx === 'uncategorized') {
@@ -945,10 +1101,12 @@
 					orgGrid.pqGrid("option", "dataModel.data", response.data || []);
 					orgGrid.pqGrid("refreshDataAndView");
 
+					// 그리드 로드 완료 후 체크박스 이벤트 재바인딩
 					setTimeout(function() {
 						$('#selectAllOrgs').prop('checked', false).prop('indeterminate', false);
+						bindCheckboxEvents(); // 이벤트 재바인딩
 						updateSelectedCount();
-					}, 100);
+					}, 200);
 				} else {
 					showToast('조직 목록 로딩에 실패했습니다', 'error');
 				}
@@ -969,6 +1127,13 @@
 		$('#confirmDeleteOrgBtn').on('click', executeDelete);
 		$('#saveOrgBtn').on('click', saveOrgInfo);
 
+		// 조직 이동 이벤트 - 데스크톱과 모바일 버튼 모두
+		$('#btnMoveOrg, #btnMoveOrgMobile').on('click', showMoveModal);
+		$('#confirmMoveOrgBtn').on('click', executeMoveOrgs);
+
+		// 삭제 이벤트도 모바일 버튼 추가
+		$('#btnDeleteOrgMobile').on('click', showDeleteModal);
+
 		$(window).on('resize', debounce(function() {
 			if (orgGrid) {
 				try {
@@ -980,6 +1145,251 @@
 		}, 250));
 	}
 
+
+	/**
+	 * 조직 이동 모달 표시
+	 */
+	function showMoveModal() {
+		// 체크된 조직 개수 확인
+		if (checkedOrgIds.size === 0) {
+			showToast('이동할 조직을 선택해주세요', 'warning');
+			return;
+		}
+
+		// 실제 조직 데이터 가져오기
+		const selectedOrgs = getSelectedOrgs();
+
+		if (selectedOrgs.length === 0) {
+			showToast('선택된 조직 데이터를 찾을 수 없습니다', 'error');
+			return;
+		}
+
+		// 메시지 업데이트
+		const message = selectedOrgs.length === 1
+			? '선택한 1개의 조직을 다른 카테고리로 이동하시겠습니까?'
+			: `선택한 ${selectedOrgs.length}개의 조직을 다른 카테고리로 이동하시겠습니까?`;
+
+		$('#moveOrgMessage').text(message);
+
+		// 이동 가능한 카테고리 목록 로드
+		loadMovableCategoryOptions();
+
+		$('#moveOrgModal').modal('show');
+	}
+
+	/**
+	 * 이동 가능한 카테고리 목록 로드 (최상위, 미분류 제외)
+	 */
+	function loadMovableCategoryOptions() {
+		$.ajax({
+			url: '/mng/mng_org/get_category_list',
+			type: 'GET',
+			dataType: 'json',
+			success: function(response) {
+				const categorySelect = $('#moveToCategory');
+				categorySelect.empty().append('<option value="">카테고리 선택</option>');
+
+				if (response && response.success && response.data && Array.isArray(response.data)) {
+					// 미분류 옵션 추가
+					categorySelect.append('<option value="uncategorized">미분류</option>');
+
+					// 일반 카테고리 옵션들 추가 (최상위는 제외)
+					response.data.forEach(function(category) {
+						// 최상위나 전체 카테고리는 제외
+						if (category.category_idx && category.category_name) {
+							categorySelect.append(`<option value="${category.category_idx}">${category.category_name}</option>`);
+						}
+					});
+				}
+			},
+			error: function() {
+				showToast('카테고리 목록을 불러올 수 없습니다', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 조직 이동 실행
+	 */
+	function executeMoveOrgs() {
+		const selectedOrgs = getSelectedOrgs();
+		const targetCategoryIdx = $('#moveToCategory').val();
+
+		if (selectedOrgs.length === 0) {
+			showToast('이동할 조직을 선택해주세요', 'warning');
+			return;
+		}
+
+		if (!targetCategoryIdx) {
+			showToast('이동할 카테고리를 선택해주세요', 'warning');
+			$('#moveToCategory').focus();
+			return;
+		}
+
+		const orgIds = selectedOrgs.map(org => org.org_id);
+
+		// 이동 버튼 비활성화
+		$('#confirmMoveOrgBtn').prop('disabled', true);
+
+		$.ajax({
+			url: '/mng/mng_org/move_to_category',
+			type: 'POST',
+			data: {
+				org_ids: orgIds,
+				category_idx: targetCategoryIdx === 'uncategorized' ? 'uncategorized' : targetCategoryIdx
+			},
+			dataType: 'json',
+			success: function(response) {
+				$('#confirmMoveOrgBtn').prop('disabled', false);
+				$('#moveOrgModal').modal('hide');
+
+				showToast(response.message, response.success ? 'success' : 'error');
+
+				if (response.success) {
+					console.log('조직 이동 성공 - 트리와 그리드 새로고침 시작');
+
+					// 트리와 그리드 새로고침 - 카운트 업데이트 포함
+					refreshTreeAndGrid();
+				}
+			},
+			error: function() {
+				$('#confirmMoveOrgBtn').prop('disabled', false);
+				$('#moveOrgModal').modal('hide');
+				showToast('조직 이동 중 오류가 발생했습니다', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 트리와 그리드 새로고침
+	 */
+	function refreshTreeAndGrid() {
+		console.log('트리와 그리드 새로고침 시작');
+
+		// 체크된 조직 ID 초기화
+		checkedOrgIds.clear();
+
+		// 현재 선택된 카테고리 정보 임시 저장
+		const currentSelectedIdx = selectedCategoryIdx;
+		const currentSelectedName = selectedCategoryName;
+
+		// 트리 새로고침 - 서버에서 최신 데이터 가져와서 재구성
+		showTreeSpinner();
+
+		Promise.all([
+			$.get('/mng/mng_org/get_category_tree'),
+			$.get('/mng/mng_org/get_total_org_count')
+		]).then(function(results) {
+			const treeResponse = results[0];
+			const totalCountResponse = results[1];
+
+			try {
+				// 기존 트리 인스턴스 제거
+				if (treeInstance) {
+					try {
+						$("#categoryTree").fancytree("destroy");
+					} catch(e) {
+						console.warn('기존 Fancytree 제거 실패:', e);
+					}
+					treeInstance = null;
+				}
+
+				// 미분류 노드를 별도로 추출
+				const uncategorizedNode = treeResponse.find(node => node.data && node.data.type === 'uncategorized');
+				const categoryNodes = treeResponse.filter(node => !node.data || node.data.type !== 'uncategorized');
+
+				// 서버에서 계산된 전체 조직 수 사용
+				const totalOrgCount = totalCountResponse.total_count || 0;
+
+				// 트리 데이터 구성
+				const treeData = [
+					{
+						key: 'all',
+						title: `전체 (${totalOrgCount}개)`,
+						folder: true,
+						expanded: true,
+						data: {
+							type: 'all',
+							category_idx: null,
+							category_name: '전체'
+						},
+						children: categoryNodes
+					}
+				];
+
+				// 미분류는 항상 추가
+				if (uncategorizedNode) {
+					treeData.push(uncategorizedNode);
+				}
+
+				// 새 트리 인스턴스 생성
+				treeInstance = $("#categoryTree").fancytree({
+					source: treeData,
+					activate: function(event, data) {
+						handleTreeNodeActivate(data.node);
+					},
+					selectMode: 1
+				});
+
+				hideTreeSpinner();
+
+				// 이전에 선택되어 있던 노드 복원
+				setTimeout(function() {
+					const tree = $.ui.fancytree.getTree('#categoryTree');
+					let nodeToActivate = null;
+
+					if (currentSelectedIdx === 'uncategorized') {
+						// 미분류였다면 미분류 노드 찾기
+						nodeToActivate = tree.getNodeByKey('uncategorized');
+					} else if (currentSelectedIdx === null) {
+						// 전체였다면 전체 노드 찾기
+						nodeToActivate = tree.getNodeByKey('all');
+					} else {
+						// 특정 카테고리였다면 해당 노드 찾기
+						nodeToActivate = tree.getNodeByKey('category_' + currentSelectedIdx);
+					}
+
+					if (nodeToActivate) {
+						nodeToActivate.setActive();
+						console.log('이전 선택 노드 복원:', nodeToActivate.title);
+					} else {
+						// 노드를 찾지 못했다면 전체 선택
+						const allNode = tree.getNodeByKey('all');
+						if (allNode) {
+							allNode.setActive();
+						}
+					}
+				}, 100);
+
+				console.log('트리 새로고침 완료 - 카운트 업데이트됨');
+
+			} catch(error) {
+				hideTreeSpinner();
+				console.error('트리 새로고침 실패:', error);
+				showToast('트리 새로고침 중 오류가 발생했습니다', 'error');
+			}
+		}).catch(function(error) {
+			hideTreeSpinner();
+			console.error('트리 데이터 로드 실패:', error);
+			showToast('트리 데이터를 새로고침할 수 없습니다', 'error');
+
+			// 실패 시 현재 그리드만이라도 새로고침
+			loadOrgList();
+		});
+	}
+
+	/**
+	 * 선택된 조직 수 업데이트 (기존 함수 수정)
+	 */
+	function updateSelectedCount() {
+		const count = checkedOrgIds.size;
+		$('#selectedCount').text(count);
+
+		// 모든 관련 버튼들의 상태 업데이트
+		const isDisabled = count === 0;
+		$('#btnDeleteOrg, #btnDeleteOrgMobile').prop('disabled', isDisabled);
+		$('#btnMoveOrg, #btnMoveOrgMobile').prop('disabled', isDisabled);
+	}
 	/**
 	 * 삭제 확인 모달 표시
 	 */
@@ -1011,14 +1421,31 @@
 	function getSelectedOrgs() {
 		const selectedOrgs = [];
 
-		if (orgGrid) {
+		if (!orgGrid) {
+			return selectedOrgs;
+		}
+
+		try {
 			const gridData = orgGrid.pqGrid('option', 'dataModel.data');
-			checkedOrgIds.forEach(orgId => {
-				const orgData = gridData.find(row => row.org_id === orgId);
+
+			if (!gridData || !Array.isArray(gridData)) {
+				return selectedOrgs;
+			}
+
+			// 체크된 각 ID에 대해 그리드에서 해당 데이터 찾기
+			checkedOrgIds.forEach(checkedOrgId => {
+				const orgData = gridData.find(row => {
+					const rowOrgId = parseInt(row.org_id);
+					return rowOrgId === checkedOrgId;
+				});
+
 				if (orgData) {
 					selectedOrgs.push(orgData);
 				}
 			});
+
+		} catch (error) {
+			console.error('getSelectedOrgs 오류:', error);
 		}
 
 		return selectedOrgs;

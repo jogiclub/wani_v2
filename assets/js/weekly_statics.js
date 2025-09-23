@@ -402,6 +402,7 @@ $(document).ready(function () {
 				scrollModel: {autoFit: false, horizontal: true, vertical: true},
 				freezeCols: isMobile ? 0 : 4,
 				numberCell: {show: false},
+				strNoRows: '출석 정보가 없습니다',
 				title: false,
 				resizable: true,
 				sortable: false,

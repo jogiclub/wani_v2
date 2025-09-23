@@ -58,7 +58,7 @@ $this->load->view('mng/header');
 							<small class="text-muted me-2">선택된 조직 <span id="selectedCount">0</span>개</small>
 
 							<div class="btn-group" role="group" aria-label="Basic example">
-								<button type="button" class="btn btn-sm btn-outline-primary" id="btnMoveOrg" disabled>
+								<button type="button" class="btn btn-sm btn-outline-primary" id="btnOrgMap" disabled>
 									<i class="bi bi-geo-alt"></i> 선택지도
 								</button>
 								<button type="button" class="btn btn-sm btn-outline-success" id="btnMoveOrg" disabled>
@@ -68,15 +68,12 @@ $this->load->view('mng/header');
 									<i class="bi bi-trash"></i> 선택삭제
 								</button>
 
-
-
-
 								<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
 									더보기
 								</button>
 								<ul class="dropdown-menu">
-									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveOrg">선택이동</a></li>
-									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteOrg">선택삭제</a></li>
+									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveOrgMobile">선택이동</a></li>
+									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteOrgMobile">선택삭제</a></li>
 									<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
 									<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
 								</ul>
@@ -296,6 +293,32 @@ $this->load->view('mng/header');
 				<div id="orgDetailContent">
 					<!-- 조직 상세 정보가 여기에 표시됩니다 -->
 				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- 카테고리 이동 확인 모달 -->
+<div class="modal fade" id="moveOrgModal" tabindex="-1" aria-labelledby="moveOrgModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="moveOrgModalLabel">조직이동</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p id="moveOrgMessage">선택한 1개의 조직을 다른 카테고리로 이동하시겠습니까?</p>
+				<div class="mb-3">
+					<label for="moveToCategory" class="form-label">이동할 카테고리 선택</label>
+					<select class="form-select" id="moveToCategory" name="moveToCategory">
+						<option value="">카테고리 선택</option>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmMoveOrgBtn">이동</button>
 			</div>
 		</div>
 	</div>
