@@ -130,9 +130,15 @@ $this->load->view('mng/header');
 </div>
 
 <!-- 조직 정보 수정 offcanvas -->
+<!-- 조직 정보 수정 offcanvas -->
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="orgOffcanvas" aria-labelledby="orgOffcanvasLabel" style="width: 600px;">
 	<div class="offcanvas-header text-start">
-		<h5 class="offcanvas-title" id="orgOffcanvasLabel">조직 정보 수정</h5>
+		<div class="d-flex align-items-center gap-2 flex-grow-1">
+			<h5 class="offcanvas-title mb-0" id="orgOffcanvasLabel">조직 정보 수정</h5>
+			<button type="button" class="btn btn-sm btn-outline-primary d-none" id="orgDashboardBtn" title="대시보드 바로가기">
+				<i class="bi bi-box-arrow-up-right"></i> 바로가기
+			</button>
+		</div>
 		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">
@@ -244,8 +250,6 @@ $this->load->view('mng/header');
 					</select>
 					<div class="form-text">태그를 선택하거나 새로 입력하세요</div>
 				</div>
-
-
 			</div>
 		</form>
 	</div>
@@ -258,7 +262,6 @@ $this->load->view('mng/header');
 		</div>
 	</div>
 </div>
-
 <!-- 카테고리명 수정 모달 -->
 <div class="modal fade" id="renameCategoryModal" tabindex="-1">
 	<div class="modal-dialog">

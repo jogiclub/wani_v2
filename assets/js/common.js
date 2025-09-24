@@ -182,6 +182,8 @@ $(document).ready(function() {
 	// 페이지 로드 시 조직 변경 성공 여부 확인
 	try {
 		const changeTimestamp = sessionStorage.getItem('org_change_timestamp');
+		const goToDashboard = sessionStorage.getItem('go_to_dashboard_after_org_change');
+
 		if (changeTimestamp) {
 			const timeDiff = Date.now() - parseInt(changeTimestamp);
 			// 5초 이내의 변경이면 성공으로 간주
@@ -189,12 +191,20 @@ $(document).ready(function() {
 				const orgName = sessionStorage.getItem('selected_org_name');
 				if (orgName) {
 					showToast(orgName + ' 조직으로 변경되었습니다.');
+
+					// 대시보드 이동 플래그가 있으면 대시보드로 이동
+					if (goToDashboard === 'true') {
+						setTimeout(function() {
+							window.location.href = '/dashboard/';
+						}, 1500);
+					}
 				}
 			}
 			// 세션 스토리지 정리
 			sessionStorage.removeItem('org_change_timestamp');
 			sessionStorage.removeItem('selected_org_id');
 			sessionStorage.removeItem('selected_org_name');
+			sessionStorage.removeItem('go_to_dashboard_after_org_change');
 		}
 	} catch (error) {
 		console.warn('sessionStorage 확인 실패:', error);

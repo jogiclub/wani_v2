@@ -828,7 +828,7 @@
 	}
 
 	/**
-	 * 조직 정보를 폼에 채우기
+	 * 조직 정보를 폼에 채우기 (수정된 버전)
 	 */
 	function populateOrgForm(orgData) {
 		console.log('populateOrgForm 시작:', orgData);
@@ -875,8 +875,8 @@
 				handleTagPopulation(orgData.org_tag);
 			}, 300);
 
-			// 제목 업데이트
-			$('#orgOffcanvasLabel').text(`조직 정보 수정 - ${orgData.org_name || '알 수 없음'}`);
+			// 제목 업데이트 및 바로가기 버튼 설정
+			updateOffcanvasHeader(orgData);
 
 			console.log('populateOrgForm 완료');
 
@@ -886,6 +886,86 @@
 		}
 	}
 
+	/**
+	 * offcanvas 헤더 영역 업데이트 (제목 및 바로가기 버튼)
+	 */
+	/**
+	 * offcanvas 헤더 영역 업데이트 (제목 및 바로가기 버튼)
+	 */
+	function updateOffcanvasHeader(orgData) {
+		try {
+			const orgName = orgData.org_name || '알 수 없음';
+			const orgId = orgData.org_id;
+
+			// 제목 업데이트
+			$('#orgOffcanvasLabel').text(`조직 정보 수정 - ${orgName}`);
+
+			// 바로가기 버튼 설정
+			const dashboardBtn = $('#orgDashboardBtn');
+
+			if (orgId) {
+				// 버튼 표시 및 데이터 설정
+				dashboardBtn
+					.removeClass('d-none')
+					.attr('data-org-id', orgId)
+					.attr('title', `${orgName} 대시보드 바로가기`);
+
+				console.log('바로가기 버튼 설정:', orgId, orgName);
+			} else {
+				// 버튼 숨기기
+				dashboardBtn.addClass('d-none');
+			}
+
+		} catch (error) {
+			console.error('updateOffcanvasHeader 오류:', error);
+		}
+	}
+
+
+	/**
+	 * 바로가기 버튼 클릭 처리
+	 */
+	function handleDashboardButtonClick() {
+		const orgId = $('#orgDashboardBtn').attr('data-org-id');
+		const orgName = $('#orgDashboardBtn').attr('title').replace(' 대시보드 바로가기', '');
+
+		if (!orgId) {
+			console.error('조직 ID를 찾을 수 없음');
+			showToast('조직 정보를 찾을 수 없습니다', 'error');
+			return;
+		}
+
+		// 조직 변경 후 대시보드로 이동하는 폼 생성
+		const form = $('<form>', {
+			'method': 'POST',
+			'action': '/dashboard',
+			'target': '_blank'
+		});
+
+		// CSRF 토큰이 있으면 추가
+		const csrfToken = $('meta[name="csrf-token"]').attr('content');
+		if (csrfToken) {
+			form.append($('<input>', {
+				'type': 'hidden',
+				'name': 'csrf_token',
+				'value': csrfToken
+			}));
+		}
+
+		// 조직 ID 추가
+		form.append($('<input>', {
+			'type': 'hidden',
+			'name': 'org_id',
+			'value': orgId
+		}));
+
+		// 폼을 body에 추가하고 제출
+		$('body').append(form);
+		form.submit();
+		form.remove();
+
+		console.log('조직 변경 후 대시보드 이동:', orgId, orgName);
+	}
 
 	/**
 	 * 태그 설정 처리
@@ -1119,8 +1199,9 @@
 		});
 	}
 
+
 	/**
-	 * 전역 이벤트 바인딩
+	 * 전역 이벤트 바인딩 (기존 함수에 추가)
 	 */
 	function bindGlobalEvents() {
 		$('#btnDeleteOrg').on('click', showDeleteModal);
@@ -1133,6 +1214,9 @@
 
 		// 삭제 이벤트도 모바일 버튼 추가
 		$('#btnDeleteOrgMobile').on('click', showDeleteModal);
+
+		// 바로가기 버튼 이벤트 추가
+		$('#orgDashboardBtn').on('click', handleDashboardButtonClick);
 
 		$(window).on('resize', debounce(function() {
 			if (orgGrid) {

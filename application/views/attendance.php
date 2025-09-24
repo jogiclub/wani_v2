@@ -17,7 +17,7 @@
 			<li class="breadcrumb-item active">출석관리</li>
 		</ol>
 	</nav>
-	<div class="col-12 my-1 d-flex align-items-center justify-content-between">
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
 		<h3 class="page-title  mb-0">출석관리</h3>
 
 		<div class="page-tabs ">
