@@ -368,7 +368,7 @@ $is_master = $this->session->userdata('master_yn');
 			<?php if (isset($recent_messages) && !empty($recent_messages)): ?>
 				<div class="accordion accordion-flush" id="msgList">
 					<?php foreach ($recent_messages as $index => $message): ?>
-						<div class="accordion-item" data-message-idx="<?php echo $message['idx']; ?>">
+						<div class="accordion-item <?php echo ($message['read_yn'] === 'Y') ? 'message-read' : ''; ?>" data-message-idx="<?php echo $message['idx']; ?>">
 							<h2 class="accordion-header">
 								<button class="accordion-button collapsed message-toggle"
 										type="button"
@@ -377,9 +377,15 @@ $is_master = $this->session->userdata('master_yn');
 										aria-expanded="false"
 										aria-controls="flush-collapse-<?php echo $message['idx']; ?>"
 										data-message-idx="<?php echo $message['idx']; ?>">
-									<span class="fs-5 text-warning me-2">
-										<i class="bi bi-envelope-fill"></i>
-									</span>
+									<?php if ($message['read_yn'] === 'N'): ?>
+										<span class="fs-5 text-warning me-2">
+											<i class="bi bi-envelope-fill"></i>
+										</span>
+									<?php else: ?>
+										<span class="fs-5 text-secondary me-2">
+											<i class="bi bi-envelope-open-fill"></i>
+										</span>
+									<?php endif; ?>
 									<?php echo htmlspecialchars($message['message_title']); ?>
 									<small class="badge text-secondary ms-auto">
 										<?php

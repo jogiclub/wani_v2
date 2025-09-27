@@ -39,13 +39,13 @@ class Message extends MY_Controller
 			return;
 		}
 
-		// 읽지 않은 메시지 목록 조회
-		$unread_messages = $this->Message_model->get_unread_messages($user_id, $org_id);
+		// 최근 메시지 목록 조회 (읽음/안읽음 포함)
+		$recent_messages = $this->Message_model->get_recent_messages($user_id, $org_id);
 		$unread_count = $this->Message_model->get_unread_count($user_id, $org_id);
 
 		echo json_encode(array(
 			'success' => true,
-			'messages' => $unread_messages,
+			'messages' => $recent_messages,
 			'unread_count' => $unread_count
 		));
 	}
@@ -181,6 +181,42 @@ class Message extends MY_Controller
 			echo json_encode(array(
 				'success' => true,
 				'message' => '메시지가 삭제되었습니다.'
+			));
+		} else {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '메시지 삭제 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+	/**
+	 * 모든 메시지 삭제 (AJAX)
+	 */
+	public function delete_all_messages()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->get_active_org_id();
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 정보를 찾을 수 없습니다.'
+			));
+			return;
+		}
+
+		// 모든 메시지 삭제
+		$result = $this->Message_model->delete_all_messages($user_id, $org_id);
+
+		if ($result) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => '모든 메시지가 삭제되었습니다.'
 			));
 		} else {
 			echo json_encode(array(
