@@ -1179,7 +1179,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 모바일 터치 이벤트 바인딩 - ParamQuery Grid 우회
+	 * 모바일 터치 이벤트 바인딩 - ParamQuery Grid 우회 (수정된 버전)
 	 */
 	function bindMobileTouchEvents() {
 		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -1187,7 +1187,7 @@ $(document).ready(function () {
 
 		if (!isMobile) return;
 
-		// 그리드 컨테이너에 직접 터치 이벤트 바인딩
+		// 그리드 컨테이너에 직접 터치 이벤트 바인딩 (수정된 버전)
 		$('#memberGrid').off('touchend.mobile click.mobile')
 			.on('touchend.mobile click.mobile', 'td', function(e) {
 				e.preventDefault();
@@ -1196,12 +1196,27 @@ $(document).ready(function () {
 				const $cell = $(this);
 				const $row = $cell.closest('tr');
 
-				// 행 인덱스 찾기
-				const rowIndex = $row.index();
-				if (rowIndex < 0) return;
+				// 헤더 행 제외
+				if ($row.hasClass('pq-grid-header') || $row.find('th').length > 0) {
+					return;
+				}
 
-				// 컬럼 인덱스 찾기
-				const cellIndex = $cell.index();
+				// 데이터 행인지 확인
+				const dataRowIndex = $row.attr('pq-row-indx');
+				if (dataRowIndex === undefined || dataRowIndex === null) {
+					return;
+				}
+
+				const rowIndex = parseInt(dataRowIndex);
+				if (rowIndex < 0 || isNaN(rowIndex)) return;
+
+				// 컬럼 인덱스 찾기 (더 정확한 방법)
+				const cellIndex = $cell.attr('pq-col-indx');
+				if (cellIndex === undefined || cellIndex === null) {
+					return;
+				}
+
+				const colIndex = parseInt(cellIndex);
 
 				try {
 					// 그리드 데이터에서 해당 행 정보 가져오기
@@ -1210,13 +1225,13 @@ $(document).ready(function () {
 
 					if (rowData) {
 						console.log('Mobile touch event triggered:', {
-							cellIndex: cellIndex,
+							colIndex: colIndex,
 							rowIndex: rowIndex,
 							memberIdx: rowData.member_idx
 						});
 
 						// 체크박스 컬럼인 경우 (첫 번째 컬럼)
-						if (cellIndex === 0) {
+						if (colIndex === 0) {
 							handleCheckboxColumnClick(e, rowData.member_idx);
 						} else {
 							// 일반 셀인 경우 회원 정보 수정 창 열기
@@ -1231,7 +1246,7 @@ $(document).ready(function () {
 				}
 			});
 
-		console.log('Mobile touch events bound');
+		console.log('Mobile touch events bound with improved targeting');
 	}
 
 	/**

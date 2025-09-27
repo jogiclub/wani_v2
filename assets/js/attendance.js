@@ -516,12 +516,10 @@ $(document).ready(function () {
 
 
 	/**
-	 * 직접 터치 이벤트 바인딩 - ParamQuery Grid 우회
+	 * 직접 터치 이벤트 바인딩 - ParamQuery Grid 우회 (수정된 버전)
 	 */
 	function bindDirectTouchEvents() {
-
-
-		// 그리드 컨테이너에 직접 터치 이벤트 바인딩
+		// 그리드 컨테이너에 직접 터치 이벤트 바인딩 (수정된 버전)
 		$('#attendanceGrid').off('touchend.attendance click.attendance')
 			.on('touchend.attendance click.attendance', 'td', function(e) {
 				e.preventDefault();
@@ -530,12 +528,25 @@ $(document).ready(function () {
 				const $cell = $(this);
 				const $row = $cell.closest('tr');
 
-				// 행 인덱스 찾기
-				const rowIndex = $row.index();
-				if (rowIndex < 0) return;
+				// 헤더 행 제외
+				if ($row.hasClass('pq-grid-header') || $row.find('th').length > 0) {
+					return;
+				}
 
-				// 컬럼 인덱스 찾기
-				const cellIndex = $cell.index();
+				// pqgrid의 데이터 속성을 사용하여 정확한 행/열 인덱스 찾기
+				const dataRowIndex = $row.attr('pq-row-indx');
+				const dataCellIndex = $cell.attr('pq-col-indx');
+
+				if (dataRowIndex === undefined || dataCellIndex === undefined) {
+					return;
+				}
+
+				const rowIndex = parseInt(dataRowIndex);
+				const cellIndex = parseInt(dataCellIndex);
+
+				if (rowIndex < 0 || cellIndex < 0 || isNaN(rowIndex) || isNaN(cellIndex)) {
+					return;
+				}
 
 				// 출석 데이터 컬럼인지 확인 (4번째 컬럼부터)
 				if (cellIndex >= 4) {
@@ -554,12 +565,12 @@ $(document).ready(function () {
 								const sundayDateStr = colData.dataIndx.replace('week_', '');
 								const sunday = sundayDateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
 
-								console.log('Direct touch event triggered:', {
-									memberIdx: rowData.member_idx,
-									sunday: sunday,
-									cellIndex: cellIndex,
-									rowIndex: rowIndex
-								});
+								// console.log('Direct touch event triggered (attendance):', {
+								// 	memberIdx: rowData.member_idx,
+								// 	sunday: sunday,
+								// 	cellIndex: cellIndex,
+								// 	rowIndex: rowIndex
+								// });
 
 								// 출석 상세 열기
 								openAttendanceDetail(sunday);
@@ -571,7 +582,7 @@ $(document).ready(function () {
 				}
 			});
 
-		console.log('Direct touch events bound for mobile');
+		// console.log('Direct touch events bound for mobile (attendance)');
 	}
 
 	/**
