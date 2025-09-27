@@ -477,6 +477,7 @@ $(document).ready(function () {
 				width: "100%",
 				dataModel: {data: []},
 				colModel: getInitialColumns(),
+				strNoRows: '출석 정보가 없습니다',
 				selectionModel: {type: '', mode: 'single'},
 				scrollModel: {autoFit: false, horizontal: true, vertical: true},
 				freezeCols: isMobile ? 0 : 4,

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=0.9">
 <meta name="description" content="왔니, 세상에서 가장 따뜻한 한마디!"/>
 <meta name="keywords" content="출석체크, 교회, 메모, 심방"/>
 <meta name="author" content="wani.im"/>
@@ -86,31 +86,29 @@
 		</div>
 	</div>
 	<div class="header-end col-xl-6 col-2 d-flex justify-content-end px-3 gap-3 align-items-center">
-		<ul class="navbar-nav flex-row d-xl-none fs-1">
-			<li class="nav-item text-nowrap">
-				<button class="nav-link " type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
-					<i class="bi bi-list"></i>
-				</button>
-			</li>
-		</ul>
-
 		<div id="navbarSearch" class="navbar-search collapse">
 			<input class="form-control rounded-0 border-0" type="text" placeholder="Search" aria-label="Search">
 		</div>
 
 		<div id="navbarProfile" class="profile-area d-xl-flex align-items-center gap-3 d-none">
 			<img src="<?php if ($user['user_profile_image']) {echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle profile-img" width="40" height="40">
-
 			<div class="profile-name">
-				<span><a class="dropdown-item" href="#"><?php if ($user['user_name']) {
-							echo $user['user_name'];
-						} ?></a></span>
-				<span class="profile-mail"><a class="dropdown-item" href="#"><?php if ($user['user_mail']) {
-							echo $user['user_mail'];
-						} ?></a></span>
+				<span><a class="dropdown-item" href="#"><?php if ($user['user_name']) {echo $user['user_name'];} ?></a></span>
+				<span class="profile-mail"><a class="dropdown-item" href="#"><?php if ($user['user_mail']) {echo $user['user_mail'];} ?></a></span>
 			</div>
+		</div>
 
-
+		<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative bg-warning me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+			<a class="" type="button" data-bs-toggle="offcanvas" data-bs-target="#msgSidebar" aria-controls="msgSidebar">
+				<i class="bi bi-bell-fill fs-5 text-white"></i>
+			</a>
+			<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
+				<small class="badge bg-danger rounded-pill position-absolute" style="left: 27px; top:-6px; font-size: 12px" id="unread-message-badge">
+					<?php echo $unread_message_count; ?>
+				</small>
+			<?php else: ?>
+				<small class="badge bg-danger rounded-pill position-absolute" style="left: 27px; top:-6px; font-size: 12px; display: none;" id="unread-message-badge">0</small>
+			<?php endif; ?>
 		</div>
 
 		<!-- 기존 헤더 내용 중 사용자 정보 드롭다운 부분에 추가 -->
@@ -125,8 +123,21 @@
 			</div>
 		<?php endif; ?>
 
+
+		<ul class="navbar-nav flex-row d-xl-none fs-1">
+			<li class="nav-item text-nowrap">
+				<button class="nav-link " type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+					<i class="bi bi-list"></i>
+				</button>
+			</li>
+		</ul>
+
 	</div>
 </header>
+
+
+
+
 
 <?php
 /**
@@ -337,6 +348,98 @@ $is_master = $this->session->userdata('master_yn');
 				</div>
 			</div>
 		</div>
+
+
+
+<!-- 파일 위치: application/views/header.php - 메시지 사이드바 수정 -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="msgSidebar" aria-labelledby="msgSidebarLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="msgSidebarLabel">
+			<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
+				총 <b class="text-primary"><?php echo $unread_message_count; ?></b>개의 읽지 않은 메시지
+			<?php else: ?>
+				메시지
+			<?php endif; ?>
+		</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div id="message-content">
+			<?php if (isset($recent_messages) && !empty($recent_messages)): ?>
+				<div class="accordion accordion-flush" id="msgList">
+					<?php foreach ($recent_messages as $index => $message): ?>
+						<div class="accordion-item" data-message-idx="<?php echo $message['idx']; ?>">
+							<h2 class="accordion-header">
+								<button class="accordion-button collapsed message-toggle"
+										type="button"
+										data-bs-toggle="collapse"
+										data-bs-target="#flush-collapse-<?php echo $message['idx']; ?>"
+										aria-expanded="false"
+										aria-controls="flush-collapse-<?php echo $message['idx']; ?>"
+										data-message-idx="<?php echo $message['idx']; ?>">
+									<span class="fs-5 text-warning me-2">
+										<i class="bi bi-envelope-fill"></i>
+									</span>
+									<?php echo htmlspecialchars($message['message_title']); ?>
+									<small class="badge text-secondary ms-auto">
+										<?php
+										$message_date = new DateTime($message['message_date']);
+										$now = new DateTime();
+										$diff = $now->diff($message_date);
+
+										if ($diff->days == 0) {
+											echo 'TODAY';
+										} else if ($diff->days == 1) {
+											echo '1일전';
+										} else {
+											echo $diff->days . '일전';
+										}
+										?>
+									</small>
+								</button>
+							</h2>
+							<div id="flush-collapse-<?php echo $message['idx']; ?>" class="accordion-collapse collapse" data-bs-parent="#msgList">
+								<div class="accordion-body">
+									<span class="msg-comment"><?php echo nl2br(htmlspecialchars($message['message_content'])); ?></span><br/>
+									<div class="mt-2 d-flex gap-2">
+										<?php if ($message['read_yn'] === 'N'): ?>
+											<button class="btn btn-sm btn-outline-primary mark-as-read" data-message-idx="<?php echo $message['idx']; ?>">
+												<i class="bi bi-check-circle me-1"></i>읽음
+											</button>
+										<?php endif; ?>
+										<button class="btn btn-sm btn-outline-danger delete-message" data-message-idx="<?php echo $message['idx']; ?>">
+											<i class="bi bi-trash me-1"></i>삭제
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+
+				<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
+					<div class="text-center mt-3">
+						<button class="btn btn-outline-primary btn-sm" id="markAllAsRead">
+							모든 메시지 읽음 처리
+						</button>
+					</div>
+				<?php endif; ?>
+			<?php elseif (isset($current_org) && $current_org): ?>
+				<div class="text-center text-muted py-5">
+					<i class="bi bi-envelope-open display-1"></i>
+					<p class="mt-3">수신된 메시지가 없습니다.</p>
+				</div>
+			<?php else: ?>
+				<div class="text-center text-muted py-5">
+					<i class="bi bi-building-exclamation display-1"></i>
+					<p class="mt-3">조직을 선택해주세요.</p>
+				</div>
+			<?php endif; ?>
+		</div>
+	</div>
+</div>
+
+
 
 		<main class="main mt-3">
 			<?php endif; ?>

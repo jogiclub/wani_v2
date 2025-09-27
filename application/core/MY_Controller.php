@@ -18,7 +18,8 @@ class MY_Controller extends CI_Controller
 	}
 
 	/**
-	 * 헤더에서 사용할 조직 데이터 준비
+	 * 파일 위치: application/core/MY_Controller.php - prepare_header_data() 함수 수정
+	 * 역할: 헤더에서 사용할 조직 및 메시지 데이터 준비
 	 */
 	protected function prepare_header_data()
 	{
@@ -45,10 +46,30 @@ class MY_Controller extends CI_Controller
 		// 현재 활성화된 조직 정보 가져오기
 		$current_org = $this->get_current_organization($user_orgs);
 
+		// 메시지 정보 가져오기
+		$unread_count = 0;
+		$recent_messages = array();
+
+		// 현재 조직이 있을 때만 메시지 조회
+		if ($current_org && isset($current_org['org_id'])) {
+			$this->load->model('Message_model');
+			try {
+				$unread_count = $this->Message_model->get_unread_count($user_id, $current_org['org_id']);
+				$recent_messages = $this->Message_model->get_unread_messages($user_id, $current_org['org_id']);
+			} catch (Exception $e) {
+				// 메시지 조회 실패 시 로그 기록하고 기본값 유지
+				log_message('error', 'Message 조회 실패: ' . $e->getMessage());
+				$unread_count = 0;
+				$recent_messages = array();
+			}
+		}
+
 		return array(
 			'user' => $user_data,
 			'user_orgs' => $user_orgs,
-			'current_org' => $current_org
+			'current_org' => $current_org,
+			'unread_message_count' => $unread_count,
+			'recent_messages' => $recent_messages
 		);
 	}
 

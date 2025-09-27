@@ -130,7 +130,6 @@ $this->load->view('mng/header');
 </div>
 
 <!-- 조직 정보 수정 offcanvas -->
-<!-- 조직 정보 수정 offcanvas -->
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="orgOffcanvas" aria-labelledby="orgOffcanvasLabel" style="width: 600px;">
 	<div class="offcanvas-header text-start">
 		<div class="d-flex align-items-center gap-2 flex-grow-1">
