@@ -147,18 +147,20 @@ $(document).ready(function() {
 			html += `
                 <div class="accordion-item ${itemClass}" data-message-idx="${messageIdx}">
                     <h2 class="accordion-header">
-                        <button class="accordion-button collapsed message-toggle" 
+                        <button class="accordion-button collapsed message-toggle d-flex" 
                                 type="button" 
                                 data-bs-toggle="collapse" 
                                 data-bs-target="#flush-collapse-${messageIdx}" 
                                 aria-expanded="false" 
                                 aria-controls="flush-collapse-${messageIdx}"
                                 data-message-idx="${messageIdx}">
-                            <span class="fs-5 me-2 message-icon">
-                                <i class="bi ${iconClass}"></i>
+                            <span class="message-icon">
+                                <i class="bi ${iconClass} fs-5 me-2"></i>
+                                ${messageTitle}
+                                <small class="badge text-secondary ms-auto">${timeText}</small>
                             </span> 
-                            ${messageTitle}
-                            <small class="badge text-secondary ms-auto">${timeText}</small>
+                            
+                            
                         </button>
                     </h2>
                     <div id="flush-collapse-${messageIdx}" class="accordion-collapse collapse" data-bs-parent="#msgList">

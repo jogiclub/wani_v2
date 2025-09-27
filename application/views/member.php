@@ -67,15 +67,17 @@
 						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
+								<button type="button" class="btn btn-sm btn-outline-danger d-none d-md-block" id="btnSendMember" disabled><i class="bi bi-chat-dots"></i> 선택문자</button>
 								<button type="button" class="btn btn-sm btn-outline-success d-none d-md-block" id="btnMoveMember" disabled><i class="bi bi-arrow-right-square"></i> 선택이동</button>
-								<button type="button" class="btn btn-sm btn-outline-danger d-none d-md-block" id="btnDeleteMember" disabled><i class="bi bi-trash"></i> 선택삭제</button>
+
 								<div class="btn-group" role="group">
 									<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
 										더보기
 									</button>
 									<ul class="dropdown-menu">
 										<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveMember">선택이동</a></li>
-										<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteMember">선택삭제</a></li>
+										<li><a class="dropdown-item d-block d-md-none" href="#" id="btnSendMember">선택문자</a></li>
+										<li><a class="dropdown-item d-block" href="#" id="btnDeleteMember">선택삭제</a></li>
 										<li><a class="dropdown-item" href="#" id="btnSelectedQrPrint">선택QR인쇄</a></li>
 										<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
 										<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
@@ -456,6 +458,23 @@
 	</div>
 </div>
 
+<!-- 선택된 회원 정보 표시 영역 (선택사항) -->
+<div class="row mt-3" id="selectedMemberInfo" style="display: none;">
+	<div class="col-12">
+		<div class="alert alert-info d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-info-circle"></i>
+                <span id="selectedMemberCount">0</span>명이 선택되었습니다.
+                <small class="text-muted">(<span id="selectedMemberWithPhone">0</span>명이 문자 발송 가능)</small>
+            </span>
+			<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllSelection()">
+				선택 해제
+			</button>
+		</div>
+	</div>
+</div>
+
+
 <?php $this->load->view('footer'); ?>
 
 
@@ -463,10 +482,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-
-<script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
-<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
-<script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/custom/split.min.js"></script>
+<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js"></script>
+<script src="/assets/js/custom/pqgrid.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.js"></script>
 
 <script>
@@ -478,3 +496,4 @@
 	$('.menu-21').addClass('active');
 </script>
 <script src="/assets/js/member.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/member_send.js?<?php echo WB_VERSION; ?>"></script>

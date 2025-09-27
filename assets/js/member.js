@@ -1107,7 +1107,7 @@ $(document).ready(function () {
 				try {
 					memberGrid.pqGrid("destroy");
 				} catch (e) {
-
+					// 무시
 				}
 			}
 
@@ -1116,6 +1116,9 @@ $(document).ready(function () {
 
 			// 새 그리드 생성
 			memberGrid = $("#memberGrid").pqGrid(gridOptions);
+
+			// 전역 접근을 위해 window에 할당
+			window.memberGrid = memberGrid;
 
 			hideGridSpinner();
 		} catch (error) {

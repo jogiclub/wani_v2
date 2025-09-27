@@ -136,3 +136,20 @@ $route['attendance_setting/update_orders'] = 'attendance_setting/update_orders';
 $route['mng'] = 'mng/mng_org';
 $route['mng/mng_org'] = 'mng/mng_org';
 $route['mng/mng_org/(:any)'] = 'mng/mng_org/$1';
+
+
+// Send 컨트롤러 관련 라우팅 추가
+$route['send'] = 'send/index';
+$route['send/popup'] = 'send/popup';
+$route['send/send_message'] = 'send/send_message';
+$route['send/get_send_history'] = 'send/get_send_history';
+$route['send/manage_templates'] = 'send/manage_templates';
+$route['send/save_template'] = 'send/save_template';
+$route['send/update_template'] = 'send/update_template';
+$route['send/delete_template'] = 'send/delete_template';
+$route['send/manage_senders'] = 'send/manage_senders';
+$route['send/save_sender'] = 'send/save_sender';
+$route['send/update_sender'] = 'send/update_sender';
+$route['send/delete_sender'] = 'send/delete_sender';
+$route['send/set_default_sender'] = 'send/set_default_sender';
+$route['send/get_statistics'] = 'send/get_statistics';
