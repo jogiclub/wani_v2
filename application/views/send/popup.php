@@ -410,41 +410,32 @@
 </div>
 
 
-<!-- 문자 충전 모달 -->
-<div class="modal fade" id="chargeModal" tabindex="-1" aria-labelledby="chargeModalLabel" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="chargeModalLabel">문자 충전</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- 문자 충전 Offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="chargeOffcanvas" aria-labelledby="chargeOffcanvasLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="chargeOffcanvasLabel">문자 충전</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div class="mb-3">
+			<label class="form-label mb-2">충전 패키지 선택</label>
+			<div class="list-group" id="packageList">
+				<!-- JavaScript로 동적 생성 -->
 			</div>
-			<div class="modal-body">
-				<table class="table table-hover">
-					<thead>
-					<tr>
-						<th>충전금액</th>
-						<th>SMS</th>
-						<th>LMS</th>
-						<th>MMS</th>
-						<th>카카오톡</th>
-						<th>선택</th>
-					</tr>
-					</thead>
-					<tbody id="packageList">
-					<!-- JavaScript로 동적 생성 -->
-					</tbody>
-				</table>
-				<div class="mt-3 p-3 bg-light border rounded">
-					<div class="d-flex justify-content-between align-items-center">
-						<strong>결제할 금액</strong>
-						<h4 class="mb-0" id="selectedAmount">0원</h4>
-					</div>
-				</div>
+		</div>
+
+		<div class="mt-4 p-3 bg-light border rounded">
+			<div class="d-flex justify-content-between align-items-center">
+				<span class="text-muted">결제할 금액</span>
+				<h4 class="mb-0 text-primary" id="selectedAmount">0원</h4>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-primary" id="btnCharge">결제하기</button>
-			</div>
+		</div>
+
+		<div class="d-grid gap-2 mt-4">
+			<button type="button" class="btn btn-primary" id="btnCharge">
+				<i class="bi bi-credit-card"></i> 결제하기
+			</button>
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">취소</button>
 		</div>
 	</div>
 </div>
@@ -457,11 +448,7 @@
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">
-		<div class="d-flex justify-content-end mb-3">
-			<button class="btn btn-sm btn-primary" id="btnAddSenderModal">
-				<i class="bi bi-plus-lg"></i> 발신번호 추가
-			</button>
-		</div>
+
 		<table class="table table-hover">
 			<thead>
 			<tr>
@@ -475,6 +462,12 @@
 			<!-- JavaScript로 동적 생성 -->
 			</tbody>
 		</table>
+
+		<div class="d-grid gap-2 mt-4">
+			<button class="btn btn-primary" id="btnAddSenderModal"><i class="bi bi-plus-lg"></i> 발신번호 추가</button>
+			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">취소</button>
+		</div>
+
 	</div>
 </div>
 

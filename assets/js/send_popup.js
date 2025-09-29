@@ -12,7 +12,8 @@ $(document).ready(function() {
 	// 문자충전 버튼 클릭
 	$('#btnChargeModal').on('click', function() {
 		loadChargePackages();
-		$('#chargeModal').modal('show');
+		const offcanvas = new bootstrap.Offcanvas(document.getElementById('chargeOffcanvas'));
+		offcanvas.show();
 	});
 
 	// 결제하기 버튼 클릭
@@ -74,41 +75,46 @@ function loadChargePackages() {
 }
 
 /**
- * 패키지 목록 렌더링
+ * 패키지 목록 렌더링 (Offcanvas용)
  */
 function renderPackageList(packages) {
-	const tbody = $('#packageList');
-	tbody.empty();
+	const container = $('#packageList');
+	container.empty();
 
 	packages.forEach(function(pkg) {
-		const row = `
-			<tr>
-				<td>${formatNumber(pkg.package_amount)}원</td>
-				<td>${pkg.sms_price}원</td>
-				<td>${pkg.lms_price}원</td>
-				<td>${pkg.mms_price}원</td>
-				<td>${pkg.kakao_price}원</td>
-				<td>
-					<button type="button" class="btn btn-sm btn-outline-primary btn-select-package"
-							data-package-idx="${pkg.package_idx}"
-							data-amount="${pkg.package_amount}">
-						선택
-					</button>
-				</td>
-			</tr>
+		const item = `
+			<a href="#" class="list-group-item list-group-item-action package-item" 
+			   data-package-idx="${pkg.package_idx}"
+			   data-package-name="${pkg.package_name}"
+			   data-amount="${pkg.package_amount}">
+				<div class="d-flex w-100 justify-content-between align-items-center">
+					<div>
+						<h6 class="mb-1">${formatNumber(pkg.package_amount)}원</h6>
+						<small class="text-muted">
+							SMS ${pkg.sms_price}원 / LMS ${pkg.lms_price}원 / 
+							MMS ${pkg.mms_price}원 / 카카오 ${pkg.kakao_price}원
+						</small>
+					</div>
+					<i class="bi bi-chevron-right"></i>
+				</div>
+			</a>
 		`;
-		tbody.append(row);
+		container.append(item);
 	});
 
-	// 선택 버튼 이벤트
-	$('.btn-select-package').on('click', function() {
-		$('.btn-select-package').removeClass('btn-primary').addClass('btn-outline-primary');
-		$(this).removeClass('btn-outline-primary').addClass('btn-primary');
+	// 선택 이벤트
+	$('.package-item').on('click', function(e) {
+		e.preventDefault();
+
+		$('.package-item').removeClass('active');
+		$(this).addClass('active');
 
 		selectedPackage = {
 			package_idx: $(this).data('package-idx'),
+			package_name: $(this).data('package-name'),
 			amount: $(this).data('amount')
 		};
+
 
 		$('#selectedAmount').text(formatNumber(selectedPackage.amount) + '원');
 	});
@@ -139,12 +145,20 @@ function processCharge() {
 					if (response.success) {
 						showToast(response.message, 'success');
 						updateBalanceDisplay(response.balance);
-						$('#chargeModal').modal('hide');
+
+						// Offcanvas 닫기
+						const offcanvasEl = document.getElementById('chargeOffcanvas');
+						const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+						if (offcanvas) {
+							offcanvas.hide();
+						}
 
 						// 선택 초기화
-						selectedPackage = null;
-						$('#selectedAmount').text('0원');
-						$('.btn-select-package').removeClass('btn-primary').addClass('btn-outline-primary');
+						setTimeout(function() {
+							selectedPackage = null;
+							$('#selectedAmount').text('0원');
+							$('.package-item').removeClass('active');
+						}, 300);
 					} else {
 						showToast(response.message, 'error');
 					}
@@ -154,7 +168,7 @@ function processCharge() {
 					console.error('충전 실패:', error);
 				},
 				complete: function() {
-					$('#btnCharge').prop('disabled', false).html('결제하기');
+					$('#btnCharge').prop('disabled', false).html('<i class="bi bi-credit-card"></i> 결제하기');
 				}
 			});
 		}
@@ -294,7 +308,7 @@ function renderSenderList(senders) {
 				<td>${authButton}</td>
 				<td>
 					<button type="button" class="btn btn-xs btn-outline-danger btn-delete-sender" data-sender-idx="${sender.sender_idx}">
-						<i class="bi bi-trash"></i>
+						<i class="bi bi-trash"></i> 삭제
 					</button>
 				</td>
 			</tr>
@@ -371,6 +385,10 @@ function saveSender() {
 	});
 }
 
+
+let authTimer = null;
+let authTimeLeft = 120;
+
 /**
  * 인증번호 요청
  */
@@ -419,20 +437,62 @@ function showAuthCodeModal(senderIdx, senderNumber) {
 						</div>
 						<div class="modal-body">
 							<p id="authCodeMessage"></p>
-							<div class="input-group">
+							
+							<div class="text-end">
+								<span class="badge bg-danger fs-3 mb-3 d-flex justify-content-center" id="authTimer">02:00</span>
+							</div>
+							
+							<div class="input-group mb-2">
 								<input type="text" class="form-control" id="authCodeInput" placeholder="인증번호 6자리" maxlength="6">
 								<button class="btn btn-primary" type="button" id="btnVerifyAuth">확인</button>
 							</div>
+							
 						</div>
 					</div>
 				</div>
 			</div>
 		`);
 		$('body').append(authModal);
+
+		// 모달이 닫힐 때 타이머 정리
+		authModal.on('hidden.bs.modal', function() {
+			if (authTimer) {
+				clearInterval(authTimer);
+				authTimer = null;
+			}
+		});
 	}
 
-	$('#authCodeMessage').text(`입력한 발신번호(${senderNumber})로 6자리 인증번호를 전송하였습니다.`);
+	$('#authCodeMessage').html(`입력한 발신번호(${senderNumber})로 6자리 인증번호를 전송하였습니다.<br>2분 안에 인증번호를 입력해주세요!`);
 	$('#authCodeInput').val('');
+
+	// 타이머 초기화 및 시작
+	authTimeLeft = 120;
+	$('#authTimer').text('02:00');
+
+	// 기존 타이머가 있으면 정리
+	if (authTimer) {
+		clearInterval(authTimer);
+	}
+
+	// 타이머 시작
+	authTimer = setInterval(function() {
+		authTimeLeft--;
+
+		const minutes = Math.floor(authTimeLeft / 60);
+		const seconds = authTimeLeft % 60;
+		const timeText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+		$('#authTimer').text(timeText);
+
+		if (authTimeLeft <= 0) {
+			clearInterval(authTimer);
+			authTimer = null;
+			$('#authTimer').text('00:00');
+			showToast('인증번호 입력 시간이 만료되었습니다.', 'error');
+			$('#authCodeModal').modal('hide');
+		}
+	}, 1000);
 
 	$('#btnVerifyAuth').off('click').on('click', function() {
 		const authCode = $('#authCodeInput').val().trim();
@@ -442,12 +502,18 @@ function showAuthCodeModal(senderIdx, senderNumber) {
 			return;
 		}
 
+		if (authTimeLeft <= 0) {
+			showToast('인증번호 입력 시간이 만료되었습니다.', 'error');
+			return;
+		}
+
 		verifyAuthCode(senderIdx, authCode);
 	});
 
 	const modalInstance = new bootstrap.Modal(authModal[0]);
 	modalInstance.show();
 }
+
 
 /**
  * 인증번호 확인
@@ -464,6 +530,12 @@ function verifyAuthCode(senderIdx, authCode) {
 		dataType: 'json',
 		success: function(response) {
 			if (response.success) {
+				// 타이머 정리
+				if (authTimer) {
+					clearInterval(authTimer);
+					authTimer = null;
+				}
+
 				showToast(response.message, 'success');
 				$('#authCodeModal').modal('hide');
 				loadSenderList();
