@@ -42,18 +42,32 @@
 						<label for="senderSelect" class="col-form-label">발신번호</label>
 
 						<div class="input-group">
-							<select class="form-select" id="senderSelect" name="sender_number">
-								<option value="">발신번호를 선택하세요</option>
-								<?php foreach ($sender_numbers as $sender): ?>
-									<option value="<?php echo $sender['sender_number']; ?>"
-											data-name="<?php echo htmlspecialchars($sender['sender_name']); ?>"
-										<?php echo $sender['is_default'] === 'Y' ? 'selected' : ''; ?>>
-										<?php echo htmlspecialchars($sender['sender_name']); ?>
-										(<?php echo $sender['sender_number']; ?>)
-									</option>
-								<?php endforeach; ?>
+							<?php
+							// 인증된 발신번호만 필터링
+							$verified_senders = array_filter($sender_numbers, function($sender) {
+								return isset($sender['auth_status']) && $sender['auth_status'] === 'verified';
+							});
+							$has_verified_sender = count($verified_senders) > 0;
+							?>
+
+							<select class="form-select" id="senderSelect" name="sender_number" <?php echo !$has_verified_sender ? 'disabled' : ''; ?>>
+								<?php if (!$has_verified_sender): ?>
+									<option value="">인증된 발신번호가 없습니다. 발신번호 추가를 진행해주세요!</option>
+								<?php else: ?>
+									<option value="">발신번호를 선택하세요</option>
+									<?php foreach ($verified_senders as $sender): ?>
+										<option value="<?php echo $sender['sender_number']; ?>"
+												data-name="<?php echo htmlspecialchars($sender['sender_name']); ?>"
+											<?php echo $sender['is_default'] === 'Y' ? 'selected' : ''; ?>>
+											<?php echo htmlspecialchars($sender['sender_name']); ?>
+											(<?php echo $sender['sender_number']; ?>)
+										</option>
+									<?php endforeach; ?>
+								<?php endif; ?>
 							</select>
-							<button class="btn btn-primary"><i class="bi bi-telephone-plus"></i> 발신번호 추가</button>
+							<button class="btn btn-primary" id="btnAddSender">
+								<i class="bi bi-telephone-plus"></i> 발신번호 관리
+							</button>
 						</div>
 					</div>
 
@@ -430,6 +444,61 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
 				<button type="button" class="btn btn-primary" id="btnCharge">결제하기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- 발신번호 관리 Offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="senderManageOffcanvas" aria-labelledby="senderManageOffcanvasLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="senderManageOffcanvasLabel">발신번호 관리</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div class="d-flex justify-content-end mb-3">
+			<button class="btn btn-sm btn-primary" id="btnAddSenderModal">
+				<i class="bi bi-plus-lg"></i> 발신번호 추가
+			</button>
+		</div>
+		<table class="table table-hover">
+			<thead>
+			<tr>
+				<th>이름</th>
+				<th>발신번호</th>
+				<th>인증</th>
+				<th>삭제</th>
+			</tr>
+			</thead>
+			<tbody id="senderTableBody">
+			<!-- JavaScript로 동적 생성 -->
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<!-- 발신번호 추가 모달 -->
+<div class="modal fade" id="addSenderModal" tabindex="-1" aria-labelledby="addSenderModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-sm">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="addSenderModalLabel">발신번호 추가</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="newSenderName" class="form-label">이름</label>
+					<input type="text" class="form-control" id="newSenderName" placeholder="이름을 입력하세요">
+				</div>
+				<div class="mb-3">
+					<label for="newSenderNumber" class="form-label">발신번호</label>
+					<input type="text" class="form-control" id="newSenderNumber" placeholder="발신번호를 입력하세요 (예: 010-1234-5678)">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnSaveSender">저장</button>
 			</div>
 		</div>
 	</div>

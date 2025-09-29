@@ -46,8 +46,8 @@ class Send extends MY_Controller
 		// 선택된 회원들의 정보 조회
 		$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
 
-		// 발신번호 목록 조회
-		$sender_numbers = $this->Send_model->get_sender_numbers($current_org_id);
+		// 발신번호 목록 조회 (인증 상태 포함)
+		$sender_numbers = $this->Send_model->get_sender_numbers_with_auth($current_org_id);
 
 		// 미리 등록된 문구 목록 조회
 		$message_templates = $this->Send_model->get_message_templates($current_org_id);
@@ -638,6 +638,105 @@ class Send extends MY_Controller
 			'success' => true,
 			'data' => $history
 		));
+	}
+
+	/**
+	 * 발신번호 목록 조회 (AJAX)
+	 */
+	public function get_sender_list()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$senders = $this->Send_model->get_sender_numbers_with_auth($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'senders' => $senders
+		));
+	}
+
+	/**
+	 * 발신번호 인증번호 발송
+	 */
+	public function send_auth_code()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$sender_idx = $this->input->post('sender_idx');
+		$sender_number = $this->input->post('sender_number');
+		$org_id = $this->input->post('org_id');
+
+		if (!$sender_idx || !$sender_number || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 6자리 인증번호 생성
+		$auth_code = sprintf('%06d', mt_rand(0, 999999));
+
+		// 인증번호 만료 시간 설정 (5분)
+		$expires = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+
+		// DB에 인증번호 저장
+		$result = $this->Send_model->save_auth_code($sender_idx, $auth_code, $expires);
+
+		if ($result) {
+			// 실제로는 SMS API를 통해 인증번호 발송
+			// 현재는 임시로 alert로 표시하도록 응답
+			echo json_encode(array(
+				'success' => true,
+				'message' => '인증번호가 발송되었습니다.',
+				'auth_code' => $auth_code,
+				'sender_number' => $sender_number
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '인증번호 발송에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 발신번호 인증 확인
+	 */
+	public function verify_auth_code()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$sender_idx = $this->input->post('sender_idx');
+		$auth_code = $this->input->post('auth_code');
+		$org_id = $this->input->post('org_id');
+
+		if (!$sender_idx || !$auth_code || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 인증번호 확인
+		$verification = $this->Send_model->verify_auth_code($sender_idx, $auth_code);
+
+		if ($verification['success']) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => '인증이 완료되었습니다.'
+			));
+		} else {
+			echo json_encode(array(
+				'success' => false,
+				'message' => $verification['message']
+			));
+		}
 	}
 
 }

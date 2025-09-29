@@ -350,4 +350,74 @@ class Send_model extends CI_Model
 		);
 	}
 
+	/**
+	 * 발신번호 목록 조회 (인증 상태 포함)
+	 */
+	public function get_sender_numbers_with_auth($org_id)
+	{
+		$this->db->select('sender_idx, sender_name, sender_number, is_default, auth_status');
+		$this->db->from('wb_sender_number');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('active_yn', 'Y');
+		$this->db->order_by('is_default', 'DESC');
+		$this->db->order_by('sender_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 인증번호 저장
+	 */
+	public function save_auth_code($sender_idx, $auth_code, $expires)
+	{
+		$data = array(
+			'auth_code' => $auth_code,
+			'auth_code_expires' => $expires,
+			'updated_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('sender_idx', $sender_idx);
+		return $this->db->update('wb_sender_number', $data);
+	}
+
+	/**
+	 * 인증번호 확인
+	 */
+	public function verify_auth_code($sender_idx, $auth_code)
+	{
+		$this->db->select('auth_code, auth_code_expires');
+		$this->db->from('wb_sender_number');
+		$this->db->where('sender_idx', $sender_idx);
+		$query = $this->db->get();
+		$sender = $query->row_array();
+
+		if (!$sender) {
+			return array('success' => false, 'message' => '발신번호를 찾을 수 없습니다.');
+		}
+
+		// 인증번호 만료 확인
+		if (strtotime($sender['auth_code_expires']) < time()) {
+			return array('success' => false, 'message' => '인증번호가 만료되었습니다.');
+		}
+
+		// 인증번호 일치 확인
+		if ($sender['auth_code'] !== $auth_code) {
+			return array('success' => false, 'message' => '인증번호가 일치하지 않습니다.');
+		}
+
+		// 인증 완료 처리
+		$update_data = array(
+			'auth_status' => 'verified',
+			'auth_code' => null,
+			'auth_code_expires' => null,
+			'updated_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('sender_idx', $sender_idx);
+		$this->db->update('wb_sender_number', $update_data);
+
+		return array('success' => true, 'message' => '인증이 완료되었습니다.');
+	}
+
 }
