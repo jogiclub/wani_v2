@@ -447,7 +447,7 @@ $is_master = $this->session->userdata('master_yn');
 
 
 
-		<main class="main mt-3">
+		<main class="main mt-3" style="height: 85vh">
 			<?php endif; ?>
 
 

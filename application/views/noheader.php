@@ -37,7 +37,7 @@
 	</header>
     <div class="container-fluid">
 		<div class="row">
-			<main class="ms-sm-auto mt-6 d-flex justify-content-center align-items-center flex-column" style="width: 100%!important;">
+			<main class="ms-sm-auto d-flex justify-content-center align-items-center flex-column" style="width: 100%!important; height: calc(100vh - 60px);">
 
 
 

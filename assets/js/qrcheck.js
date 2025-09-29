@@ -867,12 +867,10 @@ function loadAttendanceTypes(memberIdx, attendanceData) {
 	$('#attendanceModal').modal('show');
 }
 
-/**
- * 그룹출석 관련 함수들
- */
+
 
 /**
- * 그룹출석 pqgrid 초기화
+ * 그룹출석 pqgrid 초기화 (개선된 버전)
  */
 function initializePastoralGrid() {
 	if (pastoralGrid) {
@@ -907,7 +905,7 @@ function initializePastoralGrid() {
 		}
 	];
 
-	// 출석 타입별 컬럼 동적 추가
+	// 출석타입별 컬럼 동적 추가
 	if (attendanceTypes && attendanceTypes.length > 0) {
 		attendanceTypes.forEach(function(attType) {
 			var columnConfig = {
@@ -923,18 +921,20 @@ function initializePastoralGrid() {
 			if (attType.att_type_input === 'check') {
 				columnConfig.editable = false;
 				columnConfig.render = function(ui) {
-					var isChecked = ui.cellData === true || ui.cellData === 'Y' || ui.cellData === 1;
-					var checkedAttr = isChecked ? 'checked' : '';
-					var checkboxId = 'checkbox_' + ui.rowIndx + '_' + attType.att_type_idx;
+					const isChecked = ui.cellData === true || ui.cellData === 'Y' || ui.cellData === 1;
+					const checkedAttr = isChecked ? 'checked' : '';
 
-					return '<div style="text-align: center;">' +
+					// pq-row-indx 속성 사용하여 정확한 행 인덱스 전달
+					const checkboxId = 'checkbox_' + ui.rowIndx + '_' + attType.att_type_idx;
+
+					return '<div style="text-align: center; padding: 8px;">' +
 						'<input type="checkbox" ' + checkedAttr + ' ' +
 						'id="' + checkboxId + '" ' +
 						'class="pastoral-checkbox" ' +
 						'data-row-indx="' + ui.rowIndx + '" ' +
 						'data-att-type-idx="' + attType.att_type_idx + '" ' +
 						'data-member-idx="' + ui.rowData.member_idx + '" ' +
-						'style="transform: scale(1.2);">' +
+						'style="transform: scale(1.3); cursor: pointer; pointer-events: all;">' +
 						'</div>';
 				};
 			} else {
@@ -991,9 +991,10 @@ function initializePastoralGrid() {
 			saveKey: $.ui.keyCode.ENTER
 		},
 		complete: function() {
+			// 그리드 렌더링 완료 후 이벤트 바인딩 (지연 실행으로 안정성 확보)
 			setTimeout(function() {
 				bindPastoralCheckboxEvents();
-			}, 100);
+			}, 200);
 		}
 	};
 
@@ -1001,42 +1002,79 @@ function initializePastoralGrid() {
 }
 
 /**
- * 그룹출석 체크박스 이벤트 바인딩
+ * 그룹출석 체크박스 이벤트 바인딩 - PC/모바일 통합 개선
  */
 function bindPastoralCheckboxEvents() {
 	// 기존 이벤트 제거
-	$(document).off('change click touchend', '.pastoral-checkbox');
+	$(document).off('change.pastoral click.pastoral touchend.pastoral', '.pastoral-checkbox');
 
 	// 다중 이벤트 바인딩으로 모바일 호환성 개선
-	$(document).on('change click touchend', '.pastoral-checkbox', function(e) {
+	$(document).on('change.pastoral click.pastoral touchend.pastoral', '.pastoral-checkbox', function(e) {
 		e.stopPropagation();
-		e.preventDefault();
 
-		var $checkbox = $(this);
-		var checked = !$checkbox.is(':checked'); // 토글 상태
-		var rowIndx = parseInt($checkbox.data('row-indx'));
-		var memberIdx = $checkbox.data('member-idx');
-		var attTypeIdx = $checkbox.data('att-type-idx');
+		const $checkbox = $(this);
+		const $row = $checkbox.closest('tr');
 
-		// 체크박스 상태 직접 변경
-		$checkbox.prop('checked', checked);
+		// pqgrid 속성에서 정확한 행 인덱스 가져오기
+		let rowIndx = parseInt($row.attr('pq-row-indx'));
 
-		try {
-			var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
-			if (gridData && gridData[rowIndx]) {
-				gridData[rowIndx]["att_type_" + attTypeIdx] = checked;
-				pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+		// pq-row-indx가 없으면 data 속성 사용
+		if (isNaN(rowIndx)) {
+			rowIndx = parseInt($checkbox.data('row-indx'));
+		}
 
-				// 그리드 새로고침 (모바일에서 UI 업데이트 보장)
+		const memberIdx = $checkbox.data('member-idx');
+		const attTypeIdx = $checkbox.data('att-type-idx');
+
+		// 행 인덱스 유효성 검증
+		if (isNaN(rowIndx) || rowIndx < 0) {
+			console.error('유효하지 않은 행 인덱스:', rowIndx);
+			return;
+		}
+
+		// PC/모바일 이벤트 타입별 처리
+		let shouldProcess = false;
+		let checked = $checkbox.is(':checked');
+
+		if (e.type === 'change') {
+			// PC: change 이벤트
+			shouldProcess = true;
+		} else if (e.type === 'touchend') {
+			// 모바일: touchend 이벤트
+			e.preventDefault();
+			shouldProcess = true;
+			checked = !checked; // 터치 이벤트는 상태를 토글
+		} else if (e.type === 'click' && !e.originalEvent?.isTrusted) {
+			// 프로그래매틱 클릭은 무시
+			return;
+		}
+
+		if (shouldProcess) {
+			// 체크박스 상태 직접 변경 (터치 이벤트용)
+			if (e.type === 'touchend') {
 				setTimeout(function() {
-					pastoralGrid.pqGrid("refreshDataAndView");
-				}, 50);
+					$checkbox.prop('checked', checked);
+				}, 10);
 			}
-		} catch (error) {
-			console.error('체크박스 데이터 업데이트 실패:', error);
+
+			try {
+				var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
+				if (gridData && gridData[rowIndx]) {
+					gridData[rowIndx]["att_type_" + attTypeIdx] = checked;
+					pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+
+					// 그리드 새로고침 (모바일에서 UI 업데이트 보장)
+					setTimeout(function() {
+						pastoralGrid.pqGrid("refreshDataAndView");
+					}, 50);
+				}
+			} catch (error) {
+				console.error('체크박스 데이터 업데이트 실패:', error);
+			}
 		}
 	});
 
+	console.log('Pastoral checkbox events bound for PC/Mobile');
 }
 
 /**

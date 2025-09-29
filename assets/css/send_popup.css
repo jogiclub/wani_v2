@@ -1,4 +1,9 @@
+.send-popup{}
+.send-popup .card-body{height: calc(100vh - 159px);}
 .send-popup .card-body .col-form-label{font-size: 0.9rem;font-weight: 600;color: #6c757d;padding:0; margin-bottom: 0.5rem;}
-.send-popup .card-body .send-table{height: 200px; overflow-y: scroll}
+.send-popup .card-body .send-table{height: 150px; overflow-y: scroll}
 .send-popup .card-body .send-table tr td{vertical-align: middle;}
 
+#sendTabContent .figure-template{width: 100%;cursor: pointer; }
+#sendTabContent .figure-template small{ height: 150px; display: inline-block;
+	overflow-y: auto;}

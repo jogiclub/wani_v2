@@ -104,9 +104,10 @@
 					</div>
 
 
+					
+
 					<!-- 메시지 내용 -->
 					<div class="mb-3">
-
 						<div class="row">
 							<div class="col-sm-6">
 								<label for="messageContent" class="col-form-label">메시지 내용</label>
@@ -126,6 +127,25 @@
 									<a class="btn btn-sm btn-outline-secondary mb-1">임시1</a>
 									<a class="btn btn-sm btn-outline-secondary mb-1">임시2</a>
 								</div>
+							</div>
+						</div>
+					</div>
+
+
+					<div class="col-sm-12">
+						<label for="messageContent" class="col-form-label">발송시점</label>
+						<div class="d-flex justify-content-between align-items-center">
+							<div class="">
+								<input type="radio" class="btn-check" name="options-base" id="option1" autocomplete="off" checked>
+								<label class="btn" for="option1">즉시발송</label>
+								<input type="radio" class="btn-check" name="options-base" id="option2" autocomplete="off">
+								<label class="btn" for="option2">시간지정발송</label>
+							</div>
+							<div class="input-group" style="width: 350px">
+								<input type="datetime-local" class="form-control" disabled>
+								<button class="btn btn-outline-secondary" type="button" disabled>1시간후</button>
+								<button class="btn btn-outline-secondary" type="button" disabled>12시간후</button>
+								<button class="btn btn-outline-secondary" type="button" disabled>24시간후</button>
 							</div>
 						</div>
 					</div>
@@ -164,32 +184,181 @@
 					<!-- 메시지 템플릿 선택 -->
 					<div class="row mb-3">
 						<div class="col-12">
-						<label for="templateSelect" class="col-form-label">메시지 템플릿</label>
+
+
+							<ul class="nav nav-tabs" id="sendTab" role="tablist">
+								<li class="nav-item" role="presentation">
+									<button class="nav-link active" id="template-tab" data-bs-toggle="tab" data-bs-target="#template-tab-pane" type="button" role="tab" aria-controls="template-tab-pane" aria-selected="true">메시지 템플릿</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-tab-pane" type="button" role="tab" aria-controls="history-tab-pane" aria-selected="false">전송 히스토리</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="reservation-tab" data-bs-toggle="tab" data-bs-target="#reservation-tab-pane" type="button" role="tab" aria-controls="reservation-tab-pane" aria-selected="false">예약전송 목록</button>
+								</li>
+								<li class="nav-item" role="presentation">
+									<button class="nav-link" id="address-tab" data-bs-toggle="tab" data-bs-target="#address-tab-pane" type="button" role="tab" aria-controls="address-tab-pane" aria-selected="false">내 주소록</button>
+								</li>
+							</ul>
+							<div class="tab-content" id="sendTabContent">
+								<div class="tab-pane fade show active" id="template-tab-pane" role="tabpanel" aria-labelledby="template-tab" tabindex="0">
+									<div class="d-flex justify-content-end my-2">
+										<a class="btn btn-sm btn-outline-primary me-2"><i class="bi bi-plus-lg"></i> 새 템플릿</a>
+										<a class="btn btn-sm btn-primary">전체 저장</a>
+									</div>
+									<div class="row">
+										<div class="col-6 col-sm-4">
+											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
+												<small>{이름} 회원님 생일축하합니다.</small>
+												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
+											</figure>
+										</div>
+										<div class="col-6 col-sm-4">
+											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
+												<small>{이름} 회원님 생일축하합니다. {이름} 회원님 생일축하합니다.{이름} 회원님 생일축하합니다.{이름} 회원님 생일축하합니다.{이름} 회원님 생일축하합니다.</small>
+												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
+											</figure>
+										</div>
+										<div class="col-6 col-sm-4">
+											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
+												<small>{이름} 회원님 생일축하합니다.</small>
+												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
+											</figure>
+										</div>
+										<div class="col-6 col-sm-4">
+											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
+												<small>{이름} 회원님 생일축하합니다.</small>
+												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
+											</figure>
+										</div>
+									</div>
+
+
+								</div>
+								<div class="tab-pane fade" id="history-tab-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
+									<div class="d-flex justify-content-end my-2">
+
+
+											<input type="date" class="form-control" value="2025-01-01" style="width: 140px"/>
+
+
+									</div>
+									<table class="table">
+										<thead>
+										<tr>
+											<th scope="col">전송일시</th>
+											<th scope="col">발신번호</th>
+											<th scope="col">수신자</th>
+											<th scope="col">결과확인</th>
+										</tr>
+										</thead>
+										<tbody>
+										<tr>
+											<td>2025.09.11 34:33:22</td>
+											<td>02-1234-6678</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-success">결과확인</a></td>
+										</tr>
+										<tr>
+											<td>2025.09.11 34:33:22</td>
+											<td>02-1234-6678</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-success">결과확인</a></td>
+										</tr>
+										<tr>
+											<td>2025.09.11 34:33:22</td>
+											<td>02-1234-6678</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-success">결과확인</a></td>
+										</tr>
+										</tbody>
+									</table>
+
+								</div>
+								<div class="tab-pane fade" id="reservation-tab-pane" role="tabpanel" aria-labelledby="reservation-tab" tabindex="0">
+									<div class="d-flex justify-content-end my-2">
+										<a class="btn btn-sm btn-outline-success">엑셀로 예약전송 추가</a>
+									</div>
+									<table class="table">
+										<thead>
+										<tr>
+											<th scope="col">전송예정일시</th>
+											<th scope="col">발신번호</th>
+											<th scope="col">수신자</th>
+											<th scope="col">내용확인</th>
+										</tr>
+										</thead>
+										<tbody>
+										<tr>
+											<td>2025.09.11 34:33:22</td>
+											<td>02-1234-6678</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-warning">내용확인</a></td>
+										</tr>
+										<tr>
+											<td>2025.09.11 34:33:22</td>
+											<td>02-1234-6678</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-warning">내용확인</a></td>
+										</tr>
+										<tr>
+											<td>2025.09.11 34:33:22</td>
+											<td>02-1234-6678</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-warning">내용확인</a></td>
+										</tr>
+										</tbody>
+									</table>
+
+								</div>
+								<div class="tab-pane fade" id="address-tab-pane" role="tabpanel" aria-labelledby="address-tab" tabindex="0">
+
+									<div class="d-flex justify-content-end my-2">
+										<a class="btn btn-sm btn-outline-success me-2">엑셀로 주소록 추가</a>
+										<a class="btn btn-sm btn-success"><i class="bi bi-file-earmark-spreadsheet"></i> 엑셀 다운로드</a>
+									</div>
+									<table class="table">
+										<thead>
+										<tr>											
+											<th scope="col">주소록명</th>
+											<th scope="col">수신자</th>
+											<th scope="col">전송</th>
+											<th scope="col">삭제</th>
+										</tr>
+										</thead>
+										<tbody>
+										<tr>
+											<td>7월 제대예정자</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-primary">전송</a></td>
+											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
+										</tr>
+										<tr>
+											<td>감사인사그룹</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-primary">전송</a></td>
+											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
+										</tr>
+										<tr>
+											<td>5월 생일자</td>
+											<td>김길동 외 47명</td>
+											<td><a class="btn btn-xs btn-primary">전송</a></td>
+											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
+										</tr>
+										</tbody>
+									</table>
+
+								</div>
+							</div>
+
+
+
+
+
+
+
 						</div>
-						<div class="col-6 col-md-4">
-							<figure class="figure rounded bg-dark text-white p-2"
-									style="width: 100%; cursor: pointer; min-height: 150px">
-								<small>{이름} 회원님 생일축하합니다.</small>
-							</figure>
-						</div>
-						<div class="col-6 col-md-4">
-							<figure class="figure rounded bg-dark text-white p-2"
-									style="width: 100%; cursor: pointer; min-height: 150px">
-								<small>{이름} 회원님 생일축하합니다.</small>
-							</figure>
-						</div>
-						<div class="col-6 col-md-4">
-							<figure class="figure rounded bg-dark text-white p-2"
-									style="width: 100%; cursor: pointer; min-height: 150px">
-								<small>{이름} 회원님 생일축하합니다.</small>
-							</figure>
-						</div>
-						<div class="col-6 col-md-4">
-							<figure class="figure rounded bg-dark text-white p-2"
-									style="width: 100%; cursor: pointer; min-height: 150px">
-								<small>{이름} 회원님 생일축하합니다.</small>
-							</figure>
-						</div>
+
 					</div>
 				</div>
 			</div>

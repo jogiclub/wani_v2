@@ -131,7 +131,7 @@ function openSendPopup(selectedMembers) {
 	});
 
 	// 팝업 창 열기
-	const popupWindow = window.open('', 'sendPopup', 'width=800,height=700,scrollbars=yes,resizable=yes');
+	const popupWindow = window.open('', 'sendPopup', 'width=1400,height=850,scrollbars=yes,resizable=yes');
 
 	// 임시 폼 생성하여 POST로 데이터 전송
 	const tempForm = $('<form>', {
