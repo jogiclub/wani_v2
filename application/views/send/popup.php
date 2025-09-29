@@ -13,21 +13,26 @@
 				<div class="card-body">
 					<!-- 발송 타입 선택 -->
 					<div class="mb-3">
-						<label class="col-form-label">발송 타입</label>
+						<div class="d-flex justify-content-between align-items-center">
+							<label class="col-form-label">발송 타입</label>
+							<div class="mb-2">
+								<strong class="me-2">11,530원</strong>
+								<a class="btn btn-xs btn-info"><i class="bi bi-arrow-clockwise"></i> 문자충전</a>
+							</div>
+						</div>
 						<div class="btn-group p-0" role="group" id="sendTypeGroup" style="width: 100%">
 							<input type="radio" class="btn-check" name="send_type" id="sms" value="sms" checked>
-							<label class="btn btn-outline-primary" for="sms">SMS</label>
+							<label class="btn btn-outline-primary" for="sms">SMS <small>(10원)</small></label>
 
 							<input type="radio" class="btn-check" name="send_type" id="lms" value="lms">
-							<label class="btn btn-outline-primary" for="lms">LMS</label>
+							<label class="btn btn-outline-primary" for="lms">LMS <small>(20원)</small></label>
 
 							<input type="radio" class="btn-check" name="send_type" id="mms" value="mms">
-							<label class="btn btn-outline-primary" for="mms">MMS</label>
+							<label class="btn btn-outline-primary" for="mms">MMS <small>(30원)</small></label>
 
 							<input type="radio" class="btn-check" name="send_type" id="kakao" value="kakao">
-							<label class="btn btn-outline-primary" for="kakao">카카오톡</label>
+							<label class="btn btn-outline-primary" for="kakao">카카오톡 <small>(20원)</small></label>
 						</div>
-
 					</div>
 
 					<!-- 발신번호 선택 -->
@@ -164,10 +169,9 @@
 				<div class="card-footer d-flex justify-content-between align-items-center">
 					<!-- 예상 비용 (선택사항) -->
 					<div class="d-flex align-items-center">
-						<span class="badge badge-sm text-bg-info me-2">예상비용</span>
-						<span  class="badge badge-sm text-bg-warning me-2" id="costInfo">SMS</span>
-							<strong class="me-2">1,530원</strong>
-							<small>(153명 × 10원)</small>
+						<span  class="badge badge-sm text-bg-warning me-2">발송비용</span>
+						<strong class="me-2" id="costTotal">1,530원</strong>
+						<small>(153명 × 10원)</small>
 					</div>
 					<div>
 						<button type="button" class="btn btn-secondary me-2" onclick="window.close();">취소</button>
