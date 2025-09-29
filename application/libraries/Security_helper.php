@@ -11,25 +11,6 @@ class Security_helper {
 		$this->CI->load->model('Org_model');
 	}
 
-	/**
-	 * 사용자가 특정 조직에 접근 권한이 있는지 확인
-	 */
-	public function check_org_access($user_id, $org_id) {
-		if (!$user_id || !$org_id) {
-			return false;
-		}
-
-		$master_yn = $this->CI->session->userdata('master_yn');
-
-		// 마스터 권한이 있는 경우 모든 조직 접근 가능
-		if ($master_yn === 'Y') {
-			return true;
-		}
-
-		// 사용자가 해당 조직의 회원인지 확인
-		$org_user = $this->CI->User_model->get_org_user($user_id, $org_id);
-		return !empty($org_user);
-	}
 
 	/**
 	 * 현재 세션의 사용자가 조직에 접근 권한이 있는지 확인

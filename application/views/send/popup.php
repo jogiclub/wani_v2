@@ -16,8 +16,10 @@
 						<div class="d-flex justify-content-between align-items-center">
 							<label class="col-form-label">발송 타입</label>
 							<div class="mb-2">
-								<strong class="me-2">11,530원</strong>
-								<a class="btn btn-xs btn-info"><i class="bi bi-arrow-clockwise"></i> 문자충전</a>
+								<strong class="me-2" id="currentBalance">0원</strong>
+								<a class="btn btn-xs btn-info" id="btnChargeModal">
+									<i class="bi bi-arrow-clockwise"></i> 문자충전
+								</a>
 							</div>
 						</div>
 						<div class="btn-group p-0" role="group" id="sendTypeGroup" style="width: 100%">
@@ -39,17 +41,20 @@
 					<div class="mb-3">
 						<label for="senderSelect" class="col-form-label">발신번호</label>
 
-						<select class="form-select" id="senderSelect" name="sender_number">
-							<option value="">발신번호를 선택하세요</option>
-							<?php foreach ($sender_numbers as $sender): ?>
-								<option value="<?php echo $sender['sender_number']; ?>"
-										data-name="<?php echo htmlspecialchars($sender['sender_name']); ?>"
-									<?php echo $sender['is_default'] === 'Y' ? 'selected' : ''; ?>>
-									<?php echo htmlspecialchars($sender['sender_name']); ?>
-									(<?php echo $sender['sender_number']; ?>)
-								</option>
-							<?php endforeach; ?>
-						</select>
+						<div class="input-group">
+							<select class="form-select" id="senderSelect" name="sender_number">
+								<option value="">발신번호를 선택하세요</option>
+								<?php foreach ($sender_numbers as $sender): ?>
+									<option value="<?php echo $sender['sender_number']; ?>"
+											data-name="<?php echo htmlspecialchars($sender['sender_name']); ?>"
+										<?php echo $sender['is_default'] === 'Y' ? 'selected' : ''; ?>>
+										<?php echo htmlspecialchars($sender['sender_name']); ?>
+										(<?php echo $sender['sender_number']; ?>)
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<button class="btn btn-primary"><i class="bi bi-telephone-plus"></i> 발신번호 추가</button>
+						</div>
 					</div>
 
 
@@ -391,5 +396,48 @@
 </div>
 
 
+<!-- 문자 충전 모달 -->
+<div class="modal fade" id="chargeModal" tabindex="-1" aria-labelledby="chargeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="chargeModalLabel">문자 충전</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<table class="table table-hover">
+					<thead>
+					<tr>
+						<th>충전금액</th>
+						<th>SMS</th>
+						<th>LMS</th>
+						<th>MMS</th>
+						<th>카카오톡</th>
+						<th>선택</th>
+					</tr>
+					</thead>
+					<tbody id="packageList">
+					<!-- JavaScript로 동적 생성 -->
+					</tbody>
+				</table>
+				<div class="mt-3 p-3 bg-light border rounded">
+					<div class="d-flex justify-content-between align-items-center">
+						<strong>결제할 금액</strong>
+						<h4 class="mb-0" id="selectedAmount">0원</h4>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnCharge">결제하기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
 <?php include APPPATH . 'views/footer.php'; ?>
+<script>
+	const SEND_ORG_ID = '<?php echo $org_id; ?>';
+</script>
 <script src="/assets/js/send_popup.js?<?php echo WB_VERSION; ?>"></script>

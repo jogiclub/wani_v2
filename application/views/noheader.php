@@ -35,7 +35,7 @@
 	<header class="pt-3 pb-3 border-bottom d-flex justify-content-center">
 		<div class="logo"><img src="/assets/images/logo.png?2"></div>
 	</header>
-    <div class="container-fluid">
+    <div class="container-fluid bg-light" >
 		<div class="row">
 			<main class="ms-sm-auto d-flex justify-content-center align-items-center flex-column" style="width: 100%!important; height: calc(100vh - 60px);">
 

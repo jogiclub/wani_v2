@@ -513,4 +513,131 @@ class Send extends MY_Controller
 			'data' => $statistics
 		));
 	}
+
+	/**
+	 * 충전 패키지 목록 조회
+	 */
+	public function get_charge_packages()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$packages = $this->Send_model->get_charge_packages();
+
+		echo json_encode(array(
+			'success' => true,
+			'packages' => $packages
+		));
+	}
+
+	/**
+	 * 조직 문자 잔액 조회
+	 */
+	public function get_org_balance()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$balance = $this->Send_model->get_org_balance($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'balance' => $balance
+		));
+	}
+
+	/**
+	 * 문자 충전 처리
+	 */
+	public function charge_sms()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+
+		if (!$user_id) {
+			log_message('error', 'User ID not found in session');
+			echo json_encode(array('success' => false, 'message' => '로그인이 필요합니다.'));
+			return;
+		}
+
+		$org_id = $this->input->post('org_id');
+		$package_idx = $this->input->post('package_idx');
+		$charge_amount = $this->input->post('charge_amount');
+
+		// 상세 디버깅 로그
+		log_message('debug', '=== Charge SMS Request ===');
+		log_message('debug', 'org_id: ' . var_export($org_id, true) . ' (type: ' . gettype($org_id) . ')');
+		log_message('debug', 'user_id: ' . var_export($user_id, true) . ' (type: ' . gettype($user_id) . ')');
+		log_message('debug', 'package_idx: ' . var_export($package_idx, true));
+		log_message('debug', 'charge_amount: ' . var_export($charge_amount, true));
+
+		if (!$org_id || !$package_idx || !$charge_amount) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 조직 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// PG사 결제 처리는 생략하고 바로 충전 처리
+		$result = $this->Send_model->charge_sms($org_id, $user_id, $package_idx, $charge_amount);
+
+		if ($result) {
+			// 충전 후 잔액 조회
+			$new_balance = $this->Send_model->get_org_balance($org_id);
+
+			log_message('debug', 'Charge successful. New balance: ' . $new_balance);
+
+			echo json_encode(array(
+				'success' => true,
+				'message' => number_format($charge_amount) . '원이 충전되었습니다.',
+				'balance' => $new_balance
+			));
+		} else {
+			log_message('error', 'Charge failed in model');
+			echo json_encode(array('success' => false, 'message' => '충전에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 충전 내역 조회
+	 */
+	public function get_charge_history()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$page = intval($this->input->post('page')) ?: 1;
+		$per_page = intval($this->input->post('per_page')) ?: 10;
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$history = $this->Send_model->get_charge_history($org_id, $page, $per_page);
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $history
+		));
+	}
+
 }

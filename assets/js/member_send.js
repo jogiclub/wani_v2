@@ -198,51 +198,6 @@ function updateSendButtonState() {
 	}, 50);
 }
 
-/**
- * Toast 메시지 표시
- */
-function showToast(message, type = 'info') {
-	// Toast 컨테이너가 없으면 생성
-	let toastContainer = $('.toast-container');
-	if (toastContainer.length === 0) {
-		toastContainer = $(`
-            <div class="toast-container position-fixed bottom-0 end-0 p-3">
-                <div id="dynamicToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header">
-                        <strong class="me-auto">알림</strong>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body"></div>
-                </div>
-            </div>
-        `);
-		$('body').append(toastContainer);
-	}
-
-	const toast = $('#dynamicToast');
-	const toastBody = toast.find('.toast-body');
-
-	// 타입에 따른 아이콘 설정
-	let icon = '';
-	switch(type) {
-		case 'success':
-			icon = '<i class="bi bi-check-circle text-success me-2"></i>';
-			break;
-		case 'warning':
-			icon = '<i class="bi bi-exclamation-triangle text-warning me-2"></i>';
-			break;
-		case 'error':
-			icon = '<i class="bi bi-x-circle text-danger me-2"></i>';
-			break;
-		default:
-			icon = '<i class="bi bi-info-circle text-info me-2"></i>';
-	}
-
-	toastBody.html(icon + message);
-
-	const toastBootstrap = new bootstrap.Toast(toast[0]);
-	toastBootstrap.show();
-}
 
 /**
  * 확인 모달 표시

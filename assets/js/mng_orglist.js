@@ -1586,41 +1586,7 @@
 		return types[orgType] || orgType || '미분류';
 	}
 
-	/**
-	 * Toast 메시지 표시
-	 */
-	function showToast(message, type = 'info') {
-		const toast = $('#liveToast');
-		const toastBody = toast.find('.toast-body');
 
-		// 기존 클래스 제거
-		toast.removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info');
-
-		// 타입별 클래스 추가
-		switch(type) {
-			case 'success':
-				toast.addClass('text-bg-success');
-				break;
-			case 'error':
-			case 'danger':
-				toast.addClass('text-bg-danger');
-				break;
-			case 'warning':
-				toast.addClass('text-bg-warning');
-				break;
-			default:
-				toast.addClass('text-bg-info');
-		}
-
-		toastBody.text(message);
-
-		try {
-			const bsToast = new bootstrap.Toast(toast[0]);
-			bsToast.show();
-		} catch(e) {
-			console.warn('Toast 표시 실패:', e);
-		}
-	}
 
 	/**
 	 * 스피너 관련 함수들
