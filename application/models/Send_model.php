@@ -224,7 +224,7 @@ class Send_model extends CI_Model
 	 */
 	public function get_org_total_balance($org_id)
 	{
-		$this->db->select_sum('remaining_balance');
+		$this->db->select('COALESCE(SUM(remaining_balance), 0) as total_balance');
 		$this->db->from('wb_sms_charge_history');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('payment_status', 'completed');
@@ -233,7 +233,92 @@ class Send_model extends CI_Model
 		$query = $this->db->get();
 		$result = $query->row_array();
 
-		return $result['remaining_balance'] ? $result['remaining_balance'] : 0;
+		return $result['total_balance'];
+	}
+
+
+
+	/**
+	 * 역할: 문자 비용 차감 처리 (잔액이 적은 history_idx부터 순차 차감)
+	 */
+	public function deduct_sms_balance($org_id, $total_cost)
+	{
+		// 트랜잭션 시작
+		$this->db->trans_start();
+
+		// remaining_balance가 0보다 큰 충전 내역을 history_idx 오름차순으로 조회
+		$this->db->select('history_idx, remaining_balance');
+		$this->db->from('wb_sms_charge_history');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('payment_status', 'completed');
+		$this->db->where('remaining_balance >', 0);
+		$this->db->order_by('history_idx', 'ASC');
+
+		$query = $this->db->get();
+		$charge_histories = $query->result_array();
+
+		$remaining_cost = $total_cost;
+		$deduction_log = array(); // 차감 로그
+
+		foreach ($charge_histories as $history) {
+			if ($remaining_cost <= 0) {
+				break;
+			}
+
+			$history_idx = $history['history_idx'];
+			$available_balance = $history['remaining_balance'];
+
+			if ($available_balance >= $remaining_cost) {
+				// 현재 충전내역에서 전액 차감 가능
+				$deduct_amount = $remaining_cost;
+				$new_balance = $available_balance - $remaining_cost;
+				$remaining_cost = 0;
+			} else {
+				// 현재 충전내역의 잔액을 모두 사용
+				$deduct_amount = $available_balance;
+				$new_balance = 0;
+				$remaining_cost -= $available_balance;
+			}
+
+			// 잔액 업데이트
+			$this->db->where('history_idx', $history_idx);
+			$this->db->update('wb_sms_charge_history', array(
+				'remaining_balance' => $new_balance
+			));
+
+			$deduction_log[] = array(
+				'history_idx' => $history_idx,
+				'deduct_amount' => $deduct_amount,
+				'new_balance' => $new_balance
+			);
+		}
+
+		// 트랜잭션 종료
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE || $remaining_cost > 0) {
+			// 트랜잭션 실패 또는 잔액 부족
+			return array(
+				'success' => false,
+				'message' => '잔액이 부족합니다.',
+				'remaining_cost' => $remaining_cost
+			);
+		}
+
+		return array(
+			'success' => true,
+			'message' => '비용이 차감되었습니다.',
+			'deduction_log' => $deduction_log
+		);
+	}
+
+	/**
+	 * 역할: 발송 가능 여부 확인 (잔액 체크)
+	 */
+	public function check_balance_sufficient($org_id, $required_amount)
+	{
+		$total_balance = $this->get_org_total_balance($org_id);
+		return $total_balance >= $required_amount;
 	}
 
 
@@ -649,6 +734,99 @@ class Send_model extends CI_Model
 
 		$query = $this->db->get();
 		return $query->result_array();
+	}
+
+
+	/**
+	 * 역할: 전송 히스토리 저장
+	 */
+	public function save_send_history($data)
+	{
+		return $this->db->insert('wb_send_history', $data);
+	}
+
+	/**
+	 * 역할: 전송 히스토리 목록 조회
+	 */
+	public function get_send_history_list($org_id, $limit = 50)
+	{
+		$this->db->select('
+		history_idx,
+		send_type,
+		sender_number,
+		sender_name,
+		receiver_count,
+		receiver_list,
+		status,
+		DATE_FORMAT(send_date, "%Y.%m.%d %H:%i:%s") as send_date
+	');
+		$this->db->from('wb_send_history');
+		$this->db->where('org_id', $org_id);
+		$this->db->order_by('send_date', 'DESC');
+		$this->db->limit($limit);
+
+		$query = $this->db->get();
+		$results = $query->result_array();
+
+		foreach ($results as &$row) {
+			$receiver_list = json_decode($row['receiver_list'], true);
+			$row['first_receiver_name'] = $receiver_list[0]['member_name'] ?? '';
+		}
+
+		return $results;
+	}
+
+	/**
+	 * 역할: 예약 발송 저장
+	 */
+	public function save_reservation($data)
+	{
+		return $this->db->insert('wb_send_reservation', $data);
+	}
+
+	/**
+	 * 역할: 예약 발송 목록 조회
+	 */
+	public function get_reservation_list($org_id)
+	{
+		$this->db->select('
+		reservation_idx,
+		send_type,
+		sender_number,
+		sender_name,
+		receiver_count,
+		receiver_list,
+		message_content,
+		DATE_FORMAT(scheduled_time, "%Y.%m.%d %H:%i:%s") as scheduled_time,
+		status
+	');
+		$this->db->from('wb_send_reservation');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('status', 'pending');
+		$this->db->order_by('scheduled_time', 'ASC');
+
+		$query = $this->db->get();
+		$results = $query->result_array();
+
+		foreach ($results as &$row) {
+			$receiver_list = json_decode($row['receiver_list'], true);
+			$row['first_receiver_name'] = $receiver_list[0]['member_name'] ?? '';
+		}
+
+		return $results;
+	}
+
+	/**
+	 * 역할: 예약 발송 취소
+	 */
+	public function cancel_reservation($reservation_idx, $org_id)
+	{
+		$this->db->where('reservation_idx', $reservation_idx);
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_send_reservation', array(
+			'status' => 'cancelled',
+			'updated_date' => date('Y-m-d H:i:s')
+		));
 	}
 
 }

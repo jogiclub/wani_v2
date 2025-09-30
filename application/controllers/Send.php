@@ -222,22 +222,56 @@ class Send extends MY_Controller
 		}
 	}
 
+
+
 	/**
-	 * 발송 이력 조회
+	 * 역할: 즉시 발송 처리 (잔액 차감 포함)
 	 */
-	public function get_send_history()
+	public function send_message_immediately()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
 
 		$org_id = $this->input->post('org_id');
-		$page = intval($this->input->post('page')) ?: 1;
-		$per_page = 20;
+		$send_type = $this->input->post('send_type');
+		$sender_number = $this->input->post('sender_number');
+		$sender_name = $this->input->post('sender_name');
+		$message_content = $this->input->post('message_content');
+		$receiver_list = $this->input->post('receiver_list');
+		$total_cost = $this->input->post('total_cost');
 
-		$history = $this->Send_model->get_send_history($org_id, $page, $per_page);
+		// 잔액 확인
+		$balance_check = $this->Send_model->check_balance_sufficient($org_id, $total_cost);
 
-		echo json_encode($history);
+		if (!$balance_check) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '잔액이 부족합니다. 문자를 충전해주세요.'
+			));
+			return;
+		}
+
+		// 비용 차감
+		$deduct_result = $this->Send_model->deduct_sms_balance($org_id, $total_cost);
+
+		if (!$deduct_result['success']) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => $deduct_result['message']
+			));
+			return;
+		}
+
+		// 발송 처리는 프론트엔드에서 toast로 처리되므로 여기서는 성공 응답만 반환
+		$new_balance = $this->Send_model->get_org_total_balance($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'message' => '발송이 완료되었습니다.',
+			'new_balance' => $new_balance,
+			'deduction_log' => $deduct_result['deduction_log']
+		));
 	}
 
 	/**
@@ -905,6 +939,159 @@ class Send extends MY_Controller
 	public function bulk_edit_popup()
 	{
 		$this->load->view('send/bulk_edit_popup');
+	}
+
+
+	/**
+	 * 역할: 전송 히스토리 저장
+	 */
+	public function save_history()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$send_type = $this->input->post('send_type');
+		$sender_number = $this->input->post('sender_number');
+		$sender_name = $this->input->post('sender_name');
+		$receiver_count = $this->input->post('receiver_count');
+		$receiver_list = $this->input->post('receiver_list');
+		$status = $this->input->post('status');
+		$send_date = $this->input->post('send_date');
+
+		$data = array(
+			'org_id' => $org_id,
+			'send_type' => $send_type,
+			'sender_number' => $sender_number,
+			'sender_name' => $sender_name,
+			'receiver_count' => $receiver_count,
+			'receiver_list' => json_encode($receiver_list),
+			'status' => $status,
+			'send_date' => date('Y-m-d H:i:s', strtotime($send_date)),
+			'created_date' => date('Y-m-d H:i:s')
+		);
+
+		$result = $this->Send_model->save_send_history($data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '히스토리가 저장되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '저장에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 역할: 전송 히스토리 목록 조회
+	 */
+	public function get_send_history()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$history = $this->Send_model->get_send_history_list($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'history' => $history
+		));
+	}
+
+	/**
+	 * 역할: 예약 발송 저장
+	 */
+	public function save_reservation()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$send_type = $this->input->post('send_type');
+		$sender_number = $this->input->post('sender_number');
+		$sender_name = $this->input->post('sender_name');
+		$message_content = $this->input->post('message_content');
+		$receiver_list = $this->input->post('receiver_list');
+		$scheduled_time = $this->input->post('scheduled_time');
+
+		$data = array(
+			'org_id' => $org_id,
+			'send_type' => $send_type,
+			'sender_number' => $sender_number,
+			'sender_name' => $sender_name,
+			'message_content' => $message_content,
+			'receiver_list' => json_encode($receiver_list),
+			'receiver_count' => count($receiver_list),
+			'scheduled_time' => date('Y-m-d H:i:s', strtotime($scheduled_time)),
+			'status' => 'pending',
+			'created_date' => date('Y-m-d H:i:s')
+		);
+
+		$result = $this->Send_model->save_reservation($data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '예약 발송이 등록되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '등록에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 역할: 예약 발송 목록 조회
+	 */
+	public function get_reservation_list()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$reservations = $this->Send_model->get_reservation_list($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'reservations' => $reservations
+		));
+	}
+
+	/**
+	 * 역할: 예약 발송 취소
+	 */
+	public function cancel_reservation()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$reservation_idx = $this->input->post('reservation_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$reservation_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$result = $this->Send_model->cancel_reservation($reservation_idx, $org_id);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '예약이 취소되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '취소에 실패했습니다.'));
+		}
 	}
 
 }

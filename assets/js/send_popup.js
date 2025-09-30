@@ -192,6 +192,40 @@ $(document).ready(function() {
 		insertReplacementField(fieldName);
 	});
 
+
+	// 발송시점 라디오 버튼 변경 이벤트
+	$('input[name="send_schedule_type"]').on('change', function() {
+		handleScheduleTypeChange($(this).val());
+	});
+
+	// 시간 추가 버튼 이벤트
+	$('#btnAdd1Hour').on('click', function() {
+		addHoursToSchedule(1);
+	});
+
+	$('#btnAdd12Hours').on('click', function() {
+		addHoursToSchedule(12);
+	});
+
+	$('#btnAdd24Hours').on('click', function() {
+		addHoursToSchedule(24);
+	});
+
+	// 발송하기 버튼 클릭
+	$('#sendBtn').on('click', function() {
+		processSendMessage();
+	});
+
+	// 전송 히스토리 탭 클릭 시 목록 로드
+	$('#history-tab').on('shown.bs.tab', function() {
+		loadSendHistory();
+	});
+
+	// 예약 전송 목록 탭 클릭 시 목록 로드
+	$('#reservation-tab').on('shown.bs.tab', function() {
+		loadReservationList();
+	});
+
 });
 
 // ===== 발송 타입 및 메시지 관련 함수 =====
@@ -731,6 +765,9 @@ function updateReceiverCount() {
 	$countElement.text('선택된 회원 (' + count + '명)');
 }
 
+/**
+ * 역할: 발송 비용 표시 업데이트 (발송 타입별 단가 표시 포함)
+ */
 function updateSendCost() {
 	const count = $('#receiverList tr.receiver-item').length;
 	const sendType = $('input[name="send_type"]:checked').val();
@@ -742,6 +779,15 @@ function updateSendCost() {
 
 	$('#costTotal').text(formatNumber(totalCost) + '원');
 	$('#costTotal').next('small').text('(' + count + '명 × ' + costPerMessage + '원)');
+
+	// 잔액과 비교하여 경고 표시
+	const currentBalance = parseInt($('#currentBalance').text().replace(/[^0-9]/g, ''));
+	if (totalCost > currentBalance) {
+		$('#costTotal').addClass('text-danger');
+		showToast('잔액이 부족합니다. 문자를 충전해주세요.', 'warning');
+	} else {
+		$('#costTotal').removeClass('text-danger');
+	}
 }
 
 // ===== 주소록 관련 함수 =====
@@ -966,141 +1012,6 @@ function openBulkEditModal() {
 	});
 }
 
-function initBulkEditGrid(data) {
-	const $grid = $('#bulkEditGrid');
-
-	if (bulkEditGridInstance) {
-		try {
-			$grid.pqGrid('destroy');
-		} catch(e) {
-			// 무시
-		}
-		bulkEditGridInstance = null;
-	}
-
-	$grid.empty();
-
-	const colModel = [
-		{
-			title: '이름',
-			dataIndx: 'member_name',
-			width: 120,
-			editable: true,
-			align: 'center'
-		},
-		{
-			title: '직분',
-			dataIndx: 'position_name',
-			width: 150,
-			editable: true,
-			align: 'center'
-		},
-		{
-			title: '연락처',
-			dataIndx: 'member_phone',
-			width: 150,
-			editable: true,
-			align: 'center'
-		},
-		{
-			title: '그룹',
-			dataIndx: 'area_name',
-			width: 150,
-			editable: true,
-			align: 'center'
-		},
-		{
-			title: '임시1',
-			dataIndx: 'tmp01',
-			width: 150,
-			editable: true,
-			align: 'center'
-		},
-		{
-			title: '임시2',
-			dataIndx: 'tmp02',
-			width: 150,
-			editable: true,
-			align: 'center'
-		}
-	];
-
-	const gridOptions = {
-		width: '100%',
-		height: 500,
-		colModel: colModel,
-		dataModel: {
-			data: data
-		},
-		editable: true,
-		editModel: {
-			clicksToEdit: 2,
-			saveKey: ''
-		},
-		selectionModel: {
-			type: 'cell',
-			mode: 'block'
-		},
-		numberCell: {
-			show: true,
-			title: '#',
-			width: 40,
-			resizable: false,
-			align: 'center'
-		},
-		scrollModel: {
-			autoFit: true
-		},
-		showTop: false,
-		showTitle: false,
-		showToolbar: false,
-		wrap: false,
-		hwrap: false,
-		columnBorders: true,
-		rowBorders: true,
-		hoverMode: 'row',
-		stripeRows: true,
-		rowHeight: 30,
-		headerHeight: 30
-	};
-
-	bulkEditGridInstance = $grid.pqGrid(gridOptions);
-
-	// 그리드에 포커스 주기
-	setTimeout(function() {
-		$grid.pqGrid('focus');
-
-		// 그리드 영역 클릭 시 포커스 유지
-		$grid.on('mousedown', function() {
-			$(this).focus();
-		});
-	}, 100);
-
-	// 문서 레벨에서 Ctrl+C, Ctrl+V 이벤트를 우선 처리
-	$(document).off('keydown.bulkEdit').on('keydown.bulkEdit', function(e) {
-		// 모달이 열려있고, 그리드가 포커스 상태일 때만 처리
-		if ($('#bulkEditModal').hasClass('show')) {
-			if ((e.ctrlKey || e.metaKey) && (e.keyCode === 67 || e.keyCode === 86 || e.keyCode === 88)) {
-				// pqGrid의 copy/paste 함수 직접 호출
-				const gridInstance = $grid.pqGrid('getInstance');
-				if (e.keyCode === 67) { // Ctrl+C
-					gridInstance.copy();
-					e.preventDefault();
-					e.stopPropagation();
-				} else if (e.keyCode === 86) { // Ctrl+V
-					gridInstance.paste();
-					e.preventDefault();
-					e.stopPropagation();
-				} else if (e.keyCode === 88) { // Ctrl+X
-					gridInstance.cut();
-					e.preventDefault();
-					e.stopPropagation();
-				}
-			}
-		}
-	});
-}
-
 function saveBulkEdit() {
 	if (!bulkEditGridInstance) {
 		showToast('그리드가 초기화되지 않았습니다.', 'error');
@@ -1158,21 +1069,6 @@ function updateReceiverList(data) {
 
 	updateReceiverCount();
 	updateSendCost();
-}
-
-function cleanupBulkEditGrid() {
-	// 모달의 키보드 이벤트 핸들러 제거
-	$('#bulkEditModal').off('keydown');
-
-	if (bulkEditGridInstance) {
-		try {
-			$('#bulkEditGrid').pqGrid('destroy');
-		} catch(e) {
-			// 무시
-		}
-		bulkEditGridInstance = null;
-	}
-	$('#bulkEditGrid').empty();
 }
 
 // ===== 유틸리티 함수 =====
@@ -1256,4 +1152,453 @@ function insertReplacementField(fieldName) {
 
 	// 글자 수 업데이트
 	handleMessageInput();
+}
+
+
+
+/**
+ * 역할: 발송시점 타입 변경 시 처리
+ */
+function handleScheduleTypeChange(scheduleType) {
+	const $scheduledTime = $('#scheduledTime');
+	const $timeButtons = $('#btnAdd1Hour, #btnAdd12Hours, #btnAdd24Hours');
+
+	if (scheduleType === 'scheduled') {
+		$scheduledTime.prop('disabled', false);
+		$timeButtons.prop('disabled', false);
+
+		// 현재 시간으로 초기화
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = String(now.getMonth() + 1).padStart(2, '0');
+		const day = String(now.getDate()).padStart(2, '0');
+		const hours = String(now.getHours()).padStart(2, '0');
+		const minutes = String(now.getMinutes()).padStart(2, '0');
+		const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+		$scheduledTime.val(formattedDateTime);
+	} else {
+		$scheduledTime.prop('disabled', true).val('');
+		$timeButtons.prop('disabled', true);
+	}
+}
+
+/**
+ * 역할: 예약 시간에 지정된 시간 추가
+ */
+function addHoursToSchedule(hours) {
+	const $scheduledTime = $('#scheduledTime');
+	const currentValue = $scheduledTime.val();
+
+	if (!currentValue) {
+		showToast('먼저 시간을 선택해주세요.', 'warning');
+		return;
+	}
+
+	const currentDate = new Date(currentValue);
+	currentDate.setHours(currentDate.getHours() + hours);
+
+	const year = currentDate.getFullYear();
+	const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+	const day = String(currentDate.getDate()).padStart(2, '0');
+	const hoursStr = String(currentDate.getHours()).padStart(2, '0');
+	const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+	const formattedDateTime = `${year}-${month}-${day}T${hoursStr}:${minutes}`;
+
+	$scheduledTime.val(formattedDateTime);
+}
+
+/**
+ * 역할: 메시지 발송 처리
+ */
+function processSendMessage() {
+	const scheduleType = $('input[name="send_schedule_type"]:checked').val();
+	const sendType = $('input[name="send_type"]:checked').val();
+	const senderNumber = $('#senderSelect').val();
+	const senderName = $('#senderSelect option:selected').data('name');
+	const messageContent = $('#messageContent').val().trim();
+	const scheduledTime = $('#scheduledTime').val();
+
+	// 유효성 검사
+	if (!senderNumber) {
+		showToast('발신번호를 선택해주세요.', 'warning');
+		return;
+	}
+
+	if (!messageContent) {
+		showToast('메시지 내용을 입력해주세요.', 'warning');
+		return;
+	}
+
+	const receiverList = [];
+	$('#receiverList tr.receiver-item').each(function() {
+		const $row = $(this);
+		receiverList.push({
+			member_idx: $row.data('member-idx'),
+			member_name: $row.data('name'),
+			member_phone: $row.data('phone'),
+			position_name: $row.find('td:eq(1)').text().trim(),
+			area_name: $row.find('td:eq(3)').text().trim(),
+			tmp01: $row.find('td:eq(4)').text().trim(),
+			tmp02: $row.find('td:eq(5)').text().trim()
+		});
+	});
+
+	if (receiverList.length === 0) {
+		showToast('수신자를 선택해주세요.', 'warning');
+		return;
+	}
+
+	// 예상 발송 비용 계산
+	const costPerMessage = packagePrices[sendType] || 0;
+	const totalCost = receiverList.length * costPerMessage;
+
+	// 시간지정발송인 경우 시간 검증
+	if (scheduleType === 'scheduled') {
+		if (!scheduledTime) {
+			showToast('예약 발송 시간을 선택해주세요.', 'warning');
+			return;
+		}
+
+		const selectedDate = new Date(scheduledTime);
+		const now = new Date();
+
+		if (selectedDate <= now) {
+			showToast('예약 시간은 현재 시간 이후로 설정해주세요.', 'warning');
+			return;
+		}
+	}
+
+	// 발송 확인 모달
+	const confirmMessage = scheduleType === 'now'
+		? `${receiverList.length}명에게 즉시 발송하시겠습니까?\n예상 비용: ${formatNumber(totalCost)}원`
+		: `${receiverList.length}명에게 ${scheduledTime.replace('T', ' ')}에 발송하시겠습니까?\n예상 비용: ${formatNumber(totalCost)}원`;
+
+	showConfirmModal(
+		'문자 발송',
+		confirmMessage,
+		function() {
+			if (scheduleType === 'now') {
+				sendImmediately(sendType, senderNumber, senderName, messageContent, receiverList, totalCost);
+			} else {
+				sendScheduled(sendType, senderNumber, senderName, messageContent, receiverList, scheduledTime, totalCost);
+			}
+		}
+	);
+}
+
+
+/**
+ * 역할: 즉시 발송 처리 - 실제 발송 문구를 toast로 표시하고 완료 후 히스토리 탭으로 이동
+ */
+function sendImmediately(sendType, senderNumber, senderName, messageContent, receiverList, totalCost) {
+	// 서버에 비용 차감 요청
+	$.ajax({
+		url: '/send/send_message_immediately',
+		type: 'POST',
+		data: {
+			org_id: SEND_ORG_ID,
+			send_type: sendType,
+			sender_number: senderNumber,
+			sender_name: senderName,
+			message_content: messageContent,
+			receiver_list: receiverList,
+			total_cost: totalCost
+		},
+		dataType: 'json',
+		success: function(response) {
+			if (!response.success) {
+				showToast(response.message, 'error');
+				return;
+			}
+
+			// 비용 차감 성공 후 실제 발송 시뮬레이션
+			let successCount = 0;
+			let failCount = 0;
+
+			receiverList.forEach(function(receiver, index) {
+				setTimeout(function() {
+					// 치환 필드 처리
+					let personalizedMessage = messageContent;
+					personalizedMessage = personalizedMessage.replace(/{이름}/g, receiver.member_name);
+					personalizedMessage = personalizedMessage.replace(/{직분}/g, receiver.position_name || '');
+					personalizedMessage = personalizedMessage.replace(/{연락처}/g, receiver.member_phone);
+					personalizedMessage = personalizedMessage.replace(/{그룹}/g, receiver.area_name || '');
+					personalizedMessage = personalizedMessage.replace(/{임시1}/g, receiver.tmp01 || '');
+					personalizedMessage = personalizedMessage.replace(/{임시2}/g, receiver.tmp02 || '');
+
+					// 실제로는 API 호출이 필요하지만, 여기서는 toast 메시지로 대체
+					const isSuccess = Math.random() > 0.1; // 90% 성공률 시뮬레이션
+
+					if (isSuccess) {
+						successCount++;
+						// 실제 발송 문구를 toast 메시지로 표시
+						const toastMessage = `[${receiver.member_name}(${receiver.member_phone})] ${personalizedMessage}`;
+						showToast(toastMessage, 'success');
+					} else {
+						failCount++;
+						showToast(`${receiver.member_name}(${receiver.member_phone}) 발송 실패`, 'error');
+					}
+
+					// 마지막 수신자 처리 후 히스토리 저장 및 탭 전환
+					if (index === receiverList.length - 1) {
+						setTimeout(function() {
+							// 히스토리 저장
+							saveToHistory(sendType, senderNumber, senderName, receiverList, 'success');
+
+							// 잔액 업데이트
+							updateBalanceDisplay(response.new_balance);
+
+							// 완료 메시지
+							showToast(`전체 발송 완료: 성공 ${successCount}건, 실패 ${failCount}건`, 'info');
+
+							// 전송 히스토리 탭으로 자동 전환
+							setTimeout(function() {
+								$('#history-tab').tab('show');
+								loadSendHistory();
+							}, 1000);
+						}, 500);
+					}
+				}, index * 500); // 각 메시지마다 0.5초 간격
+			});
+		},
+		error: function() {
+			showToast('발송 처리 중 오류가 발생했습니다.', 'error');
+		}
+	});
+}
+
+/**
+ * 역할: 예약 발송 처리
+ */
+function sendScheduled(sendType, senderNumber, senderName, messageContent, receiverList, scheduledTime, totalCost) {
+	// 예약 전송은 실제 발송 시점에 비용이 차감되므로 현재는 잔액 확인만 수행
+	const currentBalance = parseInt($('#currentBalance').text().replace(/[^0-9]/g, ''));
+
+	if (currentBalance < totalCost) {
+		showToast('잔액이 부족합니다. 문자를 충전해주세요.', 'error');
+		return;
+	}
+
+	// 예약 전송 목록에 저장
+	const reservationData = {
+		org_id: SEND_ORG_ID,
+		send_type: sendType,
+		sender_number: senderNumber,
+		sender_name: senderName,
+		message_content: messageContent,
+		receiver_list: receiverList,
+		scheduled_time: scheduledTime,
+		estimated_cost: totalCost
+	};
+
+	$.ajax({
+		url: '/send/save_reservation',
+		type: 'POST',
+		data: reservationData,
+		dataType: 'json',
+		success: function(response) {
+			if (response.success) {
+				showToast('예약 발송이 등록되었습니다.', 'success');
+
+				// 예약 전송 목록 탭으로 이동
+				$('#reservation-tab').tab('show');
+				loadReservationList();
+			} else {
+				showToast(response.message || '예약 발송 등록에 실패했습니다.', 'error');
+			}
+		},
+		error: function() {
+			showToast('예약 발송 등록 중 오류가 발생했습니다.', 'error');
+		}
+	});
+}
+
+/**
+ * 역할: 전송 히스토리에 저장
+ */
+/**
+ * 역할: 전송 히스토리에 저장 (콜백 추가)
+ */
+function saveToHistory(sendType, senderNumber, senderName, receiverList, status, callback) {
+	const historyData = {
+		org_id: SEND_ORG_ID,
+		send_type: sendType,
+		sender_number: senderNumber,
+		sender_name: senderName,
+		receiver_count: receiverList.length,
+		receiver_list: receiverList,
+		status: status,
+		send_date: new Date().toISOString()
+	};
+
+	$.ajax({
+		url: '/send/save_history',
+		type: 'POST',
+		data: historyData,
+		dataType: 'json',
+		success: function(response) {
+			console.log('히스토리 저장 완료');
+			if (callback && typeof callback === 'function') {
+				callback(true);
+			}
+		},
+		error: function() {
+			console.error('히스토리 저장 실패');
+			if (callback && typeof callback === 'function') {
+				callback(false);
+			}
+		}
+	});
+}
+
+/**
+ * 역할: 전송 히스토리 목록 로드
+ */
+function loadSendHistory() {
+	$.ajax({
+		url: '/send/get_send_history',
+		type: 'POST',
+		data: { org_id: SEND_ORG_ID },
+		dataType: 'json',
+		success: function(response) {
+			if (response.success) {
+				renderSendHistory(response.history);
+			}
+		},
+		error: function() {
+			console.error('전송 히스토리 조회 실패');
+		}
+	});
+}
+
+/**
+ * 역할: 전송 히스토리 목록 렌더링
+ */
+function renderSendHistory(historyList) {
+	const tbody = $('#history-tab-pane tbody');
+	tbody.empty();
+
+	if (historyList.length === 0) {
+		tbody.append('<tr><td colspan="4" class="text-center text-muted">전송 이력이 없습니다.</td></tr>');
+		return;
+	}
+
+	historyList.forEach(function(item) {
+		const receiverText = item.receiver_count > 1
+			? `${item.first_receiver_name} 외 ${item.receiver_count - 1}명`
+			: item.first_receiver_name;
+
+		const row = `
+			<tr>
+				<td>${item.send_date}</td>
+				<td>${item.sender_number}</td>
+				<td>${receiverText}</td>
+				<td><a class="btn btn-xs btn-success btn-view-result" data-history-idx="${item.history_idx}">결과확인</a></td>
+			</tr>
+		`;
+		tbody.append(row);
+	});
+
+	// 결과확인 버튼 이벤트
+	$('.btn-view-result').on('click', function() {
+		const historyIdx = $(this).data('history-idx');
+		showToast('결과 확인 기능은 준비 중입니다.', 'info');
+	});
+}
+
+/**
+ * 역할: 예약 전송 목록 로드
+ */
+function loadReservationList() {
+	$.ajax({
+		url: '/send/get_reservation_list',
+		type: 'POST',
+		data: { org_id: SEND_ORG_ID },
+		dataType: 'json',
+		success: function(response) {
+			if (response.success) {
+				renderReservationList(response.reservations);
+			}
+		},
+		error: function() {
+			console.error('예약 전송 목록 조회 실패');
+		}
+	});
+}
+
+/**
+ * 역할: 예약 전송 목록 렌더링
+ */
+function renderReservationList(reservationList) {
+	const tbody = $('#reservation-tab-pane tbody');
+	tbody.empty();
+
+	if (reservationList.length === 0) {
+		tbody.append('<tr><td colspan="4" class="text-center text-muted">예약된 전송이 없습니다.</td></tr>');
+		return;
+	}
+
+	reservationList.forEach(function(item) {
+		const receiverText = item.receiver_count > 1
+			? `${item.first_receiver_name} 외 ${item.receiver_count - 1}명`
+			: item.first_receiver_name;
+
+		const row = `
+			<tr>
+				<td>${item.scheduled_time}</td>
+				<td>${item.sender_number}</td>
+				<td>${receiverText}</td>
+				<td>
+					<a class="btn btn-xs btn-warning btn-view-reservation" data-reservation-idx="${item.reservation_idx}">내용확인</a>
+					<a class="btn btn-xs btn-outline-danger btn-cancel-reservation" data-reservation-idx="${item.reservation_idx}">취소</a>
+				</td>
+			</tr>
+		`;
+		tbody.append(row);
+	});
+
+	// 내용확인 버튼 이벤트
+	$('.btn-view-reservation').on('click', function() {
+		const reservationIdx = $(this).data('reservation-idx');
+		showToast('내용 확인 기능은 준비 중입니다.', 'info');
+	});
+
+	// 취소 버튼 이벤트
+	$('.btn-cancel-reservation').on('click', function() {
+		const reservationIdx = $(this).data('reservation-idx');
+		cancelReservation(reservationIdx);
+	});
+}
+
+/**
+ * 역할: 예약 발송 취소
+ */
+function cancelReservation(reservationIdx) {
+	showConfirmModal(
+		'예약 취소',
+		'예약 발송을 취소하시겠습니까?',
+		function() {
+			$.ajax({
+				url: '/send/cancel_reservation',
+				type: 'POST',
+				data: {
+					reservation_idx: reservationIdx,
+					org_id: SEND_ORG_ID
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.success) {
+						showToast('예약이 취소되었습니다.', 'success');
+						loadReservationList();
+					} else {
+						showToast(response.message || '취소에 실패했습니다.', 'error');
+					}
+				},
+				error: function() {
+					showToast('취소 처리 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		}
+	);
 }

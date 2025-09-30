@@ -163,16 +163,16 @@
 								<label for="messageContent" class="col-form-label">발송시점</label>
 								<div class="d-flex justify-content-between align-items-center">
 									<div class="">
-										<input type="radio" class="btn-check" name="options-base" id="option1" autocomplete="off" checked>
-										<label class="btn" for="option1">즉시발송</label>
-										<input type="radio" class="btn-check" name="options-base" id="option2" autocomplete="off">
-										<label class="btn" for="option2">시간지정발송</label>
+										<input type="radio" class="btn-check" name="send_schedule_type" id="sendNow" value="now" autocomplete="off" checked>
+										<label class="btn" for="sendNow">즉시발송</label>
+										<input type="radio" class="btn-check" name="send_schedule_type" id="sendScheduled" value="scheduled" autocomplete="off">
+										<label class="btn" for="sendScheduled">시간지정발송</label>
 									</div>
-									<div class="input-group" style="width: 350px">
-										<input type="datetime-local" class="form-control" disabled>
-										<button class="btn btn-outline-secondary" type="button" disabled>1시간후</button>
-										<button class="btn btn-outline-secondary" type="button" disabled>12시간후</button>
-										<button class="btn btn-outline-secondary" type="button" disabled>24시간후</button>
+									<div class="input-group" style="width: 400px">
+										<input type="datetime-local" class="form-control" id="scheduledTime" disabled>
+										<button class="btn btn-outline-secondary" type="button" id="btnAdd1Hour" disabled>1시간후</button>
+										<button class="btn btn-outline-secondary" type="button" id="btnAdd12Hours" disabled>12시간후</button>
+										<button class="btn btn-outline-secondary" type="button" id="btnAdd24Hours" disabled>24시간후</button>
 									</div>
 								</div>
 							</div>
