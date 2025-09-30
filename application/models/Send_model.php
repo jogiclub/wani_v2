@@ -420,4 +420,56 @@ class Send_model extends CI_Model
 		return array('success' => true, 'message' => '인증이 완료되었습니다.');
 	}
 
+
+	/**
+	 * 주소록 저장
+	 */
+	public function save_address_book($data)
+	{
+		return $this->db->insert('wb_address_book', $data);
+	}
+
+	/**
+	 * 주소록 목록 조회
+	 */
+	public function get_address_book_list($org_id, $user_id)
+	{
+		$this->db->select('ab.*, COUNT(DISTINCT abm.member_idx) as member_count');
+		$this->db->from('wb_address_book ab');
+		$this->db->join('wb_address_book_member abm', 'ab.address_book_idx = abm.address_book_idx', 'left');
+		$this->db->where('ab.org_id', $org_id);
+		$this->db->where('ab.active_yn', 'Y');
+		$this->db->group_by('ab.address_book_idx');
+		$this->db->order_by('ab.created_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 주소록 삭제 (소프트 삭제)
+	 */
+	public function delete_address_book($address_book_idx, $org_id)
+	{
+		$this->db->where('address_book_idx', $address_book_idx);
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_address_book', array('active_yn' => 'N'));
+	}
+
+	/**
+	 * 주소록 회원 목록 조회
+	 */
+	public function get_address_book_members($address_book_idx)
+	{
+		$this->db->select('m.*, ma.area_name, abm.address_book_idx');
+		$this->db->from('wb_address_book_member abm');
+		$this->db->join('wb_member m', 'abm.member_idx = m.member_idx');
+		$this->db->join('wb_member_area ma', 'm.area_idx = ma.area_idx', 'left');
+		$this->db->where('abm.address_book_idx', $address_book_idx);
+		$this->db->where('m.del_yn', 'N');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
 }

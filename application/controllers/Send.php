@@ -739,4 +739,101 @@ class Send extends MY_Controller
 		}
 	}
 
+
+	/**
+	 * 주소록 저장
+	 */
+	public function save_address_book()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+		$address_book_name = $this->input->post('address_book_name');
+		$member_list = $this->input->post('member_list');
+
+		if (!$org_id || !$address_book_name || empty($member_list)) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$data = array(
+			'org_id' => $org_id,
+			'address_book_name' => $address_book_name,
+			'member_list' => json_encode($member_list),
+			'created_by' => $user_id,
+			'created_date' => date('Y-m-d H:i:s')
+		);
+
+		$result = $this->Send_model->save_address_book($data);
+
+		if ($result) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => '주소록이 저장되었습니다.',
+				'address_book_idx' => $this->db->insert_id()
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '저장에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 주소록 목록 조회
+	 */
+	public function get_address_book_list()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		$address_books = $this->Send_model->get_address_book_list($org_id, $user_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'address_books' => $address_books
+		));
+	}
+
+	/**
+	 * 주소록 삭제
+	 */
+	public function delete_address_book()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$address_book_idx = $this->input->post('address_book_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$address_book_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$result = $this->Send_model->delete_address_book($address_book_idx, $org_id);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '주소록이 삭제되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '삭제에 실패했습니다.'));
+		}
+	}
+
+	public function bulk_edit_popup()
+	{
+		$this->load->view('send/bulk_edit_popup');
+	}
+
 }

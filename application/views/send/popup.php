@@ -5,6 +5,7 @@
 ?>
 <?php include APPPATH . 'views/noheader.php'; ?>
 <link rel="stylesheet" href="/assets/css/send_popup.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
 <div class="container send-popup">
 	<div class="row">
@@ -82,6 +83,7 @@
 									<strong>선택된 회원 (<?php echo count($selected_members); ?>명)</strong>
 									<div>
 									<a class="btn btn-xs btn-danger"><i class="bi bi-x-square"></i> 전체삭제</a>
+										<a class="btn btn-xs btn-primary"><i class="bi bi-bookmark-check"></i> 내 주소록에 저장</a>
 									<a class="btn btn-xs btn-success"><i class="bi bi-pencil-square"></i> 전체편집</a>
 									</div>
 								</div>
@@ -497,8 +499,28 @@
 	</div>
 </div>
 
+<!-- 전체편집 모달 -->
+<div class="modal fade" id="bulkEditModal" tabindex="-1" aria-labelledby="bulkEditModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="bulkEditModalLabel">전체편집</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div id="bulkEditGrid" style="height: 500px;"></div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnSaveBulkEdit">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 <?php include APPPATH . 'views/footer.php'; ?>
+<script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script>
 	const SEND_ORG_ID = '<?php echo $org_id; ?>';
 </script>

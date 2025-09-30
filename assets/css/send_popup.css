@@ -1,5 +1,5 @@
 .send-popup{}
-.send-popup .card-body{height: calc(100vh - 159px);}
+.send-popup .card-body{height: calc(100vh - 155px);}
 .send-popup .card-body .col-form-label{font-size: 0.9rem;font-weight: 600;color: #6c757d;padding:0; margin-bottom: 0.5rem;}
 .send-popup .card-body .send-table{height: 150px; overflow-y: scroll}
 .send-popup .card-body .send-table tr td{vertical-align: middle;}
@@ -8,3 +8,6 @@
 #sendTabContent .figure-template small{ height: 150px; display: inline-block;overflow-y: auto;}
 
 #senderTableBody .badge{font-size: 12px;padding: 1px 5px;border-radius: 3px; line-height: 19px}
+.remove-receiver{cursor: pointer}
+
+/* pqGrid 행 높이 및 정렬 */
