@@ -64,7 +64,7 @@ class Send extends MY_Controller
 
 
 	/**
-	 * 문자 발송 처리
+	 * 역할: 문자 발송 처리 (send_message 함수 수정)
 	 */
 	public function send_message()
 	{
@@ -119,6 +119,12 @@ class Send extends MY_Controller
 			$receiver_name = $receiver_data['name'];
 			$member_idx = $receiver_data['member_idx'];
 
+			// 회원 정보 조회 (치환을 위한 추가 정보 포함)
+			$member_info = $this->Send_model->get_member_info_for_replacement($member_idx, $org_id);
+
+			// 메시지 내용에서 치환 필드를 실제 정보로 변환
+			$replaced_message = $this->replace_message_fields($message_content, $member_info);
+
 			// 문자 발송 로그 저장
 			$send_data = array(
 				'org_id' => $org_id,
@@ -129,13 +135,13 @@ class Send extends MY_Controller
 				'sender_name' => $sender_name,
 				'receiver_number' => $receiver_number,
 				'receiver_name' => $receiver_name,
-				'message_content' => $message_content,
+				'message_content' => $replaced_message,
 				'send_status' => 'pending',
 				'send_date' => date('Y-m-d H:i:s')
 			);
 
 			// 실제 문자 발송 처리
-			$send_result = $this->process_message_send($send_type, $sender_number, $receiver_number, $message_content);
+			$send_result = $this->process_message_send($send_type, $sender_number, $receiver_number, $replaced_message);
 
 			if ($send_result['success']) {
 				$send_data['send_status'] = 'success';
@@ -662,6 +668,21 @@ class Send extends MY_Controller
 		} else {
 			echo json_encode(array('success' => false, 'message' => '충전에 실패했습니다.'));
 		}
+	}
+
+
+	private function replace_message_fields($message_content, $member_data)
+	{
+		$replacements = array(
+			'{이름}' => isset($member_data['member_name']) ? $member_data['member_name'] : '',
+			'{직분}' => isset($member_data['position_name']) ? $member_data['position_name'] : '',
+			'{연락처}' => isset($member_data['member_phone']) ? $member_data['member_phone'] : '',
+			'{그룹}' => isset($member_data['area_name']) ? $member_data['area_name'] : '',
+			'{임시1}' => isset($member_data['tmp01']) ? $member_data['tmp01'] : '',
+			'{임시2}' => isset($member_data['tmp02']) ? $member_data['tmp02'] : ''
+		);
+
+		return str_replace(array_keys($replacements), array_values($replacements), $message_content);
 	}
 
 	/**

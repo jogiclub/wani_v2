@@ -181,6 +181,17 @@ $(document).ready(function() {
 	$(document).on('click', '#btnSaveAddressBook', function() {
 		saveAddressBook();
 	});
+
+
+	// 발송 치환 버튼 클릭 이벤트 추가
+	$('.btn-replace').filter(function() {
+		return $(this).parent().prev('label').text().includes('발송 치환');
+	}).on('click', function(e) {
+		e.preventDefault();
+		const fieldName = $(this).text().trim();
+		insertReplacementField(fieldName);
+	});
+
 });
 
 // ===== 발송 타입 및 메시지 관련 함수 =====
@@ -1221,4 +1232,28 @@ function showConfirmModal(title, message, confirmCallback, cancelCallback = null
 
 	const modalInstance = new bootstrap.Modal(confirmModal[0]);
 	modalInstance.show();
+}
+
+
+/**
+ * 역할: 발송 치환 버튼 클릭 시 메시지 입력란에 치환 필드 삽입
+ */
+function insertReplacementField(fieldName) {
+	const textarea = $('#messageContent')[0];
+	const cursorPos = textarea.selectionStart;
+	const textBefore = textarea.value.substring(0, cursorPos);
+	const textAfter = textarea.value.substring(cursorPos);
+
+	const replacement = '{' + fieldName + '}';
+	textarea.value = textBefore + replacement + textAfter;
+
+	// 커서 위치를 삽입된 텍스트 뒤로 이동
+	const newCursorPos = cursorPos + replacement.length;
+	textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+	// 포커스를 textarea로 이동
+	textarea.focus();
+
+	// 글자 수 업데이트
+	handleMessageInput();
 }

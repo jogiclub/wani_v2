@@ -499,7 +499,35 @@ class Send_model extends CI_Model
 		);
 	}
 
+	/**
+	 * 역할: 메시지 치환을 위한 회원 상세 정보 조회
+	 */
+	public function get_member_info_for_replacement($member_idx, $org_id)
+	{
+		$this->db->select('m.member_idx, m.member_name, m.member_phone, a.area_name, m.position_name, m.tmp01, m.tmp02');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.member_idx', $member_idx);
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
 
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		// 결과가 없으면 빈 배열 반환
+		if (!$result) {
+			return array(
+				'member_name' => '',
+				'position_name' => '',
+				'member_phone' => '',
+				'area_name' => '',
+				'tmp01' => '',
+				'tmp02' => ''
+			);
+		}
+
+		return $result;
+	}
 
 	/**
 	 * 발신번호 목록 조회 (인증 상태 포함)

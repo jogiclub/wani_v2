@@ -146,12 +146,12 @@
 							<div class="col-sm-6">
 								<label class="col-form-label">발송 치환</label>
 								<div>
-									<a class="btn btn-sm btn-outline-secondary mb-1">이름</a>
-									<a class="btn btn-sm btn-outline-secondary mb-1">직분</a>
-									<a class="btn btn-sm btn-outline-secondary mb-1">연락처</a>
-									<a class="btn btn-sm btn-outline-secondary mb-1">그룹</a>
-									<a class="btn btn-sm btn-outline-secondary mb-1">임시1</a>
-									<a class="btn btn-sm btn-outline-secondary mb-1">임시2</a>
+									<a class="btn btn-sm btn-outline-secondary mb-1 btn-replace">이름</a>
+									<a class="btn btn-sm btn-outline-secondary mb-1 btn-replace">직분</a>
+									<a class="btn btn-sm btn-outline-secondary mb-1 btn-replace">연락처</a>
+									<a class="btn btn-sm btn-outline-secondary mb-1 btn-replace">그룹</a>
+									<a class="btn btn-sm btn-outline-secondary mb-1 btn-replace">임시1</a>
+									<a class="btn btn-sm btn-outline-secondary mb-1 btn-replace">임시2</a>
 								</div>
 							</div>
 						</div>
