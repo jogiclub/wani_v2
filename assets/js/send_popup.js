@@ -198,17 +198,12 @@ $(document).ready(function() {
 		handleScheduleTypeChange($(this).val());
 	});
 
-	// 시간 추가 버튼 이벤트
-	$('#btnAdd1Hour').on('click', function() {
-		addHoursToSchedule(1);
-	});
-
-	$('#btnAdd12Hours').on('click', function() {
-		addHoursToSchedule(12);
-	});
-
-	$('#btnAdd24Hours').on('click', function() {
-		addHoursToSchedule(24);
+	$('#timeAddSelect').on('change', function() {
+		const hours = parseInt($(this).val());
+		if (hours) {
+			addHoursToSchedule(hours);
+			$(this).val('');
+		}
 	});
 
 	// 발송하기 버튼 클릭
@@ -1185,11 +1180,11 @@ function insertReplacementField(fieldName) {
  */
 function handleScheduleTypeChange(scheduleType) {
 	const $scheduledTime = $('#scheduledTime');
-	const $timeButtons = $('#btnAdd1Hour, #btnAdd12Hours, #btnAdd24Hours');
+	const $timeAddSelect = $('#timeAddSelect');
 
 	if (scheduleType === 'scheduled') {
 		$scheduledTime.prop('disabled', false);
-		$timeButtons.prop('disabled', false);
+		$timeAddSelect.prop('disabled', false);
 
 		// 현재 시간으로 초기화
 		const now = new Date();
@@ -1203,7 +1198,7 @@ function handleScheduleTypeChange(scheduleType) {
 		$scheduledTime.val(formattedDateTime);
 	} else {
 		$scheduledTime.prop('disabled', true).val('');
-		$timeButtons.prop('disabled', true);
+		$timeAddSelect.prop('disabled', true).val('');
 	}
 }
 

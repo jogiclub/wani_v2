@@ -168,11 +168,18 @@
 										<input type="radio" class="btn-check" name="send_schedule_type" id="sendScheduled" value="scheduled" autocomplete="off">
 										<label class="btn" for="sendScheduled">시간지정발송</label>
 									</div>
-									<div class="input-group" style="width: 400px">
-										<input type="datetime-local" class="form-control" id="scheduledTime" disabled>
-										<button class="btn btn-outline-secondary" type="button" id="btnAdd1Hour" disabled>1시간후</button>
-										<button class="btn btn-outline-secondary" type="button" id="btnAdd12Hours" disabled>12시간후</button>
-										<button class="btn btn-outline-secondary" type="button" id="btnAdd24Hours" disabled>24시간후</button>
+									<div class="input-group" style="width: 380px">
+										<input type="datetime-local" class="form-control" id="scheduledTime" style="width: 180px" disabled >
+										<select class="form-select" id="timeAddSelect" disabled >
+											<option value="">시간 선택</option>
+											<option value="1">1시간 후</option>
+											<option value="3">3시간 후</option>
+											<option value="6">6시간 후</option>
+											<option value="12">12시간 후</option>
+											<option value="24">24시간 후</option>
+											<option value="48">48시간 후</option>
+											<option value="72">72시간 후</option>
+										</select>
 									</div>
 								</div>
 							</div>
