@@ -226,6 +226,30 @@ $(document).ready(function() {
 		loadReservationList();
 	});
 
+
+	// 메시지 템플릿 탭 클릭 시 목록 로드
+	$('#template-tab').on('shown.bs.tab', function() {
+		loadMessageTemplates();
+	});
+	// 새 템플릿 버튼 클릭
+	$(document).on('click', '#btnAddNewTemplate', function(e) {
+		e.preventDefault();
+		showTemplateModal();
+	});
+
+
+
+	// 템플릿 모달 저장 버튼
+	$(document).on('click', '#btnSaveTemplate', function() {
+		saveTemplateFromModal();
+	});
+
+// 페이지 로드 시 템플릿 목록 로드 (template 탭이 활성화된 경우)
+	if ($('#template-tab').hasClass('active')) {
+		loadMessageTemplates();
+	}
+
+
 });
 
 // ===== 발송 타입 및 메시지 관련 함수 =====
@@ -1601,4 +1625,405 @@ function cancelReservation(reservationIdx) {
 			});
 		}
 	);
+}
+
+
+
+
+
+// 새 템플릿 버튼 클릭
+$('.btn-outline-primary').filter(function() {
+	return $(this).find('i').hasClass('bi-plus-lg') && $(this).text().includes('새 템플릿');
+}).on('click', function(e) {
+	e.preventDefault();
+	addNewTemplate();
+});
+
+
+
+
+/**
+ * 역할: 메시지 템플릿 목록 렌더링
+ */
+function renderMessageTemplates(templates) {
+	const container = $('#templateContainer');
+	container.empty();
+
+	if (templates.length === 0) {
+		container.append('<div class="col-12 text-center text-muted py-4">등록된 템플릿이 없습니다.</div>');
+		return;
+	}
+
+	templates.forEach(function(template) {
+		const isAdminTemplate = !template.org_id || template.org_id == 0;
+		const typeBadge = getTypeBadge(template.template_type);
+
+		// 관리자 템플릿은 수정/삭제 버튼 없음
+		const actionButtons = isAdminTemplate ? '' : `
+			<a href="#" class="btn-edit-template text-white position-absolute" style="bottom: 10px; right: 40px" data-template-idx="${template.template_idx}" data-template-type="${template.template_type}" data-template-content="${escapeHtml(template.template_content)}">
+				<i class="bi bi-pencil-square"></i>
+			</a>
+			<a href="#" class="btn-delete-template text-white position-absolute" style="bottom: 10px; right: 10px" data-template-idx="${template.template_idx}">
+				<i class="bi bi-trash"></i>
+			</a>
+		`;
+
+		const templateItem = `
+			<div class="col-6 col-sm-4">
+				<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative ${isAdminTemplate ? 'admin-template' : ''}" 
+						data-template-idx="${template.template_idx}"
+						data-template-type="${template.template_type}"
+						data-is-admin="${isAdminTemplate}">
+					<span class="badge ${typeBadge.class} position-absolute" style="bottom: 8px; left: 8px;">${typeBadge.text}</span>
+					<small>${escapeHtml(template.template_content)}</small>
+					${actionButtons}
+				</figure>
+			</div>
+		`;
+		container.append(templateItem);
+	});
+
+	// 템플릿 클릭 이벤트 - 메시지 내용 적용
+	$('.figure-template').on('click', function(e) {
+		// 버튼 클릭이 아닐 때만 적용
+		if ($(e.target).closest('.btn-edit-template, .btn-delete-template').length === 0) {
+			const content = $(this).find('small').text();
+			applyTemplateToMessage(content);
+		}
+	});
+
+	// 수정 버튼 클릭 이벤트
+	$('.btn-edit-template').on('click', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		const templateIdx = $(this).data('template-idx');
+		const templateType = $(this).data('template-type');
+		const templateContent = $(this).data('template-content');
+		showTemplateModal(templateIdx, templateType, templateContent);
+	});
+
+	// 삭제 버튼 클릭 이벤트
+	$('.btn-delete-template').on('click', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		const templateIdx = $(this).data('template-idx');
+		deleteTemplate(templateIdx);
+	});
+}
+
+/**
+ * 역할: 템플릿 추가/수정 모달 표시
+ */
+function showTemplateModal(templateIdx = '', templateType = '', templateContent = '') {
+	let templateModal = $('#templateModal');
+
+	// 모달이 없으면 생성
+	if (templateModal.length === 0) {
+		templateModal = $(`
+			<div class="modal fade" id="templateModal" tabindex="-1" aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="templateModalLabel">템플릿 추가</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+						</div>
+						<div class="modal-body">
+							<div class="mb-3">
+								<label class="form-label">발송 타입</label>
+								<div class="btn-group w-100" role="group">
+									<input type="radio" class="btn-check" name="template_type" id="template_sms" value="sms" checked>
+									<label class="btn btn-outline-primary" for="template_sms">SMS</label>
+									
+									<input type="radio" class="btn-check" name="template_type" id="template_lms" value="lms">
+									<label class="btn btn-outline-success" for="template_lms">LMS</label>
+									
+									<input type="radio" class="btn-check" name="template_type" id="template_mms" value="mms">
+									<label class="btn btn-outline-warning" for="template_mms">MMS</label>
+									
+									<input type="radio" class="btn-check" name="template_type" id="template_kakao" value="kakao">
+									<label class="btn btn-outline-info" for="template_kakao">카카오</label>
+								</div>
+							</div>
+							<div class="mb-3">
+								<label for="templateContent" class="form-label">템플릿 내용</label>
+								<textarea class="form-control" id="templateContentInput" rows="5" placeholder="템플릿 내용을 입력하세요"></textarea>
+							</div>
+							<input type="hidden" id="templateIdx" value="">
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+							<button type="button" class="btn btn-primary" id="btnSaveTemplate">저장</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		`);
+		$('body').append(templateModal);
+	}
+// 모달 타이틀 설정
+	if (templateIdx) {
+		$('#templateModalLabel').text('템플릿 수정');
+		$('#templateIdx').val(templateIdx);
+		$('#templateContentInput').val(templateContent);
+		$(`input[name="template_type"][value="${templateType}"]`).prop('checked', true);
+	} else {
+		$('#templateModalLabel').text('템플릿 추가');
+		$('#templateIdx').val('');
+		$('#templateContentInput').val('');
+		const currentType = $('input[name="send_type"]:checked').val();
+		$(`input[name="template_type"][value="${currentType}"]`).prop('checked', true);
+	}
+
+	// 모달 표시
+	const modalInstance = new bootstrap.Modal(templateModal[0]);
+	modalInstance.show();
+}
+
+
+
+/**
+ * 역할: 템플릿 모달에서 저장
+ */
+function saveTemplateFromModal() {
+	const templateIdx = $('#templateIdx').val();
+	const templateType = $('input[name="template_type"]:checked').val();
+	const templateContent = $('#templateContentInput').val().trim();
+
+	if (!templateContent) {
+		showToast('템플릿 내용을 입력해주세요.', 'warning');
+		return;
+	}
+
+	const url = templateIdx ? '/send/update_template' : '/send/save_template';
+	const data = {
+		org_id: SEND_ORG_ID,
+		template_content: templateContent,
+		template_type: templateType
+	};
+
+	if (templateIdx) {
+		data.template_idx = templateIdx;
+	}
+
+	$.ajax({
+		url: url,
+		type: 'POST',
+		data: data,
+		dataType: 'json',
+		beforeSend: function() {
+			$('#btnSaveTemplate').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> 저장중...');
+		},
+		success: function(response) {
+			if (response.success) {
+				showToast(response.message, 'success');
+				$('#templateModal').modal('hide');
+				loadMessageTemplates();
+			} else {
+				showToast(response.message, 'error');
+			}
+		},
+		error: function(xhr, status, error) {
+			showToast('템플릿 저장에 실패했습니다.', 'error');
+			console.error('템플릿 저장 실패:', error);
+		},
+		complete: function() {
+			$('#btnSaveTemplate').prop('disabled', false).html('저장');
+		}
+	});
+}
+
+
+/**
+ * 역할: 템플릿 내용을 메시지 입력란에 적용
+ */
+function applyTemplateToMessage(content) {
+	$('#messageContent').val(content);
+	handleMessageInput();
+	showToast('템플릿이 적용되었습니다.', 'success');
+}
+
+/**
+ * 역할: 템플릿 삭제
+ */
+function deleteTemplate(templateIdx) {
+	showConfirmModal(
+		'템플릿 삭제',
+		'템플릿을 삭제하시겠습니까?',
+		function() {
+			$.ajax({
+				url: '/send/delete_template',
+				type: 'POST',
+				data: {
+					template_idx: templateIdx,
+					org_id: SEND_ORG_ID
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.success) {
+						showToast(response.message, 'success');
+						loadMessageTemplates();
+					} else {
+						showToast(response.message, 'error');
+					}
+				},
+				error: function(xhr, status, error) {
+					showToast('템플릿 삭제에 실패했습니다.', 'error');
+					console.error('템플릿 삭제 실패:', error);
+				}
+			});
+		}
+	);
+}
+
+/**
+ * 역할: HTML 이스케이프 처리
+ */
+function escapeHtml(text) {
+	if (!text) return '';
+	const map = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#039;'
+	};
+	return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+/**
+ * 역할: 메시지 템플릿 목록 로드
+ */
+function loadMessageTemplates() {
+	$.ajax({
+		url: '/send/get_send_templates',
+		type: 'POST',
+		data: { org_id: SEND_ORG_ID },
+		dataType: 'json',
+		success: function(response) {
+			if (response.success) {
+				renderMessageTemplates(response.templates);
+			}
+		},
+		error: function(xhr, status, error) {
+			console.error('템플릿 목록 조회 실패:', error);
+		}
+	});
+}
+
+/**
+ * 역할: 템플릿 타입별 뱃지 텍스트 반환
+ */
+function getTypeBadge(type) {
+	const badges = {
+		'sms': { text: 'SMS', class: 'bg-primary' },
+		'lms': { text: 'LMS', class: 'bg-success' },
+		'mms': { text: 'MMS', class: 'bg-warning' },
+		'kakao': { text: '카카오', class: 'bg-info' }
+	};
+	return badges[type] || { text: 'SMS', class: 'bg-primary' };
+}
+
+/**
+ * 역할: 새 템플릿 추가
+ */
+function addNewTemplate() {
+	const currentType = $('input[name="send_type"]:checked').val();
+	const typeBadge = getTypeBadge(currentType);
+
+	const newTemplate = `
+		<div class="col-6 col-sm-4">
+			<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" 
+					data-template-idx=""
+					data-template-type="${currentType}"
+					data-is-admin="false"
+					contenteditable="true">
+				<span class="badge bg-info position-absolute" style="top: 5px; left: 5px;">${typeBadge}</span>
+				<small>새 템플릿 내용을 입력하세요...</small>
+				<a href="#" class="btn-delete-template text-white position-absolute" style="bottom: 10px; right: 10px" data-template-idx=""><i class="bi bi-trash"></i></a>
+			</figure>
+		</div>
+	`;
+
+	$('#template-tab-pane .row').prepend(newTemplate);
+
+	// 이벤트 재바인딩
+	$('.figure-template').off('click').on('click', function(e) {
+		if ($(e.target).closest('.btn-delete-template').length === 0) {
+			applyTemplateToMessage($(this).text().trim());
+		}
+	});
+
+	$('.btn-delete-template').off('click').on('click', function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		const templateIdx = $(this).data('template-idx');
+		if (templateIdx) {
+			deleteTemplate(templateIdx);
+		} else {
+			// 새로 추가된 템플릿은 바로 삭제
+			$(this).closest('.col-6').remove();
+		}
+	});
+
+	// 포커스 설정
+	$('#template-tab-pane .row .figure-template:first small').focus();
+}
+
+/**
+ * 역할: 템플릿 내용을 메시지 입력란에 적용
+ */
+function applyTemplateToMessage(content) {
+	// 뱃지 텍스트 제거
+	content = content.replace(/^(SMS|LMS|MMS|카카오)\s*/, '').trim();
+	$('#messageContent').val(content);
+	handleMessageInput();
+	showToast('템플릿이 적용되었습니다.', 'success');
+}
+
+/**
+ * 역할: 템플릿 삭제
+ */
+function deleteTemplate(templateIdx) {
+	showConfirmModal(
+		'템플릿 삭제',
+		'템플릿을 삭제하시겠습니까?',
+		function() {
+			$.ajax({
+				url: '/send/delete_template',
+				type: 'POST',
+				data: {
+					template_idx: templateIdx,
+					org_id: SEND_ORG_ID
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.success) {
+						showToast(response.message, 'success');
+						loadMessageTemplates();
+					} else {
+						showToast(response.message, 'error');
+					}
+				},
+				error: function(xhr, status, error) {
+					showToast('템플릿 삭제에 실패했습니다.', 'error');
+					console.error('템플릿 삭제 실패:', error);
+				}
+			});
+		}
+	);
+}
+
+
+/**
+ * 역할: HTML 이스케이프 처리
+ */
+function escapeHtml(text) {
+	const map = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#039;'
+	};
+	return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }

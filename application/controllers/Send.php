@@ -50,12 +50,12 @@ class Send extends MY_Controller
 		$sender_numbers = $this->Send_model->get_sender_numbers_with_auth($current_org_id);
 
 		// 미리 등록된 문구 목록 조회
-		$message_templates = $this->Send_model->get_message_templates($current_org_id);
+		$send_templates = $this->Send_model->get_send_templates($current_org_id);
 
 		$data = array(
 			'selected_members' => $selected_members,
 			'sender_numbers' => $sender_numbers,
-			'message_templates' => $message_templates,
+			'send_templates' => $send_templates,
 			'org_id' => $current_org_id
 		);
 
@@ -292,7 +292,7 @@ class Send extends MY_Controller
 		}
 
 		$data = array(
-			'templates' => $this->Send_model->get_message_templates($org_id),
+			'templates' => $this->Send_model->get_send_templates($org_id),
 			'org_id' => $org_id
 		);
 
@@ -310,23 +310,25 @@ class Send extends MY_Controller
 
 		$user_id = $this->session->userdata('user_id');
 		$org_id = $this->input->post('org_id');
-		$template_name = $this->input->post('template_name');
 		$template_content = $this->input->post('template_content');
+		$template_type = $this->input->post('template_type');
 
-		if (!$org_id || !$template_name || !$template_content) {
+		if (!$org_id || !$template_content || !$template_type) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
 
 		$data = array(
 			'org_id' => $org_id,
-			'template_name' => $template_name,
+			'template_name' => '', // 템플릿명은 필요 없으므로 빈 문자열
 			'template_content' => $template_content,
+			'template_type' => $template_type,
 			'created_by' => $user_id,
+			'active_yn' => 'Y',
 			'created_date' => date('Y-m-d H:i:s')
 		);
 
-		$result = $this->Send_model->save_message_template($data);
+		$result = $this->Send_model->save_send_template($data);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '템플릿이 저장되었습니다.'));
@@ -345,22 +347,22 @@ class Send extends MY_Controller
 		}
 
 		$template_idx = $this->input->post('template_idx');
-		$template_name = $this->input->post('template_name');
 		$template_content = $this->input->post('template_content');
+		$template_type = $this->input->post('template_type');
 		$org_id = $this->input->post('org_id');
 
-		if (!$template_idx || !$template_name || !$template_content || !$org_id) {
+		if (!$template_idx || !$template_content || !$template_type || !$org_id) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
 
 		$data = array(
-			'template_name' => $template_name,
 			'template_content' => $template_content,
+			'template_type' => $template_type,
 			'updated_date' => date('Y-m-d H:i:s')
 		);
 
-		$result = $this->Send_model->update_message_template($template_idx, $data);
+		$result = $this->Send_model->update_send_template($template_idx, $data);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '템플릿이 수정되었습니다.'));
@@ -386,13 +388,76 @@ class Send extends MY_Controller
 			return;
 		}
 
-		$result = $this->Send_model->delete_message_template($template_idx, $org_id);
+		$result = $this->Send_model->delete_send_template($template_idx, $org_id);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '템플릿이 삭제되었습니다.'));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '삭제에 실패했습니다.'));
 		}
+	}
+
+	/**
+	 * 여러 템플릿 일괄 저장
+	 */
+	public function save_templates_batch()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$templates = $this->input->post('templates');
+
+		if (!$org_id || !$templates || !is_array($templates)) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$success_count = 0;
+		$fail_count = 0;
+
+		foreach ($templates as $template) {
+			if (empty($template['template_content'])) {
+				continue;
+			}
+
+			if (isset($template['template_idx']) && $template['template_idx']) {
+				// 수정
+				$update_data = array(
+					'template_content' => $template['template_content'],
+					'template_type' => $template['template_type'],
+					'updated_date' => date('Y-m-d H:i:s')
+				);
+				$result = $this->Send_model->update_send_template($template['template_idx'], $update_data);
+			} else {
+				// 신규 등록
+				$insert_data = array(
+					'org_id' => $org_id,
+					'template_name' => '',
+					'template_content' => $template['template_content'],
+					'template_type' => $template['template_type'],
+					'created_by' => $user_id,
+					'active_yn' => 'Y',
+					'created_date' => date('Y-m-d H:i:s')
+				);
+				$result = $this->Send_model->save_send_template($insert_data);
+			}
+
+			if ($result) {
+				$success_count++;
+			} else {
+				$fail_count++;
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'message' => "저장 완료 ({$success_count}건 성공, {$fail_count}건 실패)",
+			'success_count' => $success_count,
+			'fail_count' => $fail_count
+		));
 	}
 
 	/**
@@ -1092,6 +1157,31 @@ class Send extends MY_Controller
 		} else {
 			echo json_encode(array('success' => false, 'message' => '취소에 실패했습니다.'));
 		}
+	}
+
+
+	/**
+	 * 메시지 템플릿 목록 조회
+	 */
+	public function get_send_templates()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$templates = $this->Send_model->get_send_templates($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'templates' => $templates
+		));
 	}
 
 }

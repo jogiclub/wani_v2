@@ -52,15 +52,17 @@ class Send_model extends CI_Model
 	}
 
 	/**
-	 * 메시지 템플릿 목록 조회
+	 * 메시지 템플릿 목록 조회 (관리자 템플릿 포함)
 	 */
-	public function get_message_templates($org_id)
+	public function get_send_templates($org_id)
 	{
-		$this->db->select('template_idx, template_name, template_content');
-		$this->db->from('wb_message_template');
-		$this->db->where('org_id', $org_id);
+		$this->db->select('template_idx, org_id, template_content, template_type');
+		$this->db->from('wb_send_template');
+		// org_id가 0이거나 NULL이면 관리자 템플릿, 그렇지 않으면 해당 조직의 템플릿
+		$this->db->where('(org_id = ' . $org_id . ' OR org_id = 0 OR org_id IS NULL)');
 		$this->db->where('active_yn', 'Y');
-		$this->db->order_by('template_name', 'ASC');
+		$this->db->order_by('org_id', 'ASC'); // 관리자 템플릿을 먼저
+		$this->db->order_by('created_date', 'DESC');
 
 		$query = $this->db->get();
 		return $query->result_array();
@@ -110,28 +112,29 @@ class Send_model extends CI_Model
 	/**
 	 * 메시지 템플릿 저장
 	 */
-	public function save_message_template($data)
+	public function save_send_template($data)
 	{
-		return $this->db->insert('wb_message_template', $data);
+		return $this->db->insert('wb_send_template', $data);
 	}
-
 	/**
 	 * 메시지 템플릿 수정
 	 */
-	public function update_message_template($template_idx, $data)
+	public function update_send_template($template_idx, $data)
 	{
 		$this->db->where('template_idx', $template_idx);
-		return $this->db->update('wb_message_template', $data);
+		return $this->db->update('wb_send_template', $data);
 	}
 
 	/**
 	 * 메시지 템플릿 삭제
 	 */
-	public function delete_message_template($template_idx, $org_id)
+	public function delete_send_template($template_idx, $org_id)
 	{
 		$this->db->where('template_idx', $template_idx);
 		$this->db->where('org_id', $org_id);
-		return $this->db->update('wb_message_template', array('active_yn' => 'N'));
+		$this->db->where('org_id !=', 0);
+		$this->db->where('org_id IS NOT NULL');
+		return $this->db->update('wb_send_template', array('active_yn' => 'N'));
 	}
 
 	/**
@@ -211,7 +214,7 @@ class Send_model extends CI_Model
 	public function get_charge_packages()
 	{
 		$this->db->select('*');
-		$this->db->from('wb_sms_package');
+		$this->db->from('wb_send_package');
 		$this->db->where('active_yn', 'Y');
 		$this->db->order_by('display_order', 'ASC');
 
@@ -225,7 +228,7 @@ class Send_model extends CI_Model
 	public function get_org_total_balance($org_id)
 	{
 		$this->db->select('COALESCE(SUM(remaining_balance), 0) as total_balance');
-		$this->db->from('wb_sms_charge_history');
+		$this->db->from('wb_send_charge_history');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('payment_status', 'completed');
 		$this->db->where('remaining_balance >', 0);
@@ -248,7 +251,7 @@ class Send_model extends CI_Model
 
 		// remaining_balance가 0보다 큰 충전 내역을 history_idx 오름차순으로 조회
 		$this->db->select('history_idx, remaining_balance');
-		$this->db->from('wb_sms_charge_history');
+		$this->db->from('wb_send_charge_history');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('payment_status', 'completed');
 		$this->db->where('remaining_balance >', 0);
@@ -282,7 +285,7 @@ class Send_model extends CI_Model
 
 			// 잔액 업데이트
 			$this->db->where('history_idx', $history_idx);
-			$this->db->update('wb_sms_charge_history', array(
+			$this->db->update('wb_send_charge_history', array(
 				'remaining_balance' => $new_balance
 			));
 
@@ -329,8 +332,8 @@ class Send_model extends CI_Model
 	{
 		// 먼저 잔액이 있는 충전 내역 조회 (package_idx가 작은 순서대로)
 		$this->db->select('h.history_idx, h.package_idx, h.remaining_balance, p.sms_price, p.lms_price, p.mms_price, p.kakao_price');
-		$this->db->from('wb_sms_charge_history h');
-		$this->db->join('wb_sms_package p', 'h.package_idx = p.package_idx', 'left');
+		$this->db->from('wb_send_charge_history h');
+		$this->db->join('wb_send_package p', 'h.package_idx = p.package_idx', 'left');
 		$this->db->where('h.org_id', $org_id);
 		$this->db->where('h.payment_status', 'completed');
 		$this->db->where('h.remaining_balance >', 0);
@@ -402,7 +405,7 @@ class Send_model extends CI_Model
 				'charge_date' => date('Y-m-d H:i:s')
 			);
 
-			$insert_result = $this->db->insert('wb_sms_charge_history', $history_data);
+			$insert_result = $this->db->insert('wb_send_charge_history', $history_data);
 
 			if (!$insert_result) {
 				log_message('error', 'Charge history insert failed: ' . $this->db->error()['message']);
@@ -432,8 +435,8 @@ class Send_model extends CI_Model
 		try {
 			// 잔액이 있는 충전 내역 조회 (package_idx가 작은 순서대로)
 			$this->db->select('h.history_idx, h.package_idx, h.remaining_balance, p.sms_price, p.lms_price, p.mms_price, p.kakao_price');
-			$this->db->from('wb_sms_charge_history h');
-			$this->db->join('wb_sms_package p', 'h.package_idx = p.package_idx', 'left');
+			$this->db->from('wb_send_charge_history h');
+			$this->db->join('wb_send_package p', 'h.package_idx = p.package_idx', 'left');
 			$this->db->where('h.org_id', $org_id);
 			$this->db->where('h.payment_status', 'completed');
 			$this->db->where('h.remaining_balance >', 0);
@@ -472,7 +475,7 @@ class Send_model extends CI_Model
 				// 잔액 차감
 				$this->db->set('remaining_balance', 'remaining_balance - ' . $deduct_amount, FALSE);
 				$this->db->where('history_idx', $history['history_idx']);
-				$update_result = $this->db->update('wb_sms_charge_history');
+				$update_result = $this->db->update('wb_send_charge_history');
 
 				if (!$update_result) {
 					throw new Exception('잔액 차감 실패');
@@ -522,15 +525,15 @@ class Send_model extends CI_Model
 		$offset = ($page - 1) * $per_page;
 
 		// 전체 개수
-		$this->db->from('wb_sms_charge_history');
+		$this->db->from('wb_send_charge_history');
 		$this->db->where('org_id', $org_id);
 		$total_count = $this->db->count_all_results();
 
 		// 목록 조회
 		$this->db->select('h.*, u.user_name, p.package_name');
-		$this->db->from('wb_sms_charge_history h');
+		$this->db->from('wb_send_charge_history h');
 		$this->db->join('wb_user u', 'h.user_id = u.user_id', 'left');
-		$this->db->join('wb_sms_package p', 'h.package_idx = p.package_idx', 'left');
+		$this->db->join('wb_send_package p', 'h.package_idx = p.package_idx', 'left');
 		$this->db->where('h.org_id', $org_id);
 		$this->db->order_by('h.charge_date', 'DESC');
 		$this->db->limit($per_page, $offset);
@@ -555,8 +558,8 @@ class Send_model extends CI_Model
 	public function get_available_package_prices($org_id)
 	{
 		$this->db->select('p.sms_price, p.lms_price, p.mms_price, p.kakao_price');
-		$this->db->from('wb_sms_charge_history h');
-		$this->db->join('wb_sms_package p', 'h.package_idx = p.package_idx', 'left');
+		$this->db->from('wb_send_charge_history h');
+		$this->db->join('wb_send_package p', 'h.package_idx = p.package_idx', 'left');
 		$this->db->where('h.org_id', $org_id);
 		$this->db->where('h.payment_status', 'completed');
 		$this->db->where('h.remaining_balance >', 0);

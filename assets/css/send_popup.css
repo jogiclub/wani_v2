@@ -5,7 +5,9 @@
 .send-popup .card-body .send-table tr td{vertical-align: middle;}
 
 #sendTabContent .figure-template{width: 100%;cursor: pointer; }
-#sendTabContent .figure-template small{ height: 150px; display: inline-block;overflow-y: auto;}
+#sendTabContent .figure-template small{ height: 150px; display: inline-block;overflow-y: auto;white-space: pre-line; word-break: break-word;}
+
+#messageContent::placeholder{color:#999}
 
 #senderTableBody .badge{font-size: 12px;padding: 1px 5px;border-radius: 3px; line-height: 19px}
 .remove-receiver{cursor: pointer}

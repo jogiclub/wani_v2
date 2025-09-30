@@ -137,7 +137,7 @@
 						<div class="row">
 							<div class="col-sm-6">
 								<label for="messageContent" class="col-form-label">메시지 내용</label>
-								<textarea class="form-control" id="messageContent" name="message_content" rows="4" placeholder="전송할 메시지를 입력하세요" required></textarea>
+								<textarea class="form-control bg-dark text-white" id="messageContent" name="message_content" rows="4" placeholder="전송할 메시지를 입력하세요" required></textarea>
 								<div class="form-text">
 									<span id="charCount">0</span> / <span id="maxChar">70</span> 자
 									<span id="messageTypeInfo" class="ms-3">SMS (70자 이하)</span>
@@ -198,7 +198,7 @@
 						<small>(153명 × 10원)</small>
 					</div>
 					<div>
-						<button type="button" class="btn btn-secondary me-2" onclick="window.close();">취소</button>
+						<button type="button" class="btn btn-secondary me-1" onclick="window.close();">취소</button>
 						<button type="button" class="btn btn-primary" id="sendBtn">
 							<i class="bi bi-send"></i> 발송하기
 						</button>
@@ -231,37 +231,11 @@
 							<div class="tab-content" id="sendTabContent">
 								<div class="tab-pane fade show active" id="template-tab-pane" role="tabpanel" aria-labelledby="template-tab" tabindex="0">
 									<div class="d-flex justify-content-end my-2">
-										<a class="btn btn-sm btn-outline-primary me-2"><i class="bi bi-plus-lg"></i> 새 템플릿</a>
-										<a class="btn btn-sm btn-primary">전체 저장</a>
+										<a class="btn btn-sm btn-outline-primary me-2" id="btnAddNewTemplate"><i class="bi bi-plus-lg"></i> 새 템플릿</a>
 									</div>
-									<div class="row">
-										<div class="col-6 col-sm-4">
-											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
-												<small>{이름} 회원님 생일축하합니다.</small>
-												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
-											</figure>
-										</div>
-										<div class="col-6 col-sm-4">
-											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
-												<small>{이름} 회원님 생일축하합니다. {이름} 회원님 생일축하합니다.{이름} 회원님 생일축하합니다.{이름} 회원님 생일축하합니다.{이름} 회원님 생일축하합니다.</small>
-												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
-											</figure>
-										</div>
-										<div class="col-6 col-sm-4">
-											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
-												<small>{이름} 회원님 생일축하합니다.</small>
-												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
-											</figure>
-										</div>
-										<div class="col-6 col-sm-4">
-											<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" >
-												<small>{이름} 회원님 생일축하합니다.</small>
-												<a href="#" id="del-template" class="text-white position-absolute" style="bottom: 10px; right: 10px"><i class="bi bi-trash"></i></a>
-											</figure>
-										</div>
+									<div class="row" id="templateContainer">
+										<!-- JavaScript로 동적 생성 -->
 									</div>
-
-
 								</div>
 								<div class="tab-pane fade" id="history-tab-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
 									<div class="d-flex justify-content-end my-2">
