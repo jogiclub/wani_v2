@@ -62,6 +62,7 @@ class Send extends MY_Controller
 		$this->load->view('send/popup', $data);
 	}
 
+
 	/**
 	 * 문자 발송 처리
 	 */
@@ -77,11 +78,11 @@ class Send extends MY_Controller
 			return;
 		}
 
-		$send_type = $this->input->post('send_type'); // sms, lms, mms, kakao
+		$send_type = $this->input->post('send_type');
 		$sender_number = $this->input->post('sender_number');
 		$sender_name = $this->input->post('sender_name');
 		$message_content = $this->input->post('message_content');
-		$receiver_numbers = $this->input->post('receiver_numbers'); // 배열
+		$receiver_numbers = $this->input->post('receiver_numbers');
 		$org_id = $this->input->post('org_id');
 
 		// 필수 값 검증
@@ -93,6 +94,19 @@ class Send extends MY_Controller
 		// 조직 권한 확인
 		if (!$this->check_org_access($org_id)) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$receiver_count = count($receiver_numbers);
+
+		// 발송 전 잔액 차감
+		$deduction_result = $this->Send_model->deduct_balance($org_id, $send_type, $receiver_count);
+
+		if (!$deduction_result['success']) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => $deduction_result['message']
+			));
 			return;
 		}
 
@@ -120,7 +134,7 @@ class Send extends MY_Controller
 				'send_date' => date('Y-m-d H:i:s')
 			);
 
-			// 실제 문자 발송 처리 (API 연동 부분)
+			// 실제 문자 발송 처리
 			$send_result = $this->process_message_send($send_type, $sender_number, $receiver_number, $message_content);
 
 			if ($send_result['success']) {
@@ -145,11 +159,25 @@ class Send extends MY_Controller
 			$response_message .= "\n실패 내역:\n" . implode("\n", $fail_messages);
 		}
 
+		// 최신 잔액 조회
+		$new_balance = $this->Send_model->get_org_total_balance($org_id);
+		$sms_available = $this->Send_model->get_available_balance_by_type($org_id, 'sms');
+		$lms_available = $this->Send_model->get_available_balance_by_type($org_id, 'lms');
+		$mms_available = $this->Send_model->get_available_balance_by_type($org_id, 'mms');
+		$kakao_available = $this->Send_model->get_available_balance_by_type($org_id, 'kakao');
+
 		echo json_encode(array(
 			'success' => true,
 			'message' => $response_message,
 			'success_count' => $success_count,
-			'fail_count' => $fail_count
+			'fail_count' => $fail_count,
+			'balance' => $new_balance,
+			'available_counts' => array(
+				'sms' => $sms_available,
+				'lms' => $lms_available,
+				'mms' => $mms_available,
+				'kakao' => $kakao_available
+			)
 		));
 	}
 
@@ -547,11 +575,28 @@ class Send extends MY_Controller
 			return;
 		}
 
-		$balance = $this->Send_model->get_org_balance($org_id);
+		// 전체 잔액 조회
+		$total_balance = $this->Send_model->get_org_total_balance($org_id);
+
+		// 발송 타입별 사용 가능 건수 조회
+		$sms_available = $this->Send_model->get_available_balance_by_type($org_id, 'sms');
+		$lms_available = $this->Send_model->get_available_balance_by_type($org_id, 'lms');
+		$mms_available = $this->Send_model->get_available_balance_by_type($org_id, 'mms');
+		$kakao_available = $this->Send_model->get_available_balance_by_type($org_id, 'kakao');
+
+		// 잔액이 있는 패키지의 단가 조회
+		$package_prices = $this->Send_model->get_available_package_prices($org_id);
 
 		echo json_encode(array(
 			'success' => true,
-			'balance' => $balance
+			'balance' => $total_balance,
+			'available_counts' => array(
+				'sms' => $sms_available,
+				'lms' => $lms_available,
+				'mms' => $mms_available,
+				'kakao' => $kakao_available
+			),
+			'package_prices' => $package_prices
 		));
 	}
 
@@ -567,7 +612,6 @@ class Send extends MY_Controller
 		$user_id = $this->session->userdata('user_id');
 
 		if (!$user_id) {
-			log_message('error', 'User ID not found in session');
 			echo json_encode(array('success' => false, 'message' => '로그인이 필요합니다.'));
 			return;
 		}
@@ -575,13 +619,6 @@ class Send extends MY_Controller
 		$org_id = $this->input->post('org_id');
 		$package_idx = $this->input->post('package_idx');
 		$charge_amount = $this->input->post('charge_amount');
-
-		// 상세 디버깅 로그
-		log_message('debug', '=== Charge SMS Request ===');
-		log_message('debug', 'org_id: ' . var_export($org_id, true) . ' (type: ' . gettype($org_id) . ')');
-		log_message('debug', 'user_id: ' . var_export($user_id, true) . ' (type: ' . gettype($user_id) . ')');
-		log_message('debug', 'package_idx: ' . var_export($package_idx, true));
-		log_message('debug', 'charge_amount: ' . var_export($charge_amount, true));
 
 		if (!$org_id || !$package_idx || !$charge_amount) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
@@ -594,22 +631,35 @@ class Send extends MY_Controller
 			return;
 		}
 
-		// PG사 결제 처리는 생략하고 바로 충전 처리
+		// 충전 처리
 		$result = $this->Send_model->charge_sms($org_id, $user_id, $package_idx, $charge_amount);
 
 		if ($result) {
 			// 충전 후 잔액 조회
-			$new_balance = $this->Send_model->get_org_balance($org_id);
+			$new_balance = $this->Send_model->get_org_total_balance($org_id);
 
-			log_message('debug', 'Charge successful. New balance: ' . $new_balance);
+			// 발송 타입별 사용 가능 건수 조회
+			$sms_available = $this->Send_model->get_available_balance_by_type($org_id, 'sms');
+			$lms_available = $this->Send_model->get_available_balance_by_type($org_id, 'lms');
+			$mms_available = $this->Send_model->get_available_balance_by_type($org_id, 'mms');
+			$kakao_available = $this->Send_model->get_available_balance_by_type($org_id, 'kakao');
+
+			// 잔액이 있는 패키지의 단가 조회
+			$package_prices = $this->Send_model->get_available_package_prices($org_id);
 
 			echo json_encode(array(
 				'success' => true,
 				'message' => number_format($charge_amount) . '원이 충전되었습니다.',
-				'balance' => $new_balance
+				'balance' => $new_balance,
+				'available_counts' => array(
+					'sms' => $sms_available,
+					'lms' => $lms_available,
+					'mms' => $mms_available,
+					'kakao' => $kakao_available
+				),
+				'package_prices' => $package_prices
 			));
 		} else {
-			log_message('error', 'Charge failed in model');
 			echo json_encode(array('success' => false, 'message' => '충전에 실패했습니다.'));
 		}
 	}

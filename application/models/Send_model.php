@@ -220,6 +220,58 @@ class Send_model extends CI_Model
 	}
 
 	/**
+	 * 조직의 전체 문자 잔액 조회 (모든 패키지의 잔액 합계)
+	 */
+	public function get_org_total_balance($org_id)
+	{
+		$this->db->select_sum('remaining_balance');
+		$this->db->from('wb_sms_charge_history');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('payment_status', 'completed');
+		$this->db->where('remaining_balance >', 0);
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		return $result['remaining_balance'] ? $result['remaining_balance'] : 0;
+	}
+
+
+	/**
+	 * 발송 타입별 사용 가능한 잔액 조회 (패키지별 단가 기준)
+	 */
+	public function get_available_balance_by_type($org_id, $send_type)
+	{
+		// 먼저 잔액이 있는 충전 내역 조회 (package_idx가 작은 순서대로)
+		$this->db->select('h.history_idx, h.package_idx, h.remaining_balance, p.sms_price, p.lms_price, p.mms_price, p.kakao_price');
+		$this->db->from('wb_sms_charge_history h');
+		$this->db->join('wb_sms_package p', 'h.package_idx = p.package_idx', 'left');
+		$this->db->where('h.org_id', $org_id);
+		$this->db->where('h.payment_status', 'completed');
+		$this->db->where('h.remaining_balance >', 0);
+		$this->db->order_by('h.package_idx', 'ASC');
+		$this->db->order_by('h.history_idx', 'ASC');
+
+		$query = $this->db->get();
+		$charge_histories = $query->result_array();
+
+		$total_available = 0;
+		$price_field = $send_type . '_price';
+
+		foreach ($charge_histories as $history) {
+			$unit_price = $history[$price_field];
+			if ($unit_price > 0) {
+				// 해당 패키지로 발송 가능한 건수 계산
+				$available_count = floor($history['remaining_balance'] / $unit_price);
+				$total_available += $available_count;
+			}
+		}
+
+		return $total_available;
+	}
+
+
+	/**
 	 * 조직 문자 잔액 조회
 	 */
 	public function get_org_balance($org_id)
@@ -243,6 +295,7 @@ class Send_model extends CI_Model
 		return $result['balance'];
 	}
 
+
 	/**
 	 * 문자 충전 처리
 	 */
@@ -252,57 +305,23 @@ class Send_model extends CI_Model
 		$this->db->trans_begin();
 
 		try {
-			// 충전 내역 저장
+			// 충전 내역 저장 (remaining_balance를 charge_amount와 동일하게 설정)
 			$history_data = array(
 				'org_id' => (int)$org_id,
 				'user_id' => $user_id,
 				'package_idx' => (int)$package_idx,
 				'charge_amount' => (int)$charge_amount,
+				'remaining_balance' => (int)$charge_amount,
 				'payment_method' => 'card',
 				'payment_status' => 'completed',
 				'charge_date' => date('Y-m-d H:i:s')
 			);
-
-			// 디버깅 로그
-			log_message('debug', 'Charge SMS Model - Data: ' . json_encode($history_data));
 
 			$insert_result = $this->db->insert('wb_sms_charge_history', $history_data);
 
 			if (!$insert_result) {
 				log_message('error', 'Charge history insert failed: ' . $this->db->error()['message']);
 				throw new Exception('충전 내역 저장 실패');
-			}
-
-			// 잔액 업데이트 - 기존 레코드가 있는지 확인
-			$this->db->select('balance_idx');
-			$this->db->from('wb_org_sms_balance');
-			$this->db->where('org_id', (int)$org_id);
-			$balance_exists = $this->db->get()->row_array();
-
-			if ($balance_exists) {
-				// 기존 레코드가 있으면 업데이트
-				$this->db->set('balance', 'balance + ' . (int)$charge_amount, FALSE);
-				$this->db->set('updated_date', date('Y-m-d H:i:s'));
-				$this->db->where('org_id', (int)$org_id);
-				$update_result = $this->db->update('wb_org_sms_balance');
-
-				if (!$update_result) {
-					log_message('error', 'Balance update failed: ' . $this->db->error()['message']);
-					throw new Exception('잔액 업데이트 실패');
-				}
-			} else {
-				// 레코드가 없으면 새로 생성
-				$balance_data = array(
-					'org_id' => (int)$org_id,
-					'balance' => (int)$charge_amount,
-					'updated_date' => date('Y-m-d H:i:s')
-				);
-				$insert_balance = $this->db->insert('wb_org_sms_balance', $balance_data);
-
-				if (!$insert_balance) {
-					log_message('error', 'Balance insert failed: ' . $this->db->error()['message']);
-					throw new Exception('잔액 생성 실패');
-				}
 			}
 
 			// 트랜잭션 커밋
@@ -314,6 +333,99 @@ class Send_model extends CI_Model
 			$this->db->trans_rollback();
 			log_message('error', 'Charge SMS failed: ' . $e->getMessage());
 			return FALSE;
+		}
+	}
+
+	/**
+	 * 문자 발송 시 잔액 차감 (패키지 우선순위에 따라)
+	 */
+	public function deduct_balance($org_id, $send_type, $receiver_count)
+	{
+		// 트랜잭션 시작
+		$this->db->trans_begin();
+
+		try {
+			// 잔액이 있는 충전 내역 조회 (package_idx가 작은 순서대로)
+			$this->db->select('h.history_idx, h.package_idx, h.remaining_balance, p.sms_price, p.lms_price, p.mms_price, p.kakao_price');
+			$this->db->from('wb_sms_charge_history h');
+			$this->db->join('wb_sms_package p', 'h.package_idx = p.package_idx', 'left');
+			$this->db->where('h.org_id', $org_id);
+			$this->db->where('h.payment_status', 'completed');
+			$this->db->where('h.remaining_balance >', 0);
+			$this->db->order_by('h.package_idx', 'ASC');
+			$this->db->order_by('h.history_idx', 'ASC');
+
+			$query = $this->db->get();
+			$charge_histories = $query->result_array();
+
+			if (empty($charge_histories)) {
+				throw new Exception('사용 가능한 잔액이 없습니다.');
+			}
+
+			$price_field = $send_type . '_price';
+			$remaining_count = $receiver_count;
+			$deduction_log = array();
+
+			// 각 충전 패키지에서 순서대로 차감
+			foreach ($charge_histories as $history) {
+				if ($remaining_count <= 0) {
+					break;
+				}
+
+				$unit_price = $history[$price_field];
+				if ($unit_price <= 0) {
+					continue;
+				}
+
+				// 이 패키지로 발송 가능한 최대 건수
+				$available_count = floor($history['remaining_balance'] / $unit_price);
+
+				// 실제 차감할 건수
+				$deduct_count = min($remaining_count, $available_count);
+				$deduct_amount = $deduct_count * $unit_price;
+
+				// 잔액 차감
+				$this->db->set('remaining_balance', 'remaining_balance - ' . $deduct_amount, FALSE);
+				$this->db->where('history_idx', $history['history_idx']);
+				$update_result = $this->db->update('wb_sms_charge_history');
+
+				if (!$update_result) {
+					throw new Exception('잔액 차감 실패');
+				}
+
+				$deduction_log[] = array(
+					'history_idx' => $history['history_idx'],
+					'package_idx' => $history['package_idx'],
+					'deduct_count' => $deduct_count,
+					'deduct_amount' => $deduct_amount,
+					'unit_price' => $unit_price
+				);
+
+				$remaining_count -= $deduct_count;
+			}
+
+			// 차감 후에도 발송할 건수가 남아있으면 잔액 부족
+			if ($remaining_count > 0) {
+				throw new Exception('잔액이 부족합니다. (부족한 건수: ' . $remaining_count . '건)');
+			}
+
+			// 트랜잭션 커밋
+			$this->db->trans_commit();
+
+			return array(
+				'success' => true,
+				'deduction_log' => $deduction_log
+			);
+
+		} catch (Exception $e) {
+			// 트랜잭션 롤백
+			$this->db->trans_rollback();
+			log_message('error', 'Balance deduction failed: ' . $e->getMessage());
+
+			return array(
+				'success' => false,
+				'message' => $e->getMessage()
+			);
 		}
 	}
 
@@ -349,6 +461,45 @@ class Send_model extends CI_Model
 			'total_pages' => ceil($total_count / $per_page)
 		);
 	}
+
+
+
+	/**
+	 * 조직의 잔액이 있는 패키지별 단가 조회
+	 */
+	public function get_available_package_prices($org_id)
+	{
+		$this->db->select('p.sms_price, p.lms_price, p.mms_price, p.kakao_price');
+		$this->db->from('wb_sms_charge_history h');
+		$this->db->join('wb_sms_package p', 'h.package_idx = p.package_idx', 'left');
+		$this->db->where('h.org_id', $org_id);
+		$this->db->where('h.payment_status', 'completed');
+		$this->db->where('h.remaining_balance >', 0);
+		$this->db->order_by('h.package_idx', 'ASC');
+		$this->db->limit(1); // 가장 먼저 사용될 패키지의 단가만 조회
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		if ($result) {
+			return array(
+				'sms' => $result['sms_price'],
+				'lms' => $result['lms_price'],
+				'mms' => $result['mms_price'],
+				'kakao' => $result['kakao_price']
+			);
+		}
+
+		// 잔액이 없으면 기본값 반환
+		return array(
+			'sms' => 10,
+			'lms' => 20,
+			'mms' => 30,
+			'kakao' => 20
+		);
+	}
+
+
 
 	/**
 	 * 발신번호 목록 조회 (인증 상태 포함)

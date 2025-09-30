@@ -9,9 +9,55 @@ let bulkEditGridInstance = null;
 let authTimer = null;
 let authTimeLeft = 120;
 
+// 메시지 타입별 제한 설정
+const MESSAGE_LIMITS = {
+	sms: { maxChar: 70, label: 'SMS (70자 이하)' },
+	lms: { maxChar: 1000, label: 'LMS (1000자 이하)' },
+	mms: { maxChar: 1000, label: 'MMS (1000자 이하)' }
+};
+
+
+let availableCounts = {
+	sms: 0,
+	lms: 0,
+	mms: 0,
+	kakao: 0
+};
+
+let packagePrices = {
+	sms: 10,
+	lms: 20,
+	mms: 30,
+	kakao: 20
+};
+
 $(document).ready(function() {
 	// 초기 잔액 조회
 	loadBalance();
+
+	// 발송 타입 변경 이벤트
+	$('input[name="send_type"]').on('change', function() {
+		handleSendTypeChange($(this).val());
+		updateSendCost();
+	});
+
+	// 메시지 내용 입력 이벤트
+	$('#messageContent').on('input', function() {
+		handleMessageInput();
+	});
+
+	// 카카오톡 버튼에 툴팁 추가
+	$('#kakao').next('label').attr({
+		'data-bs-toggle': 'tooltip',
+		'data-bs-placement': 'top',
+		'title': '현재 준비중입니다'
+	});
+
+	// Bootstrap 툴팁 초기화
+	const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+	tooltipTriggerList.map(function (tooltipTriggerEl) {
+		return new bootstrap.Tooltip(tooltipTriggerEl);
+	});
 
 	// 문자충전 버튼 클릭
 	$('#btnChargeModal').on('click', function() {
@@ -135,9 +181,59 @@ $(document).ready(function() {
 	$(document).on('click', '#btnSaveAddressBook', function() {
 		saveAddressBook();
 	});
-
-
 });
+
+// ===== 발송 타입 및 메시지 관련 함수 =====
+/**
+ * 역할: 발송 타입 변경 시 처리
+ */
+function handleSendTypeChange(sendType) {
+	// 카카오톡 선택 시 차단
+	if (sendType === 'kakao') {
+		showToast('카카오톡 발송은 현재 준비중입니다.', 'warning');
+		$('#sms').prop('checked', true);
+		return;
+	}
+
+	// MMS 파일첨부 섹션 표시/숨김
+	if (sendType === 'mms') {
+		$('#mmsFileSection').removeClass('d-none');
+	} else {
+		$('#mmsFileSection').addClass('d-none');
+		$('#mmsFile').val('');
+	}
+
+	// 글자 수 제한 업데이트
+	const limit = MESSAGE_LIMITS[sendType];
+	if (limit) {
+		$('#maxChar').text(limit.maxChar);
+		$('#messageTypeInfo').text(limit.label);
+	}
+
+	// 현재 메시지 재검증
+	handleMessageInput();
+}
+
+/**
+ * 역할: 메시지 입력 시 글자 수 카운트 및 자동 타입 전환
+ */
+function handleMessageInput() {
+	const message = $('#messageContent').val();
+	const charCount = message.length;
+	const currentType = $('input[name="send_type"]:checked').val();
+
+	// 글자 수 표시
+	$('#charCount').text(charCount);
+
+	// SMS에서 70자 초과 시 자동으로 LMS로 전환
+	if (currentType === 'sms' && charCount > MESSAGE_LIMITS.sms.maxChar) {
+		$('#lms').prop('checked', true);
+		$('#maxChar').text(MESSAGE_LIMITS.lms.maxChar);
+		$('#messageTypeInfo').text(MESSAGE_LIMITS.lms.label);
+		showToast('70자를 초과하여 자동으로 LMS로 전환되었습니다.', 'info');
+		updateSendCost();
+	}
+}
 
 // ===== 잔액 관련 함수 =====
 function loadBalance() {
@@ -149,6 +245,9 @@ function loadBalance() {
 		success: function(response) {
 			if (response.success) {
 				updateBalanceDisplay(response.balance);
+				availableCounts = response.available_counts;
+				packagePrices = response.package_prices;
+				updateSendTypeLabels();
 			}
 		},
 		error: function(xhr, status, error) {
@@ -156,6 +255,27 @@ function loadBalance() {
 		}
 	});
 }
+
+/**
+ * 역할: 발송 타입별 건당 단가 표시
+ */
+function updateSendTypeLabels() {
+	const typeLabels = {
+		sms: { name: 'SMS' },
+		lms: { name: 'LMS' },
+		mms: { name: 'MMS' },
+		kakao: { name: '카카오톡' }
+	};
+
+	Object.keys(typeLabels).forEach(function(type) {
+		const price = packagePrices[type] || 0;
+		const $label = $(`#${type}`).next('label');
+
+		// 건당 단가 표시
+		$label.html(`${typeLabels[type].name} <small>(${price}원)</small>`);
+	});
+}
+
 
 function updateBalanceDisplay(balance) {
 	$('#currentBalance').text(formatNumber(balance) + '원');
@@ -217,6 +337,9 @@ function renderPackageList(packages) {
 	});
 }
 
+/**
+ * 역할: 충전 완료 후 잔액 업데이트
+ */
 function processCharge() {
 	showConfirmModal(
 		'문자 충전',
@@ -238,6 +361,11 @@ function processCharge() {
 					if (response.success) {
 						showToast(response.message, 'success');
 						updateBalanceDisplay(response.balance);
+						availableCounts = response.available_counts;
+						packagePrices = response.package_prices;
+						updateSendTypeLabels();
+						updateSendCost(); // 발송 비용도 업데이트
+
 						const offcanvasEl = document.getElementById('chargeOffcanvas');
 						const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
 						if (offcanvas) {
@@ -596,10 +724,8 @@ function updateSendCost() {
 	const count = $('#receiverList tr.receiver-item').length;
 	const sendType = $('input[name="send_type"]:checked').val();
 
-	let costPerMessage = 10;
-	if (sendType === 'lms') costPerMessage = 20;
-	else if (sendType === 'mms') costPerMessage = 30;
-	else if (sendType === 'kakao') costPerMessage = 20;
+	// 현재 패키지의 단가 사용
+	const costPerMessage = packagePrices[sendType] || 0;
 
 	const totalCost = count * costPerMessage;
 
@@ -786,9 +912,9 @@ function deleteAddressBook(addressBookIdx) {
 	);
 }
 
-/*
-* 역할: 전체편집 모달 열기 시 초기화
-*/
+/**
+ * 역할: 전체편집 모달 열기 시 초기화
+ */
 function openBulkEditModal() {
 	const receiverData = [];
 

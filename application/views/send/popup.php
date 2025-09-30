@@ -139,8 +139,8 @@
 								<label for="messageContent" class="col-form-label">메시지 내용</label>
 								<textarea class="form-control" id="messageContent" name="message_content" rows="4" placeholder="전송할 메시지를 입력하세요" required></textarea>
 								<div class="form-text">
-									<span id="charCount">0</span> / <span id="maxChar">90</span> 자
-									<span id="messageTypeInfo" class="ms-3">SMS (90자 이하)</span>
+									<span id="charCount">0</span> / <span id="maxChar">70</span> 자
+									<span id="messageTypeInfo" class="ms-3">SMS (70자 이하)</span>
 								</div>
 							</div>
 							<div class="col-sm-6">
@@ -157,31 +157,34 @@
 						</div>
 					</div>
 
-
-					<div class="col-sm-12">
-						<label for="messageContent" class="col-form-label">발송시점</label>
-						<div class="d-flex justify-content-between align-items-center">
-							<div class="">
-								<input type="radio" class="btn-check" name="options-base" id="option1" autocomplete="off" checked>
-								<label class="btn" for="option1">즉시발송</label>
-								<input type="radio" class="btn-check" name="options-base" id="option2" autocomplete="off">
-								<label class="btn" for="option2">시간지정발송</label>
-							</div>
-							<div class="input-group" style="width: 350px">
-								<input type="datetime-local" class="form-control" disabled>
-								<button class="btn btn-outline-secondary" type="button" disabled>1시간후</button>
-								<button class="btn btn-outline-secondary" type="button" disabled>12시간후</button>
-								<button class="btn btn-outline-secondary" type="button" disabled>24시간후</button>
+					<div class="mb-3">
+						<div class="row">
+							<div class="col-sm-12">
+								<label for="messageContent" class="col-form-label">발송시점</label>
+								<div class="d-flex justify-content-between align-items-center">
+									<div class="">
+										<input type="radio" class="btn-check" name="options-base" id="option1" autocomplete="off" checked>
+										<label class="btn" for="option1">즉시발송</label>
+										<input type="radio" class="btn-check" name="options-base" id="option2" autocomplete="off">
+										<label class="btn" for="option2">시간지정발송</label>
+									</div>
+									<div class="input-group" style="width: 350px">
+										<input type="datetime-local" class="form-control" disabled>
+										<button class="btn btn-outline-secondary" type="button" disabled>1시간후</button>
+										<button class="btn btn-outline-secondary" type="button" disabled>12시간후</button>
+										<button class="btn btn-outline-secondary" type="button" disabled>24시간후</button>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>
 
 					<!-- MMS 첨부파일 (MMS 선택 시에만 표시) -->
-					<div class="mb-3 d-none" id="mmsFileSection">
+
+					<div class="col-sm-12 d-none" id="mmsFileSection">
 						<label for="mmsFile" class="col-form-label">첨부파일</label>
 
-						<input type="file" class="form-control" id="mmsFile" name="mms_file"
-							   accept="image/*"/>
+						<input type="file" class="form-control" id="mmsFile" name="mms_file" accept="image/*"/>
 						<div class="form-text">이미지 파일만 첨부 가능합니다. (최대 300KB)</div>
 
 					</div>
