@@ -215,7 +215,7 @@
             <div class="modal-body">
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" placeholder="메일주소를 입력하세요!" aria-label="invite-email" aria-describedby="invite-user">
-                    <button class="btn btn-outline-secondary" type="button" id="invite-user">초대메일 전송</button>
+                    <button class="btn btn-outline-secondary" type="button" id="invite-user">초대메일 발송</button>
                 </div>
                 <div class="table-responsive-xl" style="overflow-y: scroll">
                     <table class="table align-middle" style="min-width: 900px">

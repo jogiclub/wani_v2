@@ -84,7 +84,7 @@
 									<div>
 									<a class="btn btn-xs btn-danger"><i class="bi bi-x-square"></i> 전체삭제</a>
 										<a class="btn btn-xs btn-primary"><i class="bi bi-bookmark-check"></i> 내 주소록에 저장</a>
-									<a class="btn btn-xs btn-success"><i class="bi bi-pencil-square"></i> 전체편집</a>
+									<a class="btn btn-xs btn-success" id="popup-edit"><i class="bi bi-pencil-square"></i> 전체편집</a>
 									</div>
 								</div>
 							</div>
@@ -137,7 +137,7 @@
 						<div class="row">
 							<div class="col-sm-6">
 								<label for="messageContent" class="col-form-label">메시지 내용</label>
-								<textarea class="form-control bg-dark text-white" id="messageContent" name="message_content" rows="4" placeholder="전송할 메시지를 입력하세요" required></textarea>
+								<textarea class="form-control bg-dark text-white" id="messageContent" name="message_content" rows="4" placeholder="발송할 메시지를 입력하세요" required></textarea>
 								<div class="form-text">
 									<span id="charCount">0</span> / <span id="maxChar">70</span> 자
 									<span id="messageTypeInfo" class="ms-3">SMS (70자 이하)</span>
@@ -178,7 +178,8 @@
 											<option value="12">12시간 후</option>
 											<option value="24">24시간 후</option>
 											<option value="48">48시간 후</option>
-											<option value="72">72시간 후</option>
+											<option value="48">다음 날 오전9시</option>
+											<option value="48">다음 날 오전9시</option>
 										</select>
 									</div>
 								</div>
@@ -226,10 +227,10 @@
 									<button class="nav-link active" id="template-tab" data-bs-toggle="tab" data-bs-target="#template-tab-pane" type="button" role="tab" aria-controls="template-tab-pane" aria-selected="true">메시지 템플릿</button>
 								</li>
 								<li class="nav-item" role="presentation">
-									<button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-tab-pane" type="button" role="tab" aria-controls="history-tab-pane" aria-selected="false">전송 히스토리</button>
+									<button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history-tab-pane" type="button" role="tab" aria-controls="history-tab-pane" aria-selected="false">발송 히스토리</button>
 								</li>
 								<li class="nav-item" role="presentation">
-									<button class="nav-link" id="reservation-tab" data-bs-toggle="tab" data-bs-target="#reservation-tab-pane" type="button" role="tab" aria-controls="reservation-tab-pane" aria-selected="false">예약전송 목록</button>
+									<button class="nav-link" id="reservation-tab" data-bs-toggle="tab" data-bs-target="#reservation-tab-pane" type="button" role="tab" aria-controls="reservation-tab-pane" aria-selected="false">예약발송 목록</button>
 								</li>
 								<li class="nav-item" role="presentation">
 									<button class="nav-link" id="address-tab" data-bs-toggle="tab" data-bs-target="#address-tab-pane" type="button" role="tab" aria-controls="address-tab-pane" aria-selected="false">내 주소록</button>
@@ -245,12 +246,35 @@
 									</div>
 								</div>
 								<div class="tab-pane fade" id="history-tab-pane" role="tabpanel" aria-labelledby="history-tab" tabindex="0">
-									<div class="d-flex justify-content-end my-2">
+									<div class="d-flex justify-content-center">
+										<div class="input-group my-2" style="width: 350px">
+										<button type="button" class="btn btn-sm btn-outline-secondary" id="btnPrevMonth">
+											<i class="bi bi-chevron-left"></i> 이전월
+										</button>
 
+										<select class="form-select form-select-sm" id="historyYear" >
+											<!-- JavaScript로 동적 생성 -->
+										</select>
 
-											<input type="date" class="form-control" value="2025-01-01" style="width: 140px"/>
+										<select class="form-select form-select-sm" id="historyMonth">
+											<option value="1">1월</option>
+											<option value="2">2월</option>
+											<option value="3">3월</option>
+											<option value="4">4월</option>
+											<option value="5">5월</option>
+											<option value="6">6월</option>
+											<option value="7">7월</option>
+											<option value="8">8월</option>
+											<option value="9">9월</option>
+											<option value="10">10월</option>
+											<option value="11">11월</option>
+											<option value="12">12월</option>
+										</select>
 
-
+										<button type="button" class="btn btn-sm btn-outline-secondary" id="btnNextMonth">
+											다음월 <i class="bi bi-chevron-right"></i>
+										</button>
+									</div>
 									</div>
 									<table class="table">
 										<thead>
@@ -261,37 +285,19 @@
 											<th scope="col">결과확인</th>
 										</tr>
 										</thead>
-										<tbody>
-										<tr>
-											<td>2025.09.11 34:33:22</td>
-											<td>02-1234-6678</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-success">결과확인</a></td>
-										</tr>
-										<tr>
-											<td>2025.09.11 34:33:22</td>
-											<td>02-1234-6678</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-success">결과확인</a></td>
-										</tr>
-										<tr>
-											<td>2025.09.11 34:33:22</td>
-											<td>02-1234-6678</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-success">결과확인</a></td>
-										</tr>
+										<tbody id="historyTableBody">
+										<!-- JavaScript로 동적 생성 -->
 										</tbody>
 									</table>
-
 								</div>
 								<div class="tab-pane fade" id="reservation-tab-pane" role="tabpanel" aria-labelledby="reservation-tab" tabindex="0">
 									<div class="d-flex justify-content-end my-2">
-										<a class="btn btn-sm btn-outline-success">엑셀로 예약전송 추가</a>
+										<a class="btn btn-sm btn-outline-success">엑셀로 예약발송 추가</a>
 									</div>
 									<table class="table">
 										<thead>
 										<tr>
-											<th scope="col">전송예정일시</th>
+											<th scope="col">발송예정일시</th>
 											<th scope="col">발신번호</th>
 											<th scope="col">수신자</th>
 											<th scope="col">내용확인</th>
@@ -323,15 +329,14 @@
 								<div class="tab-pane fade" id="address-tab-pane" role="tabpanel" aria-labelledby="address-tab" tabindex="0">
 
 									<div class="d-flex justify-content-end my-2">
-										<a class="btn btn-sm btn-outline-success me-2">엑셀로 주소록 추가</a>
-										<a class="btn btn-sm btn-success"><i class="bi bi-file-earmark-spreadsheet"></i> 엑셀 다운로드</a>
+										<a class="btn btn-sm btn-success" id="address-download"><i class="bi bi-file-earmark-spreadsheet"></i> 엑셀 다운로드</a>
 									</div>
 									<table class="table">
 										<thead>
-										<tr>											
+										<tr>
 											<th scope="col">주소록명</th>
 											<th scope="col">수신자</th>
-											<th scope="col">전송</th>
+											<th scope="col">적용</th>
 											<th scope="col">삭제</th>
 										</tr>
 										</thead>
@@ -339,19 +344,19 @@
 										<tr>
 											<td>7월 제대예정자</td>
 											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-primary">전송</a></td>
+											<td><a class="btn btn-xs btn-primary">적용</a></td>
 											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
 										</tr>
 										<tr>
 											<td>감사인사그룹</td>
 											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-primary">전송</a></td>
+											<td><a class="btn btn-xs btn-primary">적용</a></td>
 											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
 										</tr>
 										<tr>
 											<td>5월 생일자</td>
 											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-primary">전송</a></td>
+											<td><a class="btn btn-xs btn-primary">적용</a></td>
 											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
 										</tr>
 										</tbody>
@@ -502,6 +507,133 @@
 	</div>
 </div>
 
+
+
+<!-- 발송 히스토리 상세 Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="historyDetailOffcanvas" aria-labelledby="historyDetailOffcanvasLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="historyDetailOffcanvasLabel">발송 결과 상세</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div class="mb-3">
+			<label class="form-label fw-bold mb-2">발송 정보</label>
+			<div class="border rounded p-3 bg-light">
+				<div class="row mb-2">
+					<div class="col-4 text-muted">발송일시</div>
+					<div class="col-8" id="historyDetailSendDate"></div>
+				</div>
+				<div class="row mb-2">
+					<div class="col-4 text-muted">발신번호</div>
+					<div class="col-8" id="historyDetailSenderNumber"></div>
+				</div>
+				<div class="row mb-2">
+					<div class="col-4 text-muted">발신자명</div>
+					<div class="col-8" id="historyDetailSenderName"></div>
+				</div>
+				<div class="row mb-2">
+					<div class="col-4 text-muted">발송타입</div>
+					<div class="col-8" id="historyDetailSendType"></div>
+				</div>
+				<div class="row">
+					<div class="col-4 text-muted">수신자 수</div>
+					<div class="col-8" id="historyDetailReceiverCount"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-bold mb-2">메시지 내용</label>
+			<div class="border rounded p-3  bg-dark text-white" style="white-space: pre-wrap;" id="historyDetailMessage"></div>
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-bold mb-2">수신자 목록</label>
+			<div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+				<table class="table">
+					<thead class="table-primary sticky-top">
+					<tr>
+						<th>이름</th>
+						<th>연락처</th>
+						<th>상태</th>
+					</tr>
+					</thead>
+					<tbody id="historyDetailReceiverList">
+					<!-- JavaScript로 동적 생성 -->
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="d-grid gap-2">
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">닫기</button>
+		</div>
+	</div>
+</div>
+
+<!-- 예약 발송 상세 Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="reservationDetailOffcanvas" aria-labelledby="reservationDetailOffcanvasLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="reservationDetailOffcanvasLabel">예약 발송 상세</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div class="mb-3">
+			<label class="form-label fw-bold mb-2">예약 정보</label>
+			<div class="border rounded p-3 bg-light">
+				<div class="row mb-2">
+					<div class="col-4 text-muted">예약일시</div>
+					<div class="col-8" id="reservationDetailScheduledTime"></div>
+				</div>
+				<div class="row mb-2">
+					<div class="col-4 text-muted">발신번호</div>
+					<div class="col-8" id="reservationDetailSenderNumber"></div>
+				</div>
+				<div class="row mb-2">
+					<div class="col-4 text-muted">발신자명</div>
+					<div class="col-8" id="reservationDetailSenderName"></div>
+				</div>
+				<div class="row mb-2">
+					<div class="col-4 text-muted">발송타입</div>
+					<div class="col-8" id="reservationDetailSendType"></div>
+				</div>
+				<div class="row">
+					<div class="col-4 text-muted">수신자 수</div>
+					<div class="col-8" id="reservationDetailReceiverCount"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-bold mb-2">메시지 내용</label>
+			<div class="border rounded p-3 bg-dark text-white" style="white-space: pre-wrap;" id="reservationDetailMessage"></div>
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-bold mb-2">수신자 목록</label>
+			<div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+				<table class="table">
+					<thead class="table-primary sticky-top">
+					<tr>
+						<th>이름</th>
+						<th>연락처</th>
+						<th>직분</th>
+						<th>그룹</th>
+					</tr>
+					</thead>
+					<tbody id="reservationDetailReceiverList">
+					<!-- JavaScript로 동적 생성 -->
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="d-grid gap-2">
+			<button type="button" class="btn btn-danger" id="btnCancelReservationDetail">예약 취소</button>
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">닫기</button>
+		</div>
+	</div>
+</div>
 
 <?php include APPPATH . 'views/footer.php'; ?>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>

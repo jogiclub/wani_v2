@@ -693,7 +693,7 @@ class Send_model extends CI_Model
 	 */
 	public function save_address_book($data)
 	{
-		return $this->db->insert('wb_address_book', $data);
+		return $this->db->insert('wb_send_address_book', $data);
 	}
 
 	/**
@@ -702,8 +702,8 @@ class Send_model extends CI_Model
 	public function get_address_book_list($org_id, $user_id)
 	{
 		$this->db->select('ab.*, COUNT(DISTINCT abm.member_idx) as member_count');
-		$this->db->from('wb_address_book ab');
-		$this->db->join('wb_address_book_member abm', 'ab.address_book_idx = abm.address_book_idx', 'left');
+		$this->db->from('wb_send_address_book ab');
+		$this->db->join('wb_send_address_book_member abm', 'ab.address_book_idx = abm.address_book_idx', 'left');
 		$this->db->where('ab.org_id', $org_id);
 		$this->db->where('ab.active_yn', 'Y');
 		$this->db->group_by('ab.address_book_idx');
@@ -720,7 +720,7 @@ class Send_model extends CI_Model
 	{
 		$this->db->where('address_book_idx', $address_book_idx);
 		$this->db->where('org_id', $org_id);
-		return $this->db->update('wb_address_book', array('active_yn' => 'N'));
+		return $this->db->update('wb_send_address_book', array('active_yn' => 'N'));
 	}
 
 	/**
@@ -729,7 +729,7 @@ class Send_model extends CI_Model
 	public function get_address_book_members($address_book_idx)
 	{
 		$this->db->select('m.*, ma.area_name, abm.address_book_idx');
-		$this->db->from('wb_address_book_member abm');
+		$this->db->from('wb_send_address_book_member abm');
 		$this->db->join('wb_member m', 'abm.member_idx = m.member_idx');
 		$this->db->join('wb_member_area ma', 'm.area_idx = ma.area_idx', 'left');
 		$this->db->where('abm.address_book_idx', $address_book_idx);
@@ -741,43 +741,14 @@ class Send_model extends CI_Model
 
 
 	/**
-	 * 역할: 전송 히스토리 저장
+	 * 역할: 발송 히스토리 저장
 	 */
 	public function save_send_history($data)
 	{
 		return $this->db->insert('wb_send_history', $data);
 	}
 
-	/**
-	 * 역할: 전송 히스토리 목록 조회
-	 */
-	public function get_send_history_list($org_id, $limit = 50)
-	{
-		$this->db->select('
-		history_idx,
-		send_type,
-		sender_number,
-		sender_name,
-		receiver_count,
-		receiver_list,
-		status,
-		DATE_FORMAT(send_date, "%Y.%m.%d %H:%i:%s") as send_date
-	');
-		$this->db->from('wb_send_history');
-		$this->db->where('org_id', $org_id);
-		$this->db->order_by('send_date', 'DESC');
-		$this->db->limit($limit);
 
-		$query = $this->db->get();
-		$results = $query->result_array();
-
-		foreach ($results as &$row) {
-			$receiver_list = json_decode($row['receiver_list'], true);
-			$row['first_receiver_name'] = $receiver_list[0]['member_name'] ?? '';
-		}
-
-		return $results;
-	}
 
 	/**
 	 * 역할: 예약 발송 저장
@@ -787,37 +758,6 @@ class Send_model extends CI_Model
 		return $this->db->insert('wb_send_reservation', $data);
 	}
 
-	/**
-	 * 역할: 예약 발송 목록 조회
-	 */
-	public function get_reservation_list($org_id)
-	{
-		$this->db->select('
-		reservation_idx,
-		send_type,
-		sender_number,
-		sender_name,
-		receiver_count,
-		receiver_list,
-		message_content,
-		DATE_FORMAT(scheduled_time, "%Y.%m.%d %H:%i:%s") as scheduled_time,
-		status
-	');
-		$this->db->from('wb_send_reservation');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('status', 'pending');
-		$this->db->order_by('scheduled_time', 'ASC');
-
-		$query = $this->db->get();
-		$results = $query->result_array();
-
-		foreach ($results as &$row) {
-			$receiver_list = json_decode($row['receiver_list'], true);
-			$row['first_receiver_name'] = $receiver_list[0]['member_name'] ?? '';
-		}
-
-		return $results;
-	}
 
 	/**
 	 * 역할: 예약 발송 취소
@@ -831,5 +771,150 @@ class Send_model extends CI_Model
 			'updated_date' => date('Y-m-d H:i:s')
 		));
 	}
+
+
+	/**
+	 * 역할: 발송 히스토리 상세 정보 조회
+	 */
+	public function get_send_history_detail($history_idx, $org_id)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_history');
+		$this->db->where('history_idx', $history_idx);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			$row = $query->row_array();
+
+			// receiver_list를 JSON에서 배열로 변환
+			if (!empty($row['receiver_list'])) {
+				$row['receiver_list'] = json_decode($row['receiver_list'], true);
+			} else {
+				$row['receiver_list'] = array();
+			}
+
+			return $row;
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * 역할: 예약 발송 상세 정보 조회
+	 */
+	public function get_reservation_detail($reservation_idx, $org_id)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_reservation');
+		$this->db->where('reservation_idx', $reservation_idx);
+		$this->db->where('org_id', $org_id);
+		$this->db->where('status', 'pending'); // 취소되지 않은 예약만 조회
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			$row = $query->row_array();
+
+			// receiver_list를 JSON에서 배열로 변환
+			if (!empty($row['receiver_list'])) {
+				$row['receiver_list'] = json_decode($row['receiver_list'], true);
+			} else {
+				$row['receiver_list'] = array();
+			}
+
+			return $row;
+		}
+
+		return false;
+	}
+
+	/**
+	 * 역할: 전송 히스토리 목록 조회 (년월 필터링)
+	 */
+	public function get_send_history_list($org_id, $year, $month, $limit = 100)
+	{
+		// 시작일과 종료일 계산
+		$start_date = sprintf('%04d-%02d-01 00:00:00', $year, $month);
+		$last_day = date('t', strtotime($start_date)); // 해당 월의 마지막 날
+		$end_date = sprintf('%04d-%02d-%02d 23:59:59', $year, $month, $last_day);
+
+		$this->db->select('history_idx, send_date, sender_number, sender_name, send_type, receiver_count, receiver_list, status');
+		$this->db->from('wb_send_history');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('send_date >=', $start_date);
+		$this->db->where('send_date <=', $end_date);
+		$this->db->order_by('send_date', 'DESC');
+		$this->db->limit($limit);
+		$query = $this->db->get();
+
+		$result = array();
+		if ($query->num_rows() > 0) {
+			foreach ($query->result_array() as $row) {
+				// receiver_list를 파싱하여 첫 번째 수신자 이름 추출
+				$receiver_list = json_decode($row['receiver_list'], true);
+				$first_receiver_name = !empty($receiver_list) ? $receiver_list[0]['member_name'] : '알 수 없음';
+
+				$row['first_receiver_name'] = $first_receiver_name;
+				$row['send_date'] = date('Y.m.d H:i:s', strtotime($row['send_date']));
+
+				$result[] = $row;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * 역할: 예약 발송 목록 조회
+	 */
+	public function get_reservation_list($org_id, $limit = 50)
+	{
+		$this->db->select('reservation_idx, scheduled_time, sender_number, sender_name, send_type, receiver_count, receiver_list, status');
+		$this->db->from('wb_send_reservation');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('status', 'pending');
+		$this->db->order_by('scheduled_time', 'ASC');
+		$this->db->limit($limit);
+		$query = $this->db->get();
+
+		$result = array();
+		if ($query->num_rows() > 0) {
+			foreach ($query->result_array() as $row) {
+				// receiver_list를 파싱하여 첫 번째 수신자 이름 추출
+				$receiver_list = json_decode($row['receiver_list'], true);
+				$first_receiver_name = !empty($receiver_list) ? $receiver_list[0]['member_name'] : '알 수 없음';
+
+				$row['first_receiver_name'] = $first_receiver_name;
+				$row['scheduled_time'] = date('Y.m.d H:i:s', strtotime($row['scheduled_time']));
+
+				$result[] = $row;
+			}
+		}
+
+		return $result;
+	}
+
+
+	/**
+	 * 역할: 주소록 상세 정보 조회 (저장된 member_list 그대로 반환)
+	 */
+	public function get_address_book_detail($address_book_idx, $org_id)
+	{
+		$this->db->select('member_list');
+		$this->db->from('wb_send_address_book');
+		$this->db->where('address_book_idx', $address_book_idx);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			$row = $query->row_array();
+			$member_list = json_decode($row['member_list'], true);
+			return $member_list;
+		}
+
+		return false;
+	}
+
 
 }

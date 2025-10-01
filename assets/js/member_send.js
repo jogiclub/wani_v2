@@ -133,7 +133,7 @@ function openSendPopup(selectedMembers) {
 	// 팝업 창 열기
 	const popupWindow = window.open('', 'sendPopup', 'width=1400,height=850,scrollbars=yes,resizable=yes');
 
-	// 임시 폼 생성하여 POST로 데이터 전송
+	// 임시 폼 생성하여 POST로 데이터 발송
 	const tempForm = $('<form>', {
 		'method': 'POST',
 		'action': '/send/popup',

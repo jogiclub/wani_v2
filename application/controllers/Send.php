@@ -1008,7 +1008,7 @@ class Send extends MY_Controller
 
 
 	/**
-	 * 역할: 전송 히스토리 저장
+	 * 역할: 발송 히스토리 저장
 	 */
 	public function save_history()
 	{
@@ -1020,6 +1020,7 @@ class Send extends MY_Controller
 		$send_type = $this->input->post('send_type');
 		$sender_number = $this->input->post('sender_number');
 		$sender_name = $this->input->post('sender_name');
+		$message_content = $this->input->post('message_content'); // 메시지 내용 추가
 		$receiver_count = $this->input->post('receiver_count');
 		$receiver_list = $this->input->post('receiver_list');
 		$status = $this->input->post('status');
@@ -1030,8 +1031,9 @@ class Send extends MY_Controller
 			'send_type' => $send_type,
 			'sender_number' => $sender_number,
 			'sender_name' => $sender_name,
+			'message_content' => $message_content, // 메시지 내용 저장
 			'receiver_count' => $receiver_count,
-			'receiver_list' => json_encode($receiver_list),
+			'receiver_list' => json_encode($receiver_list), // 수신자별 결과 포함
 			'status' => $status,
 			'send_date' => date('Y-m-d H:i:s', strtotime($send_date)),
 			'created_date' => date('Y-m-d H:i:s')
@@ -1047,7 +1049,7 @@ class Send extends MY_Controller
 	}
 
 	/**
-	 * 역할: 전송 히스토리 목록 조회
+	 * 역할: 전송 히스토리 목록 조회 (년월 필터링)
 	 */
 	public function get_send_history()
 	{
@@ -1056,13 +1058,21 @@ class Send extends MY_Controller
 		}
 
 		$org_id = $this->input->post('org_id');
+		$year = $this->input->post('year');
+		$month = $this->input->post('month');
 
 		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
 			return;
 		}
 
-		$history = $this->Send_model->get_send_history_list($org_id);
+		// 년월이 없으면 현재 년월 사용
+		if (!$year || !$month) {
+			$year = date('Y');
+			$month = date('n');
+		}
+
+		$history = $this->Send_model->get_send_history_list($org_id, $year, $month);
 
 		echo json_encode(array(
 			'success' => true,
@@ -1182,6 +1192,113 @@ class Send extends MY_Controller
 			'success' => true,
 			'templates' => $templates
 		));
+	}
+
+
+
+	/**
+	 * 역할: 발송 히스토리 상세 정보 조회
+	 */
+	public function get_history_detail()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$history_idx = $this->input->post('history_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$history_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 조직 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$detail = $this->Send_model->get_send_history_detail($history_idx, $org_id);
+
+		if ($detail) {
+			echo json_encode(array(
+				'success' => true,
+				'data' => $detail
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '상세 정보를 찾을 수 없습니다.'));
+		}
+	}
+
+	/**
+	 * 역할: 예약 발송 상세 정보 조회
+	 */
+	public function get_reservation_detail()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$reservation_idx = $this->input->post('reservation_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$reservation_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 조직 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$detail = $this->Send_model->get_reservation_detail($reservation_idx, $org_id);
+
+		if ($detail) {
+			echo json_encode(array(
+				'success' => true,
+				'data' => $detail
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '상세 정보를 찾을 수 없습니다.'));
+		}
+	}
+
+	/**
+	 * 역할: 주소록 상세 정보 조회
+	 */
+	public function get_address_book_detail()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$address_book_idx = $this->input->post('address_book_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$address_book_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 조직 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$detail = $this->Send_model->get_address_book_detail($address_book_idx, $org_id);
+
+		if ($detail) {
+			echo json_encode(array(
+				'success' => true,
+				'member_list' => $detail
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '주소록을 찾을 수 없습니다.'));
+		}
 	}
 
 }
