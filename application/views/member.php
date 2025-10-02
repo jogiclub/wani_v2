@@ -201,18 +201,18 @@
 
 					<div class="row">
 						<!-- 개인정보 입력 필드들 -->
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="member_name" class="form-label">이름 <span class="text-danger">*</span></label>
 							<input type="text" class="form-control" id="member_name" name="member_name" required>
 						</div>
 
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="member_nick" class="form-label">별명</label>
 							<input type="text" class="form-control" id="member_nick" name="member_nick">
 						</div>
 
 						<!-- 새로 추가되는 직위/직분 필드 -->
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="position_name" class="form-label">직위/직분</label>
 							<select class="form-select" id="position_name" name="position_name">
 								<option value="">직위/직분 선택</option>
@@ -220,44 +220,48 @@
 						</div>
 
 						<!-- 새로 추가되는 직책 필드 -->
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="duty_name" class="form-label">직책(그룹직책)</label>
 							<select class="form-select" id="duty_name" name="duty_name">
 								<option value="">직책 선택</option>
 							</select>
 						</div>
 
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="member_phone" class="form-label">연락처</label>
 							<input type="tel" class="form-control" id="member_phone" name="member_phone">
 						</div>
 
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="member_birth" class="form-label">생년월일</label>
 							<input type="date" class="form-control" id="member_birth" name="member_birth">
 						</div>
 
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="member_address" class="form-label">주소</label>
 							<input type="text" class="form-control" id="member_address" name="member_address">
 						</div>
 
-						<div class="col-6 mb-3">
+						<div class="col-6 col-sm-4 mb-3">
 							<label for="member_address_detail" class="form-label">상세주소</label>
 							<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
 						</div>
+
+
+						<div class="col-6 col-sm-4 mb-3">
+							<label for="area_idx" class="form-label">소그룹</label>
+							<select class="form-select" id="area_idx" name="area_idx">
+								<option value="">소그룹 선택</option>
+							</select>
+						</div>
+
 
 						<div class="col-12 mb-3">
 							<label for="member_etc" class="form-label">특이사항</label>
 							<textarea class="form-control" id="member_etc" name="member_etc" rows="3"></textarea>
 						</div>
 
-						<div class="col-6 mb-3">
-							<label for="area_idx" class="form-label">소그룹</label>
-							<select class="form-select" id="area_idx" name="area_idx">
-								<option value="">소그룹 선택</option>
-							</select>
-						</div>
+
 					</div>
 				</div>
 				<div class="tab-pane fade" id="detail-tab-pane" role="tabpanel" aria-labelledby="detail-tab" tabindex="0">

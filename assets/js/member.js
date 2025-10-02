@@ -25,15 +25,11 @@ $(document).ready(function () {
 	}, 800);
 
 	/**
-	 * 페이지 초기화 메인 함수
+	 * 페이지 초기화 메인 함수 (수정된 버전)
 	 */
 	function initializePage() {
-
-
-		// 페이지 초기 로딩 시 모든 스피너 표시
 		showAllSpinners();
 
-		// 라이브러리 검증
 		if (typeof $.fn.pqGrid === 'undefined') {
 			console.error('ParamQuery 라이브러리가 로드되지 않았습니다.');
 			hideAllSpinners();
@@ -56,15 +52,14 @@ $(document).ready(function () {
 		}
 
 		try {
-			initializeSplitJS();       // Split.js 초기화 추가
-			initializeFancytree();     // 트리 초기화 (내부에서 트리 스피너 제어)
-			initializeParamQuery();    // 그리드 초기화 (내부에서 그리드 스피너 제어)
+			initializeSplitJS();
+			initializeFancytree();
+			// initializeParamQuery()는 여기서 호출하지 않고 loadMemberData()에서 처리
 			bindGlobalEvents();
 			setupCleanupEvents();
-			initDetailTab();           // 상세정보 탭 초기화
-			bindMemoTabEvents();       // 메모 탭 이벤트 바인딩 추가
+			initDetailTab();
+			bindMemoTabEvents();
 			bindTimelineTabEvents();
-
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
 			hideAllSpinners();
@@ -705,16 +700,6 @@ $(document).ready(function () {
 			{ dataIndx: "member_birth", title: "생년월일" },
 			{ dataIndx: "member_address", title: "주소" },
 			{ dataIndx: "member_address_detail", title: "상세주소" },
-			{
-				dataIndx: "leader_yn",
-				title: "리더여부",
-				exportRender: true
-			},
-			{
-				dataIndx: "new_yn",
-				title: "신규여부",
-				exportRender: true
-			},
 			{ dataIndx: "member_etc", title: "특이사항" },
 			{
 				dataIndx: "regi_date",
@@ -1092,39 +1077,98 @@ $(document).ready(function () {
 
 
 
-	/**
-	 * ParamQuery Grid 초기화 (개선된 버전)
-	 */
-	function initializeParamQuery() {
 
+	/**
+	 * ParamQuery Grid 초기화 (개선된 버전 - 컬럼 순서 변경 이벤트 추가)
+	 */
+	function initializeParamQuery(detailFields = []) {
+		console.log('initializeParamQuery 호출, 상세필드:', detailFields.length, '개');
 		showGridSpinner();
 
-		const gridOptions = createGridOptions();
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+			|| window.innerWidth <= 768;
+
+		const colModel = createColumnModel(detailFields);
+		console.log('생성된 컬럼 모델:', colModel.length, '개');
+
+		const gridOptions = {
+			width: "100%",
+			height: "100%",
+			headerHeight: 35,
+			dataModel: {
+				data: []
+			},
+			colModel: colModel,
+			selectionModel: {
+				type: 'cell',
+				mode: 'single'
+			},
+			scrollModel: {
+				autoFit: false,
+				horizontal: true,
+				vertical: true
+			},
+			freezeCols: isMobile ? 0 : 4,
+			numberCell: { show: false },
+			title: false,
+			strNoRows: '회원 정보가 없습니다',
+			resizable: true,
+			sortable: false,
+			hoverMode: 'row',
+			wrap: false,
+			columnBorders: true,
+			cellClick: function(event, ui) {
+				handleGridCellClick(event, ui);
+			},
+			cellDblClick: function(event, ui) {
+				handleGridCellClick(event, ui);
+			},
+			complete: function() {
+				console.log('그리드 complete 이벤트 발생');
+				setTimeout(function() {
+					removeDuplicateCheckboxes();
+					bindMobileTouchEvents();
+				}, 100);
+			},
+			// 컬럼 순서 변경 이벤트 추가
+			columnOrder: function(evt, ui) {
+				console.log('컬럼 순서 변경됨');
+
+				// 변경된 컬럼 순서 저장
+				setTimeout(function() {
+					if (memberGrid) {
+						const currentColModel = memberGrid.pqGrid("option", "colModel");
+						saveColumnOrder(currentColModel);
+						showToast('컬럼 순서가 저장되었습니다.', 'success');
+					}
+				}, 100);
+			}
+		};
 
 		try {
-			// 기존 그리드가 있다면 완전히 제거
+			// 기존 그리드 제거
 			if (memberGrid) {
 				try {
+					console.log('기존 그리드 제거 중...');
 					memberGrid.pqGrid("destroy");
+					memberGrid = null;
 				} catch (e) {
-					// 무시
+					console.warn('기존 그리드 제거 중 경고:', e);
 				}
 			}
 
-			// 그리드 컨테이너 초기화
 			$("#memberGrid").empty();
-
-			// 새 그리드 생성
+			console.log('새 그리드 생성 중...');
 			memberGrid = $("#memberGrid").pqGrid(gridOptions);
-
-			// 전역 접근을 위해 window에 할당
 			window.memberGrid = memberGrid;
 
+			console.log('그리드 초기화 완료');
 			hideGridSpinner();
 		} catch (error) {
 			console.error('ParamQuery Grid 초기화 실패:', error);
+			console.error('Error stack:', error.stack);
 			hideGridSpinner();
-			showToast('그리드 초기화에 실패했습니다.', 'warning');
+			showToast('그리드 초기화에 실패했습니다.', 'error');
 		}
 	}
 
@@ -1227,11 +1271,7 @@ $(document).ready(function () {
 					const rowData = gridData[rowIndex];
 
 					if (rowData) {
-						console.log('Mobile touch event triggered:', {
-							colIndex: colIndex,
-							rowIndex: rowIndex,
-							memberIdx: rowData.member_idx
-						});
+
 
 						// 체크박스 컬럼인 경우 (첫 번째 컬럼)
 						if (colIndex === 0) {
@@ -1249,14 +1289,16 @@ $(document).ready(function () {
 				}
 			});
 
-		console.log('Mobile touch events bound with improved targeting');
+
 	}
 
 	/**
-	 * ParamQuery Grid 컬럼 모델 생성 (수정된 버전 - 직위/직책 컬럼 추가)
+	 * ParamQuery Grid 컬럼 모델 생성 (수정된 버전 - 컬럼 순서 복원 지원)
 	 */
-	function createColumnModel() {
-		return [
+	function createColumnModel(detailFields = []) {
+		console.log('createColumnModel 호출, 상세필드:', detailFields);
+
+		const baseColumns = [
 			{
 				title: '<input type="checkbox" id="selectAllCheckbox" />',
 				dataIndx: "pq_selected",
@@ -1356,27 +1398,32 @@ $(document).ready(function () {
 				width: 250,
 				editable: false,
 				align: "left"
-			},
-			{
-				title: "리더",
-				dataIndx: "leader_yn",
-				width: 60,
-				editable: false,
-				align: "center",
-				render: function (ui) {
-					return ui.cellData === 'Y' ? '<i class="bi bi-check-circle-fill text-success"></i>' : '';
+			}
+		];
+
+		// 상세필드 컬럼 동적 추가
+		if (detailFields && Array.isArray(detailFields) && detailFields.length > 0) {
+			console.log('상세필드 컬럼 추가 중...');
+			detailFields.forEach(function(field) {
+				if (field.is_active === 'Y') {
+					const fieldColumn = {
+						title: field.field_name,
+						dataIndx: 'detail_' + field.field_idx,
+						width: 150,
+						editable: false,
+						align: field.field_type === 'textarea' ? 'left' : 'center',
+						render: function(ui) {
+							return renderDetailFieldValue(ui.cellData, field.field_type);
+						}
+					};
+					baseColumns.push(fieldColumn);
+					console.log('상세필드 컬럼 추가:', field.field_name, '(detail_' + field.field_idx + ')');
 				}
-			},
-			{
-				title: "신규",
-				dataIndx: "new_yn",
-				width: 60,
-				editable: false,
-				align: "center",
-				render: function (ui) {
-					return ui.cellData === 'Y' ? '<i class="bi bi-star-fill text-warning"></i>' : '';
-				}
-			},
+			});
+		}
+
+		// 등록일/수정일 컬럼 추가
+		baseColumns.push(
 			{
 				title: "등록일",
 				dataIndx: "regi_date",
@@ -1397,7 +1444,17 @@ $(document).ready(function () {
 					return formatDateTime(ui.cellData);
 				}
 			}
-		];
+		);
+
+		console.log('최종 컬럼 모델 개수:', baseColumns.length);
+
+		// 저장된 컬럼 순서가 있으면 재정렬
+		const savedOrder = loadColumnOrder();
+		if (savedOrder) {
+			return reorderColumnModel(baseColumns, savedOrder);
+		}
+
+		return baseColumns;
 	}
 
 	/**
@@ -1421,12 +1478,7 @@ $(document).ready(function () {
 	 * 그리드 셀 클릭 처리 - 모바일/PC 통합 개선
 	 */
 	function handleGridCellClick(event, ui) {
-		console.log('Grid cell click triggered:', {
-			colIndx: ui.colIndx,
-			eventType: event.type || 'unknown',
-			originalEventType: event.originalEvent ? event.originalEvent.type : 'no originalEvent',
-			isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-		});
+
 
 		const colIndx = ui.colIndx;
 		const rowData = ui.rowData;
@@ -1435,7 +1487,7 @@ $(document).ready(function () {
 		// 모바일에서는 직접 터치 이벤트로 처리되므로 중복 실행 방지
 		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 		if (isMobile && event.originalEvent && event.originalEvent.type === 'touchend') {
-			console.log('Skipping duplicate mobile event');
+
 			return;
 		}
 
@@ -1456,11 +1508,7 @@ $(document).ready(function () {
 	 * 체크박스 컬럼 클릭 처리 - 모바일 터치 지원 강화
 	 */
 	function handleCheckboxColumnClick(event, memberIdx) {
-		console.log('Checkbox column clicked:', {
-			memberIdx: memberIdx,
-			eventType: event.type || 'unknown',
-			target: event.target ? event.target.tagName : 'no target'
-		});
+
 
 		// 직접 체크박스를 클릭한 경우가 아니라면 체크박스 토글
 		const isDirectCheckboxClick = $(event.target).hasClass('member-checkbox') ||
@@ -1472,10 +1520,6 @@ $(document).ready(function () {
 				const isCurrentlyChecked = checkbox.is(':checked');
 				checkbox.prop('checked', !isCurrentlyChecked);
 
-				console.log('Toggled checkbox:', {
-					memberIdx: memberIdx,
-					newState: !isCurrentlyChecked
-				});
 			}
 		}
 
@@ -1924,14 +1968,11 @@ $(document).ready(function () {
 
 
 	/**
-	 * 회원 데이터 로드
+	 * 회원 데이터 로드 (상세필드 포함)
 	 */
 	function loadMemberData() {
 		if (!selectedOrgId) return;
 
-
-
-		// 회원 데이터 로딩 시 그리드 스피너 표시
 		showGridSpinner();
 
 		$.ajax({
@@ -1944,67 +1985,109 @@ $(document).ready(function () {
 			},
 			dataType: 'json',
 			success: function (response) {
-
+				// console.log('회원 데이터 응답:', response);
 				handleMemberDataResponse(response);
 			},
 			error: function (xhr, status, error) {
 				console.error('회원 데이터 로드 실패:', error);
-				console.error('Response:', xhr.responseText);
-
-				// 에러 발생 시 그리드 스피너 숨김
 				hideGridSpinner();
 				showToast('회원 데이터를 불러오는데 실패했습니다.', 'error');
 			}
 		});
 	}
 
+
 	/**
-	 * 회원 데이터 응답 처리 - 모바일 터치 이벤트 재바인딩 포함
+	 * 회원 데이터 응답 처리 (수정된 버전)
 	 */
 	function handleMemberDataResponse(response) {
-		if (response.success) {
-			if (memberGrid) {
-				try {
-					// 기존 데이터 완전 초기화
-					memberGrid.pqGrid("option", "dataModel.data", []);
-					memberGrid.pqGrid("refreshDataAndView");
+		// console.log('handleMemberDataResponse 시작');
 
-					// 잠시 대기 후 새 데이터 설정
-					setTimeout(function() {
-						memberGrid.pqGrid("option", "dataModel.data", response.data || []);
-						memberGrid.pqGrid("refreshDataAndView");
-
-						// 추가 대기 후 이벤트 처리
-						setTimeout(function() {
-							// 중복 체크박스 제거
-							removeDuplicateCheckboxes();
-
-							// 체크 상태 초기화
-							$('.member-checkbox').prop('checked', false);
-							$('#selectAllCheckbox').prop('checked', false);
-
-							// 체크박스 이벤트 바인딩
-							bindCheckboxEvents();
-
-							// 모바일 터치 이벤트 재바인딩
-							bindMobileTouchEvents();
-
-						}, 100);
-					}, 50);
-
-				} catch (error) {
-					console.error('그리드 데이터 업데이트 실패:', error);
-				}
-			}
-
-			$('#btnDeleteMember').prop('disabled', true);
-			hideGridSpinner();
-		} else {
+		if (!response.success) {
 			console.error('회원 데이터 로드 실패:', response.message);
 			hideGridSpinner();
 			showToast('회원 데이터를 불러오는데 실패했습니다.', 'error');
+			return;
 		}
+
+
+
+		// 그리드가 없거나 상세필드 구조가 변경된 경우에만 재생성
+		if (!memberGrid) {
+
+			initializeParamQuery(response.detail_fields || []);
+		} else if (response.detail_fields && response.detail_fields.length > 0) {
+			// 기존 컬럼 구조와 비교
+			const currentCols = memberGrid.pqGrid("option", "colModel");
+			const needsRebuild = checkIfColumnsChanged(currentCols, response.detail_fields);
+
+			if (needsRebuild) {
+				// console.log('상세필드 구조가 변경되어 그리드 재생성');
+				initializeParamQuery(response.detail_fields || []);
+			}
+		}
+
+		// 데이터 업데이트
+		if (memberGrid) {
+			try {
+				// console.log('그리드에 데이터 설정 중...');
+
+				// 먼저 데이터 초기화
+				memberGrid.pqGrid("option", "dataModel.data", []);
+				memberGrid.pqGrid("refreshDataAndView");
+
+				// 잠시 대기 후 실제 데이터 설정
+				setTimeout(function() {
+					// console.log('실제 데이터 설정:', response.data.length, '건');
+					memberGrid.pqGrid("option", "dataModel.data", response.data || []);
+					memberGrid.pqGrid("refreshDataAndView");
+
+					// 체크박스 관련 처리
+					setTimeout(function() {
+						removeDuplicateCheckboxes();
+						$('.member-checkbox').prop('checked', false);
+						$('#selectAllCheckbox').prop('checked', false);
+						bindCheckboxEvents();
+						bindMobileTouchEvents();
+
+						// console.log('그리드 데이터 로딩 완료');
+					}, 100);
+				}, 50);
+
+			} catch (error) {
+				console.error('그리드 데이터 업데이트 실패:', error);
+				showToast('데이터 표시 중 오류가 발생했습니다.', 'error');
+			}
+		} else {
+			console.error('memberGrid 인스턴스가 없습니다!');
+			showToast('그리드 초기화 오류', 'error');
+		}
+
+		$('#btnDeleteMember').prop('disabled', true);
+		hideGridSpinner();
 	}
+
+	/**
+	 * 컬럼 구조 변경 확인
+	 */
+	function checkIfColumnsChanged(currentCols, detailFields) {
+		if (!currentCols || !detailFields) return false;
+
+		// 현재 그리드의 상세필드 컬럼 개수 확인
+		const currentDetailCols = currentCols.filter(col =>
+			col.dataIndx && col.dataIndx.startsWith('detail_')
+		);
+
+		// 활성화된 상세필드 개수 확인
+		const activeDetailFields = detailFields.filter(field => field.is_active === 'Y');
+
+		// console.log('현재 상세 컬럼:', currentDetailCols.length, '개');
+		// console.log('새로운 상세필드:', activeDetailFields.length, '개');
+
+		// 개수가 다르면 재생성 필요
+		return currentDetailCols.length !== activeDetailFields.length;
+	}
+
 
 	/**
 	 * 중복 체크박스 제거 함수
@@ -2777,7 +2860,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 회원 저장 (Croppie 적용)
+	 * 회원 저장 (수정된 버전)
 	 */
 	function saveMember() {
 		if (!validateMemberForm()) {
@@ -2788,6 +2871,9 @@ $(document).ready(function () {
 			showToast('이미지 크롭을 완료하거나 취소해주세요.', 'warning');
 			return;
 		}
+
+		// 상세정보 데이터 준비
+		saveDetailData();
 
 		const form = $('#memberForm')[0];
 		const formData = new FormData(form);
@@ -3012,8 +3098,9 @@ $(document).ready(function () {
 		return `<select class="form-select" id="${fieldId}" name="${fieldName}">${options}</select>`;
 	}
 
+
 	/**
-	 * 상세정보 저장
+	 * 상세정보 저장 - member_detail 컬럼 활용
 	 */
 	function saveDetailData() {
 		const orgId = $('#org_id').val();
@@ -3037,25 +3124,12 @@ $(document).ready(function () {
 			}
 		});
 
-		$.ajax({
-			url: '/member/save_member_detail',
-			type: 'POST',
-			data: {
-				org_id: orgId,
-				member_idx: memberIdx,
-				detail_data: detailData
-			},
-			dataType: 'json',
-			async: false,
-			success: function(response) {
-				if (!response.success) {
-					showToast(response.message || '상세정보 저장에 실패했습니다.', 'error');
-				}
-			},
-			error: function() {
-				showToast('상세정보 저장 중 오류가 발생했습니다.', 'error');
-			}
-		});
+		// 상세필드 데이터를 폼에 추가 (히든 필드로)
+		$('#detailFieldsContainer').append(
+			'<input type="hidden" name="detail_field" value=\'' + JSON.stringify(detailData) + '\' />'
+		);
+
+		return true;
 	}
 
 	// ===== 유틸리티 함수들 =====
@@ -3090,20 +3164,7 @@ $(document).ready(function () {
 		destroyCroppie();
 	}
 
-	/**
-	 * HTML 이스케이프 함수
-	 */
-	function escapeHtml(text) {
-		if (!text) return '';
-		const map = {
-			'&': '&amp;',
-			'<': '&lt;',
-			'>': '&gt;',
-			'"': '&quot;',
-			"'": '&#039;'
-		};
-		return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
-	}
+
 
 
 	// ===== 회원 저장 버튼 클릭 이벤트 수정 =====
@@ -3418,4 +3479,136 @@ $(document).ready(function () {
 		}
 	}
 
+
+
+	/**
+	 * 컬럼 순서를 localStorage에 저장
+	 */
+	function saveColumnOrder(colModel) {
+		if (!selectedOrgId) return;
+
+		try {
+			// 컬럼의 dataIndx만 순서대로 저장 (필수 컬럼 제외)
+			const columnOrder = colModel
+				.filter(col => col.dataIndx && col.dataIndx !== 'pq_selected')
+				.map(col => col.dataIndx);
+
+			const storageKey = 'member_column_order_' + selectedOrgId;
+			localStorage.setItem(storageKey, JSON.stringify(columnOrder));
+
+			console.log('컬럼 순서 저장됨:', columnOrder);
+		} catch (error) {
+			console.error('컬럼 순서 저장 실패:', error);
+		}
+	}
+
+	/**
+	 * localStorage에서 컬럼 순서 불러오기
+	 */
+	function loadColumnOrder() {
+		if (!selectedOrgId) return null;
+
+		try {
+			const storageKey = 'member_column_order_' + selectedOrgId;
+			const savedOrder = localStorage.getItem(storageKey);
+
+			if (savedOrder) {
+				const columnOrder = JSON.parse(savedOrder);
+				console.log('저장된 컬럼 순서 로드됨:', columnOrder);
+				return columnOrder;
+			}
+		} catch (error) {
+			console.error('컬럼 순서 로드 실패:', error);
+		}
+
+		return null;
+	}
+
+	/**
+	 * 저장된 순서에 따라 컬럼 모델 재정렬
+	 */
+	function reorderColumnModel(colModel, savedOrder) {
+		if (!savedOrder || savedOrder.length === 0) {
+			return colModel;
+		}
+
+		// 체크박스 컬럼은 항상 첫 번째에 고정
+		const checkboxCol = colModel.find(col => col.dataIndx === 'pq_selected');
+		const otherCols = colModel.filter(col => col.dataIndx !== 'pq_selected');
+
+		// 저장된 순서대로 재정렬
+		const reorderedCols = [];
+		const colMap = new Map(otherCols.map(col => [col.dataIndx, col]));
+
+		// 저장된 순서대로 먼저 추가
+		savedOrder.forEach(dataIndx => {
+			if (colMap.has(dataIndx)) {
+				reorderedCols.push(colMap.get(dataIndx));
+				colMap.delete(dataIndx);
+			}
+		});
+
+		// 저장된 순서에 없는 새로운 컬럼들은 뒤에 추가 (상세필드가 추가된 경우)
+		colMap.forEach(col => {
+			reorderedCols.push(col);
+		});
+
+		// 체크박스 컬럼을 맨 앞에 추가
+		return checkboxCol ? [checkboxCol, ...reorderedCols] : reorderedCols;
+	}
+
+
+
 });
+
+
+
+/**
+ * 상세필드 값 렌더링
+ */
+function renderDetailFieldValue(value, fieldType) {
+	if (!value) return '';
+
+	switch(fieldType) {
+		case 'checkbox':
+			return value === 'Y' ? '<i class="bi bi-check-circle-fill text-success"></i>' : '';
+		case 'date':
+			return formatDateOnly(value);
+		case 'textarea':
+			// 긴 텍스트는 일부만 표시
+			return value.length > 50 ? value.substring(0, 50) + '...' : value;
+		default:
+			return escapeHtml(value);
+	}
+}
+
+
+/**
+ * 날짜만 포맷팅 (yyyy-mm-dd)
+ */
+function formatDateOnly(dateString) {
+	if (!dateString) return '';
+	const date = new Date(dateString);
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+}
+
+
+/**
+ * HTML 이스케이프 함수
+ */
+function escapeHtml(text) {
+	if (!text) return '';
+	const map = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#039;'
+	};
+	return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+

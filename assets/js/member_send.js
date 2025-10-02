@@ -109,7 +109,7 @@ function getSelectedMembers() {
 		}
 	});
 
-	console.log('선택된 회원 정보:', selectedMembers);
+	// console.log('선택된 회원 정보:', selectedMembers);
 	return selectedMembers;
 }
 
@@ -168,7 +168,7 @@ function openSendPopup(selectedMembers) {
  */
 function updateSendButtonState() {
 	// 디버깅을 위한 로그
-	console.log('updateSendButtonState 호출됨');
+	// console.log('updateSendButtonState 호출됨');
 
 	// DOM이 완전히 로드될 때까지 잠시 대기
 	setTimeout(function() {
@@ -187,7 +187,7 @@ function updateSendButtonState() {
 		const selectedCount = uniqueCheckedBoxes.length;
 		const sendButton = $('#btnSendMember');
 
-		console.log('선택된 회원 수:', selectedCount);
+		// console.log('선택된 회원 수:', selectedCount);
 
 		if (selectedCount > 0) {
 			sendButton.prop('disabled', false);

@@ -34,6 +34,7 @@ $(document).ready(function() {
 			field_name: $('#field_name').val().trim(),
 			field_type: $('#field_type').val(),
 			field_size: $('#field_size').val(),
+			field_position: $('#field_position').val(),
 			field_settings: {}
 		};
 
@@ -50,8 +51,14 @@ $(document).ready(function() {
 		}
 
 		if (!formData.field_size) {
-			showToast('필드 타입을 선택해주세요.');
+			showToast('필드 사이즈를 선택해주세요.');
 			$('#field_size').focus();
+			return;
+		}
+
+		if (!formData.field_position) {
+			showToast('필드 위치를 선택해주세요.');
+			$('#field_position').focus();
 			return;
 		}
 
@@ -102,6 +109,7 @@ $(document).ready(function() {
 			field_name: $('#edit_field_name').val().trim(),
 			field_type: $('#edit_field_type').val(),
 			field_size: $('#edit_field_size').val(),
+			field_position: $('#edit_field_position').val(),
 			field_settings: {}
 		};
 
@@ -116,9 +124,16 @@ $(document).ready(function() {
 			$('#edit_field_type').focus();
 			return;
 		}
+
 		if (!formData.field_size) {
 			showToast('필드 사이즈를 선택해주세요.');
 			$('#edit_field_size').focus();
+			return;
+		}
+
+		if (!formData.field_position) {
+			showToast('필드 위치를 선택해주세요.');
+			$('#edit_field_position').focus();
 			return;
 		}
 
@@ -160,20 +175,20 @@ $(document).ready(function() {
 		});
 	});
 
-// 기존 필드 수정 버튼 클릭 이벤트
+	// 기존 필드 수정 버튼 클릭 이벤트
 	$(document).on('click', '.edit-field-btn', function() {
 		var fieldIdx = $(this).data('field-idx');
 		var fieldName = $(this).data('field-name');
 		var fieldType = $(this).data('field-type');
 		var fieldSize = $(this).data('field-size');
-		var fieldSettings = $(this).attr('data-field-settings'); // .data() 대신 .attr() 사용
-
-
+		var fieldPosition = $(this).data('field-position');
+		var fieldSettings = $(this).attr('data-field-settings');
 
 		$('#edit_field_idx').val(fieldIdx);
 		$('#edit_field_name').val(fieldName);
 		$('#edit_field_type').val(fieldType);
 		$('#edit_field_size').val(fieldSize);
+		$('#edit_field_position').val(fieldPosition);
 
 		// select type 필드인 경우 옵션 영역을 먼저 보여주고 값을 설정
 		if (fieldType === 'select') {
@@ -183,10 +198,8 @@ $(document).ready(function() {
 				try {
 					var settings = JSON.parse(fieldSettings);
 
-
 					if (settings.options && Array.isArray(settings.options)) {
 						$('#edit_select_options').val(settings.options.join('\n'));
-
 					}
 				} catch (e) {
 					console.error('Failed to parse field settings:', e);
@@ -355,6 +368,7 @@ function showDeleteConfirmModal(fieldName, fieldIdx) {
 		$(this).remove();
 	});
 }
+
 function deleteField(fieldIdx) {
 	$.ajax({
 		url: 'detail_field/delete_field',

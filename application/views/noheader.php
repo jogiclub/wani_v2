@@ -34,7 +34,7 @@
 
     <link rel="stylesheet" href="/assets/css/common.css?<?php echo WB_VERSION; ?>">
 	<header class="pt-3 pb-3 border-bottom d-flex justify-content-center">
-		<div class="logo"><img src="/assets/images/logo.png?2"></div>
+		<div class="logo"><img src="/assets/images/logo.png?4"></div>
 	</header>
     <div class="container-fluid bg-light" >
 		<div class="row">

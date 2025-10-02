@@ -24,8 +24,6 @@
 
 	<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
 		<div class="row">
-
-
 			<div class="col-lg-12">
 				<div class="card">
 					<div class="card-header">
@@ -37,7 +35,7 @@
 					<div class="card-body">
 						<?php if (isset($detail_fields) && !empty($detail_fields)): ?>
 							<div class="table-responsive">
-								<table class="table align-middle" style="min-width: 800px">
+								<table class="table align-middle" style="min-width: 900px">
 									<thead>
 									<tr>
 										<th style="width: 50px;">순서</th>
@@ -46,6 +44,7 @@
 										<th style="width: 100px;">타입</th>
 										<th>옵션</th>
 										<th style="width: 70px;">사이즈</th>
+										<th style="width: 80px;">표시위치</th>
 										<th style="width: 50px;">상태</th>
 										<th style="width: 120px;">관리</th>
 									</tr>
@@ -59,25 +58,24 @@
 												   style="cursor: move; font-size: 1.2em;"></i>
 											</td>
 											<td class="text-center d-none d-md-table-cell">
-												<span
-													class="order-number ms-2"><?php echo $field['display_order']; ?></span>
+												<span class="order-number ms-2"><?php echo $field['display_order']; ?></span>
 											</td>
 											<td>
 												<strong><?php echo htmlspecialchars($field['field_name']); ?></strong>
 											</td>
 											<td>
-						<span class="badge bg-secondary">
-							<?php
-							$type_names = array(
-								'text' => '텍스트',
-								'select' => '선택박스',
-								'textarea' => '긴텍스트',
-								'checkbox' => '체크박스',
-								'date' => '날짜'
-							);
-							echo $type_names[$field['field_type']] ?? $field['field_type'];
-							?>
-						</span>
+												<span class="badge bg-secondary">
+													<?php
+													$type_names = array(
+														'text' => '텍스트',
+														'select' => '선택박스',
+														'textarea' => '긴텍스트',
+														'checkbox' => '체크박스',
+														'date' => '날짜'
+													);
+													echo $type_names[$field['field_type']] ?? $field['field_type'];
+													?>
+												</span>
 											</td>
 											<td>
 												<?php if ($field['field_settings'] && $field['field_settings'] !== '{}'): ?>
@@ -91,8 +89,16 @@
 													</small>
 												<?php endif; ?>
 											</td>
-											<td>
-												<?php echo $field['field_size']; ?>
+											<td class="text-center">
+												<?php
+												$size_names = array('1' => '1단', '2' => '2단', '3' => '3단');
+												echo $size_names[$field['field_size']] ?? $field['field_size'];
+												?>
+											</td>
+											<td class="text-center">
+												<span class="badge <?php echo ($field['field_position'] === 'front') ? 'bg-primary' : 'bg-info'; ?>">
+													<?php echo ($field['field_position'] === 'front') ? '앞' : '뒤'; ?>
+												</span>
 											</td>
 											<td>
 												<div class="form-check form-switch">
@@ -108,6 +114,7 @@
 														data-field-name="<?php echo htmlspecialchars($field['field_name']); ?>"
 														data-field-type="<?php echo $field['field_type']; ?>"
 														data-field-size="<?php echo $field['field_size']; ?>"
+														data-field-position="<?php echo $field['field_position']; ?>"
 														data-field-settings="<?php echo htmlspecialchars($field['field_settings']); ?>">
 													<i class="bi bi-pencil"></i>
 												</button>
@@ -132,8 +139,6 @@
 					</div>
 				</div>
 			</div>
-
-
 		</div>
 	<?php else: ?>
 		<div class="alert alert-warning">
@@ -176,9 +181,18 @@
 					<div class="mb-3">
 						<label for="field_size" class="form-label">필드 사이즈 <span class="text-danger">*</span></label>
 						<select class="form-select" id="field_size" name="field_size" required>
-							<option value="">필드 사이즈를 선택하세요!</option>
-							<option value="1">1</option>
-							<option value="2">2</option>
+							<option value="">필드 사이즈를 선택하세요</option>
+							<option value="1">1단</option>
+							<option value="2">2단</option>
+							<option value="3">3단</option>
+						</select>
+					</div>
+					<div class="mb-3">
+						<label for="field_position" class="form-label">필드 위치 <span class="text-danger">*</span></label>
+						<select class="form-select" id="field_position" name="field_position" required>
+							<option value="">필드 위치를 선택하세요</option>
+							<option value="front">앞</option>
+							<option value="back">뒤</option>
 						</select>
 					</div>
 				</div>
@@ -226,9 +240,18 @@
 					<div class="mb-3">
 						<label for="edit_field_size" class="form-label">필드 사이즈 <span class="text-danger">*</span></label>
 						<select class="form-select" id="edit_field_size" name="field_size" required>
-							<option value="">필드 사이즈를 선택하세요!</option>
-							<option value="1">1</option>
-							<option value="2">2</option>
+							<option value="">필드 사이즈를 선택하세요</option>
+							<option value="1">1단</option>
+							<option value="2">2단</option>
+							<option value="3">3단</option>
+						</select>
+					</div>
+					<div class="mb-3">
+						<label for="edit_field_position" class="form-label">필드 위치 <span class="text-danger">*</span></label>
+						<select class="form-select" id="edit_field_position" name="field_position" required>
+							<option value="">필드 위치를 선택하세요</option>
+							<option value="front">앞</option>
+							<option value="back">뒤</option>
 						</select>
 					</div>
 				</div>
@@ -241,23 +264,9 @@
 	</div>
 </div>
 
-
-<!-- 필드 추가 모달 -->
-<div class="modal fade" id="addFieldModal" tabindex="-1" aria-labelledby="addFieldModalLabel" aria-hidden="true">
-	<!-- 기존 모달 내용 -->
-</div>
-
-<!-- 필드 수정 모달 -->
-<div class="modal fade" id="editFieldModal" tabindex="-1" aria-labelledby="editFieldModalLabel" aria-hidden="true">
-	<!-- 기존 모달 내용 -->
-</div>
-
-
 <?php $this->load->view('footer'); ?>
 <script>
 	/*출석관리 메뉴 active*/
 	$('.menu-43').addClass('active');
 </script>
 <script src="/assets/js/detail_field.js?<?php echo WB_VERSION; ?>"></script>
-
-

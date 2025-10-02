@@ -36,7 +36,7 @@
 <header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start shadow bg-white">
 	<div class="header-start col-xl-6 col-10">
 		<a class="navbar-brand col-6 col-xl-1 me-0 px-3 fs-6 logo pe-0" href="#">
-			<img src="/assets/images/logo.png">
+			<img src="/assets/images/logo.png?ver=1">
 		</a>
 
 		<div class="btn-group col-auto ms-2">

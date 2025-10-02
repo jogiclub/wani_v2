@@ -92,6 +92,8 @@ class Detail_field extends My_Controller
 
 		$field_name = $this->input->post('field_name');
 		$field_type = $this->input->post('field_type');
+		$field_size = $this->input->post('field_size');
+		$field_position = $this->input->post('field_position');
 		$field_settings = $this->input->post('field_settings');
 
 		if (empty($field_name) || empty($field_type)) {
@@ -99,11 +101,30 @@ class Detail_field extends My_Controller
 			return;
 		}
 
+		// field_size 기본값 설정 (입력되지 않은 경우)
+		if (empty($field_size)) {
+			// 타입별 기본 사이즈
+			$default_sizes = array(
+				'text' => '1',
+				'select' => '1',
+				'textarea' => '3',
+				'checkbox' => '1',
+				'date' => '1'
+			);
+			$field_size = isset($default_sizes[$field_type]) ? $default_sizes[$field_type] : '1';
+		}
+
+		// field_position 기본값 설정
+		if (empty($field_position)) {
+			$field_position = 'front';
+		}
+
 		$data = array(
 			'field_name' => $field_name,
 			'org_id' => $org_id,
 			'field_type' => $field_type,
 			'field_size' => $field_size,
+			'field_position' => $field_position,
 			'field_settings' => $field_settings ? json_encode($field_settings, JSON_UNESCAPED_UNICODE) : '{}',
 			'display_order' => $this->Detail_field_model->get_next_display_order($org_id),
 			'is_active' => 'Y'
@@ -150,9 +171,10 @@ class Detail_field extends My_Controller
 		$field_name = $this->input->post('field_name');
 		$field_type = $this->input->post('field_type');
 		$field_size = $this->input->post('field_size');
+		$field_position = $this->input->post('field_position');
 		$field_settings = $this->input->post('field_settings');
 
-		if (!$field_idx || empty($field_name) || empty($field_type) || empty($field_size)) {
+		if (!$field_idx || empty($field_name) || empty($field_type) || empty($field_size) || empty($field_position)) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
@@ -161,6 +183,7 @@ class Detail_field extends My_Controller
 			'field_name' => $field_name,
 			'field_type' => $field_type,
 			'field_size' => $field_size,
+			'field_position' => $field_position,
 			'field_settings' => $field_settings ? json_encode($field_settings, JSON_UNESCAPED_UNICODE) : '{}'
 		);
 
