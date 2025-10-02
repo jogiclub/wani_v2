@@ -39,14 +39,19 @@ $(document).ready(function() {
 /**
  * 그리드 초기화 - 원본 컬럼 구조 사용
  */
+/**
+ * 그리드 초기화 - 원본 컬럼 구조 사용
+ */
 function initBulkEditGrid(data, originalColumns) {
 	const $grid = $('#bulkEditGrid');
 
-	// 편집 가능한 컬럼 모델 생성 (체크박스와 사진 제외)
+	// 제외할 컬럼 목록 (회원번호 추가)
+	const excludeColumns = ['pq_selected', 'photo', 'area_name', 'regi_date', 'modi_date', 'member_idx'];
+
+	// 편집 가능한 컬럼 모델 생성 (제외 컬럼 필터링)
 	const colModel = originalColumns
 		.filter(col => {
-			// 체크박스, 사진 컬럼 제외
-			return col.dataIndx !== 'pq_selected' && col.dataIndx !== 'photo';
+			return !excludeColumns.includes(col.dataIndx);
 		})
 		.map(col => {
 			// 모든 컬럼을 편집 가능하게 설정
@@ -56,9 +61,7 @@ function initBulkEditGrid(data, originalColumns) {
 				width: col.width || 120,
 				editable: true,
 				align: col.align || 'center',
-				render: col.dataIndx === 'regi_date' || col.dataIndx === 'modi_date'
-					? null  // 날짜 컬럼은 render 함수 제거
-					: col.render
+				render: col.render
 			};
 		});
 

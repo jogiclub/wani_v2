@@ -767,47 +767,120 @@ class Member extends My_Controller
 		}
 
 		$this->load->model('Member_model');
+		$this->load->model('Detail_field_model');
+
+		// 조직의 상세필드 정의 가져오기
+		$detail_fields = $this->Detail_field_model->get_detail_fields_by_org($org_id);
+		$detail_field_indices = array();
+		foreach ($detail_fields as $field) {
+			$detail_field_indices[] = (string)$field['field_idx'];
+		}
 
 		// 트랜잭션 시작
 		$this->db->trans_start();
 
 		$success_count = 0;
 		$error_count = 0;
+		$error_messages = array();
 
 		foreach ($members as $member) {
-			$member_idx = isset($member['member_idx']) && $member['member_idx'] !== ''
-				? $member['member_idx']
-				: null;
+			try {
+				$member_idx = isset($member['member_idx']) && $member['member_idx'] !== ''
+					? $member['member_idx']
+					: null;
 
-			$update_data = [
-				'member_name' => trim($member['member_name']),
-				'position_name' => trim($member['position_name']),
-				'member_phone' => trim($member['member_phone']),
-				'modi_date' => date('Y-m-d H:i:s')
-			];
+				// 기본 업데이트 데이터
+				$update_data = [
+					'member_name' => trim($member['member_name']),
+					'modi_date' => date('Y-m-d H:i:s')
+				];
 
-			// area_name이 있으면 area_idx 찾기
-			if (!empty($member['area_name'])) {
-				$area_info = $this->Member_model->get_area_by_name($org_id, trim($member['area_name']));
-				if ($area_info) {
-					$update_data['area_idx'] = $area_info['area_idx'];
+				// 기본 필드 처리
+				$basic_fields = ['position_name', 'member_phone', 'duty_name', 'member_nick',
+					'member_birth', 'member_address', 'member_address_detail', 'member_etc'];
+
+				foreach ($basic_fields as $field) {
+					if (isset($member[$field])) {
+						$update_data[$field] = trim($member[$field]);
+					}
 				}
-			}
 
-			if ($member_idx) {
-				// 기존 회원 업데이트
-				$result = $this->Member_model->update_member($member_idx, $update_data, $org_id);
-			} else {
-				// 신규 회원 추가
-				$update_data['org_id'] = $org_id;
-				$update_data['regi_date'] = date('Y-m-d H:i:s');
-				$result = $this->Member_model->add_member($update_data);
-			}
+				// area_idx가 있으면 추가
+				if (isset($member['area_idx']) && $member['area_idx'] !== '') {
+					$update_data['area_idx'] = $member['area_idx'];
+				}
 
-			if ($result) {
-				$success_count++;
-			} else {
+				// member_detail 처리 (detail_ 접두사로 시작하는 필드들)
+				$detail_data = array();
+				$has_detail_fields = false;
+
+				foreach ($member as $key => $value) {
+					// detail_로 시작하는 필드인지 확인
+					if (strpos($key, 'detail_') === 0) {
+						$has_detail_fields = true;
+						// detail_ 접두사 제거하여 field_idx 추출
+						$field_idx = str_replace('detail_', '', $key);
+
+						// 유효한 상세필드인지 확인 (빈 값도 처리)
+						if (in_array($field_idx, $detail_field_indices)) {
+							// 빈 값이 아닌 경우에만 저장 (빈 값은 해당 필드를 저장하지 않음)
+							if ($value !== '' && $value !== null) {
+								$detail_data[$field_idx] = trim($value);
+							}
+						}
+					}
+				}
+
+				// 기존 회원인 경우 기존 member_detail과 병합
+				if ($member_idx && $has_detail_fields) {
+					$existing_member = $this->Member_model->get_member_by_idx($member_idx);
+					if ($existing_member && !empty($existing_member['member_detail'])) {
+						$existing_detail = json_decode($existing_member['member_detail'], true);
+						if (is_array($existing_detail)) {
+							// 기존 데이터에서 시작하여 새 데이터로 덮어쓰기
+							// 새 데이터에 없는 필드는 기존 값 유지
+							foreach ($existing_detail as $existing_key => $existing_value) {
+								// 현재 member 데이터에 해당 detail 필드가 없으면 기존 값 유지
+								if (!isset($member['detail_' . $existing_key])) {
+									$detail_data[$existing_key] = $existing_value;
+								}
+							}
+						}
+					}
+				}
+
+				// member_detail JSON 저장 (빈 객체가 아닌 경우에만)
+				if (!empty($detail_data)) {
+					$update_data['member_detail'] = json_encode($detail_data, JSON_UNESCAPED_UNICODE);
+				} elseif ($has_detail_fields && $member_idx) {
+					// 모든 상세필드가 빈 값인 경우 member_detail을 null로 설정
+					$update_data['member_detail'] = null;
+				}
+
+				if ($member_idx) {
+					// 기존 회원 업데이트
+					$result = $this->Member_model->update_member($member_idx, $update_data, $org_id);
+				} else {
+					// 신규 회원 추가
+					$update_data['org_id'] = $org_id;
+					$update_data['regi_date'] = date('Y-m-d H:i:s');
+					$update_data['del_yn'] = 'N';
+					$update_data['leader_yn'] = 'N';
+					$update_data['new_yn'] = 'Y';
+					$update_data['grade'] = 0;
+					$result = $this->Member_model->add_member($update_data);
+				}
+
+				if ($result) {
+					$success_count++;
+				} else {
+					$error_count++;
+					$error_messages[] = $member['member_name'] . ' 저장 실패';
+				}
+			} catch (Exception $e) {
 				$error_count++;
+				$error_messages[] = $member['member_name'] . ': ' . $e->getMessage();
+				log_message('error', '일괄 편집 저장 오류: ' . $e->getMessage());
 			}
 		}
 
@@ -821,9 +894,20 @@ class Member extends My_Controller
 			return;
 		}
 
+		$message = "저장 완료: 성공 {$success_count}건";
+		if ($error_count > 0) {
+			$message .= ", 실패 {$error_count}건";
+			if (!empty($error_messages)) {
+				$message .= "\n오류 상세: " . implode(', ', array_slice($error_messages, 0, 3));
+				if (count($error_messages) > 3) {
+					$message .= ' 외 ' . (count($error_messages) - 3) . '건';
+				}
+			}
+		}
+
 		echo json_encode([
-			'success' => true,
-			'message' => "저장 완료: 성공 {$success_count}건, 실패 {$error_count}건",
+			'success' => $error_count === 0,
+			'message' => $message,
 			'success_count' => $success_count,
 			'error_count' => $error_count
 		]);

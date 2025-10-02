@@ -99,9 +99,15 @@ class Member_model extends CI_Model
 		return $query->row_array();
 	}
 
-	public function update_member($member_idx, $data)
+	public function update_member($member_idx, $data, $org_id = null)
 	{
 		$this->db->where('member_idx', $member_idx);
+
+		// org_id가 제공된 경우 추가 보안 체크
+		if ($org_id !== null) {
+			$this->db->where('org_id', $org_id);
+		}
+
 		$this->db->update('wb_member', $data);
 
 		return $this->db->affected_rows() > 0;
