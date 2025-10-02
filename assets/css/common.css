@@ -14,6 +14,9 @@ ul, dl{}
 .btn-warning{background: #e09529; color:#fff}
 .form-switch{display: flex; align-items: center}
 .form-switch label{margin-left: 5px}
+.row-lg{    margin-left: -32px;margin-right: -32px;padding-left: 19px;padding-right: 19px;}
+
+
 /*.offcanvas.offcanvas-end{width: 700px}*/
 .circle{border-radius: 50%;}
 .badge{font-weight: 400; letter-spacing: 0}

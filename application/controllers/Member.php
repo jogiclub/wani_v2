@@ -675,10 +675,42 @@ class Member extends My_Controller
 			}
 		}
 
-		// 상세필드 데이터 처리
+		// 상세필드 데이터 처리 (수정된 버전)
 		$detail_data = $this->input->post('detail_field');
-		if (is_array($detail_data)) {
-			$update_data['member_detail'] = json_encode($detail_data, JSON_UNESCAPED_UNICODE);
+		if (!empty($detail_data)) {
+			// JSON 문자열로 전달된 경우 디코딩
+			if (is_string($detail_data)) {
+				$detail_array = json_decode($detail_data, true);
+				if (json_last_error() === JSON_ERROR_NONE && is_array($detail_array)) {
+					// 빈 값들을 제거
+					$filtered_detail = array();
+					foreach ($detail_array as $field_idx => $value) {
+						if ($value !== '' && $value !== null) {
+							$filtered_detail[$field_idx] = $value;
+						}
+					}
+					if (!empty($filtered_detail)) {
+						$update_data['member_detail'] = json_encode($filtered_detail, JSON_UNESCAPED_UNICODE);
+					} else {
+						$update_data['member_detail'] = null;
+					}
+				}
+			}
+			// 배열로 전달된 경우 (직접 배열로 전송하는 경우)
+			elseif (is_array($detail_data)) {
+				// 빈 값들을 제거
+				$filtered_detail = array();
+				foreach ($detail_data as $field_idx => $value) {
+					if ($value !== '' && $value !== null) {
+						$filtered_detail[$field_idx] = $value;
+					}
+				}
+				if (!empty($filtered_detail)) {
+					$update_data['member_detail'] = json_encode($filtered_detail, JSON_UNESCAPED_UNICODE);
+				} else {
+					$update_data['member_detail'] = null;
+				}
+			}
 		}
 
 		$this->db->where('member_idx', $member_idx);

@@ -80,7 +80,7 @@
 										<li><a class="dropdown-item d-block" href="#" id="btnDeleteMember">선택삭제</a></li>
 										<li><a class="dropdown-item" href="#" id="btnSelectedQrPrint">선택QR인쇄</a></li>
 										<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
-										<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
+										<li><a class="dropdown-item" href="#" id="btnExcelEdit">엑셀편집</a></li>
 									</ul>
 								</div>
 							</div>
@@ -156,7 +156,7 @@
 					</div>
 
 					<!-- 사진 업로드 영역 -->
-					<div class="row mb-4">
+					<div class="row">
 						<div class="col-12 text-center">
 							<!-- 사진 업로드 버튼 -->
 							<div id="photoUpload">
@@ -246,22 +246,22 @@
 							<label for="member_address_detail" class="form-label">상세주소</label>
 							<input type="text" class="form-control" id="member_address_detail" name="member_address_detail">
 						</div>
-
-
 						<div class="col-6 col-sm-4 mb-3">
 							<label for="area_idx" class="form-label">소그룹</label>
 							<select class="form-select" id="area_idx" name="area_idx">
 								<option value="">소그룹 선택</option>
 							</select>
 						</div>
+					</div>
 
+						<!-- front 위치 상세필드 영역 (동적 생성) -->
+					<div class="row row-lg pt-3 pb-1 mb-3" id="detail-front" style="display: none; background:#eee;"></div>
 
+					<div class="row">
 						<div class="col-12 mb-3">
 							<label for="member_etc" class="form-label">특이사항</label>
 							<textarea class="form-control" id="member_etc" name="member_etc" rows="3"></textarea>
 						</div>
-
-
 					</div>
 				</div>
 				<div class="tab-pane fade" id="detail-tab-pane" role="tabpanel" aria-labelledby="detail-tab" tabindex="0">

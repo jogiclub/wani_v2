@@ -2140,7 +2140,7 @@ $(document).ready(function () {
 
 
 	/**
-	 * 회원 정보 수정 모달 열기 (수정된 버전)
+	 * 회원 정보 수정 모달 열기 (수정된 버전 - 상세필드 미리 로드)
 	 */
 	function openMemberOffcanvas(mode, memberData = null) {
 		const offcanvas = $('#memberOffcanvas');
@@ -2162,12 +2162,20 @@ $(document).ready(function () {
 					// 메모 관련 초기화
 					currentMemberIdx = memberData.member_idx;
 					currentMemberTimelineIdx = memberData.member_idx;
+
+					// 회원정보 탭에 표시될 상세필드 로드
+					loadDetailFields(selectedOrgId, memberData.member_idx);
 				});
 			});
 		} else {
 			// 새 회원 추가 시에도 옵션들 로드
 			loadAreaOptions(selectedOrgId);
 			loadPositionsAndDuties(selectedOrgId);
+
+			// 새 회원 추가 시에도 빈 상세필드 폼 로드
+			if (selectedOrgId) {
+				loadDetailFields(selectedOrgId, null);
+			}
 		}
 
 		// 사진 이벤트 바인딩
@@ -2253,7 +2261,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * Offcanvas 폼 초기화
+	 * Offcanvas 폼 초기화 (수정된 버전)
 	 */
 	function resetOffcanvasForm() {
 		$('#memberForm')[0].reset();
@@ -2262,6 +2270,8 @@ $(document).ready(function () {
 		$('#cropContainer').hide();
 
 		$('#delete_photo').remove();
+		$('input[name="detail_field"]').remove(); // 상세필드 히든 필드도 제거
+		$('#detail-front').empty().hide();
 		$('#detailFieldsContainer').empty();
 
 		// 메모 관련 초기화
@@ -2270,7 +2280,7 @@ $(document).ready(function () {
 		$('#newMemoContent').val('');
 		$('#memoList').empty();
 
-		// 타임라인 관련 초기화 추가
+		// 타임라인 관련 초기화
 		currentMemberTimelineIdx = null;
 		editingTimelineIdx = null;
 		$('#newTimelineType').val('');
@@ -2940,12 +2950,21 @@ $(document).ready(function () {
 	// ===== 상세정보 탭 관련 함수들 =====
 
 	/**
-	 * 상세정보 탭 초기화
+	 * 상세정보 탭 초기화 (수정된 버전)
 	 */
 	function initDetailTab() {
 		$('#detail-tab').on('click', function() {
 			const orgId = $('#org_id').val();
 			const memberIdx = $('#member_idx').val();
+
+			// 이미 로드되었는지 확인
+			const frontContainer = $('#detail-front');
+			const backContainer = $('#detailFieldsContainer');
+
+			// front나 back 컨테이너에 이미 필드가 있으면 다시 로드하지 않음
+			if (frontContainer.children().length > 0 || backContainer.children().length > 0) {
+				return;
+			}
 
 			if (orgId && memberIdx) {
 				loadDetailFields(orgId, memberIdx);
@@ -2959,13 +2978,15 @@ $(document).ready(function () {
 	 * 상세필드 로드 및 폼 생성
 	 */
 	function loadDetailFields(orgId, memberIdx = null) {
-		const container = $('#detailFieldsContainer');
+		const frontContainer = $('#detail-front');
+		const backContainer = $('#detailFieldsContainer');
 		const loading = $('#detailFieldsLoading');
 		const empty = $('#detailFieldsEmpty');
 
 		loading.show();
 		empty.hide();
-		container.empty();
+		frontContainer.empty();
+		backContainer.empty();
 
 		$.ajax({
 			url: '/member/get_detail_fields',
@@ -2983,11 +3004,13 @@ $(document).ready(function () {
 					}
 				} else {
 					empty.show();
+					frontContainer.hide();
 				}
 			},
 			error: function() {
 				loading.hide();
 				showToast('상세필드를 불러오는데 실패했습니다.', 'error');
+				frontContainer.hide();
 			}
 		});
 	}
@@ -3021,23 +3044,59 @@ $(document).ready(function () {
 	 * 상세정보 폼 생성
 	 */
 	function generateDetailForm(fields, memberDetail) {
-		const container = $('#detailFieldsContainer');
-		container.empty();
+		const frontContainer = $('#detail-front');
+		const backContainer = $('#detailFieldsContainer');
+
+		frontContainer.empty();
+		backContainer.empty();
+
+		if (!fields || fields.length === 0) {
+			return;
+		}
 
 		fields.forEach(function(field) {
+			if (field.is_active !== 'Y') {
+				return; // 비활성 필드는 건너뛰기
+			}
+
 			const fieldValue = memberDetail[field.field_idx] || '';
 			const fieldHtml = generateFieldHtml(field, fieldValue);
-			container.append(fieldHtml);
+
+			// field_position에 따라 다른 컨테이너에 추가
+			if (field.field_position === 'front') {
+				frontContainer.append(fieldHtml);
+			} else {
+				backContainer.append(fieldHtml);
+			}
 		});
+
+		// front 영역에 필드가 있으면 보이도록 설정
+		if (frontContainer.children().length > 0) {
+			frontContainer.show();
+		} else {
+			frontContainer.hide();
+		}
 	}
 
+	/**
+	 * 필드별 HTML 생성
+	 */
 	/**
 	 * 필드별 HTML 생성
 	 */
 	function generateFieldHtml(field, value) {
 		const fieldId = 'detail_field_' + field.field_idx;
 		const fieldName = 'detail_field[' + field.field_idx + ']';
-		const colClass = field.field_size == 1 ? 'col-6' : 'col-12';
+
+		// field_size에 따라 col 클래스 결정 (수정된 버전)
+		let colClass = 'col-12'; // 기본값
+		if (field.field_size == 1) {
+			colClass = 'col-6 col-sm-4';
+		} else if (field.field_size == 2) {
+			colClass = 'col-8 col-sm-6';
+		} else if (field.field_size == 3) {
+			colClass = 'col-12';
+		}
 
 		let inputHtml = '';
 
@@ -3057,11 +3116,11 @@ $(document).ready(function () {
 			case 'checkbox':
 				const checked = value === 'Y' ? 'checked' : '';
 				inputHtml = `
-				<div class="form-check">
-					<input class="form-check-input" type="checkbox" id="${fieldId}" name="${fieldName}" value="Y" ${checked}>
-					<label class="form-check-label" for="${fieldId}">${escapeHtml(field.field_name)}</label>
-				</div>
-			`;
+			<div class="form-check">
+				<input class="form-check-input" type="checkbox" id="${fieldId}" name="${fieldName}" value="Y" ${checked}>
+				<label class="form-check-label" for="${fieldId}">${escapeHtml(field.field_name)}</label>
+			</div>
+		`;
 				break;
 
 			case 'date':
@@ -3075,11 +3134,11 @@ $(document).ready(function () {
 		const labelHtml = field.field_type === 'checkbox' ? '' : `<label for="${fieldId}" class="form-label">${escapeHtml(field.field_name)}</label>`;
 
 		return `
-		<div class="${colClass} mb-3">
-			${labelHtml}
-			${inputHtml}
-		</div>
-	`;
+	<div class="${colClass} mb-3">
+		${labelHtml}
+		${inputHtml}
+	</div>
+`;
 	}
 
 	/**
@@ -3100,7 +3159,7 @@ $(document).ready(function () {
 
 
 	/**
-	 * 상세정보 저장 - member_detail 컬럼 활용
+	 * 상세정보 저장 - member_detail 컬럼 활용 (수정된 버전)
 	 */
 	function saveDetailData() {
 		const orgId = $('#org_id').val();
@@ -3111,7 +3170,9 @@ $(document).ready(function () {
 		}
 
 		const detailData = {};
-		$('#detailFieldsContainer input, #detailFieldsContainer select, #detailFieldsContainer textarea').each(function() {
+
+		// front와 back 영역 모두에서 입력값 수집
+		$('#detail-front input, #detail-front select, #detail-front textarea, #detailFieldsContainer input, #detailFieldsContainer select, #detailFieldsContainer textarea').each(function() {
 			const name = $(this).attr('name');
 			if (name && name.startsWith('detail_field[')) {
 				const fieldIdx = name.match(/detail_field\[(\d+)\]/)[1];
@@ -3124,8 +3185,11 @@ $(document).ready(function () {
 			}
 		});
 
-		// 상세필드 데이터를 폼에 추가 (히든 필드로)
-		$('#detailFieldsContainer').append(
+		// 기존 히든 필드 제거 (중복 방지)
+		$('input[name="detail_field"]').remove();
+
+		// 상세필드 데이터를 폼에 추가 (히든 필드로) - 폼의 직접 자식으로 추가
+		$('#memberForm').append(
 			'<input type="hidden" name="detail_field" value=\'' + JSON.stringify(detailData) + '\' />'
 		);
 
