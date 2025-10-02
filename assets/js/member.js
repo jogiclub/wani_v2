@@ -139,6 +139,14 @@ $(document).ready(function () {
 			moveSelectedMembers(selectedMembers);
 		});
 
+		/**
+		 * 엑셀편집 버튼 클릭 이벤트 바인딩 (bindGlobalEvents 함수 내부에 추가)
+		 */
+		$('#btnExcelEdit').on('click', function (e) {
+			e.preventDefault();
+			openExcelEditPopup();
+		});
+
 		// 회원 저장 버튼
 		$('#btnSaveMember').on('click', function () {
 			saveMember();
@@ -3228,6 +3236,140 @@ $(document).ready(function () {
 		destroyCroppie();
 	}
 
+
+
+	/**
+	 * 엑셀편집 팝업 열기 (수정된 버전 - 전체 컬럼 데이터 전달)
+	 */
+	function openExcelEditPopup() {
+		if (!memberGrid) {
+			showToast('그리드가 초기화되지 않았습니다.', 'error');
+			return;
+		}
+
+		try {
+			// 현재 그리드의 모든 데이터 가져오기 (원본 그대로)
+			const gridData = memberGrid.pqGrid("option", "dataModel.data");
+
+			if (!gridData || gridData.length === 0) {
+				showToast('편집할 데이터가 없습니다.', 'info');
+				return;
+			}
+
+			// 현재 그리드의 컬럼 모델 가져오기
+			const colModel = memberGrid.pqGrid("option", "colModel");
+
+			// 세션 스토리지에 데이터와 컬럼 모델 저장
+			sessionStorage.setItem('bulkEditData', JSON.stringify(gridData));
+			sessionStorage.setItem('bulkEditColumns', JSON.stringify(colModel));
+
+			// 팝업 창 열기
+			const popupWidth = 1400;
+			const popupHeight = 800;
+			const left = (window.screen.width - popupWidth) / 2;
+			const top = (window.screen.height - popupHeight) / 2;
+
+			const popup = window.open(
+				'/member/member_popup',
+				'memberPopup',
+				`width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes`
+			);
+
+			if (!popup) {
+				showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
+				return;
+			}
+
+			// postMessage 리스너 등록 (기존 리스너가 있으면 제거)
+			window.removeEventListener('message', handleBulkEditMessage);
+			window.addEventListener('message', handleBulkEditMessage);
+
+		} catch (error) {
+			console.error('엑셀편집 팝업 열기 오류:', error);
+			showToast('엑셀편집 팝업을 여는 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+	/**
+	 * 팝업에서 전송된 메시지 처리
+	 */
+	function handleBulkEditMessage(event) {
+		// 보안: 같은 origin인지 확인
+		if (event.origin !== window.location.origin) {
+			return;
+		}
+
+		// 메시지 타입 확인
+		if (event.data && event.data.type === 'bulkEditComplete') {
+			const editedData = event.data.data;
+
+			if (!editedData || editedData.length === 0) {
+				showToast('수정된 데이터가 없습니다.', 'warning');
+				return;
+			}
+
+			// 수정된 데이터 저장
+			saveBulkEditData(editedData);
+		}
+	}
+
+	/**
+	 * 일괄 편집된 데이터를 서버에 저장
+	 */
+	function saveBulkEditData(editedData) {
+		if (!selectedOrgId) {
+			showToast('조직 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		// 확인 모달 표시
+		showConfirmModal(
+			'엑셀편집 저장',
+			`총 ${editedData.length}건의 데이터를 저장하시겠습니까?`,
+			function() {
+				// 저장 실행
+				executeBulkEditSave(editedData);
+			}
+		);
+	}
+
+	/**
+	 * 일괄 편집 저장 실행
+	 */
+	function executeBulkEditSave(editedData) {
+		const saveBtn = $('#btnExcelEdit');
+		const originalText = saveBtn.text();
+
+		saveBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 저장 중...');
+
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/save_member_popup',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				members: JSON.stringify(editedData)
+			},
+			dataType: 'json',
+			success: function(response) {
+				const toastType = response.success ? 'success' : 'error';
+				showToast(response.message, toastType);
+
+				if (response.success) {
+					// 그리드 새로고침
+					loadMemberData();
+					// 트리 새로고침 (인원수 변경 가능성)
+					refreshGroupTree();
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('일괄 편집 저장 실패:', error);
+				showToast('데이터 저장 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				saveBtn.prop('disabled', false).html(originalText);
+			}
+		});
+	}
 
 
 

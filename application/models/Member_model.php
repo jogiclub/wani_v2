@@ -17,6 +17,22 @@ class Member_model extends CI_Model
 
 
 	/**
+	 * 소그룹명으로 area_idx 찾기
+	 */
+	public function get_area_by_name($org_id, $area_name)
+	{
+		$this->db->select('area_idx, area_name');
+		$this->db->from('tb_area');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('area_name', $area_name);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+
+		return $query->row_array();
+	}
+
+
+	/**
 	 * 파일 위치: application/models/Member_model.php
 	 * 역할: 회원 정보 조회 시 position_name, duty_name 필드 추가
 	 */

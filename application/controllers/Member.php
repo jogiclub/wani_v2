@@ -730,6 +730,105 @@ class Member extends My_Controller
 		}
 	}
 
+	public function member_popup()
+	{
+		$this->load->view('member_popup');
+	}
+
+
+	/**
+	 * 일괄 편집 데이터 저장
+	 */
+	public function save_member_popup()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$members_json = $this->input->post('members');
+
+		if (!$org_id || !$members_json) {
+			echo json_encode([
+				'success' => false,
+				'message' => '필수 데이터가 누락되었습니다.'
+			]);
+			return;
+		}
+
+		$members = json_decode($members_json, true);
+
+		if (!is_array($members) || empty($members)) {
+			echo json_encode([
+				'success' => false,
+				'message' => '유효한 데이터가 없습니다.'
+			]);
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		// 트랜잭션 시작
+		$this->db->trans_start();
+
+		$success_count = 0;
+		$error_count = 0;
+
+		foreach ($members as $member) {
+			$member_idx = isset($member['member_idx']) && $member['member_idx'] !== ''
+				? $member['member_idx']
+				: null;
+
+			$update_data = [
+				'member_name' => trim($member['member_name']),
+				'position_name' => trim($member['position_name']),
+				'member_phone' => trim($member['member_phone']),
+				'modi_date' => date('Y-m-d H:i:s')
+			];
+
+			// area_name이 있으면 area_idx 찾기
+			if (!empty($member['area_name'])) {
+				$area_info = $this->Member_model->get_area_by_name($org_id, trim($member['area_name']));
+				if ($area_info) {
+					$update_data['area_idx'] = $area_info['area_idx'];
+				}
+			}
+
+			if ($member_idx) {
+				// 기존 회원 업데이트
+				$result = $this->Member_model->update_member($member_idx, $update_data, $org_id);
+			} else {
+				// 신규 회원 추가
+				$update_data['org_id'] = $org_id;
+				$update_data['regi_date'] = date('Y-m-d H:i:s');
+				$result = $this->Member_model->add_member($update_data);
+			}
+
+			if ($result) {
+				$success_count++;
+			} else {
+				$error_count++;
+			}
+		}
+
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			echo json_encode([
+				'success' => false,
+				'message' => '데이터 저장 중 오류가 발생했습니다.'
+			]);
+			return;
+		}
+
+		echo json_encode([
+			'success' => true,
+			'message' => "저장 완료: 성공 {$success_count}건, 실패 {$error_count}건",
+			'success_count' => $success_count,
+			'error_count' => $error_count
+		]);
+	}
+
 	/**
 	 * 다중 회원 삭제 (미분류: del_yn = 'Y', 소그룹: area_idx = null)
 	 */

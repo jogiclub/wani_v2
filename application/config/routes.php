@@ -69,10 +69,29 @@ $route['mypage/add_attendance_type_category'] = 'mypage/add_attendance_type_cate
 $route['member'] = 'member/index';
 $route['member/index'] = 'member/index';
 $route['member/get_group_tree'] = 'member/get_group_tree';
+$route['member/get_org_tree'] = 'member/get_org_tree';
 $route['member/get_members'] = 'member/get_members';
 $route['member/add_member'] = 'member/add_member';
 $route['member/update_member'] = 'member/update_member';
 $route['member/delete_member'] = 'member/delete_member';
+$route['member/delete_members'] = 'member/delete_members';
+$route['member/move_members'] = 'member/move_members';
+$route['member/get_detail_fields'] = 'member/get_detail_fields';
+$route['member/get_member_detail'] = 'member/get_member_detail';
+$route['member/save_memo'] = 'member/save_memo';
+$route['member/get_memo_list'] = 'member/get_memo_list';
+$route['member/update_memo'] = 'member/update_memo';
+$route['member/delete_memo'] = 'member/delete_memo';
+$route['member/get_timeline_types'] = 'member/get_timeline_types';
+$route['member/get_timeline_list'] = 'member/get_timeline_list';
+$route['member/save_timeline'] = 'member/save_timeline';
+$route['member/update_timeline'] = 'member/update_timeline';
+$route['member/delete_timeline'] = 'member/delete_timeline';
+$route['member/get_org_positions_duties'] = 'member/get_org_positions_duties';
+$route['member/print_selected_qr'] = 'member/print_selected_qr';
+$route['member/member_popup'] = 'member/member_popup';
+$route['member/save_member_popup'] = 'member/save_member_popup';
+
 
 // Main 컨트롤러 관련 라우팅
 $route['main/profile'] = 'main/profile';
@@ -153,3 +172,7 @@ $route['send/update_sender'] = 'send/update_sender';
 $route['send/delete_sender'] = 'send/delete_sender';
 $route['send/set_default_sender'] = 'send/set_default_sender';
 $route['send/get_statistics'] = 'send/get_statistics';
+
+
+
+
