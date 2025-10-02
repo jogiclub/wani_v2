@@ -732,7 +732,24 @@ class Member extends My_Controller
 
 	public function member_popup()
 	{
-		$this->load->view('member_popup');
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->cookie('activeOrg');
+
+		if (!$user_id || !$org_id) {
+			echo '<script>alert("인증 정보가 없습니다."); window.close();</script>';
+			return;
+		}
+
+		// 소그룹 목록 가져오기
+		$this->load->model('Member_area_model');
+		$member_areas = $this->Member_area_model->get_member_areas($org_id);
+
+		$data = array(
+			'member_areas' => $member_areas,
+			'org_id' => $org_id
+		);
+
+		$this->load->view('member_popup', $data);
 	}
 
 

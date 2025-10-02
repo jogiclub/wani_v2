@@ -1,6 +1,7 @@
 'use strict';
 
 let bulkEditGridInstance = null;
+let memberAreasMap = {}; // area_idx -> area_name 매핑
 
 $(document).ready(function() {
 	// 세션 스토리지에서 데이터 및 컬럼 모델 가져오기
@@ -15,6 +16,13 @@ $(document).ready(function() {
 
 	const data = JSON.parse(dataString);
 	const originalColumns = JSON.parse(columnsString);
+
+	// 소그룹 매핑 생성
+	if (window.memberAreas && window.memberAreas.length > 0) {
+		window.memberAreas.forEach(function(area) {
+			memberAreasMap[area.area_idx] = area.area_name;
+		});
+	}
 
 	initBulkEditGrid(data, originalColumns);
 
@@ -39,14 +47,25 @@ $(document).ready(function() {
 /**
  * 그리드 초기화 - 원본 컬럼 구조 사용
  */
-/**
- * 그리드 초기화 - 원본 컬럼 구조 사용
- */
 function initBulkEditGrid(data, originalColumns) {
 	const $grid = $('#bulkEditGrid');
 
 	// 제외할 컬럼 목록 (회원번호 추가)
 	const excludeColumns = ['pq_selected', 'photo', 'regi_date', 'modi_date', 'member_idx'];
+
+	// 데이터 전처리: area_name만 있는 경우 area_idx 찾기
+	data.forEach(function(row) {
+		if (row.area_name && !row.area_idx) {
+			// area_name으로 area_idx 찾기
+			const area = window.memberAreas.find(a => a.area_name === row.area_name);
+			if (area) {
+				row.area_idx = area.area_idx;
+			}
+		} else if (row.area_idx && !row.area_name) {
+			// area_idx로 area_name 찾기
+			row.area_name = memberAreasMap[row.area_idx] || '';
+		}
+	});
 
 	// 편집 가능한 컬럼 모델 생성 (제외 컬럼 필터링)
 	const colModel = originalColumns
@@ -54,21 +73,51 @@ function initBulkEditGrid(data, originalColumns) {
 			return !excludeColumns.includes(col.dataIndx);
 		})
 		.map(col => {
-			// 모든 컬럼을 편집 가능하게 설정
-			return {
+			// 기본 컬럼 설정
+			const columnConfig = {
 				title: col.title,
 				dataIndx: col.dataIndx,
 				width: col.width || 120,
 				editable: true,
-				align: col.align || 'center',
-				render: col.render
+				align: col.align || 'center'
 			};
+
+			// area_name 컬럼을 select로 변경
+			if (col.dataIndx === 'area_name' && window.memberAreas && window.memberAreas.length > 0) {
+				// select options 생성
+				const selectOptions = [{ '': '소그룹 선택' }];
+				window.memberAreas.forEach(function(area) {
+					selectOptions.push({
+						[area.area_idx]: area.area_name
+					});
+				});
+
+				columnConfig.editor = {
+					type: 'select',
+					options: selectOptions
+				};
+
+				// 렌더링: area_idx를 area_name으로 표시
+				columnConfig.render = function(ui) {
+					const rowData = ui.rowData;
+
+					// rowData에서 실제 값 가져오기
+					if (rowData.area_idx) {
+						return memberAreasMap[rowData.area_idx] || rowData.area_name || '';
+					}
+
+					return rowData.area_name || '';
+				};
+			} else {
+				columnConfig.render = col.render;
+			}
+
+			return columnConfig;
 		});
 
 	const gridOptions = {
 		width: '100%',
 		height: '100%',
-
 		colModel: colModel,
 		dataModel: {
 			data: data
@@ -76,7 +125,7 @@ function initBulkEditGrid(data, originalColumns) {
 		editable: true,
 		strNoRows: '회원 정보가 없습니다',
 		editModel: {
-			clicksToEdit: 2,
+			clicksToEdit: 1,
 			saveKey: ''
 		},
 		selectionModel: {
@@ -105,7 +154,36 @@ function initBulkEditGrid(data, originalColumns) {
 		hoverMode: 'row',
 		stripeRows: true,
 		rowHeight: 30,
-		headerHeight: 35
+		headerHeight: 35,
+		// 셀 저장 전에 값 검증
+		cellBeforeSave: function(evt, ui) {
+			if (ui.dataIndx === 'area_name') {
+				// 새 값이 비어있거나 '소그룹 선택'인 경우 이전 값 유지
+				if (!ui.newVal || ui.newVal === '' || ui.newVal === '소그룹 선택') {
+					return false; // 저장 취소 (이전 값 유지)
+				}
+			}
+		},
+		// 셀 편집 완료 시 area_idx와 area_name 동기화
+		cellSave: function(evt, ui) {
+			if (ui.dataIndx === 'area_name') {
+				// 선택된 area_idx로 area_name 설정
+				const selectedAreaIdx = ui.newVal;
+
+				if (selectedAreaIdx && memberAreasMap[selectedAreaIdx]) {
+					// area_idx와 area_name 모두 업데이트
+					ui.rowData.area_idx = selectedAreaIdx;
+					ui.rowData.area_name = memberAreasMap[selectedAreaIdx];
+				} else if (selectedAreaIdx === '' || selectedAreaIdx === '소그룹 선택') {
+					// 빈 값 선택 시 - 실제로는 cellBeforeSave에서 막히므로 여기 도달 안함
+					ui.rowData.area_idx = '';
+					ui.rowData.area_name = '';
+				}
+
+				// 그리드 새로고침
+				$grid.pqGrid('refreshCell', { rowIndx: ui.rowIndx, dataIndx: 'area_name' });
+			}
+		}
 	};
 
 	bulkEditGridInstance = $grid.pqGrid(gridOptions);
@@ -143,6 +221,8 @@ function addEmptyCells() {
 		colModel.forEach(col => {
 			newRow[col.dataIndx] = '';
 		});
+		// area_idx도 빈 값으로 초기화
+		newRow.area_idx = '';
 		newRows.push(newRow);
 	}
 
@@ -188,16 +268,31 @@ function saveBulkEdit() {
 		});
 
 		if (filteredData.length === 0) {
-			showToast('저장할 수 있는 유효한 데이터가 없습니다.\n이름은 필수 항목입니다.', 'warning');
+			showToast('저장할 수 있는 유효한 데이터가 없습니다. 이름은 필수 항목입니다.', 'warning');
 			return;
 		}
 
-		// 데이터 정규화 (모든 필드를 문자열로 변환)
+		// 데이터 정규화 및 area_idx 확인
 		const normalizedData = filteredData.map(function(row) {
 			const normalizedRow = {};
+
 			Object.keys(row).forEach(key => {
 				normalizedRow[key] = String(row[key] || '').trim();
 			});
+
+			// area_idx가 없으면 area_name으로 찾기
+			if (!normalizedRow.area_idx && normalizedRow.area_name) {
+				const area = window.memberAreas.find(a => a.area_name === normalizedRow.area_name);
+				if (area) {
+					normalizedRow.area_idx = String(area.area_idx);
+				}
+			}
+
+			// area_idx가 있으면 area_name도 설정
+			if (normalizedRow.area_idx && memberAreasMap[normalizedRow.area_idx]) {
+				normalizedRow.area_name = memberAreasMap[normalizedRow.area_idx];
+			}
+
 			return normalizedRow;
 		});
 

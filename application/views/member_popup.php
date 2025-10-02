@@ -1,4 +1,3 @@
-
 <?php include APPPATH . 'views/noheader.php'; ?>
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 <style>
@@ -16,7 +15,7 @@
 	<div class="row">
 		<div class="col-12">
 			<div class="alert alert-warning alert-dismissible fade show" role="alert">
-				엑셀에서 복사하여 붙여 넣기가 가능하며 하단의 '셀추가' 이용이 가능합니다.
+				* 엑셀에서 복사하여 붙여 넣기가 가능하며 하단의 '셀추가' 이용이 가능합니다.
 				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 			</div>
 			<div class="card">
@@ -40,4 +39,9 @@
 
 <?php include APPPATH . 'views/nofooter.php'; ?>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+<script>
+	// 소그룹 목록을 JavaScript 전역 변수로 전달
+	window.memberAreas = <?php echo json_encode($member_areas); ?>;
+	window.currentOrgId = '<?php echo $org_id; ?>';
+</script>
 <script src="/assets/js/member_popup.js?<?php echo WB_VERSION; ?>"></script>
