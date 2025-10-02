@@ -45,6 +45,60 @@ $(document).ready(function() {
 });
 
 /**
+ * 소그룹 데이터를 계층 구조로 정렬
+ */
+function sortAreasByHierarchy(areas) {
+	if (!areas || areas.length === 0) {
+		return [];
+	}
+
+	// area_order로 정렬
+	const sortedAreas = areas.slice().sort((a, b) => {
+		const orderA = parseInt(a.area_order) || 0;
+		const orderB = parseInt(b.area_order) || 0;
+		return orderA - orderB;
+	});
+
+	// parent와 children으로 분류
+	const parentAreas = [];
+	const childrenMap = {};
+
+	sortedAreas.forEach(area => {
+		const parentIdx = area.parent_idx;
+		if (!parentIdx || parentIdx === '0' || parentIdx === 0 || parentIdx === '') {
+			// parent 그룹
+			parentAreas.push(area);
+		} else {
+			// child 그룹
+			if (!childrenMap[parentIdx]) {
+				childrenMap[parentIdx] = [];
+			}
+			childrenMap[parentIdx].push(area);
+		}
+	});
+
+	// 계층 구조로 재구성
+	const hierarchicalAreas = [];
+
+	parentAreas.forEach(parent => {
+		hierarchicalAreas.push(parent);
+
+		// 해당 parent의 children 추가
+		if (childrenMap[parent.area_idx]) {
+			childrenMap[parent.area_idx].forEach(child => {
+				// child의 area_name 앞에 전각 스페이스 추가
+				hierarchicalAreas.push({
+					...child,
+					display_name: '\u3000' + child.area_name // 전각 스페이스 추가
+				});
+			});
+		}
+	});
+
+	return hierarchicalAreas;
+}
+
+/**
  * 그리드 초기화 - 원본 컬럼 구조 사용
  */
 function initBulkEditGrid(data, originalColumns) {
@@ -84,18 +138,26 @@ function initBulkEditGrid(data, originalColumns) {
 
 			// area_name 컬럼을 select로 변경
 			if (col.dataIndx === 'area_name' && window.memberAreas && window.memberAreas.length > 0) {
+				// 계층 구조로 정렬된 소그룹 데이터
+				const sortedAreas = sortAreasByHierarchy(window.memberAreas);
+
 				// select options 생성
 				const selectOptions = [{ '': '소그룹 선택' }];
-				window.memberAreas.forEach(function(area) {
+				sortedAreas.forEach(function(area) {
+					const displayName = area.display_name || area.area_name;
 					selectOptions.push({
-						[area.area_idx]: area.area_name
+						[area.area_idx]: displayName
 					});
 				});
 
 				columnConfig.editor = {
 					type: 'select',
-					options: selectOptions
+					options: selectOptions,
+					style: 'text-align: left;' // select 좌측 정렬
 				};
+
+				// 좌측 정렬
+				columnConfig.align = 'left';
 
 				// 렌더링: area_idx를 area_name으로 표시
 				columnConfig.render = function(ui) {
@@ -103,6 +165,15 @@ function initBulkEditGrid(data, originalColumns) {
 
 					// rowData에서 실제 값 가져오기
 					if (rowData.area_idx) {
+						const areaData = window.memberAreas.find(a => a.area_idx == rowData.area_idx);
+						if (areaData) {
+							// parent인지 child인지 확인하여 들여쓰기 적용
+							const parentIdx = areaData.parent_idx;
+							if (parentIdx && parentIdx !== '0' && parentIdx !== 0 && parentIdx !== '') {
+								return '\u3000' + areaData.area_name;
+							}
+							return areaData.area_name;
+						}
 						return memberAreasMap[rowData.area_idx] || rowData.area_name || '';
 					}
 
@@ -282,13 +353,15 @@ function saveBulkEdit() {
 
 			// area_idx가 없으면 area_name으로 찾기
 			if (!normalizedRow.area_idx && normalizedRow.area_name) {
-				const area = window.memberAreas.find(a => a.area_name === normalizedRow.area_name);
+				// 들여쓰기 제거 후 찾기
+				const cleanAreaName = normalizedRow.area_name.replace(/^\u3000/, '');
+				const area = window.memberAreas.find(a => a.area_name === cleanAreaName);
 				if (area) {
 					normalizedRow.area_idx = String(area.area_idx);
 				}
 			}
 
-			// area_idx가 있으면 area_name도 설정
+			// area_idx가 있으면 area_name도 설정 (들여쓰기 제거)
 			if (normalizedRow.area_idx && memberAreasMap[normalizedRow.area_idx]) {
 				normalizedRow.area_name = memberAreasMap[normalizedRow.area_idx];
 			}
