@@ -523,7 +523,7 @@ $(document).ready(function() {
 	// 주기적 메시지 확인 (5분마다)
 	setInterval(function() {
 		updateUnreadCount();
-	}, 60000); //60,000 = 1분
+	}, 100000); //60,000 = 1분 현재는 1분 40초
 
 	// 초기 로드 시 배지 상태 확인
 	setTimeout(function() {

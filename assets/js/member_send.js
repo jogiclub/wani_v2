@@ -191,7 +191,7 @@ function updateSendButtonState() {
 
 		if (selectedCount > 0) {
 			sendButton.prop('disabled', false);
-			sendButton.html(`<i class="bi bi-chat-dots"></i> 선택문자 (${selectedCount})`);
+			sendButton.html('<i class="bi bi-chat-dots"></i> 선택문자');
 		} else {
 			sendButton.prop('disabled', true);
 			sendButton.html('<i class="bi bi-chat-dots"></i> 선택문자');

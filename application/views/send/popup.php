@@ -393,6 +393,9 @@
 			<button type="button" class="btn btn-primary" id="btnCharge">
 				<i class="bi bi-credit-card"></i> 결제하기
 			</button>
+			<button type="button" class="btn btn-outline-primary" id="btnChargeHistory">
+				<i class="bi bi-receipt"></i> 충전내역 <span class="badge badge-sm text-bg-warning">준비중</span>
+			</button>
 			<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">취소</button>
 		</div>
 	</div>

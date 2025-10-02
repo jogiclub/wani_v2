@@ -46,7 +46,7 @@ function initBulkEditGrid(data, originalColumns) {
 	const $grid = $('#bulkEditGrid');
 
 	// 제외할 컬럼 목록 (회원번호 추가)
-	const excludeColumns = ['pq_selected', 'photo', 'area_name', 'regi_date', 'modi_date', 'member_idx'];
+	const excludeColumns = ['pq_selected', 'photo', 'regi_date', 'modi_date', 'member_idx'];
 
 	// 편집 가능한 컬럼 모델 생성 (제외 컬럼 필터링)
 	const colModel = originalColumns
@@ -68,6 +68,7 @@ function initBulkEditGrid(data, originalColumns) {
 	const gridOptions = {
 		width: '100%',
 		height: '100%',
+
 		colModel: colModel,
 		dataModel: {
 			data: data
@@ -75,7 +76,7 @@ function initBulkEditGrid(data, originalColumns) {
 		editable: true,
 		strNoRows: '회원 정보가 없습니다',
 		editModel: {
-			clicksToEdit: 1,
+			clicksToEdit: 2,
 			saveKey: ''
 		},
 		selectionModel: {
@@ -90,7 +91,9 @@ function initBulkEditGrid(data, originalColumns) {
 			align: 'center'
 		},
 		scrollModel: {
-			autoFit: true
+			autoFit: false,
+			horizontal: true,
+			vertical: true
 		},
 		showTop: false,
 		showTitle: false,
