@@ -20,7 +20,7 @@
 	<div class="row">
 		<div class="col-12">
 			<div class="alert alert-warning alert-dismissible fade show" role="alert">
-				엑셀에서 복사하여 붙여 넣기가 가능합니다. 편집 후 하단의 저장 버튼을 선택하면 적용이 됩니다.
+				엑셀에서 복사하여 붙여 넣기가 가능하며 하단의 '셀추가' 이용이 가능합니다.
 				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 			</div>
 			<div class="card">

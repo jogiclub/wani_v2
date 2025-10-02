@@ -129,10 +129,7 @@ $(document).ready(function() {
 		openBulkEditModal();
 	});
 
-	// 전체편집 저장 버튼
-	$(document).on('click', '#btnSaveBulkEdit', function() {
-		saveBulkEdit();
-	});
+
 
 	// 수신자 단건 삭제
 	$(document).on('click', '.remove-receiver', function(e) {
@@ -240,11 +237,6 @@ $(document).ready(function() {
 
 
 
-	// 새 템플릿 버튼 클릭
-	$(document).on('click', '#btnAddNewTemplate', function(e) {
-		e.preventDefault();
-		showTemplateModal();
-	});
 
 
 
@@ -807,20 +799,57 @@ function loadSenderSelectOptions() {
 	});
 }
 
-// ===== 수신자 관련 함수 =====
+/**
+ * 역할: 빈 수신자 메시지 표시
+ */
 function showEmptyReceiverMessage() {
 	const emptyMessage = `
-		<tr>
+		<tr class="empty-message">
 			<td colspan="7" class="text-center text-muted">선택된 회원이 없습니다.</td>
 		</tr>
 	`;
 	$('#receiverList').html(emptyMessage);
 }
 
+// 수신자 전체 삭제
+$('#btn-remove-all').on('click', function(e) {
+	e.preventDefault();
+	const totalCount = $('#receiverList tr.receiver-item').length;
+	if (totalCount === 0) {
+		showToast('삭제할 수신자가 없습니다.', 'warning');
+		return;
+	}
+	const firstMember = $('#receiverList tr.receiver-item:first').data('name');
+	const otherCount = totalCount - 1;
+	const message = otherCount > 0
+		? firstMember + ' 외 ' + otherCount + '명의 목록을 삭제합니다.'
+		: firstMember + '님을 목록에서 삭제합니다.';
+	showConfirmModal(
+		'전체 삭제',
+		message,
+		function() {
+			$('#receiverList').empty();
+			showEmptyReceiverMessage();
+			updateReceiverCount();
+			updateSendCost();
+		}
+	);
+});
+
+// 내 주소록에 저장
+$('#btn-save-addressbook').on('click', function(e) {
+	e.preventDefault();
+	const totalCount = $('#receiverList tr.receiver-item').length;
+	if (totalCount === 0) {
+		showToast('저장할 수신자가 없습니다.', 'warning');
+		return;
+	}
+	showAddressBookNameModal();
+});
+
 function updateReceiverCount() {
 	const count = $('#receiverList tr.receiver-item').length;
-	const $countElement = $('.col-12.mb-2.d-flex strong');
-	$countElement.text('선택된 회원 (' + count + '명)');
+	$('#receiverCount').text(count);
 }
 
 /**
@@ -1212,47 +1241,26 @@ function openBulkEditModal() {
 	});
 }
 
-function saveBulkEdit() {
-	if (!bulkEditGridInstance) {
-		showToast('그리드가 초기화되지 않았습니다.', 'error');
+
+
+/**
+ * 역할: 수신자 목록 업데이트
+ */
+function updateReceiverList(data) {
+	const $receiverList = $('#receiverList');
+	$receiverList.empty();
+
+	if (!data || data.length === 0) {
+		showEmptyReceiverMessage();
+		updateReceiverCount();
+		updateSendCost();
 		return;
 	}
-
-	try {
-		$('#bulkEditGrid').pqGrid('saveEditCell');
-		const data = $('#bulkEditGrid').pqGrid('option', 'dataModel.data');
-
-		if (!data || data.length === 0) {
-			showToast('저장할 데이터가 없습니다.', 'warning');
-			return;
-		}
-
-		showConfirmModal(
-			'전체편집 저장',
-			'수정된 내용을 저장하시겠습니까?',
-			function() {
-				updateReceiverList(data);
-				const modalEl = document.getElementById('bulkEditModal');
-				const modal = bootstrap.Modal.getInstance(modalEl);
-				if (modal) {
-					modal.hide();
-				}
-				showToast('수정 내용이 저장되었습니다.', 'success');
-			}
-		);
-	} catch(e) {
-		console.error('저장 중 오류:', e);
-		showToast('저장 중 오류가 발생했습니다.', 'error');
-	}
-}
-
-function updateReceiverList(data) {
-	$('#receiverList').empty();
 
 	data.forEach(function(item) {
 		const row = `
 			<tr class="receiver-item"
-				 data-member-idx="${item.member_idx}"
+				 data-member-idx="${item.member_idx || ''}"
 				 data-phone="${item.member_phone}"
 				 data-name="${item.member_name}">
 				<td>${item.member_name}</td>
@@ -1264,7 +1272,7 @@ function updateReceiverList(data) {
 				<td><a class="remove-receiver"><i class="bi bi-x-lg"></i></a></td>
 			</tr>
 		`;
-		$('#receiverList').append(row);
+		$receiverList.append(row);
 	});
 
 	updateReceiverCount();
@@ -1857,15 +1865,6 @@ function cancelReservation(reservationIdx) {
 
 
 
-// 새 템플릿 버튼 클릭
-$('.btn-outline-primary').filter(function() {
-	return $(this).find('i').hasClass('bi-plus-lg') && $(this).text().includes('새 템플릿');
-}).on('click', function(e) {
-	e.preventDefault();
-	addNewTemplate();
-});
-
-
 
 
 /**
@@ -2005,7 +2004,10 @@ function showTemplateModal(templateIdx = '', templateType = '', templateContent 
 	modalInstance.show();
 }
 
-
+$(document).on('click', '#btnAddNewTemplate', function(e) {
+	e.preventDefault();
+	showTemplateModal(); // 빈 모달만 표시
+});
 
 /**
  * 역할: 템플릿 모달에서 저장
@@ -2042,7 +2044,15 @@ function saveTemplateFromModal() {
 		success: function(response) {
 			if (response.success) {
 				showToast(response.message, 'success');
-				$('#templateModal').modal('hide');
+
+				// 모달 닫기
+				const modalEl = document.getElementById('templateModal');
+				const modal = bootstrap.Modal.getInstance(modalEl);
+				if (modal) {
+					modal.hide();
+				}
+
+				// 템플릿 목록 새로고침
 				loadMessageTemplates();
 			} else {
 				showToast(response.message, 'error');
@@ -2149,51 +2159,7 @@ function getTypeBadge(type) {
 	return badges[type] || { text: 'SMS', class: 'bg-primary' };
 }
 
-/**
- * 역할: 새 템플릿 추가
- */
-function addNewTemplate() {
-	const currentType = $('input[name="send_type"]:checked').val();
-	const typeBadge = getTypeBadge(currentType);
 
-	const newTemplate = `
-		<div class="col-6 col-sm-4">
-			<figure class="figure figure-template rounded bg-dark text-white p-2 position-relative" 
-					data-template-idx=""
-					data-template-type="${currentType}"
-					data-is-admin="false"
-					contenteditable="true">
-				<span class="badge bg-info position-absolute" style="top: 5px; left: 5px;">${typeBadge}</span>
-				<small>새 템플릿 내용을 입력하세요...</small>
-				<a href="#" class="btn-delete-template text-white position-absolute" style="bottom: 10px; right: 10px" data-template-idx=""><i class="bi bi-trash"></i></a>
-			</figure>
-		</div>
-	`;
-
-	$('#template-tab-pane .row').prepend(newTemplate);
-
-	// 이벤트 재바인딩
-	$('.figure-template').off('click').on('click', function(e) {
-		if ($(e.target).closest('.btn-delete-template').length === 0) {
-			applyTemplateToMessage($(this).text().trim());
-		}
-	});
-
-	$('.btn-delete-template').off('click').on('click', function(e) {
-		e.preventDefault();
-		e.stopPropagation();
-		const templateIdx = $(this).data('template-idx');
-		if (templateIdx) {
-			deleteTemplate(templateIdx);
-		} else {
-			// 새로 추가된 템플릿은 바로 삭제
-			$(this).closest('.col-6').remove();
-		}
-	});
-
-	// 포커스 설정
-	$('#template-tab-pane .row .figure-template:first small').focus();
-}
 
 /**
  * 역할: 템플릿 내용을 메시지 입력란에 적용

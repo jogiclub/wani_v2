@@ -86,6 +86,7 @@ function initBulkEditGrid(data) {
 			data: data
 		},
 		editable: true,
+		strNoRows: '회원 정보가 없습니다',
 		editModel: {
 			clicksToEdit: 2,
 			saveKey: ''
@@ -189,14 +190,30 @@ function saveBulkEdit() {
 
 		// 빈 행 제거 (이름과 전화번호가 모두 비어있는 행)
 		const filteredData = data.filter(function(row) {
-			return row.member_name && row.member_name.trim() !== '' &&
-				row.member_phone && row.member_phone.trim() !== '';
+			// 문자열로 변환 후 체크
+			const memberName = String(row.member_name || '').trim();
+			const memberPhone = String(row.member_phone || '').trim();
+
+			return memberName !== '' && memberPhone !== '';
 		});
 
 		if (filteredData.length === 0) {
 			showToast('저장할 수 있는 유효한 데이터가 없습니다.\n이름과 연락처는 필수 항목입니다.', 'warning');
 			return;
 		}
+
+		// 데이터 정규화 (모든 필드를 문자열로 변환)
+		const normalizedData = filteredData.map(function(row) {
+			return {
+				member_idx: row.member_idx || '',
+				member_name: String(row.member_name || '').trim(),
+				position_name: String(row.position_name || '').trim(),
+				member_phone: String(row.member_phone || '').trim(),
+				area_name: String(row.area_name || '').trim(),
+				tmp01: String(row.tmp01 || '').trim(),
+				tmp02: String(row.tmp02 || '').trim()
+			};
+		});
 
 		showConfirmModal(
 			'전체편집 저장',
@@ -206,7 +223,7 @@ function saveBulkEdit() {
 				if (window.opener) {
 					window.opener.postMessage({
 						type: 'bulkEditComplete',
-						data: filteredData
+						data: normalizedData
 					}, '*');
 					window.close();
 				}

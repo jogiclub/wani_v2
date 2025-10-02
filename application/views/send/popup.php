@@ -73,24 +73,22 @@
 					</div>
 
 
-					<!-- 수신번호 목록 -->
+					<!-- 수신자 번호 목록 -->
 					<div class="mb-3">
 						<label class="col-form-label">수신자</label>
 
 						<div class="border rounded p-2">
 							<div class="row">
 								<div class="col-12 mb-2 d-flex justify-content-between align-items-center">
-									<strong>선택된 회원 (<?php echo count($selected_members); ?>명)</strong>
+									<strong>선택된 회원 (<span id="receiverCount"><?php echo count($selected_members); ?></span>명)</strong>
 									<div>
-									<a class="btn btn-xs btn-danger"><i class="bi bi-x-square"></i> 전체삭제</a>
-										<a class="btn btn-xs btn-primary"><i class="bi bi-bookmark-check"></i> 내 주소록에 저장</a>
-									<a class="btn btn-xs btn-success" id="popup-edit"><i class="bi bi-pencil-square"></i> 전체편집</a>
+										<a class="btn btn-xs btn-danger" id="btn-remove-all"><i class="bi bi-x-square"></i> 전체삭제</a>
+										<a class="btn btn-xs btn-primary" id="btn-save-addressbook"><i class="bi bi-bookmark-check"></i> 내 주소록에 저장</a>
+										<a class="btn btn-xs btn-success" id="popup-edit"><i class="bi bi-pencil-square"></i> 전체편집</a>
 									</div>
 								</div>
 							</div>
-							<?php if (empty($selected_members)): ?>
-								<div class="text-muted">선택된 회원이 없습니다.</div>
-							<?php else: ?>
+
 							<div class="send-table">
 								<table class="table table-striped">
 									<thead>
@@ -104,29 +102,31 @@
 										<th scope="col">삭제</th>
 									</tr>
 									</thead>
-									<tbody  id="receiverList">
-									<?php foreach ($selected_members as $member): ?>
-										<tr class="receiver-item"
-											 data-member-idx="<?php echo $member['member_idx']; ?>"
-											 data-phone="<?php echo $member['member_phone']; ?>"
-											 data-name="<?php echo htmlspecialchars($member['member_name']); ?>">
-
+									<tbody id="receiverList">
+									<?php if (empty($selected_members)): ?>
+										<tr class="empty-message">
+											<td colspan="7" class="text-center text-muted">선택된 회원이 없습니다.</td>
+										</tr>
+									<?php else: ?>
+										<?php foreach ($selected_members as $member): ?>
+											<tr class="receiver-item"
+												data-member-idx="<?php echo $member['member_idx']; ?>"
+												data-phone="<?php echo $member['member_phone']; ?>"
+												data-name="<?php echo htmlspecialchars($member['member_name']); ?>">
 												<td><?php echo htmlspecialchars($member['member_name']); ?></td>
-											<td></td>
+												<td></td>
 												<td><?php echo $member['member_phone']; ?></td>
 												<td><?php echo htmlspecialchars($member['area_name']); ?></td>
-											<td></td>
-											<td></td>
+												<td></td>
+												<td></td>
 												<td><a class="remove-receiver"><i class="bi bi-x-lg"></i></a></td>
-
-										</tr>
-									<?php endforeach; ?>
+											</tr>
+										<?php endforeach; ?>
+									<?php endif; ?>
 									</tbody>
 								</table>
 							</div>
-							<?php endif; ?>
 						</div>
-
 					</div>
 
 
@@ -305,24 +305,7 @@
 										</tr>
 										</thead>
 										<tbody>
-										<tr>
-											<td>2025.09.11 34:33:22</td>
-											<td>02-1234-6678</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-warning">내용확인</a></td>
-										</tr>
-										<tr>
-											<td>2025.09.11 34:33:22</td>
-											<td>02-1234-6678</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-warning">내용확인</a></td>
-										</tr>
-										<tr>
-											<td>2025.09.11 34:33:22</td>
-											<td>02-1234-6678</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-warning">내용확인</a></td>
-										</tr>
+										<!-- JavaScript로 동적 생성 -->
 										</tbody>
 									</table>
 
@@ -342,24 +325,7 @@
 										</tr>
 										</thead>
 										<tbody>
-										<tr>
-											<td>7월 제대예정자</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-primary">적용</a></td>
-											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
-										</tr>
-										<tr>
-											<td>감사인사그룹</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-primary">적용</a></td>
-											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
-										</tr>
-										<tr>
-											<td>5월 생일자</td>
-											<td>김길동 외 47명</td>
-											<td><a class="btn btn-xs btn-primary">적용</a></td>
-											<td><a class="btn btn-xs btn-outline-danger">삭제</a></td>
-										</tr>
+										<!-- JavaScript로 동적 생성 -->
 										</tbody>
 									</table>
 

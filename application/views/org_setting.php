@@ -175,25 +175,25 @@
 							<!-- 직위/직분, 직책, 타임라인 설정 추가 -->
 							<div class="row mb-3">
 								<div class="col-md-12 mb-3">
-									<label for="position_names" class="form-label">직위/직분 호칭</label>
+									<label for="position_names" class="form-label">직위/직분 호칭</label><small class="text-warning"> * 쉼표로 구분</small>
 									<select class="form-select" id="position_names" name="position_names[]" multiple>
 										<!-- JavaScript로 기존 데이터 로드 -->
 									</select>
-									<div class="form-text">예: 장로, 권사, 집사, 평신도 등</div>
+									<div class="form-text">예: 이병, 병장, 대리, 과장, 장로, 권사, 집사 등</div>
 								</div>
 								<div class="col-md-12 mb-3">
-									<label for="duty_names" class="form-label">직책(그룹직책) 호칭</label>
+									<label for="duty_names" class="form-label">직책(그룹직책) 호칭</label><small class="text-warning"> * 쉼표로 구분</small>
 									<select class="form-select" id="duty_names" name="duty_names[]" multiple>
 										<!-- JavaScript로 기존 데이터 로드 -->
 									</select>
-									<div class="form-text">예: 구역장, 조장, 팀장, 총무 등</div>
+									<div class="form-text">예: 반장, 회장, 조장, 팀장, 총무 등</div>
 								</div>
 								<div class="col-md-12 mb-3">
-									<label for="timeline_names" class="form-label">타임라인 호칭</label>
+									<label for="timeline_names" class="form-label">타임라인 호칭</label><small class="text-warning"> * 쉼표로 구분</small>
 									<select class="form-select" id="timeline_names" name="timeline_names[]" multiple>
 										<!-- JavaScript로 기존 데이터 로드 -->
 									</select>
-									<div class="form-text">예: 입교, 세례, 결혼, 직분임명 등</div>
+									<div class="form-text">예: 입대, 진급, 제대, 파송, 입교, 세례, 결혼, 직분임명 등</div>
 								</div>
 							</div>
 
