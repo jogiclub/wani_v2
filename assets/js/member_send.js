@@ -9,6 +9,7 @@ $(document).ready(function() {
 		handleSendMember();
 	});
 
+
 	// 체크박스 선택 변경 시 버튼 상태 업데이트
 	$(document).on('change', '.member-checkbox, #selectAllCheckbox', function() {
 		updateSendButtonState();

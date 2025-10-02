@@ -27,24 +27,22 @@ class Send extends MY_Controller
 			return;
 		}
 
-		// 선택된 회원 번호들 받기
-		$member_ids = $this->input->post('member_ids');
-		if (empty($member_ids)) {
-			$this->session->set_flashdata('error', '선택된 회원이 없습니다.');
-			redirect($_SERVER['HTTP_REFERER']);
-			return;
-		}
-
 		// 현재 조직 정보 가져오기
 		$current_org_id = $this->input->cookie('activeOrg');
 		if (!$current_org_id) {
 			$this->session->set_flashdata('error', '조직 정보를 찾을 수 없습니다.');
-			redirect($_SERVER['HTTP_REFERER']);
+			echo '<script>alert("조직을 먼저 선택해주세요."); window.close();</script>';
 			return;
 		}
 
-		// 선택된 회원들의 정보 조회
-		$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
+		// 선택된 회원 번호들 받기 (옵션)
+		$member_ids = $this->input->post('member_ids');
+		$selected_members = array();
+
+		if (!empty($member_ids)) {
+			// POST로 회원이 선택된 경우
+			$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
+		}
 
 		// 발신번호 목록 조회 (인증 상태 포함)
 		$sender_numbers = $this->Send_model->get_sender_numbers_with_auth($current_org_id);
@@ -1300,5 +1298,100 @@ class Send extends MY_Controller
 			echo json_encode(array('success' => false, 'message' => '주소록을 찾을 수 없습니다.'));
 		}
 	}
+
+
+
+	/**
+	 * 역할: 예약발송 일괄 저장 (엑셀 업로드용)
+	 */
+	public function save_reservation_batch()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$sender_number = $this->input->post('sender_number');
+		$sender_name = $this->input->post('sender_name');
+		$reservation_list = $this->input->post('reservation_list');
+
+		if (!$org_id || !$sender_number || !$sender_name || empty($reservation_list)) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 조직 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$success_count = 0;
+		$fail_count = 0;
+		$errors = array();
+
+		foreach ($reservation_list as $item) {
+			// 메시지 타입 자동 판단 (글자 수 기준)
+			$message_length = mb_strlen($item['message_content']);
+			if ($message_length <= 70) {
+				$send_type = 'sms';
+			} else if ($message_length <= 1000) {
+				$send_type = 'lms';
+			} else {
+				$send_type = 'lms'; // 1000자 초과는 LMS로 처리
+				$item['message_content'] = mb_substr($item['message_content'], 0, 1000); // 1000자로 자르기
+			}
+
+			$receiver_list = array(
+				array(
+					'member_idx' => null,
+					'member_name' => $item['member_name'],
+					'member_phone' => $item['member_phone'],
+					'position_name' => '',
+					'area_name' => '',
+					'tmp01' => '',
+					'tmp02' => ''
+				)
+			);
+
+			$data = array(
+				'org_id' => $org_id,
+				'send_type' => $send_type,
+				'sender_number' => $sender_number,
+				'sender_name' => $sender_name,
+				'message_content' => $item['message_content'],
+				'receiver_list' => json_encode($receiver_list),
+				'receiver_count' => 1,
+				'scheduled_time' => date('Y-m-d H:i:s', strtotime($item['scheduled_time'])),
+				'status' => 'pending',
+				'created_date' => date('Y-m-d H:i:s')
+			);
+
+			$result = $this->Send_model->save_reservation($data);
+
+			if ($result) {
+				$success_count++;
+			} else {
+				$fail_count++;
+				$errors[] = $item['member_name'] . '(' . $item['member_phone'] . ')';
+			}
+		}
+
+		$message = "총 {$success_count}건 등록 완료";
+		if ($fail_count > 0) {
+			$message .= ", {$fail_count}건 실패";
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'message' => $message,
+			'success_count' => $success_count,
+			'fail_count' => $fail_count,
+			'errors' => $errors
+		));
+	}
+
+
+
 
 }

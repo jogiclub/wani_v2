@@ -22,9 +22,6 @@
 					<button type="submit" class="btn btn-primary">
 						<i class="bi bi-check-circle"></i> 저장
 					</button>
-					<button type="button" class="btn btn-secondary" id="resetForm">
-						<i class="bi bi-arrow-clockwise"></i> 초기화
-					</button>
 				</div>
 			</div>
 		</div>

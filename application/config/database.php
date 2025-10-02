@@ -75,9 +75,9 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 //	'dsn'	=> '',
-	'hostname' => 'localhost',
-	'username' => 'wani',
-	'password' => '!wani00',
+	'hostname' => 'wani-db.cpkm6uk4ip5g.ap-northeast-2.rds.amazonaws.com',
+	'username' => 'jogiclub',
+	'password' => '!Inpion00',
 	'database' => 'wani',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',

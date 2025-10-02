@@ -5,6 +5,7 @@
       <sshConfig authType="PASSWORD" connectionConfig="{&quot;serverAliveInterval&quot;:300}" host="115.68.218.42" id="ac475c95-9ef0-4bf1-a397-e26f50f626da" port="22" customName="webhows" nameFormat="CUSTOM" username="root" useOpenSSHConfig="true">
         <option name="customName" value="webhows" />
       </sshConfig>
+      <sshConfig host="15.165.34.150" id="96100f60-e9cb-4072-8f1c-3c5f5b7da7f9" keyPath="C:\Users\정충상\Downloads\wani-web.ppk" port="22" nameFormat="DESCRIPTIVE" username="ubuntu" useOpenSSHConfig="true" />
     </configs>
   </component>
 </project>

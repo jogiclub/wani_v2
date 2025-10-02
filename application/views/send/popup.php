@@ -290,9 +290,10 @@
 										</tbody>
 									</table>
 								</div>
+								<!-- 예약 발송 목록 탭의 버튼 수정 (205번째 줄 근처) -->
 								<div class="tab-pane fade" id="reservation-tab-pane" role="tabpanel" aria-labelledby="reservation-tab" tabindex="0">
 									<div class="d-flex justify-content-end my-2">
-										<a class="btn btn-sm btn-outline-success">엑셀로 예약발송 추가</a>
+										<a class="btn btn-sm btn-outline-success" id="btnExcelReservationUpload">엑셀로 예약발송 추가</a>
 									</div>
 									<table class="table">
 										<thead>
@@ -635,8 +636,49 @@
 	</div>
 </div>
 
-<?php include APPPATH . 'views/footer.php'; ?>
+
+<!-- 엑셀 예약발송 업로드 Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="excelReservationOffcanvas" aria-labelledby="excelReservationOffcanvasLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="excelReservationOffcanvasLabel">엑셀로 예약발송 추가</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div class="mb-3">
+			<p>아래의 엑셀 서식을 다운 받아 파일을 업로드하면 예약문자 발송이 가능합니다.</p>
+			<div class="d-grid gap-2 mb-3">
+				<button type="button" class="btn btn-success" id="btnDownloadReservationTemplate">
+					<i class="bi bi-file-earmark-spreadsheet"></i> 엑셀 서식 다운로드
+				</button>
+			</div>
+		</div>
+
+		<div class="mb-3">
+			<label for="reservationExcelFile" class="form-label">엑셀 파일 선택</label>
+			<input type="file" class="form-control" id="reservationExcelFile" accept=".csv">
+			<div class="form-text">발송예정일시, 이름, 연락처, 메시지가 포함된 엑셀 파일을 업로드하세요.</div>
+		</div>
+
+		<div class="alert alert-info" role="alert">
+			<small>
+				<i class="bi bi-info-circle"></i> 주의사항<br>
+				- 발송예정일시는 현재시간 이후여야 합니다.<br>
+				- 엑셀 서식의 양식을 지켜주세요.
+			</small>
+		</div>
+
+		<div class="d-grid gap-2">
+			<button type="button" class="btn btn-primary" id="btnUploadReservationExcel">
+				<i class="bi bi-upload"></i> 저장
+			</button>
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">닫기</button>
+		</div>
+	</div>
+</div>
+
+<?php include APPPATH . 'views/nofooter.php'; ?>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 	const SEND_ORG_ID = '<?php echo $org_id; ?>';
 </script>

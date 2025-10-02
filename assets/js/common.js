@@ -108,6 +108,13 @@ function showConfirmModal(title, message, confirmCallback, cancelCallback = null
 	}
 }
 
+function getCookie(name) {
+	const value = `; ${document.cookie}`;
+	const parts = value.split(`; ${name}=`);
+	if (parts.length === 2) return parts.pop().split(';').shift();
+	return null;
+}
+
 $(document).ready(function() {
 	// 통합 조직 선택 이벤트 처리 (.org-selector와 .org-selector-item 모두 처리)
 	$(document).on('click', '.org-selector, .org-selector-item', function(e) {
@@ -209,4 +216,38 @@ $(document).ready(function() {
 	} catch (error) {
 		console.warn('sessionStorage 확인 실패:', error);
 	}
+
+
+	/**
+	 * 역할: 문자발송 버튼 클릭 시 팝업 열기
+	 */
+	$('#buttonSend').on('click', function(e) {
+		e.preventDefault();
+
+		// 현재 조직이 선택되어 있는지 확인
+		const currentOrgId = getCookie('activeOrg');
+
+		if (!currentOrgId) {
+			showToast('조직을 먼저 선택해주세요.', 'warning');
+			return;
+		}
+
+		// 팝업 크기 설정
+		const popupWidth = 1400;
+		const popupHeight = 900;
+		const left = (screen.width - popupWidth) / 2;
+		const top = (screen.height - popupHeight) / 2;
+
+		// 팝업 열기
+		const popup = window.open(
+			'/send/popup',
+			'sendPopup',
+			`width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
+		);
+
+		if (!popup) {
+			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
+		}
+	});
+
 });

@@ -531,8 +531,8 @@ class User_management extends My_Controller
 			// SMTP 설정
 			$config['protocol'] = 'smtp';
 			$config['smtp_host'] = 'smtp.gmail.com';
-			$config['smtp_user'] = 'jogiclub@gmail.com'; // 실제 Gmail 주소로 변경
-			$config['smtp_pass'] = 'zdlt driw epud yoym'; // Gmail 앱 비밀번호로 변경
+			$config['smtp_user'] = 'hello@webhows.com'; // 실제 Gmail 주소로 변경
+			$config['smtp_pass'] = 'hzeh kaik dyuh utty'; // Gmail 앱 비밀번호로 변경
 			$config['smtp_port'] = 587;
 			$config['smtp_crypto'] = 'tls';
 			$config['charset'] = 'utf-8';
@@ -546,7 +546,7 @@ class User_management extends My_Controller
 			// 초대 링크 생성
 			$invite_url = base_url('login/invite/' . $invite_token);
 
-			$this->email->from('your-email@gmail.com', '왔니'); // 실제 이메일로 변경
+			$this->email->from('hello@webhows.com', '왔니'); // 실제 이메일로 변경
 			$this->email->to($invite_email);
 			$this->email->subject($org_info['org_name'] . ' 조직 초대');
 

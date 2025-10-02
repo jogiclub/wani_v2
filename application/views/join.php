@@ -84,6 +84,6 @@
 	</div>
 </div>
 
-<?php $this->load->view('footer'); ?>
+<?php $this->load->view('nofooter'); ?>
 
 <script src="/assets/js/login.js?<?php echo WB_VERSION; ?>"></script>

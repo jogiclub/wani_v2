@@ -28,8 +28,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/themes/base/jquery-ui.min.css" integrity="sha512-8PjjnSP8Bw/WNPxF6wkklW6qlQJdWJc/3w/ZQPvZ/1bjVDkrrSqLe9mfPYrMxtnzsXFPc434+u4FHLnLjXTSsg==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
-<!--    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">-->
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-std-dynamic-subset.min.css" />
 
 <link rel="stylesheet" href="/assets/css/common.css?<?php echo WB_VERSION; ?>">
 
@@ -85,12 +84,12 @@
 			</ul>
 		</div>
 	</div>
-	<div class="header-end col-xl-6 col-2 d-flex justify-content-end px-3 gap-3 align-items-center">
+	<div class="header-end col-xl-6 col-2 d-flex justify-content-end px-3 gap-2 align-items-center">
 		<div id="navbarSearch" class="navbar-search collapse">
 			<input class="form-control rounded-0 border-0" type="text" placeholder="Search" aria-label="Search">
 		</div>
 
-		<div id="navbarProfile" class="profile-area d-xl-flex align-items-center gap-3 d-none">
+		<div id="navbarProfile" class="profile-area d-xl-flex align-items-center d-none">
 			<img src="<?php if ($user['user_profile_image']) {echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle profile-img" width="40" height="40">
 			<div class="profile-name">
 				<span><a class="dropdown-item" href="#"><?php if ($user['user_name']) {echo $user['user_name'];} ?></a></span>
@@ -98,18 +97,24 @@
 			</div>
 		</div>
 
-		<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative bg-warning me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
-			<a class="" type="button" data-bs-toggle="offcanvas" data-bs-target="#msgSidebar" aria-controls="msgSidebar">
-				<i class="bi bi-bell-fill fs-5 text-white"></i>
-			</a>
-			<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
+		<div id="navbarSend" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-secondary" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+			<a class="" type="button" id="buttonSend"><i class="bi bi-chat-text-fill fs-5 text-secondary"></i></a>
+		</div>
+
+
+		<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
+			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative bg-warning me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+				<a class="" type="button" data-bs-toggle="offcanvas" data-bs-target="#msgSidebar" aria-controls="msgSidebar"><i class="bi bi-bell-fill fs-5 text-white"></i></a>
 				<small class="badge bg-danger rounded-pill position-absolute" style="left: 27px; top:-6px; font-size: 12px" id="unread-message-badge">
 					<?php echo $unread_message_count; ?>
 				</small>
-			<?php else: ?>
-				<small class="badge bg-danger rounded-pill position-absolute" style="left: 27px; top:-6px; font-size: 12px; display: none;" id="unread-message-badge">0</small>
-			<?php endif; ?>
-		</div>
+			</div>
+		<?php else: ?>
+			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-secondary me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+				<a class="" type="button" data-bs-toggle="offcanvas" data-bs-target="#msgSidebar" aria-controls="msgSidebar"><i class="bi bi-bell-fill fs-5 text-secondary"></i></a>
+			</div>
+		<?php endif; ?>
+
 
 		<!-- 기존 헤더 내용 중 사용자 정보 드롭다운 부분에 추가 -->
 		<?php if ($this->session->userdata('is_admin_login')): ?>

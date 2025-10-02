@@ -42,6 +42,6 @@
 	</div>
 </div>
 
-<?php include APPPATH . 'views/footer.php'; ?>
+<?php include APPPATH . 'views/nofooter.php'; ?>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/bulk_edit_popup.js?<?php echo WB_VERSION; ?>"></script>

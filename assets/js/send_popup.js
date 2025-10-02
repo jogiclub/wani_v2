@@ -121,11 +121,11 @@ $(document).ready(function() {
 	// 전체편집 버튼 클릭
 	$('#popup-edit').on('click', function(e) {
 		e.preventDefault();
-		const totalCount = $('#receiverList tr.receiver-item').length;
-		if (totalCount === 0) {
-			showToast('편집할 수신자가 없습니다.', 'warning');
-			return;
-		}
+		// const totalCount = $('#receiverList tr.receiver-item').length;
+		// if (totalCount === 0) {
+		// 	showToast('편집할 수신자가 없습니다.', 'warning');
+		// 	return;
+		// }
 		openBulkEditModal();
 	});
 
@@ -264,6 +264,25 @@ $(document).ready(function() {
 		e.preventDefault();
 		downloadAddressBookExcel();
 	});
+
+
+	// 엑셀로 예약발송 추가 버튼
+	$('#btnExcelReservationUpload').on('click', function(e) {
+		e.preventDefault();
+		const offcanvas = new bootstrap.Offcanvas(document.getElementById('excelReservationOffcanvas'));
+		offcanvas.show();
+	});
+
+	// 엑셀 서식 다운로드
+	$('#btnDownloadReservationTemplate').on('click', function() {
+		downloadReservationTemplate();
+	});
+
+	// 엑셀 업로드 저장
+	$('#btnUploadReservationExcel').on('click', function() {
+		uploadReservationExcel();
+	});
+
 
 });
 
@@ -2450,4 +2469,285 @@ function changeHistoryMonth(offset) {
 	$('#historyMonth').val(month);
 
 	loadSendHistory();
+}
+
+
+/**
+ * 역할: 예약발송 엑셀 서식 다운로드
+ */
+function downloadReservationTemplate() {
+	const headers = ['발송예정일시', '이름', '연락처', '메시지'];
+	const sampleData = [
+		['2025-12-31 09:00:00', '홍길동', '010-1234-5678', '새해 복 많이 받으세요!'],
+		['2025-12-31 09:00:00', '김철수', '010-2345-6789', '새해 복 많이 받으세요!']
+	];
+
+	let csv = '\uFEFF'; // BOM for UTF-8
+	csv += headers.join(',') + '\n';
+
+	sampleData.forEach(function(row) {
+		const values = row.map(function(value) {
+			if (value.indexOf(',') > -1 || value.indexOf('"') > -1) {
+				return '"' + value.replace(/"/g, '""') + '"';
+			}
+			return value;
+		});
+		csv += values.join(',') + '\n';
+	});
+
+	const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+	const link = document.createElement('a');
+	const url = URL.createObjectURL(blob);
+	const fileName = '예약발송_양식_' + new Date().toISOString().slice(0, 10) + '.csv';
+
+	link.setAttribute('href', url);
+	link.setAttribute('download', fileName);
+	link.style.visibility = 'hidden';
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+
+	showToast('엑셀 서식이 다운로드되었습니다.', 'success');
+}
+
+/**
+ * 역할: 예약발송 엑셀 파일 업로드 및 검증
+ */
+function uploadReservationExcel() {
+	const fileInput = $('#reservationExcelFile')[0];
+
+	if (!fileInput.files || fileInput.files.length === 0) {
+		showToast('엑셀 파일을 선택해주세요.', 'warning');
+		return;
+	}
+
+	const file = fileInput.files[0];
+	const fileExtension = file.name.split('.').pop().toLowerCase();
+
+	if (fileExtension !== 'xlsx' && fileExtension !== 'xls' && fileExtension !== 'csv') {
+		showToast('엑셀 파일(.xlsx, .xls, .csv)만 업로드 가능합니다.', 'error');
+		return;
+	}
+
+	showToast('파일을 처리하고 있습니다...', 'info');
+
+	const reader = new FileReader();
+
+	reader.onload = function(e) {
+		try {
+			let parsedData;
+
+			if (fileExtension === 'csv') {
+				parsedData = parseCSV(e.target.result);
+			} else {
+				parsedData = parseExcel(e.target.result);
+			}
+
+			if (parsedData.length === 0) {
+				showToast('파일에 데이터가 없습니다.', 'error');
+				return;
+			}
+
+			processReservationData(parsedData);
+
+		} catch (error) {
+			console.error('파일 처리 오류:', error);
+			showToast('파일 처리 중 오류가 발생했습니다.', 'error');
+		}
+	};
+
+	reader.onerror = function() {
+		showToast('파일 읽기에 실패했습니다.', 'error');
+	};
+
+	if (fileExtension === 'csv') {
+		reader.readAsText(file);
+	} else {
+		reader.readAsArrayBuffer(file);
+	}
+}
+
+/**
+ * 역할: CSV 파일 파싱
+ */
+function parseCSV(csvText) {
+	const lines = csvText.split('\n');
+	const result = [];
+
+	// 헤더 제거 (첫 번째 줄)
+	for (let i = 1; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (!line) continue;
+
+		const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+
+		if (values.length >= 4) {
+			result.push({
+				scheduled_time: values[0],
+				member_name: values[1],
+				member_phone: values[2],
+				message_content: values[3]
+			});
+		}
+	}
+
+	return result;
+}
+
+/**
+ * 역할: Excel 파일 파싱 (XLSX)
+ */
+function parseExcel(arrayBuffer) {
+	const data = new Uint8Array(arrayBuffer);
+	const workbook = XLSX.read(data, { type: 'array' });
+	const firstSheetName = workbook.SheetNames[0];
+	const worksheet = workbook.Sheets[firstSheetName];
+	const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+	const result = [];
+
+	// 헤더 제거 (첫 번째 줄)
+	for (let i = 1; i < jsonData.length; i++) {
+		const row = jsonData[i];
+
+		if (row.length >= 4 && row[0] && row[1] && row[2] && row[3]) {
+			result.push({
+				scheduled_time: row[0],
+				member_name: row[1],
+				member_phone: String(row[2]).replace(/[^0-9-]/g, ''),
+				message_content: row[3]
+			});
+		}
+	}
+
+	return result;
+}
+
+/**
+ * 역할: 예약발송 데이터 검증 및 저장
+ */
+function processReservationData(data) {
+	const now = new Date();
+	const phoneNumbers = new Set();
+	const errors = [];
+	const validData = [];
+
+	data.forEach(function(item, index) {
+		const rowNum = index + 2; // 엑셀 행 번호 (헤더 포함)
+
+		// 발송예정일시 검증
+		const scheduledTime = new Date(item.scheduled_time);
+
+		if (isNaN(scheduledTime.getTime())) {
+			errors.push(`${rowNum}행: 발송예정일시 형식이 올바르지 않습니다.`);
+			return;
+		}
+
+		if (scheduledTime <= now) {
+			errors.push(`${rowNum}행: 발송예정일시가 현재시간보다 과거입니다.`);
+			return;
+		}
+
+
+		// 휴대폰번호 형식 검증
+		const phonePattern = /^01[0-9]-?\d{3,4}-?\d{4}$/;
+		if (!phonePattern.test(item.member_phone)) {
+			errors.push(`${rowNum}행: 휴대폰번호 형식이 올바르지 않습니다.`);
+			return;
+		}
+
+		// 이름 검증
+		if (!item.member_name || item.member_name.trim() === '') {
+			errors.push(`${rowNum}행: 이름이 비어있습니다.`);
+			return;
+		}
+
+		// 메시지 검증
+		if (!item.message_content || item.message_content.trim() === '') {
+			errors.push(`${rowNum}행: 메시지가 비어있습니다.`);
+			return;
+		}
+
+		phoneNumbers.add(item.member_phone);
+		validData.push(item);
+	});
+
+	if (errors.length > 0) {
+		const errorMessage = '다음 오류를 수정해주세요:\n\n' + errors.slice(0, 5).join('\n');
+		if (errors.length > 5) {
+			showToast(errorMessage + `\n\n외 ${errors.length - 5}건`, 'error');
+		} else {
+			showToast(errorMessage, 'error');
+		}
+		return;
+	}
+
+	if (validData.length === 0) {
+		showToast('처리할 데이터가 없습니다.', 'warning');
+		return;
+	}
+
+	// 서버로 데이터 전송
+	saveReservationBatch(validData);
+}
+
+/**
+ * 역할: 예약발송 일괄 저장
+ */
+function saveReservationBatch(reservationList) {
+	const senderNumber = $('#senderSelect').val();
+	const senderName = $('#senderSelect option:selected').data('name');
+
+	if (!senderNumber) {
+		showToast('발신번호를 선택해주세요.', 'warning');
+		return;
+	}
+
+	showConfirmModal(
+		'예약발송 일괄 등록',
+		`${reservationList.length}건의 예약발송을 등록하시겠습니까?`,
+		function() {
+			$.ajax({
+				url: '/send/save_reservation_batch',
+				type: 'POST',
+				data: {
+					org_id: SEND_ORG_ID,
+					sender_number: senderNumber,
+					sender_name: senderName,
+					reservation_list: reservationList
+				},
+				dataType: 'json',
+				beforeSend: function() {
+					$('#btnUploadReservationExcel').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> 처리중...');
+				},
+				success: function(response) {
+					if (response.success) {
+						showToast(response.message, 'success');
+
+						// Offcanvas 닫기
+						const offcanvasEl = document.getElementById('excelReservationOffcanvas');
+						const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+						if (offcanvas) {
+							offcanvas.hide();
+						}
+
+						// 파일 입력 초기화
+						$('#reservationExcelFile').val('');
+
+						// 예약발송 목록 새로고침
+						$('#reservation-tab').tab('show');
+						loadReservationList();
+					} else {
+						showToast(response.message, 'error');
+					}
+				},
+				error: function() {
+					showToast('예약발송 등록 중 오류가 발생했습니다.', 'error');
+				},
+				complete: function() {
+					$('#btnUploadReservationExcel').prop('disabled', false).html('<i class="bi bi-upload"></i> 저장');
+				}
+			});
+		}
+	);
 }
