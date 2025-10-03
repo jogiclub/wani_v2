@@ -89,8 +89,7 @@
 
 							<div class="mb-3">
 								<label for="org_desc" class="form-label">조직 설명</label>
-								<textarea class="form-control" id="org_desc" name="org_desc" rows="3"
-										  placeholder="조직에 대한 설명을 입력하세요..."><?php echo htmlspecialchars($selected_org_detail['org_desc'] ?? ''); ?></textarea>
+								<textarea class="form-control" id="org_desc" name="org_desc" rows="3" placeholder="조직에 대한 설명을 입력하세요..."><?php echo htmlspecialchars($selected_org_detail['org_desc'] ?? ''); ?></textarea>
 							</div>
 
 							<!-- 최고관리자 정보 -->

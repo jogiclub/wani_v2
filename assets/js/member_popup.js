@@ -196,7 +196,7 @@ function initBulkEditGrid(data, originalColumns) {
 		editable: true,
 		strNoRows: '회원 정보가 없습니다',
 		editModel: {
-			clicksToEdit: 1,
+			clicksToEdit: 2,
 			saveKey: ''
 		},
 		selectionModel: {

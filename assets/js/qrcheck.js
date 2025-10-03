@@ -987,7 +987,7 @@ function initializePastoralGrid() {
 		columnBorders: true,
 		editable: true,
 		editModel: {
-			clicksToEdit: 1,
+			clicksToEdit: 2,
 			saveKey: $.ui.keyCode.ENTER
 		},
 		complete: function() {

@@ -312,7 +312,7 @@ $(document).ready(function () {
 		}
 	});
 
-	javascript	// 아이콘 파일 선택 시 미리보기 (새로운 코드 블록)
+	// 아이콘 파일 선택 시 미리보기 (새로운 코드 블록)
 	$('#orgIconFile').on('change', function () {
 		const file = this.files[0];
 		if (file) {

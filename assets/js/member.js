@@ -3251,10 +3251,10 @@ $(document).ready(function () {
 			// 현재 그리드의 모든 데이터 가져오기 (원본 그대로)
 			const gridData = memberGrid.pqGrid("option", "dataModel.data");
 
-			if (!gridData || gridData.length === 0) {
-				showToast('편집할 데이터가 없습니다.', 'info');
-				return;
-			}
+			// if (!gridData || gridData.length === 0) {
+			// 	showToast('편집할 데이터가 없습니다.', 'info');
+			// 	return;
+			// }
 
 			// 현재 그리드의 컬럼 모델 가져오기
 			const colModel = memberGrid.pqGrid("option", "colModel");

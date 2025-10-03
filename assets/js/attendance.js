@@ -1162,7 +1162,7 @@ $(document).ready(function () {
 			columnBorders: true,
 			editable: true,
 			editModel: {
-				clicksToEdit: 1,
+				clicksToEdit: 2,
 				saveKey: $.ui.keyCode.ENTER
 			},
 			// 그리드 완성 후 이벤트 바인딩
