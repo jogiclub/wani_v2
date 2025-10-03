@@ -698,4 +698,154 @@ class Mng_org extends CI_Controller
 		));
 	}
 
+
+	/**
+	 * 조직 대량 편집 팝업 페이지
+	 */
+	public function org_popup()
+	{
+		$data['user'] = $this->User_model->get_user_by_id($this->session->userdata('user_id'));
+
+		// 카테고리 목록 조회 (선택박스용)
+		$data['categories'] = $this->Org_category_model->get_categories_for_select();
+
+		$this->load->view('mng/org_popup', $data);
+	}
+
+	/**
+	 * 조직 대량 업데이트 (AJAX)
+	 */
+	public function bulk_update_orgs()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$json_data = $this->input->raw_input_stream;
+		$request_data = json_decode($json_data, true);
+
+		if (!isset($request_data['orgs']) || !is_array($request_data['orgs'])) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '유효하지 않은 데이터 형식입니다'
+			));
+			return;
+		}
+
+		$orgs = $request_data['orgs'];
+
+		if (empty($orgs)) {
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '저장할 데이터가 없습니다'
+			));
+			return;
+		}
+
+		try {
+			$this->db->trans_start();
+
+			$update_count = 0;
+			$insert_count = 0;
+			$error_count = 0;
+
+			foreach ($orgs as $org_data) {
+				// 조직명 필수 체크
+				if (empty($org_data['org_name'])) {
+					$error_count++;
+					continue;
+				}
+
+				// 데이터 정리
+				$data = array(
+					'org_name' => trim($org_data['org_name']),
+					'org_type' => !empty($org_data['org_type']) ? $org_data['org_type'] : 'church',
+					'org_desc' => !empty($org_data['org_desc']) ? trim($org_data['org_desc']) : null,
+					'org_rep' => !empty($org_data['org_rep']) ? trim($org_data['org_rep']) : null,
+					'org_manager' => !empty($org_data['org_manager']) ? trim($org_data['org_manager']) : null,
+					'org_phone' => !empty($org_data['org_phone']) ? trim($org_data['org_phone']) : null,
+					'org_address_postno' => !empty($org_data['org_address_postno']) ? trim($org_data['org_address_postno']) : null,
+					'org_address' => !empty($org_data['org_address']) ? trim($org_data['org_address']) : null,
+					'org_address_detail' => !empty($org_data['org_address_detail']) ? trim($org_data['org_address_detail']) : null,
+					'category_idx' => !empty($org_data['category_idx']) ? $org_data['category_idx'] : null
+				);
+
+				// 태그 처리
+				if (!empty($org_data['org_tag'])) {
+					$tags = $org_data['org_tag'];
+					if (is_string($tags)) {
+						$tags = json_decode($tags, true);
+					}
+					if (is_array($tags) && count($tags) > 0) {
+						$data['org_tag'] = json_encode($tags);
+					} else {
+						$data['org_tag'] = null;
+					}
+				} else {
+					$data['org_tag'] = null;
+				}
+
+				// org_id가 있으면 업데이트, 없으면 신규 생성
+				if (!empty($org_data['org_id'])) {
+					// 기존 조직 업데이트
+					$org_id = $org_data['org_id'];
+					$result = $this->Org_model->update_org($org_id, $data);
+
+					if ($result) {
+						$update_count++;
+					} else {
+						$error_count++;
+					}
+				} else {
+					// 새 조직 생성
+					$data['org_code'] = $this->Org_model->generate_org_code();
+					$data['regi_date'] = date('Y-m-d H:i:s');
+
+					$new_org_id = $this->Org_model->create_org($data);
+
+					if ($new_org_id) {
+						$insert_count++;
+					} else {
+						$error_count++;
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				throw new Exception('트랜잭션 실패');
+			}
+
+			$message = sprintf(
+				'저장 완료: 업데이트 %d개, 신규 추가 %d개',
+				$update_count,
+				$insert_count
+			);
+
+			if ($error_count > 0) {
+				$message .= sprintf(', 실패 %d개', $error_count);
+			}
+
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => true,
+				'message' => $message,
+				'update_count' => $update_count,
+				'insert_count' => $insert_count,
+				'error_count' => $error_count
+			));
+
+		} catch (Exception $e) {
+			log_message('error', '조직 대량 업데이트 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '저장 중 오류가 발생했습니다: ' . $e->getMessage()
+			));
+		}
+	}
+
 }

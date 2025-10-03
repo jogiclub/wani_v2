@@ -535,10 +535,9 @@
 				dataIndx: 'org_desc',
 				title: '조직설명',
 				width: 200,
-				align: 'center',
 				editable: false,
 				render: function(ui) {
-					return getOrgTypeText(ui.cellData);
+					return ui.cellData ? ui.cellData : '<span class="text-muted">-</span>';
 				}
 			},
 			{
@@ -548,7 +547,7 @@
 				align: 'center',
 				editable: false,
 				render: function(ui) {
-					return getOrgTypeText(ui.cellData);
+					return ui.cellData ? ui.cellData : '<span class="text-muted">-</span>';
 				}
 			},
 			{
@@ -558,17 +557,17 @@
 				align: 'center',
 				editable: false,
 				render: function(ui) {
-					return getOrgTypeText(ui.cellData);
+					return ui.cellData ? ui.cellData : '<span class="text-muted">-</span>';
 				}
 			},
 			{
 				dataIndx: 'org_phone',
 				title: '연락처',
-				width: 80,
+				width: 120,
 				align: 'center',
 				editable: false,
 				render: function(ui) {
-					return getOrgTypeText(ui.cellData);
+					return ui.cellData ? ui.cellData : '<span class="text-muted">-</span>';
 				}
 			},
 			{
@@ -578,27 +577,25 @@
 				align: 'center',
 				editable: false,
 				render: function(ui) {
-					return getOrgTypeText(ui.cellData);
+					return ui.cellData ? ui.cellData : '<span class="text-muted">-</span>';
 				}
 			},
 			{
 				dataIndx: 'org_address',
 				title: '주소',
 				width: 150,
-				align: 'center',
 				editable: false,
 				render: function(ui) {
-					return getOrgTypeText(ui.cellData);
+					return ui.cellData ? ui.cellData : '<span class="text-muted">-</span>';
 				}
 			},
 			{
 				dataIndx: 'org_address_detail',
 				title: '상세주소',
 				width: 150,
-				align: 'center',
 				editable: false,
 				render: function(ui) {
-					return getOrgTypeText(ui.cellData);
+					return ui.cellData ? ui.cellData : '<span class="text-muted">-</span>';
 				}
 			},
 			{
@@ -1201,22 +1198,25 @@
 
 
 	/**
-	 * 전역 이벤트 바인딩 (기존 함수에 추가)
+	 * 전역 이벤트 바인딩 함수에 추가
 	 */
 	function bindGlobalEvents() {
 		$('#btnDeleteOrg').on('click', showDeleteModal);
 		$('#confirmDeleteOrgBtn').on('click', executeDelete);
 		$('#saveOrgBtn').on('click', saveOrgInfo);
 
-		// 조직 이동 이벤트 - 데스크톱과 모바일 버튼 모두
+		// 조직 이동 이벤트
 		$('#btnMoveOrg, #btnMoveOrgMobile').on('click', showMoveModal);
 		$('#confirmMoveOrgBtn').on('click', executeMoveOrgs);
 
-		// 삭제 이벤트도 모바일 버튼 추가
+		// 삭제 이벤트
 		$('#btnDeleteOrgMobile').on('click', showDeleteModal);
 
-		// 바로가기 버튼 이벤트 추가
+		// 바로가기 버튼 이벤트
 		$('#orgDashboardBtn').on('click', handleDashboardButtonClick);
+
+		// 엑셀편집 버튼 이벤트 추가
+		$('#btnExcelEdit').on('click', openExcelEditPopup);
 
 		$(window).on('resize', debounce(function() {
 			if (orgGrid) {
@@ -1229,6 +1229,112 @@
 		}, 250));
 	}
 
+	/**
+	 * 엑셀편집 팝업 열기
+	 */
+	function openExcelEditPopup() {
+		if (!orgGrid) {
+			showToast('그리드가 초기화되지 않았습니다', 'error');
+			return;
+		}
+
+		try {
+			// 현재 그리드 데이터 가져오기
+			const gridData = orgGrid.pqGrid('option', 'dataModel.data');
+
+			if (!gridData || gridData.length === 0) {
+				showToast('편집할 조직 데이터가 없습니다', 'warning');
+				return;
+			}
+
+			// 컬럼 모델 가져오기
+			const colModel = orgGrid.pqGrid('option', 'colModel');
+
+			// 세션 스토리지에 데이터 저장
+			sessionStorage.setItem('bulkEditOrgData', JSON.stringify(gridData));
+			sessionStorage.setItem('bulkEditOrgColumns', JSON.stringify(colModel));
+			sessionStorage.setItem('bulkEditOrgCategoryIdx', selectedCategoryIdx || '');
+
+			// 팝업 열기
+			const popupWidth = 1400;
+			const popupHeight = 800;
+			const left = (screen.width - popupWidth) / 2;
+			const top = (screen.height - popupHeight) / 2;
+
+			const popup = window.open(
+				'/mng/mng_org/org_popup',
+				'orgBulkEdit',
+				`width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
+			);
+
+			if (!popup) {
+				showToast('팝업 차단을 해제해주세요', 'warning');
+				return;
+			}
+
+			// 팝업에서 메시지 수신 대기
+			window.addEventListener('message', handleBulkEditMessage);
+
+		} catch(error) {
+			console.error('엑셀편집 팝업 열기 오류:', error);
+			showToast('팝업을 열 수 없습니다', 'error');
+		}
+	}
+
+	/**
+	 * 팝업에서 전송된 메시지 처리
+	 */
+	function handleBulkEditMessage(event) {
+		if (event.data.type === 'bulkEditOrgComplete') {
+			console.log('대량 편집 완료 데이터 수신:', event.data.data);
+
+			// 서버로 데이터 전송
+			saveBulkEditData(event.data.data);
+
+			// 이벤트 리스너 제거
+			window.removeEventListener('message', handleBulkEditMessage);
+		}
+	}
+
+
+
+	/**
+	 * 대량 편집 데이터 저장
+	 */
+	function saveBulkEditData(data) {
+		if (!data || data.length === 0) {
+			showToast('저장할 데이터가 없습니다', 'warning');
+			return;
+		}
+
+		// 로딩 표시
+		showGridSpinner();
+
+		$.ajax({
+			url: '/mng/mng_org/bulk_update_orgs',
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify({ orgs: data }),
+			dataType: 'json',
+			success: function(response) {
+				hideGridSpinner();
+
+				if (response.success) {
+					showToast(response.message, 'success');
+
+					// 트리와 그리드 새로고침
+					refreshTreeAndGrid();
+				} else {
+					showToast(response.message || '저장에 실패했습니다', 'error');
+				}
+			},
+			error: function(xhr, status, error) {
+				hideGridSpinner();
+				console.error('대량 편집 저장 오류:', error);
+				showToast('저장 중 오류가 발생했습니다', 'error');
+			}
+		});
+	}
 
 	/**
 	 * 조직 이동 모달 표시

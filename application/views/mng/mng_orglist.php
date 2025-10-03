@@ -75,7 +75,7 @@ $this->load->view('mng/header');
 									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnMoveOrgMobile">선택이동</a></li>
 									<li><a class="dropdown-item d-block d-md-none" href="#" id="btnDeleteOrgMobile">선택삭제</a></li>
 									<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
-									<li><a class="dropdown-item" href="#">엑셀업로드 <span class="badge badge-sm text-bg-warning">준비중</span></a> </li>
+									<li><a class="dropdown-item" href="#" id="btnExcelEdit">엑셀편집</a></li>
 								</ul>
 							</div>
 
@@ -134,7 +134,7 @@ $this->load->view('mng/header');
 	<div class="offcanvas-header text-start">
 		<div class="d-flex align-items-center gap-2 flex-grow-1">
 			<h5 class="offcanvas-title mb-0" id="orgOffcanvasLabel">조직 정보 수정</h5>
-			<button type="button" class="btn btn-sm btn-outline-primary d-none" id="orgDashboardBtn" title="대시보드 바로가기">
+			<button type="button" class="btn btn-xs btn-primary d-none" id="orgDashboardBtn" title="대시보드 바로가기">
 				<i class="bi bi-box-arrow-up-right"></i> 바로가기
 			</button>
 		</div>

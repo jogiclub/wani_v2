@@ -142,7 +142,7 @@
 </div>
 
 <!-- 출석체크 offcanvas (pqgrid용으로 수정) -->
-<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel" style="width: 800px;">
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="static" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel" style="width: 800px;">
 	<div class="offcanvas-header text-start">
 		<h5 class="offcanvas-title" id="attendanceOffcanvasLabel"></h5>
 		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>

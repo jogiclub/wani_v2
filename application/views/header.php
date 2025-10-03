@@ -91,17 +91,25 @@
 
 		<div id="navbarProfile" class="profile-area d-xl-flex align-items-center d-none">
 			<img src="<?php if ($user['user_profile_image']) {echo $user['user_profile_image'];} else {echo '/assets/images/photo_no.png?3';} ?>" class="rounded-circle profile-img" width="40" height="40">
-			<div class="profile-name">
+			<div class="profile-name ms-2">
 				<span><a class="dropdown-item" href="#"><?php if ($user['user_name']) {echo $user['user_name'];} ?></a></span>
 				<span class="profile-mail"><a class="dropdown-item" href="#"><?php if ($user['user_mail']) {echo $user['user_mail'];} ?></a></span>
 			</div>
 		</div>
 
+		<!--관리자-->
+		<?php if ($this->session->userdata('master_yn') === 'Y'): ?>
+			<div id="navbarMng" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-danger" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+				<a href="https://wani.im/mng/" type="button" id="buttonMng"><i class="bi bi-gear-wide-connected fs-5 text-danger"></i></a>
+			</div>
+		<?php endif; ?>
+
+		<!--문자전송-->
 		<div id="navbarSend" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-secondary" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
 			<a class="" type="button" id="buttonSend"><i class="bi bi-chat-text-fill fs-5 text-secondary"></i></a>
 		</div>
 
-
+		<!--알림메시지-->
 		<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
 			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative bg-warning me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
 				<a class="" type="button" data-bs-toggle="offcanvas" data-bs-target="#msgSidebar" aria-controls="msgSidebar"><i class="bi bi-bell-fill fs-5 text-white"></i></a>
@@ -251,6 +259,21 @@ $is_master = $this->session->userdata('master_yn');
 									</a>
 								</li>
 							<?php endif; ?>
+
+
+
+							<li class="nav-item">
+								<a class="nav-link d-flex align-items-center gap-1 menu-24" href="<?php echo base_url('timeline'); ?>">
+									<i class="bi bi-clock-history"></i> 타임라인관리
+								</a>
+							</li>
+
+							<li class="nav-item">
+								<a class="nav-link d-flex align-items-center gap-1 menu-25" href="<?php echo base_url('memo'); ?>">
+									<i class="bi bi-journal-bookmark"></i> 메모관리
+								</a>
+							</li>
+							
 						</ul>
 					<?php endif; ?>
 
