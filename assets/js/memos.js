@@ -1,22 +1,21 @@
 /**
- * 역할: 타임라인 관리 화면 동작 제어
+ * 역할: 메모 관리 화면 동작 제어
  */
 
 $(document).ready(function() {
-	const baseUrl = window.timelinePageData.baseUrl;
-	const currentOrgId = window.timelinePageData.currentOrgId;
-	let timelineGrid;
-	let timelineTypes = [];
+	const baseUrl = window.memoPageData.baseUrl;
+	const currentOrgId = window.memoPageData.currentOrgId;
+	let memoGrid;
+	let memoTypes = [];
 
 	// PQGrid 초기화
 	initPQGrid();
 
-	// 타임라인 항목 로드
-	loadTimelineTypes();
+	// 메모 항목 로드
+	loadMemoTypes();
 
 	// 이벤트 바인딩
 	bindEvents();
-
 
 	/**
 	 * 역할: PQGrid 초기화 - cellClick 이벤트 추가
@@ -33,19 +32,19 @@ $(document).ready(function() {
 				editable: false,
 				menuIcon: false,
 				render: function (ui) {
-					const checkboxId = 'timeline-checkbox-' + ui.rowData.idx;
-					return '<input type="checkbox" class="timeline-checkbox" id="' + checkboxId + '" data-idx="' + ui.rowData.idx + '" />';
+					const checkboxId = 'memo-checkbox-' + ui.rowData.idx;
+					return '<input type="checkbox" class="memo-checkbox" id="' + checkboxId + '" data-idx="' + ui.rowData.idx + '" />';
 				}
 			},
 			{
 				title: '항목',
-				dataIndx: 'timeline_type',
+				dataIndx: 'memo_type',
 				dataType: 'string',
 				width: 120
 			},
 			{
 				title: '날짜',
-				dataIndx: 'timeline_date',
+				dataIndx: 'memo_date',
 				dataType: 'string',
 				width: 120,
 				render: function(ui) {
@@ -67,7 +66,7 @@ $(document).ready(function() {
 			},
 			{
 				title: '내용',
-				dataIndx: 'timeline_content',
+				dataIndx: 'memo_content',
 				dataType: 'string',
 				width: 250
 			},
@@ -121,19 +120,18 @@ $(document).ready(function() {
 			location: 'remote',
 			dataType: 'JSON',
 			method: 'POST',
-			url: baseUrl + 'timeline/get_timelines',
+			url: baseUrl + 'memos/get_memos',
 			postData: function() {
-				// 선택된 타임라인 항목들 가져오기
 				const selectedTypes = [];
 				if (!$('#searchType_all').is(':checked')) {
-					$('.timeline-type-checkbox:checked').each(function() {
+					$('.memo-type-checkbox:checked').each(function() {
 						selectedTypes.push($(this).val());
 					});
 				}
 
 				return {
 					org_id: currentOrgId,
-					timeline_types: selectedTypes,
+					memo_types: selectedTypes,
 					search_text: $('#searchText').val()
 				};
 			},
@@ -161,73 +159,65 @@ $(document).ready(function() {
 			showTop: false,
 			showHeader: true,
 			scrollModel: { autoFit: false },
-			strNoRows: '조회된 타임라인이 없습니다.',
+			strNoRows: '조회된 메모가 없습니다.',
 			loading: { show: false },
 			cellClick: function(event, ui) {
 				if (ui.dataIndx === 'pq_selected') {
 					handleCheckboxColumnClick(event, ui.rowData.idx);
 				} else {
-					// 체크박스 컬럼이 아닌 경우 수정 폼 열기
-					editTimeline(ui.rowData);
+					editMemo(ui.rowData);
 				}
 			},
 			beforeRemoteRequest: function(event, ui) {
-				// 데이터 로드 시작 시 스피너 표시
 				showGridLoading();
 			},
 			load: function(event, ui) {
-				// 데이터 로드 완료 시 스피너 숨김
 				hideGridLoading();
 			}
 		};
 
-		timelineGrid = pq.grid('#timelineGrid', gridOptions);
+		memoGrid = pq.grid('#memoGrid', gridOptions);
 	}
 
 	/**
 	 * 그리드 로딩 스피너 표시
 	 */
 	function showGridLoading() {
-		$('#timelineGridLoading').show();
+		$('#memoGridLoading').show();
 	}
 
 	/**
 	 * 그리드 로딩 스피너 숨김
 	 */
 	function hideGridLoading() {
-		$('#timelineGridLoading').hide();
-
+		$('#memoGridLoading').hide();
 	}
 
 	/**
-	 
 	 * 역할: 체크박스 컬럼 클릭 핸들러
 	 */
 	function handleCheckboxColumnClick(event, idx) {
-		// 직접 체크박스를 클릭한 경우가 아니라면 체크박스 토글
-		const isDirectCheckboxClick = $(event.target).hasClass('timeline-checkbox') ||
-			$(event.originalEvent?.target).hasClass('timeline-checkbox');
+		const isDirectCheckboxClick = $(event.target).hasClass('memo-checkbox') ||
+			$(event.originalEvent?.target).hasClass('memo-checkbox');
 
 		if (!isDirectCheckboxClick) {
-			const checkbox = $('.timeline-checkbox[data-idx="' + idx + '"]').first();
+			const checkbox = $('.memo-checkbox[data-idx="' + idx + '"]').first();
 			if (checkbox.length > 0) {
 				const isCurrentlyChecked = checkbox.is(':checked');
 				checkbox.prop('checked', !isCurrentlyChecked);
 			}
 		}
 
-		// 체크박스 상태 업데이트
 		updateSelectAllCheckbox();
-		updateSelectedTimelineButtons();
+		updateSelectedMemoButtons();
 	}
 
 	/**
-	 
 	 * 역할: 전체 선택 체크박스 상태 업데이트
 	 */
 	function updateSelectAllCheckbox() {
-		const totalCheckboxes = $('.timeline-checkbox').length;
-		const checkedCheckboxes = $('.timeline-checkbox:checked').length;
+		const totalCheckboxes = $('.memo-checkbox').length;
+		const checkedCheckboxes = $('.memo-checkbox:checked').length;
 
 		if (totalCheckboxes === 0) {
 			$('#selectAllCheckbox').prop('checked', false);
@@ -245,11 +235,10 @@ $(document).ready(function() {
 	}
 
 	/**
-	 
-	 * 역할: 선택된 타임라인에 따라 버튼 활성화/비활성화
+	 * 역할: 선택된 메모에 따라 버튼 활성화/비활성화
 	 */
-	function updateSelectedTimelineButtons() {
-		const checkedCount = $('.timeline-checkbox:checked').length;
+	function updateSelectedMemoButtons() {
+		const checkedCount = $('.memo-checkbox:checked').length;
 
 		if (checkedCount === 0) {
 			$('#btnDelete').prop('disabled', true);
@@ -259,42 +248,39 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 타임라인 항목 로드
+	 * 메모 항목 로드
 	 */
-	function loadTimelineTypes() {
+	function loadMemoTypes() {
 		$.ajax({
-			url: baseUrl + 'timeline/get_timeline_types',
+			url: baseUrl + 'memos/get_memo_types',
 			type: 'POST',
 			dataType: 'json',
 			data: { org_id: currentOrgId },
 			success: function(response) {
 				if (response.success) {
-					timelineTypes = response.data;
-					updateTimelineTypeSelect();
+					memoTypes = response.data;
+					updateMemoTypeSelect();
 				}
 			},
 			error: function() {
-				showToast('타임라인 항목 로드에 실패했습니다.', 'error');
+				showToast('메모 항목 로드에 실패했습니다.', 'error');
 			}
 		});
 	}
 
 	/**
-	 * 타임라인 항목 셀렉트 업데이트
+	 * 메모 항목 셀렉트 업데이트
 	 */
-	function updateTimelineTypeSelect() {
-		// 검색 드롭다운 메뉴 업데이트
+	function updateMemoTypeSelect() {
 		const $searchMenu = $('#searchTypeMenu');
 
-		// 기존 항목 제거 (전체와 구분선은 유지)
 		$searchMenu.find('li:gt(1)').remove();
 
-		// 타임라인 항목들 추가
-		timelineTypes.forEach(function(type) {
+		memoTypes.forEach(function(type) {
 			const itemId = 'searchType_' + type.replace(/\s+/g, '_');
 			const $li = $('<li></li>');
 			const $div = $('<div class="dropdown-item"></div>');
-			const $checkbox = $('<input type="checkbox" class="form-check-input me-2 timeline-type-checkbox">');
+			const $checkbox = $('<input type="checkbox" class="form-check-input me-2 memo-type-checkbox">');
 			$checkbox.attr('id', itemId);
 			$checkbox.attr('value', type);
 			const $label = $('<label class="form-check-label"></label>');
@@ -307,14 +293,12 @@ $(document).ready(function() {
 			$searchMenu.append($li);
 		});
 
-		// offcanvas의 항목 셀렉트 업데이트
-		$('#timeline_type').empty();
-		$('#timeline_type').append('<option value="">항목을 선택하세요</option>');
-		timelineTypes.forEach(function(type) {
-			$('#timeline_type').append(`<option value="${type}">${type}</option>`);
+		$('#memo_type').empty();
+		$('#memo_type').append('<option value="">항목을 선택하세요</option>');
+		memoTypes.forEach(function(type) {
+			$('#memo_type').append(`<option value="${type}">${type}</option>`);
 		});
 
-		// 드롭다운 이벤트 바인딩
 		bindDropdownEvents();
 	}
 
@@ -322,42 +306,37 @@ $(document).ready(function() {
 	 * 드롭다운 이벤트 바인딩
 	 */
 	function bindDropdownEvents() {
-		// 전체 체크박스 클릭 이벤트
 		$('#searchType_all').on('change', function() {
 			const isChecked = $(this).is(':checked');
-			$('.timeline-type-checkbox').prop('checked', false);
+			$('.memo-type-checkbox').prop('checked', false);
 			if (isChecked) {
 				updateSearchTypeText();
 			}
 		});
 
-		// 개별 항목 체크박스 클릭 이벤트
-		$(document).off('change', '.timeline-type-checkbox').on('change', '.timeline-type-checkbox', function() {
-			// 개별 항목이 체크되면 전체 체크 해제
+		$(document).off('change', '.memo-type-checkbox').on('change', '.memo-type-checkbox', function() {
 			if ($(this).is(':checked')) {
 				$('#searchType_all').prop('checked', false);
 			}
 
-			// 모든 개별 항목이 체크 해제되면 전체 체크
-			if ($('.timeline-type-checkbox:checked').length === 0) {
+			if ($('.memo-type-checkbox:checked').length === 0) {
 				$('#searchType_all').prop('checked', true);
 			}
 
 			updateSearchTypeText();
 		});
 
-		// 드롭다운 아이템 클릭 시 닫히지 않도록 방지
 		$('#searchTypeMenu .dropdown-item').on('click', function(e) {
 			e.stopPropagation();
 		});
 	}
 
 	/**
-	 * 선택된 타임라인 항목 텍스트 업데이트
+	 * 선택된 메모 항목 텍스트 업데이트
 	 */
 	function updateSearchTypeText() {
 		const $allCheckbox = $('#searchType_all');
-		const $typeCheckboxes = $('.timeline-type-checkbox:checked');
+		const $typeCheckboxes = $('.memo-type-checkbox:checked');
 
 		if ($allCheckbox.is(':checked') || $typeCheckboxes.length === 0) {
 			$('#searchTypeText').text('전체');
@@ -367,7 +346,6 @@ $(document).ready(function() {
 			$('#searchTypeText').text($typeCheckboxes.length + '개 항목 선택');
 		}
 	}
-
 
 	/**
 	 * Select2 초기화
@@ -391,7 +369,7 @@ $(document).ready(function() {
 				}
 			},
 			ajax: {
-				url: baseUrl + 'timeline/get_members_for_select',
+				url: baseUrl + 'memos/get_members_for_select',
 				dataType: 'json',
 				delay: 250,
 				data: function(params) {
@@ -427,159 +405,125 @@ $(document).ready(function() {
 			}
 		});
 
-		// Select2 드래그앤드롭 기능 적용
 		$('#member_select').select2Sortable();
 	}
-
-
 
 	/**
 	 * 역할: 이벤트 바인딩 - 체크박스 이벤트 수정
 	 */
 	function bindEvents() {
-		$('#btnSearch').on('click', searchTimelines);
+		$('#btnSearch').on('click', searchMemos);
 		$('#searchText').on('keypress', function(e) {
 			if (e.which === 13) {
-				searchTimelines();
+				searchMemos();
 			}
 		});
 
 		$('#btnAdd').on('click', showAddForm);
 		$('#btnDelete').on('click', showDeleteConfirm);
 
-		$('#btnSaveTimeline').on('click', saveTimeline);
-		$('#confirmDeleteBtn').on('click', deleteTimelines);
+		$('#btnSaveMemo').on('click', saveMemo);
+		$('#confirmDeleteBtn').on('click', deleteMemos);
 
-		$('#timelineOffcanvas').on('hidden.bs.offcanvas', resetForm);
+		$('#memoOffcanvas').on('hidden.bs.offcanvas', resetForm);
 
-		// 전체 선택 체크박스 이벤트
 		$(document).on('change', '#selectAllCheckbox', function() {
 			const isChecked = $(this).prop('checked');
-			$('.timeline-checkbox').prop('checked', isChecked);
-			updateSelectedTimelineButtons();
+			$('.memo-checkbox').prop('checked', isChecked);
+			updateSelectedMemoButtons();
 		});
 
-		// 개별 체크박스 이벤트
-		$(document).on('change', '.timeline-checkbox', function() {
+		$(document).on('change', '.memo-checkbox', function() {
 			updateSelectAllCheckbox();
-			updateSelectedTimelineButtons();
+			updateSelectedMemoButtons();
 		});
 	}
 
 	/**
-	 
-	 * 역할: 타임라인 검색 - 검색 후 버튼 상태 초기화
+	 * 역할: 메모 검색 - 검색 후 버튼 상태 초기화
 	 */
-	function searchTimelines() {
+	function searchMemos() {
 		showGridLoading();
-		timelineGrid.refreshDataAndView();
+		memoGrid.refreshDataAndView();
 
-		// 검색 후 버튼 비활성화
 		setTimeout(function() {
 			updateSelectAllCheckbox();
-			updateSelectedTimelineButtons();
+			updateSelectedMemoButtons();
 			hideGridLoading();
 		}, 100);
 	}
-
 
 	/**
 	 * 추가 폼 표시
 	 */
 	function showAddForm() {
 		resetForm();
-		$('#timeline_mode').val('add');
-		$('#timelineOffcanvasLabel').text('타임라인 일괄추가');
+		$('#memo_mode').val('add');
+		$('#memoOffcanvasLabel').text('메모 일괄추가');
 		$('#memberSelectDiv').show();
 		$('#memberNameDiv').hide();
 
-		// 오늘 날짜를 기본값으로 설정
 		const today = new Date();
 		const year = today.getFullYear();
 		const month = String(today.getMonth() + 1).padStart(2, '0');
 		const day = String(today.getDate()).padStart(2, '0');
-		$('#timeline_date').val(`${year}-${month}-${day}`);
+		$('#memo_date').val(`${year}-${month}-${day}`);
 
 		initMemberSelect2();
 
-		const offcanvas = new bootstrap.Offcanvas(document.getElementById('timelineOffcanvas'));
+		const offcanvas = new bootstrap.Offcanvas(document.getElementById('memoOffcanvas'));
 		offcanvas.show();
 	}
 
 	/**
-	 * 수정 폼 표시
+	 * 메모 수정
 	 */
-	function showEditForm() {
-		const selectedCheckboxes = $('.timeline-checkbox:checked');
-
-		if (selectedCheckboxes.length === 0) {
-			showToast('수정할 항목을 선택해주세요.', 'warning');
-			return;
-		}
-
-		if (selectedCheckboxes.length > 1) {
-			showToast('한 개의 항목만 선택해주세요.', 'warning');
-			return;
-		}
-
-		const idx = selectedCheckboxes.first().data('idx');
-		const allData = timelineGrid.getData();
-		const rowData = allData.find(row => row.idx === idx);
-
-		if (rowData) {
-			editTimeline(rowData);
-		}
-	}
-
-	/**
-	 * 타임라인 수정
-	 */
-	function editTimeline(rowData) {
+	function editMemo(rowData) {
 		$.ajax({
-			url: baseUrl + 'timeline/get_timeline_detail',
+			url: baseUrl + 'memos/get_memo_detail',
 			type: 'POST',
 			dataType: 'json',
 			data: { idx: rowData.idx },
 			success: function(response) {
 				if (response.success) {
-					const timeline = response.data;
-					$('#timeline_mode').val('edit');
-					$('#timeline_idx').val(timeline.idx);
-					$('#timeline_type').val(timeline.timeline_type);
-					$('#timeline_date').val(timeline.timeline_date);
-					$('#timeline_content').val(timeline.timeline_content);
-					$('#member_name_display').val(timeline.member_name);
+					const memo = response.data;
+					$('#memo_mode').val('edit');
+					$('#memo_idx').val(memo.idx);
+					$('#memo_type').val(memo.memo_type);
+					$('#memo_date').val(memo.memo_date);
+					$('#memo_content').val(memo.memo_content);
+					$('#member_name_display').val(memo.member_name);
 
-					$('#timelineOffcanvasLabel').text('타임라인 수정');
+					$('#memoOffcanvasLabel').text('메모 수정');
 					$('#memberSelectDiv').hide();
 					$('#memberNameDiv').show();
 
-					const offcanvas = new bootstrap.Offcanvas(document.getElementById('timelineOffcanvas'));
+					const offcanvas = new bootstrap.Offcanvas(document.getElementById('memoOffcanvas'));
 					offcanvas.show();
 				} else {
-					showToast(response.message || '타임라인 정보를 불러올 수 없습니다.', 'error');
+					showToast(response.message || '메모 정보를 불러올 수 없습니다.', 'error');
 				}
 			},
 			error: function() {
-				showToast('타임라인 정보 로드에 실패했습니다.', 'error');
+				showToast('메모 정보 로드에 실패했습니다.', 'error');
 			}
 		});
 	}
 
 	/**
-	 * 타임라인 저장
+	 * 메모 저장
 	 */
-	function saveTimeline() {
-		const mode = $('#timeline_mode').val();
-		const timeline_type = $('#timeline_type').val();
-		const timeline_date = $('#timeline_date').val();
+	function saveMemo() {
+		const mode = $('#memo_mode').val();
+		const memo_type = $('#memo_type').val();
+		const memo_date = $('#memo_date').val();
 
-		if (!timeline_type) {
+		if (!memo_type) {
 			showToast('항목을 선택해주세요.', 'warning');
 			return;
 		}
 
-		if (!timeline_date) {
+		if (!memo_date) {
 			showToast('날짜를 입력해주세요.', 'warning');
 			return;
 		}
@@ -591,71 +535,71 @@ $(document).ready(function() {
 				return;
 			}
 
-			addTimeline();
+			addMemo();
 		} else {
-			updateTimeline();
+			updateMemo();
 		}
 	}
 
 	/**
-	 * 타임라인 일괄추가
+	 * 메모 일괄추가
 	 */
-	function addTimeline() {
+	function addMemo() {
 		const formData = {
 			org_id: currentOrgId,
 			member_idxs: $('#member_select').val(),
-			timeline_type: $('#timeline_type').val(),
-			timeline_date: $('#timeline_date').val(),
-			timeline_content: $('#timeline_content').val()
+			memo_type: $('#memo_type').val(),
+			memo_date: $('#memo_date').val(),
+			memo_content: $('#memo_content').val()
 		};
 
 		$.ajax({
-			url: baseUrl + 'timeline/add_timeline',
+			url: baseUrl + 'memos/add_memo',
 			type: 'POST',
 			dataType: 'json',
 			data: formData,
 			success: function(response) {
 				if (response.success) {
 					showToast(response.message, 'success');
-					bootstrap.Offcanvas.getInstance(document.getElementById('timelineOffcanvas')).hide();
-					searchTimelines();
+					bootstrap.Offcanvas.getInstance(document.getElementById('memoOffcanvas')).hide();
+					searchMemos();
 				} else {
-					showToast(response.message || '타임라인 일괄추가에 실패했습니다.', 'error');
+					showToast(response.message || '메모 일괄추가에 실패했습니다.', 'error');
 				}
 			},
 			error: function() {
-				showToast('타임라인 일괄추가에 실패했습니다.', 'error');
+				showToast('메모 일괄추가에 실패했습니다.', 'error');
 			}
 		});
 	}
 
 	/**
-	 * 타임라인 수정
+	 * 메모 수정
 	 */
-	function updateTimeline() {
+	function updateMemo() {
 		const formData = {
-			idx: $('#timeline_idx').val(),
-			timeline_type: $('#timeline_type').val(),
-			timeline_date: $('#timeline_date').val(),
-			timeline_content: $('#timeline_content').val()
+			idx: $('#memo_idx').val(),
+			memo_type: $('#memo_type').val(),
+			memo_date: $('#memo_date').val(),
+			memo_content: $('#memo_content').val()
 		};
 
 		$.ajax({
-			url: baseUrl + 'timeline/update_timeline',
+			url: baseUrl + 'memos/update_memo',
 			type: 'POST',
 			dataType: 'json',
 			data: formData,
 			success: function(response) {
 				if (response.success) {
 					showToast(response.message, 'success');
-					bootstrap.Offcanvas.getInstance(document.getElementById('timelineOffcanvas')).hide();
-					searchTimelines();
+					bootstrap.Offcanvas.getInstance(document.getElementById('memoOffcanvas')).hide();
+					searchMemos();
 				} else {
-					showToast(response.message || '타임라인 수정에 실패했습니다.', 'error');
+					showToast(response.message || '메모 수정에 실패했습니다.', 'error');
 				}
 			},
 			error: function() {
-				showToast('타임라인 수정에 실패했습니다.', 'error');
+				showToast('메모 수정에 실패했습니다.', 'error');
 			}
 		});
 	}
@@ -664,7 +608,7 @@ $(document).ready(function() {
 	 * 삭제 확인 모달 표시
 	 */
 	function showDeleteConfirm() {
-		const selectedIdxs = $('.timeline-checkbox:checked');
+		const selectedIdxs = $('.memo-checkbox:checked');
 
 		if (selectedIdxs.length === 0) {
 			showToast('삭제할 항목을 선택해주세요.', 'warning');
@@ -676,17 +620,16 @@ $(document).ready(function() {
 	}
 
 	/**
-	 
-	 * 역할: 타임라인 삭제 - 체크박스 방식에 맞게 수정
+	 * 역할: 메모 삭제 - 체크박스 방식에 맞게 수정
 	 */
-	function deleteTimelines() {
+	function deleteMemos() {
 		const selectedIdxs = [];
-		$('.timeline-checkbox:checked').each(function() {
+		$('.memo-checkbox:checked').each(function() {
 			selectedIdxs.push($(this).data('idx'));
 		});
 
 		$.ajax({
-			url: baseUrl + 'timeline/delete_timelines',
+			url: baseUrl + 'memos/delete_memos',
 			type: 'POST',
 			dataType: 'json',
 			data: { idxs: selectedIdxs },
@@ -694,13 +637,13 @@ $(document).ready(function() {
 				if (response.success) {
 					showToast(response.message, 'success');
 					bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-					searchTimelines();
+					searchMemos();
 				} else {
-					showToast(response.message || '타임라인 삭제에 실패했습니다.', 'error');
+					showToast(response.message || '메모 삭제에 실패했습니다.', 'error');
 				}
 			},
 			error: function() {
-				showToast('타임라인 삭제에 실패했습니다.', 'error');
+				showToast('메모 삭제에 실패했습니다.', 'error');
 			}
 		});
 	}
@@ -709,9 +652,9 @@ $(document).ready(function() {
 	 * 폼 초기화
 	 */
 	function resetForm() {
-		$('#timelineForm')[0].reset();
-		$('#timeline_idx').val('');
-		$('#timeline_mode').val('add');
+		$('#memoForm')[0].reset();
+		$('#memo_idx').val('');
+		$('#memo_mode').val('add');
 
 		if ($('#member_select').data('select2')) {
 			$('#member_select').val(null).trigger('change');

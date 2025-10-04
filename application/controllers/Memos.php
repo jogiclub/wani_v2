@@ -1,18 +1,14 @@
 <?php
-/**
- * 역할: 타임라인 관리 컨트롤러 - 회원 타임라인 이력 조회 및 관리
- */
-
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Memo extends My_Controller
+class Memos extends My_Controller
 {
 	public function __construct()
 	{
 		parent::__construct();
 		$this->load->library('session');
 		$this->load->helper('url');
-		$this->load->model('Timeline_model');
+		$this->load->model('Memo_model');
 		$this->load->model('Member_model');
 		$this->load->model('Org_model');
 
@@ -22,7 +18,7 @@ class Memo extends My_Controller
 	}
 
 	/**
-	 * 타임라인 관리 메인 페이지
+	 * 메모 관리 메인 페이지
 	 */
 	public function index()
 	{
@@ -40,26 +36,26 @@ class Memo extends My_Controller
 		$currentOrgId = $data['current_org']['org_id'];
 
 		if (!$this->check_org_access($currentOrgId)) {
-			$this->handle_access_denied('해당 조직의 타임라인을 관리할 권한이 없습니다.');
+			$this->handle_access_denied('해당 조직의 메모를 관리할 권한이 없습니다.');
 			return;
 		}
 
 		$data['orgs'] = array($data['current_org']);
 
-		$this->load->view('timeline', $data);
+		$this->load->view('memos', $data);
 	}
 
 	/**
-	 * 타임라인 목록 조회
+	 * 메모 목록 조회
 	 */
-	public function get_timelines()
+	public function get_memos()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
 
 		$org_id = $this->input->post('org_id');
-		$timeline_types = $this->input->post('timeline_types'); // 배열로 받음
+		$memo_types = $this->input->post('memo_types');
 		$search_text = $this->input->post('search_text');
 
 		if (!$org_id) {
@@ -70,27 +66,26 @@ class Memo extends My_Controller
 			return;
 		}
 
-		// 필터 조건 설정
 		$filters = array(
-			'timeline_types' => $timeline_types,
+			'memo_types' => $memo_types,
 			'search_text' => $search_text
 		);
 
-		$timelines = $this->Timeline_model->get_timelines($org_id, $filters);
-		$total_count = $this->Timeline_model->get_timelines_count($org_id, $filters);
+		$memos = $this->Memo_model->get_memos($org_id, $filters);
+		$total_count = $this->Memo_model->get_memos_count($org_id, $filters);
 
 		echo json_encode(array(
 			'success' => true,
 			'curPage' => 1,
 			'totalRecords' => $total_count,
-			'data' => $timelines
+			'data' => $memos
 		));
 	}
 
 	/**
-	 * 타임라인 항목 조회
+	 * 메모 타입 조회
 	 */
-	public function get_timeline_types()
+	public function get_memo_types()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -103,11 +98,11 @@ class Memo extends My_Controller
 			return;
 		}
 
-		$timeline_types = $this->Org_model->get_timeline_types($org_id);
+		$memo_types = $this->Org_model->get_memo_types($org_id);
 
 		echo json_encode(array(
 			'success' => true,
-			'data' => $timeline_types
+			'data' => $memo_types
 		));
 	}
 
@@ -137,9 +132,9 @@ class Memo extends My_Controller
 	}
 
 	/**
-	 * 타임라인 일괄추가
+	 * 메모 일괄추가
 	 */
-	public function add_timeline()
+	public function add_memo()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -147,12 +142,12 @@ class Memo extends My_Controller
 
 		$org_id = $this->input->post('org_id');
 		$member_idxs = $this->input->post('member_idxs');
-		$timeline_type = $this->input->post('timeline_type');
-		$timeline_date = $this->input->post('timeline_date');
-		$timeline_content = $this->input->post('timeline_content');
+		$memo_type = $this->input->post('memo_type');
+		$memo_date = $this->input->post('memo_date');
+		$memo_content = $this->input->post('memo_content');
 		$user_id = $this->session->userdata('user_id');
 
-		if (!$org_id || !$member_idxs || !$timeline_type || !$timeline_date) {
+		if (!$org_id || !$member_idxs || !$memo_type || !$memo_date) {
 			echo json_encode(array('success' => false, 'message' => '필수 항목을 입력해주세요.'));
 			return;
 		}
@@ -162,59 +157,60 @@ class Memo extends My_Controller
 		}
 
 		$data = array(
-			'timeline_type' => $timeline_type,
-			'timeline_date' => $timeline_date,
-			'timeline_content' => $timeline_content,
+			'memo_type' => $memo_type,
+			'att_date' => $memo_date,
+			'memo_content' => $memo_content,
 			'user_id' => $user_id
 		);
 
-		$result = $this->Timeline_model->add_timelines($member_idxs, $data);
+		$result = $this->Memo_model->add_memos($member_idxs, $data);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '타임라인이 추가되었습니다.'));
+			echo json_encode(array('success' => true, 'message' => '메모가 추가되었습니다.'));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '타임라인 일괄추가에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '메모 일괄추가에 실패했습니다.'));
 		}
 	}
 
 	/**
-	 * 타임라인 수정
+	 * 메모 수정
 	 */
-	public function update_timeline()
+	public function update_memo()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
 
 		$idx = $this->input->post('idx');
-		$timeline_type = $this->input->post('timeline_type');
-		$timeline_date = $this->input->post('timeline_date');
-		$timeline_content = $this->input->post('timeline_content');
+		$memo_type = $this->input->post('memo_type');
+		$memo_date = $this->input->post('memo_date');
+		$memo_content = $this->input->post('memo_content');
 
-		if (!$idx || !$timeline_type || !$timeline_date) {
+		if (!$idx || !$memo_type || !$memo_date) {
 			echo json_encode(array('success' => false, 'message' => '필수 항목을 입력해주세요.'));
 			return;
 		}
 
 		$data = array(
-			'timeline_type' => $timeline_type,
-			'timeline_date' => $timeline_date,
-			'timeline_content' => $timeline_content
+			'memo_type' => $memo_type,
+			'att_date' => $memo_date,
+			'memo_content' => $memo_content,
+			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		$result = $this->Timeline_model->update_timeline($idx, $data);
+		$result = $this->Memo_model->update_memo($idx, $data);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '타임라인이 수정되었습니다.'));
+			echo json_encode(array('success' => true, 'message' => '메모가 수정되었습니다.'));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '타임라인 수정에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '메모 수정에 실패했습니다.'));
 		}
 	}
 
 	/**
-	 * 타임라인 삭제
+	 * 메모 삭제
 	 */
-	public function delete_timelines()
+	public function delete_memos()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -227,19 +223,19 @@ class Memo extends My_Controller
 			return;
 		}
 
-		$result = $this->Timeline_model->delete_timelines($idxs);
+		$result = $this->Memo_model->delete_memos($idxs);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => count($idxs) . '개의 타임라인이 삭제되었습니다.'));
+			echo json_encode(array('success' => true, 'message' => count($idxs) . '개의 메모가 삭제되었습니다.'));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '타임라인 삭제에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '메모 삭제에 실패했습니다.'));
 		}
 	}
 
 	/**
-	 * 타임라인 상세 조회
+	 * 메모 상세 조회
 	 */
-	public function get_timeline_detail()
+	public function get_memo_detail()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -252,12 +248,12 @@ class Memo extends My_Controller
 			return;
 		}
 
-		$timeline = $this->Timeline_model->get_timeline_by_idx($idx);
+		$memo = $this->Memo_model->get_memo_detail_by_idx($idx);
 
-		if ($timeline) {
-			echo json_encode(array('success' => true, 'data' => $timeline));
+		if ($memo) {
+			echo json_encode(array('success' => true, 'data' => $memo));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '타임라인을 찾을 수 없습니다.'));
+			echo json_encode(array('success' => false, 'message' => '메모를 찾을 수 없습니다.'));
 		}
 	}
 }

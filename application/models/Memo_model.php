@@ -282,4 +282,137 @@ class Memo_model extends CI_Model {
 		return $memo_records;
 	}
 
+
+	/**
+	 * 메모 목록 조회 (필터링 포함)
+	 */
+	public function get_memos($org_id, $filters = array())
+	{
+		$this->db->select('
+		m.idx,
+		m.memo_type,
+		m.att_date as memo_date,
+		m.memo_content,
+		m.regi_date,
+		m.modi_date,
+		mem.member_name,
+		u.user_name as regi_user_name
+	');
+		$this->db->from('wb_memo m');
+		$this->db->join('wb_member mem', 'm.member_idx = mem.member_idx', 'left');
+		$this->db->join('wb_user u', 'm.user_id = u.user_id', 'left');
+		$this->db->where('mem.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+
+		// 메모 타입 필터
+		if (!empty($filters['memo_types']) && is_array($filters['memo_types'])) {
+			$this->db->where_in('m.memo_type', $filters['memo_types']);
+		}
+
+		// 검색어 필터
+		if (!empty($filters['search_text'])) {
+			$this->db->group_start();
+			$this->db->like('mem.member_name', $filters['search_text']);
+			$this->db->or_like('m.memo_content', $filters['search_text']);
+			$this->db->group_end();
+		}
+
+		$this->db->order_by('m.att_date', 'DESC');
+		$this->db->order_by('m.regi_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 메모 개수 조회
+	 */
+	public function get_memos_count($org_id, $filters = array())
+	{
+		$this->db->select('COUNT(*) as count');
+		$this->db->from('wb_memo m');
+		$this->db->join('wb_member mem', 'm.member_idx = mem.member_idx', 'left');
+		$this->db->where('mem.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+
+		// 메모 타입 필터
+		if (!empty($filters['memo_types']) && is_array($filters['memo_types'])) {
+			$this->db->where_in('m.memo_type', $filters['memo_types']);
+		}
+
+		// 검색어 필터
+		if (!empty($filters['search_text'])) {
+			$this->db->group_start();
+			$this->db->like('mem.member_name', $filters['search_text']);
+			$this->db->or_like('m.memo_content', $filters['search_text']);
+			$this->db->group_end();
+		}
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+		return $result['count'];
+	}
+
+	/**
+	 * 메모 일괄추가
+	 */
+	public function add_memos($member_idxs, $data)
+	{
+		if (empty($member_idxs) || !is_array($member_idxs)) {
+			return false;
+		}
+
+		$this->db->trans_start();
+
+		foreach ($member_idxs as $member_idx) {
+			$insert_data = array_merge($data, array(
+				'member_idx' => $member_idx,
+				'del_yn' => 'N',
+				'regi_date' => date('Y-m-d H:i:s')
+			));
+			$this->db->insert('wb_memo', $insert_data);
+		}
+
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
+	}
+
+	/**
+	 * 메모 삭제 (여러 개)
+	 */
+	public function delete_memos($idxs)
+	{
+		if (empty($idxs) || !is_array($idxs)) {
+			return false;
+		}
+
+		$data = array(
+			'del_yn' => 'Y',
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where_in('idx', $idxs);
+		return $this->db->update('wb_memo', $data);
+	}
+
+	/**
+	 * 메모 상세 조회 (회원명 포함)
+	 */
+	public function get_memo_detail_by_idx($idx)
+	{
+		$this->db->select('
+		m.*,
+		mem.member_name,
+		m.att_date as memo_date
+	');
+		$this->db->from('wb_memo m');
+		$this->db->join('wb_member mem', 'm.member_idx = mem.member_idx', 'left');
+		$this->db->where('m.idx', $idx);
+		$this->db->where('m.del_yn', 'N');
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 }

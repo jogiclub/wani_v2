@@ -184,3 +184,13 @@ $route['timeline/update_timeline'] = 'timeline/update_timeline';
 $route['timeline/delete_timelines'] = 'timeline/delete_timelines';
 $route['timeline/get_timeline_detail'] = 'timeline/get_timeline_detail';
 
+
+$route['memos'] = 'memos/index';
+$route['memos/index'] = 'memos/index';
+$route['memos/get_memos'] = 'memos/get_memos';
+$route['memos/get_memo_types'] = 'memos/get_memo_types';
+$route['memos/get_members_for_select'] = 'memos/get_members_for_select';
+$route['memos/add_memo'] = 'memos/add_memo';
+$route['memos/update_memo'] = 'memos/update_memo';
+$route['memos/delete_memos'] = 'memos/delete_memos';
+$route['memos/get_memo_detail'] = 'memos/get_memo_detail';

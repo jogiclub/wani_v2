@@ -72,6 +72,7 @@ class Org extends My_Controller
 		$position_names = $this->input->post('position_names');
 		$duty_names = $this->input->post('duty_names');
 		$timeline_names = $this->input->post('timeline_names');
+		$memo_names = $this->input->post('memo_names');
 
 		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
@@ -107,6 +108,10 @@ class Org extends My_Controller
 
 		if (!empty($timeline_names) && is_array($timeline_names)) {
 			$update_data['timeline_name'] = $timeline_names;
+		}
+
+		if (!empty($memo_names) && is_array($memo_names)) {
+			$update_data['memo_name'] = $memo_names;
 		}
 
 		$result = $this->Org_model->update_org_info($org_id, $update_data);

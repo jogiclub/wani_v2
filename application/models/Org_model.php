@@ -843,4 +843,27 @@ class Org_model extends CI_Model {
 		return array();
 	}
 
+
+	/**
+	 * 조직의 메모 타입 목록 조회
+	 */
+	public function get_memo_types($org_id)
+	{
+		$org_detail = $this->get_org_detail_by_id($org_id);
+		$memo_types = array();
+
+		if ($org_detail && !empty($org_detail['memo_type_name'])) {
+			try {
+				$decoded_types = json_decode($org_detail['memo_type_name'], true);
+				if (is_array($decoded_types)) {
+					$memo_types = $decoded_types;
+				}
+			} catch (Exception $e) {
+				log_message('error', '메모 타입 JSON 파싱 오류: ' . $e->getMessage());
+			}
+		}
+
+		return $memo_types;
+	}
+
 }

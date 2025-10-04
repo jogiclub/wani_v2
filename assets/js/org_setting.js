@@ -104,7 +104,28 @@ $(document).ready(function () {
 				};
 			}
 		});
-		$('#timeline_names').select2Sortable();
+		$('#timeline_names').select2Sortable();	// 타임라인 설정
+
+
+		$('#memos_names').select2({
+			width: '100%',
+			placeholder: '메모 이벤트를 입력하거나 선택하세요',
+			tags: true,
+			allowClear: false,
+			tokenSeparators: [',', ' '],
+			createTag: function (params) {
+				const term = $.trim(params.term);
+				if (term === '') {
+					return null;
+				}
+				return {
+					id: term,
+					text: term,
+					newTag: true
+				};
+			}
+		});
+		$('#memos_names').select2Sortable();
 
 		// 기존 데이터 로드
 		loadExistingData();
@@ -173,6 +194,21 @@ $(document).ready(function () {
 							console.error('타임라인 데이터 파싱 오류:', e);
 						}
 					}
+					// 메모 데이터 로드
+					if (data.memo_name) {
+						try {
+							const memo_name = JSON.parse(data.memo_name);
+							if (Array.isArray(memos)) {
+								memos.forEach(function (memo) {
+									const option = new Option(memo, memo, true, true);
+									$('#memos_name').append(option);
+								});
+								$('#memos_name').trigger('change');
+							}
+						} catch (e) {
+							console.error('타임라인 데이터 파싱 오류:', e);
+						}
+					}
 				}
 			},
 			error: function (xhr, status, error) {
@@ -194,7 +230,8 @@ $(document).ready(function () {
 			new_name: $('#new_name').val().trim(),
 			position_names: $('#position_names').val() || [],
 			duty_names: $('#duty_names').val() || [],
-			timeline_names: $('#timeline_names').val() || []
+			timeline_names: $('#timeline_names').val() || [],
+			memo_names: $('#memo_names').val() || []
 		};
 
 		// 필수 항목 검증
@@ -622,6 +659,38 @@ $(document).ready(function () {
 			}
 		});
 	}
+function getOrgMemos(orgId, callback) {
+		$.ajax({
+			url: '/org/get_org_detail',
+			method: 'POST',
+			data: { org_id: orgId },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success && response.data && response.data.memo_name) {
+					try {
+						const memos = JSON.parse(response.data.memo_name);
+						if (typeof callback === 'function') {
+							callback(memoa);
+						}
+					} catch (e) {
+						console.error('타임라인 데이터 파싱 오류:', e);
+						if (typeof callback === 'function') {
+							callback([]);
+						}
+					}
+				} else {
+					if (typeof callback === 'function') {
+						callback([]);
+					}
+				}
+			},
+			error: function() {
+				if (typeof callback === 'function') {
+					callback([]);
+				}
+			}
+		});
+	}
 
 	// 초대 코드 갱신
 	$('#refreshInviteCode').on('click', function () {
@@ -680,5 +749,6 @@ $(document).ready(function () {
 	window.getOrgPositions = getOrgPositions;
 	window.getOrgDuties = getOrgDuties;
 	window.getOrgTimelines = getOrgTimelines;
+	window.getOrgMemos = getOrgMemos;
 
 });

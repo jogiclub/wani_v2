@@ -269,7 +269,7 @@ $is_master = $this->session->userdata('master_yn');
 							</li>
 
 							<li class="nav-item">
-								<a class="nav-link d-flex align-items-center gap-1 menu-25" href="<?php echo base_url('memo'); ?>">
+								<a class="nav-link d-flex align-items-center gap-1 menu-25" href="<?php echo base_url('memos'); ?>">
 									<i class="bi bi-journal-bookmark"></i> 메모관리
 								</a>
 							</li>
