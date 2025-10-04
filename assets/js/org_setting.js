@@ -107,9 +107,10 @@ $(document).ready(function () {
 		$('#timeline_names').select2Sortable();	// 타임라인 설정
 
 
+		// 메모 설정
 		$('#memos_names').select2({
 			width: '100%',
-			placeholder: '메모 이벤트를 입력하거나 선택하세요',
+			placeholder: '메모 호칭을 입력하거나 선택하세요',
 			tags: true,
 			allowClear: false,
 			tokenSeparators: [',', ' '],
@@ -194,19 +195,20 @@ $(document).ready(function () {
 							console.error('타임라인 데이터 파싱 오류:', e);
 						}
 					}
-					// 메모 데이터 로드
+
+					// 메모 데이터 로드 (수정됨)
 					if (data.memo_name) {
 						try {
-							const memo_name = JSON.parse(data.memo_name);
+							const memos = JSON.parse(data.memo_name);
 							if (Array.isArray(memos)) {
 								memos.forEach(function (memo) {
 									const option = new Option(memo, memo, true, true);
-									$('#memos_name').append(option);
+									$('#memos_names').append(option);
 								});
-								$('#memos_name').trigger('change');
+								$('#memos_names').trigger('change');
 							}
 						} catch (e) {
-							console.error('타임라인 데이터 파싱 오류:', e);
+							console.error('메모 데이터 파싱 오류:', e);
 						}
 					}
 				}
@@ -217,7 +219,9 @@ $(document).ready(function () {
 		});
 	}
 
-	// 조직 정보 저장
+	/**
+	* 조직 정보 저장
+	 **/
 	$('#orgSettingForm').on('submit', function (e) {
 		e.preventDefault();
 
@@ -231,7 +235,7 @@ $(document).ready(function () {
 			position_names: $('#position_names').val() || [],
 			duty_names: $('#duty_names').val() || [],
 			timeline_names: $('#timeline_names').val() || [],
-			memo_names: $('#memo_names').val() || []
+			memo_names: $('#memos_names').val() || []
 		};
 
 		// 필수 항목 검증
@@ -659,7 +663,12 @@ $(document).ready(function () {
 			}
 		});
 	}
-function getOrgMemos(orgId, callback) {
+
+
+	/**
+	 * 조직의 메모 목록 가져오기 (다른 화면에서 사용)
+	 */
+	function getOrgMemos(orgId, callback) {
 		$.ajax({
 			url: '/org/get_org_detail',
 			method: 'POST',
@@ -670,10 +679,10 @@ function getOrgMemos(orgId, callback) {
 					try {
 						const memos = JSON.parse(response.data.memo_name);
 						if (typeof callback === 'function') {
-							callback(memoa);
+							callback(memos);
 						}
 					} catch (e) {
-						console.error('타임라인 데이터 파싱 오류:', e);
+						console.error('메모 데이터 파싱 오류:', e);
 						if (typeof callback === 'function') {
 							callback([]);
 						}

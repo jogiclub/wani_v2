@@ -91,6 +91,10 @@ class Org_model extends CI_Model {
 			$data['timeline_name'] = json_encode($data['timeline_name'], JSON_UNESCAPED_UNICODE);
 		}
 
+		if (isset($data['memo_name']) && is_array($data['memo_name'])) {
+			$data['memo_name'] = json_encode($data['memo_name'], JSON_UNESCAPED_UNICODE);
+		}
+
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');
 		return $this->db->update('wb_org', $data);
@@ -329,6 +333,7 @@ class Org_model extends CI_Model {
             position_name,
             duty_name,
             timeline_name,
+            memo_name,
             category_idx,
             regi_date,
             modi_date
