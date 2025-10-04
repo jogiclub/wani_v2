@@ -174,5 +174,13 @@ $route['send/set_default_sender'] = 'send/set_default_sender';
 $route['send/get_statistics'] = 'send/get_statistics';
 
 
-
+$route['timeline'] = 'timeline/index';
+$route['timeline/index'] = 'timeline/index';
+$route['timeline/get_timelines'] = 'timeline/get_timelines';
+$route['timeline/get_timeline_types'] = 'timeline/get_timeline_types';
+$route['timeline/get_members_for_select'] = 'timeline/get_members_for_select';
+$route['timeline/add_timeline'] = 'timeline/add_timeline';
+$route['timeline/update_timeline'] = 'timeline/update_timeline';
+$route['timeline/delete_timelines'] = 'timeline/delete_timelines';
+$route['timeline/get_timeline_detail'] = 'timeline/get_timeline_detail';
 

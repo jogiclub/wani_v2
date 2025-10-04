@@ -570,6 +570,34 @@ class Member_model extends CI_Model
 		return $dt->format('Y-m-d');
 	}
 
+
+
+
+	public function get_members_for_select($org_id, $search = '')
+	{
+		$this->db->select('member_idx, member_name');
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+
+		if (!empty($search)) {
+			$this->db->like('member_name', $search);
+		}
+
+		$this->db->order_by('member_name', 'ASC');
+		$this->db->limit(50);
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+
+
+
+
+
+
 }
 
 

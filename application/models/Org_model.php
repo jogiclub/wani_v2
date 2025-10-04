@@ -765,4 +765,32 @@ class Org_model extends CI_Model {
 		return $this->db->count_all_results() > 0;
 	}
 
+
+	/**
+	 * 조직의 타임라인 항목 조회
+	 */
+	public function get_timeline_types($org_id)
+	{
+		$this->db->select('timeline_name');
+		$this->db->from('wb_org');
+		$this->db->where('org_id', $org_id);
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		if ($result && !empty($result['timeline_name'])) {
+			$timeline_data = json_decode($result['timeline_name'], true);
+
+			if (is_array($timeline_data)) {
+				return $timeline_data;
+			}
+
+			// JSON이 아닌 경우 쉼표로 구분된 문자열로 처리
+			$timeline_names = explode(',', $result['timeline_name']);
+			return array_map('trim', $timeline_names);
+		}
+
+		return array();
+	}
+
 }
