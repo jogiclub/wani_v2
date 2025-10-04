@@ -317,6 +317,19 @@ class Memo_model extends CI_Model {
 			$this->db->group_end();
 		}
 
+		// 연/월 필터 (등록일 기준)
+		if (!empty($filters['year']) && !empty($filters['month'])) {
+			$year = intval($filters['year']);
+			$month = intval($filters['month']);
+
+			$start_date = sprintf('%04d-%02d-01 00:00:00', $year, $month);
+			$last_day = date('t', strtotime($start_date));
+			$end_date = sprintf('%04d-%02d-%02d 23:59:59', $year, $month, $last_day);
+
+			$this->db->where('m.regi_date >=', $start_date);
+			$this->db->where('m.regi_date <=', $end_date);
+		}
+
 		$this->db->order_by('m.att_date', 'DESC');
 		$this->db->order_by('m.regi_date', 'DESC');
 
@@ -346,6 +359,19 @@ class Memo_model extends CI_Model {
 			$this->db->like('mem.member_name', $filters['search_text']);
 			$this->db->or_like('m.memo_content', $filters['search_text']);
 			$this->db->group_end();
+		}
+
+		// 연/월 필터 (등록일 기준)
+		if (!empty($filters['year']) && !empty($filters['month'])) {
+			$year = intval($filters['year']);
+			$month = intval($filters['month']);
+
+			$start_date = sprintf('%04d-%02d-01 00:00:00', $year, $month);
+			$last_day = date('t', strtotime($start_date));
+			$end_date = sprintf('%04d-%02d-%02d 23:59:59', $year, $month, $last_day);
+
+			$this->db->where('m.regi_date >=', $start_date);
+			$this->db->where('m.regi_date <=', $end_date);
 		}
 
 		$query = $this->db->get();

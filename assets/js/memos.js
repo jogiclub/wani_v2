@@ -8,6 +8,9 @@ $(document).ready(function() {
 	let memoGrid;
 	let memoTypes = [];
 
+	// 현재 연/월 초기화
+	initializeYearMonth();
+
 	// PQGrid 초기화
 	initPQGrid();
 
@@ -17,8 +20,23 @@ $(document).ready(function() {
 	// 이벤트 바인딩
 	bindEvents();
 
+	// 전송 히스토리 년월 초기화
+	initHistoryYearMonth();
+
 	/**
-	 * 역할: PQGrid 초기화 - cellClick 이벤트 추가
+	 * 연/월 초기화
+	 */
+	function initializeYearMonth() {
+		const today = new Date();
+		const currentYear = today.getFullYear();
+		const currentMonth = today.getMonth() + 1;
+
+		$('#historyYear').val(currentYear);
+		$('#historyMonth').val(currentMonth);
+	}
+
+	/**
+	 * PQGrid 초기화
 	 */
 	function initPQGrid() {
 		const colModel = [
@@ -132,7 +150,9 @@ $(document).ready(function() {
 				return {
 					org_id: currentOrgId,
 					memo_types: selectedTypes,
-					search_text: $('#searchText').val()
+					search_text: $('#searchText').val(),
+					year: $('#historyYear').val(),
+					month: $('#historyMonth').val()
 				};
 			},
 			getData: function(response) {
@@ -177,6 +197,74 @@ $(document).ready(function() {
 		};
 
 		memoGrid = pq.grid('#memoGrid', gridOptions);
+	}
+
+	/**
+	 * 이벤트 바인딩
+	 */
+	function bindEvents() {
+		$('#btnSearch').on('click', searchMemos);
+		$('#searchText').on('keypress', function(e) {
+			if (e.which === 13) {
+				searchMemos();
+			}
+		});
+
+		$('#btnAdd').on('click', showAddForm);
+		$('#btnDelete').on('click', showDeleteConfirm);
+
+		$('#btnSaveMemo').on('click', saveMemo);
+		$('#confirmDeleteBtn').on('click', deleteMemos);
+
+		$('#memoOffcanvas').on('hidden.bs.offcanvas', resetForm);
+
+		$(document).on('change', '#selectAllCheckbox', function() {
+			const isChecked = $(this).prop('checked');
+			$('.memo-checkbox').prop('checked', isChecked);
+			updateSelectedMemoButtons();
+		});
+
+		$(document).on('change', '.memo-checkbox', function() {
+			updateSelectAllCheckbox();
+			updateSelectedMemoButtons();
+		});
+
+		// 연/월 변경 이벤트
+		$('#historyYear, #historyMonth').on('change', function() {
+			searchMemos();
+		});
+
+		// 이전월 버튼
+		$('#btnPrevMonth').on('click', function() {
+			let year = parseInt($('#historyYear').val());
+			let month = parseInt($('#historyMonth').val());
+
+			month--;
+			if (month < 1) {
+				month = 12;
+				year--;
+			}
+
+			$('#historyYear').val(year);
+			$('#historyMonth').val(month);
+			searchMemos();
+		});
+
+		// 다음월 버튼
+		$('#btnNextMonth').on('click', function() {
+			let year = parseInt($('#historyYear').val());
+			let month = parseInt($('#historyMonth').val());
+
+			month++;
+			if (month > 12) {
+				month = 1;
+				year++;
+			}
+
+			$('#historyYear').val(year);
+			$('#historyMonth').val(month);
+			searchMemos();
+		});
 	}
 
 	/**
@@ -348,68 +436,30 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * Select2 초기화
+	 * 역할: 히스토리 년월 선택 초기화
 	 */
-	function initMemberSelect2() {
-		$('#member_select').select2({
-			width: '100%',
-			placeholder: '회원을 선택하세요',
-			allowClear: true,
-			multiple: true,
-			closeOnSelect: false,
-			language: {
-				noResults: function() {
-					return '검색 결과가 없습니다.';
-				},
-				searching: function() {
-					return '검색 중...';
-				},
-				inputTooShort: function() {
-					return '검색어를 입력하세요.';
-				}
-			},
-			ajax: {
-				url: baseUrl + 'memos/get_members_for_select',
-				dataType: 'json',
-				delay: 250,
-				data: function(params) {
-					return {
-						org_id: currentOrgId,
-						search: params.term
-					};
-				},
-				processResults: function(response) {
-					if (response.success) {
-						return {
-							results: response.data.map(function(member) {
-								return {
-									id: member.member_idx,
-									text: member.member_name
-								};
-							})
-						};
-					}
-					return { results: [] };
-				},
-				cache: true
-			},
-			minimumInputLength: 0,
-			templateResult: function(data) {
-				if (!data.id) {
-					return data.text;
-				}
-				return $('<span>' + data.text + '</span>');
-			},
-			templateSelection: function(data) {
-				return data.text;
-			}
-		});
+	function initHistoryYearMonth() {
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		const currentMonth = now.getMonth() + 1;
 
-		$('#member_select').select2Sortable();
+		// 년도 옵션 생성 (현재년도 기준 ±5년)
+		const yearSelect = $('#historyYear');
+		yearSelect.empty();
+
+		for (let year = currentYear - 5; year <= currentYear + 1; year++) {
+			const option = `<option value="${year}">${year}년</option>`;
+			yearSelect.append(option);
+		}
+
+		// 현재 년월로 설정
+		$('#historyYear').val(currentYear);
+		$('#historyMonth').val(currentMonth);
 	}
 
+
 	/**
-	 * 역할: 이벤트 바인딩 - 체크박스 이벤트 수정
+	 * 이벤트 바인딩
 	 */
 	function bindEvents() {
 		$('#btnSearch').on('click', searchMemos);
@@ -436,6 +486,43 @@ $(document).ready(function() {
 		$(document).on('change', '.memo-checkbox', function() {
 			updateSelectAllCheckbox();
 			updateSelectedMemoButtons();
+		});
+
+		// 연/월 변경 이벤트
+		$('#historyYear, #historyMonth').on('change', function() {
+			searchMemos();
+		});
+
+		// 이전월 버튼
+		$('#btnPrevMonth').on('click', function() {
+			let year = parseInt($('#historyYear').val());
+			let month = parseInt($('#historyMonth').val());
+
+			month--;
+			if (month < 1) {
+				month = 12;
+				year--;
+			}
+
+			$('#historyYear').val(year);
+			$('#historyMonth').val(month);
+			searchMemos();
+		});
+
+		// 다음월 버튼
+		$('#btnNextMonth').on('click', function() {
+			let year = parseInt($('#historyYear').val());
+			let month = parseInt($('#historyMonth').val());
+
+			month++;
+			if (month > 12) {
+				month = 1;
+				year++;
+			}
+
+			$('#historyYear').val(year);
+			$('#historyMonth').val(month);
+			searchMemos();
 		});
 	}
 
@@ -660,4 +747,84 @@ $(document).ready(function() {
 			$('#member_select').val(null).trigger('change');
 		}
 	}
+
+
+	/**
+	 * 전체 회원 데이터 로드
+	 */
+	function loadAllMembers(callback) {
+		$.ajax({
+			url: baseUrl + 'memos/get_all_members',
+			type: 'POST',
+			dataType: 'json',
+			data: { org_id: currentOrgId },
+			success: function(response) {
+				if (response.success && typeof callback === 'function') {
+					callback(response.data);
+				}
+			},
+			error: function() {
+				showToast('회원 목록 로드에 실패했습니다.', 'error');
+				if (typeof callback === 'function') {
+					callback([]);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Select2 초기화 (전체 데이터 미리 로드 방식)
+	 */
+	function initMemberSelect2() {
+		loadAllMembers(function(members) {
+			$('#member_select').select2({
+				width: '100%',
+				placeholder: '회원을 선택하세요',
+				allowClear: true,
+				multiple: true,
+				closeOnSelect: false,
+				data: members.map(function(member) {
+					return {
+						id: member.member_idx,
+						text: member.member_name
+					};
+				}),
+				language: {
+					noResults: function() {
+						return '검색 결과가 없습니다.';
+					},
+					searching: function() {
+						return '검색 중...';
+					}
+				},
+				matcher: function(params, data) {
+					if ($.trim(params.term) === '') {
+						return data;
+					}
+
+					if (typeof data.text === 'undefined') {
+						return null;
+					}
+
+					if (data.text.indexOf(params.term) > -1) {
+						return data;
+					}
+
+					return null;
+				},
+				templateResult: function(data) {
+					if (!data.id) {
+						return data.text;
+					}
+					return $('<span>' + data.text + '</span>');
+				},
+				templateSelection: function(data) {
+					return data.text;
+				}
+			});
+
+			$('#member_select').select2Sortable();
+		});
+	}
+
 });

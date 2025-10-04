@@ -32,6 +32,35 @@ $this->load->view('header');
 			<div class="row flex-column flex-lg-row">
 				<div class="d-flex justify-content-between flex-lg-row">
 
+					<div class="input-group" style="width: 350px">
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnPrevMonth">
+							<i class="bi bi-chevron-left"></i> 이전월
+						</button>
+
+						<select class="form-select form-select-sm" id="historyYear">
+
+						</select>
+
+						<select class="form-select form-select-sm" id="historyMonth">
+							<option value="1">1월</option>
+							<option value="2">2월</option>
+							<option value="3">3월</option>
+							<option value="4">4월</option>
+							<option value="5">5월</option>
+							<option value="6">6월</option>
+							<option value="7">7월</option>
+							<option value="8">8월</option>
+							<option value="9">9월</option>
+							<option value="10">10월</option>
+							<option value="11">11월</option>
+							<option value="12">12월</option>
+						</select>
+
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnNextMonth">
+							다음월 <i class="bi bi-chevron-right"></i>
+						</button>
+					</div>
+
 					<div class="input-group input-group-sm" style="width: 400px;">
 
 						<button type="button" class="btn btn-secondary" id="searchTypeText">전체 타임라인</button>

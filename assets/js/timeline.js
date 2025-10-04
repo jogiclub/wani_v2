@@ -8,6 +8,9 @@ $(document).ready(function() {
 	let timelineGrid;
 	let timelineTypes = [];
 
+	// 현재 연/월 초기화
+	initializeYearMonth();
+
 	// PQGrid 초기화
 	initPQGrid();
 
@@ -17,6 +20,8 @@ $(document).ready(function() {
 	// 이벤트 바인딩
 	bindEvents();
 
+	// 전송 히스토리 년월 초기화
+	initHistoryYearMonth();
 
 	/**
 	 * 역할: PQGrid 초기화 - cellClick 이벤트 추가
@@ -200,7 +205,41 @@ $(document).ready(function() {
 	}
 
 	/**
-	 
+	 * 연/월 초기화
+	 */
+	function initializeYearMonth() {
+		const today = new Date();
+		const currentYear = today.getFullYear();
+		const currentMonth = today.getMonth() + 1;
+
+		$('#historyYear').val(currentYear);
+		$('#historyMonth').val(currentMonth);
+	}
+
+
+	/**
+	 * 역할: 히스토리 년월 선택 초기화
+	 */
+	function initHistoryYearMonth() {
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		const currentMonth = now.getMonth() + 1;
+
+		// 년도 옵션 생성 (현재년도 기준 ±5년)
+		const yearSelect = $('#historyYear');
+		yearSelect.empty();
+
+		for (let year = currentYear - 5; year <= currentYear + 1; year++) {
+			const option = `<option value="${year}">${year}년</option>`;
+			yearSelect.append(option);
+		}
+
+		// 현재 년월로 설정
+		$('#historyYear').val(currentYear);
+		$('#historyMonth').val(currentMonth);
+	}
+
+	/**
 	 * 역할: 체크박스 컬럼 클릭 핸들러
 	 */
 	function handleCheckboxColumnClick(event, idx) {

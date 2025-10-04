@@ -57,6 +57,8 @@ class Memos extends My_Controller
 		$org_id = $this->input->post('org_id');
 		$memo_types = $this->input->post('memo_types');
 		$search_text = $this->input->post('search_text');
+		$year = $this->input->post('year');
+		$month = $this->input->post('month');
 
 		if (!$org_id) {
 			echo json_encode(array(
@@ -68,7 +70,9 @@ class Memos extends My_Controller
 
 		$filters = array(
 			'memo_types' => $memo_types,
-			'search_text' => $search_text
+			'search_text' => $search_text,
+			'year' => $year,
+			'month' => $month
 		);
 
 		$memos = $this->Memo_model->get_memos($org_id, $filters);
@@ -256,4 +260,30 @@ class Memos extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '메모를 찾을 수 없습니다.'));
 		}
 	}
+
+
+	/**
+	 * 전체 회원 목록 조회 (Select2용 - 미리 로드)
+	 */
+	public function get_all_members()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
+			return;
+		}
+
+		$members = $this->Member_model->get_members_for_select($org_id, '');
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $members
+		));
+	}
+
 }
