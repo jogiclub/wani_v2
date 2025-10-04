@@ -1,4 +1,5 @@
 /**
+ * 파일 위치: assets/js/timeline.js
  * 역할: 타임라인 관리 화면 동작 제어
  */
 
@@ -23,14 +24,16 @@ $(document).ready(function() {
 	function initPQGrid() {
 		const colModel = [
 			{
-				title: '',
+				type: 'checkbox',
 				dataIndx: 'pq_select',
-				dataType: 'bool',
-				align: 'center',
 				width: 40,
+				align: 'center',
+				editable: true,
 				cb: {
-					all: false,
-					header: true
+					all: true,
+					header: true,
+					check: true,
+					uncheck: false
 				}
 			},
 			{
@@ -42,9 +45,18 @@ $(document).ready(function() {
 			{
 				title: '날짜',
 				dataIndx: 'timeline_date',
-				dataType: 'date',
+				dataType: 'string',
 				width: 120,
-				format: 'yyyy-MM-dd'
+				render: function(ui) {
+					if (ui.cellData) {
+						const date = new Date(ui.cellData);
+						const year = date.getFullYear();
+						const month = String(date.getMonth() + 1).padStart(2, '0');
+						const day = String(date.getDate()).padStart(2, '0');
+						return `${year}-${month}-${day}`;
+					}
+					return '';
+				}
 			},
 			{
 				title: '이름',
@@ -61,9 +73,21 @@ $(document).ready(function() {
 			{
 				title: '등록일',
 				dataIndx: 'regi_date',
-				dataType: 'date',
+				dataType: 'string',
 				width: 150,
-				format: 'yyyy-MM-dd HH:mm:ss'
+				render: function(ui) {
+					if (ui.cellData) {
+						const date = new Date(ui.cellData);
+						const year = date.getFullYear();
+						const month = String(date.getMonth() + 1).padStart(2, '0');
+						const day = String(date.getDate()).padStart(2, '0');
+						const hours = String(date.getHours()).padStart(2, '0');
+						const minutes = String(date.getMinutes()).padStart(2, '0');
+						const seconds = String(date.getSeconds()).padStart(2, '0');
+						return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					}
+					return '';
+				}
 			},
 			{
 				title: '등록자',
@@ -74,9 +98,21 @@ $(document).ready(function() {
 			{
 				title: '수정일',
 				dataIndx: 'modi_date',
-				dataType: 'date',
+				dataType: 'string',
 				width: 150,
-				format: 'yyyy-MM-dd HH:mm:ss'
+				render: function(ui) {
+					if (ui.cellData) {
+						const date = new Date(ui.cellData);
+						const year = date.getFullYear();
+						const month = String(date.getMonth() + 1).padStart(2, '0');
+						const day = String(date.getDate()).padStart(2, '0');
+						const hours = String(date.getHours()).padStart(2, '0');
+						const minutes = String(date.getMinutes()).padStart(2, '0');
+						const seconds = String(date.getSeconds()).padStart(2, '0');
+						return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+					}
+					return '';
+				}
 			}
 		];
 
@@ -106,13 +142,14 @@ $(document).ready(function() {
 			height: 600,
 			colModel: colModel,
 			dataModel: dataModel,
+			editable: true,
 			pageModel: {
 				type: 'remote',
 				rPP: 20,
 				rPPOptions: [10, 20, 50, 100]
 			},
 			selectionModel: { type: 'row', mode: 'block' },
-			numberCell: { show: true, width: 40, title: 'No' },
+			numberCell: { show: false },
 			showTitle: false,
 			showToolbar: false,
 			showBottom: true,
@@ -248,7 +285,8 @@ $(document).ready(function() {
 	 * 수정 폼 표시
 	 */
 	function showEditForm() {
-		const selectedRows = timelineGrid.Selection().getSelection();
+		const allData = timelineGrid.getData();
+		const selectedRows = allData.filter(row => row.pq_select === true);
 
 		if (selectedRows.length === 0) {
 			showToast('수정할 항목을 선택해주세요.', 'warning');
@@ -260,8 +298,7 @@ $(document).ready(function() {
 			return;
 		}
 
-		const rowData = selectedRows[0].rowData;
-		editTimeline(rowData);
+		editTimeline(selectedRows[0]);
 	}
 
 	/**
@@ -397,7 +434,8 @@ $(document).ready(function() {
 	 * 삭제 확인 모달 표시
 	 */
 	function showDeleteConfirm() {
-		const selectedRows = timelineGrid.Selection().getSelection();
+		const allData = timelineGrid.getData();
+		const selectedRows = allData.filter(row => row.pq_select === true);
 
 		if (selectedRows.length === 0) {
 			showToast('삭제할 항목을 선택해주세요.', 'warning');
@@ -412,8 +450,9 @@ $(document).ready(function() {
 	 * 타임라인 삭제
 	 */
 	function deleteTimelines() {
-		const selectedRows = timelineGrid.Selection().getSelection();
-		const idxs = selectedRows.map(row => row.rowData.idx);
+		const allData = memberGrid.getData();
+		const selectedRows = allData.filter(row => row.pq_select === true);
+		const idxs = selectedRows.map(row => row.idx);
 
 		$.ajax({
 			url: baseUrl + 'timeline/delete_timelines',
@@ -446,37 +485,5 @@ $(document).ready(function() {
 		if ($('#member_select').data('select2')) {
 			$('#member_select').val(null).trigger('change');
 		}
-	}
-
-	/**
-	 * Toast 메시지 표시
-	 */
-	function showToast(message, type = 'info') {
-		const toastClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info';
-		const toastHtml = `
-			<div class="toast align-items-center text-white ${toastClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-				<div class="d-flex">
-					<div class="toast-body">
-						${message}
-					</div>
-					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-				</div>
-			</div>
-		`;
-
-		const toastContainer = $('#toastContainer');
-		if (toastContainer.length === 0) {
-			$('body').append('<div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>');
-		}
-
-		const $toast = $(toastHtml);
-		$('#toastContainer').append($toast);
-
-		const toast = new bootstrap.Toast($toast[0]);
-		toast.show();
-
-		$toast.on('hidden.bs.toast', function() {
-			$(this).remove();
-		});
 	}
 });
