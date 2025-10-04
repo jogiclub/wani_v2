@@ -249,6 +249,7 @@
 
 <!-- Select2 JS 추가 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/org_setting.js?<?php echo WB_VERSION; ?>"></script>
 
 

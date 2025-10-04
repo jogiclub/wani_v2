@@ -61,6 +61,8 @@ $(document).ready(function () {
 				};
 			}
 		});
+		$('#position_names').select2Sortable();
+
 
 		// 직책(그룹직책) 설정
 		$('#duty_names').select2({
@@ -81,6 +83,7 @@ $(document).ready(function () {
 				};
 			}
 		});
+		$('#duty_names').select2Sortable();
 
 		// 타임라인 설정
 		$('#timeline_names').select2({
@@ -101,6 +104,7 @@ $(document).ready(function () {
 				};
 			}
 		});
+		$('#timeline_names').select2Sortable();
 
 		// 기존 데이터 로드
 		loadExistingData();

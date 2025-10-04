@@ -368,6 +368,7 @@ $(document).ready(function() {
 		}
 	}
 
+
 	/**
 	 * Select2 초기화
 	 */
@@ -375,8 +376,20 @@ $(document).ready(function() {
 		$('#member_select').select2({
 			width: '100%',
 			placeholder: '회원을 선택하세요',
-			allowClear: false,
+			allowClear: true,
 			multiple: true,
+			closeOnSelect: false,
+			language: {
+				noResults: function() {
+					return '검색 결과가 없습니다.';
+				},
+				searching: function() {
+					return '검색 중...';
+				},
+				inputTooShort: function() {
+					return '검색어를 입력하세요.';
+				}
+			},
 			ajax: {
 				url: baseUrl + 'timeline/get_members_for_select',
 				dataType: 'json',
@@ -402,9 +415,23 @@ $(document).ready(function() {
 				},
 				cache: true
 			},
-			minimumInputLength: 0
+			minimumInputLength: 0,
+			templateResult: function(data) {
+				if (!data.id) {
+					return data.text;
+				}
+				return $('<span>' + data.text + '</span>');
+			},
+			templateSelection: function(data) {
+				return data.text;
+			}
 		});
+
+		// Select2 드래그앤드롭 기능 적용
+		$('#member_select').select2Sortable();
 	}
+
+
 
 	/**
 	 * 역할: 이벤트 바인딩 - 체크박스 이벤트 수정

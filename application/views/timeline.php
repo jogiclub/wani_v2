@@ -114,9 +114,8 @@ $this->load->view('header');
 				<label for="member_select" class="form-label">이름 <span class="text-danger">*</span></label>
 				<select class="form-select" id="member_select" name="member_idxs[]" multiple required>
 				</select>
-				<div class="form-text">여러 명을 선택할 수 있습니다.</div>
+				<div class="form-text">여러 명을 선택할 수 있습니다. 선택된 항목을 드래그하여 순서를 변경할 수 있습니다.</div>
 			</div>
-
 			<div class="mb-3" id="memberNameDiv" style="display: none;">
 				<label class="form-label">회원명</label>
 				<input type="text" class="form-control" id="member_name_display" readonly>
@@ -156,6 +155,8 @@ $this->load->view('header');
 
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
+
 
 <script>
 	window.timelinePageData = {
