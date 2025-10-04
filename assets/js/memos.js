@@ -11,7 +11,6 @@ $(document).ready(function() {
 	// 전송 히스토리 년월 초기화
 	initHistoryYearMonth();
 
-
 	// PQGrid 초기화
 	initPQGrid();
 
@@ -21,7 +20,8 @@ $(document).ready(function() {
 	// 이벤트 바인딩
 	bindEvents();
 
-
+	// 메모 통계 로드 추가
+	loadMemoStatistics();
 
 
 	/**
@@ -527,6 +527,9 @@ $(document).ready(function() {
 			updateSelectedMemoButtons();
 			hideGridLoading();
 		}, 100);
+
+		// 통계 갱신
+		loadMemoStatistics();
 	}
 
 	/**
@@ -814,6 +817,90 @@ $(document).ready(function() {
 
 			$('#member_select').select2Sortable();
 		});
+	}
+
+
+	/**
+	 * 메모 통계 로드
+	 */
+	function loadMemoStatistics() {
+		var orgId = window.memoPageData.currentOrgId;
+
+		if (!orgId) {
+			return;
+		}
+
+		// 로딩 표시
+		$('#memoStaticsLoading').show();
+		$('#memoStatics').empty();
+
+		$.ajax({
+			url: window.memoPageData.baseUrl + 'memos/get_memo_statistics',
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				org_id: orgId
+			},
+			success: function(response) {
+				$('#memoStaticsLoading').hide();
+
+				if (response.success) {
+					renderMemoStatistics(response.data);
+				} else {
+					showToast(response.message || '통계를 불러오는데 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				$('#memoStaticsLoading').hide();
+				showToast('통계를 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 메모 통계 렌더링 (Bootstrap Progress 사용)
+	 */
+	function renderMemoStatistics(data) {
+		var statistics = data.statistics || [];
+		var totalMembers = data.total_members || 0;
+		var memoTypes = data.memo_types || [];
+
+		var html = '';
+
+		if (statistics.length === 0 || totalMembers === 0) {
+			html = '<div class="text-center text-muted py-4">통계 데이터가 없습니다.</div>';
+		} else {
+			// 타입명 매핑
+			var typeMap = {};
+			memoTypes.forEach(function(type) {
+				typeMap[type] = type;
+			});
+
+			// Progress bar 색상 배열
+			var progressColors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+
+			// 통계 데이터 렌더링
+			statistics.forEach(function(stat, index) {
+				var typeName = typeMap[stat.memo_type] || stat.memo_type;
+				var memberCount = parseInt(stat.member_count) || 0;
+
+				// 소수점 2자리까지 계산
+				var percentage = totalMembers > 0 ? ((memberCount / totalMembers) * 100).toFixed(2) : '0.00';
+				var color = progressColors[index % progressColors.length];
+
+				html += '<div class="mb-3">';
+				html += '<div class="d-flex justify-content-between align-items-center mb-1">';
+				html += '<span class="fw-bold">' + typeName + '</span>';
+				html += '<span class="text-muted small">' + percentage + '% (' + memberCount + '명/' + totalMembers + '명)</span>';
+				html += '</div>';
+				html += '<div class="progress" role="progressbar" aria-label="' + typeName + '" aria-valuenow="' + percentage + '" aria-valuemin="0" aria-valuemax="100">';
+				html += '<div class="progress-bar bg-' + color + '" style="width: ' + percentage + '%"></div>';
+				html += '</div>';
+				html += '</div>';
+			});
+		}
+
+		$('#memoStatics').html(html);
 	}
 
 });

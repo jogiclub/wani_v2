@@ -46,6 +46,33 @@ class Memos extends My_Controller
 	}
 
 	/**
+	 * 메모 통계 조회
+	 */
+	public function get_memo_statistics()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 필요합니다.'
+			));
+			return;
+		}
+
+		$statistics = $this->Memo_model->get_memo_statistics($org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $statistics
+		));
+	}
+
+	/**
 	 * 메모 목록 조회
 	 */
 	public function get_memos()

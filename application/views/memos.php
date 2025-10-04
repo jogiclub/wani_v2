@@ -17,86 +17,111 @@ $this->load->view('header');
 	<div class="row align-items-center justify-content-between g-3 mb-3">
 		<h3 class="page-title col-12 my-1">메모관리</h3>
 	</div>
+	<div class="row">
+	<div class="col-lg-8">
+		<!-- PQGrid 영역 -->
+		<div class="card">
+			<div class="card-header">
+				<div class="row flex-column flex-lg-row">
+					<div class="d-flex justify-content-between flex-lg-row">
 
-	<!-- PQGrid 영역 -->
-	<div class="card">
-		<div class="card-header">
-			<div class="row flex-column flex-lg-row">
-				<div class="d-flex justify-content-between flex-lg-row">
+						<div class="input-group" style="width: 350px">
+							<button type="button" class="btn btn-sm btn-outline-secondary" id="btnPrevMonth">
+								<i class="bi bi-chevron-left"></i> 이전월
+							</button>
 
-					<div class="input-group" style="width: 350px">
-						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnPrevMonth">
-							<i class="bi bi-chevron-left"></i> 이전월
-						</button>
+							<select class="form-select form-select-sm" id="historyYear">
 
-						<select class="form-select form-select-sm" id="historyYear">
+							</select>
 
-						</select>
+							<select class="form-select form-select-sm" id="historyMonth">
+								<option value="1">1월</option>
+								<option value="2">2월</option>
+								<option value="3">3월</option>
+								<option value="4">4월</option>
+								<option value="5">5월</option>
+								<option value="6">6월</option>
+								<option value="7">7월</option>
+								<option value="8">8월</option>
+								<option value="9">9월</option>
+								<option value="10">10월</option>
+								<option value="11">11월</option>
+								<option value="12">12월</option>
+							</select>
 
-						<select class="form-select form-select-sm" id="historyMonth">
-							<option value="1">1월</option>
-							<option value="2">2월</option>
-							<option value="3">3월</option>
-							<option value="4">4월</option>
-							<option value="5">5월</option>
-							<option value="6">6월</option>
-							<option value="7">7월</option>
-							<option value="8">8월</option>
-							<option value="9">9월</option>
-							<option value="10">10월</option>
-							<option value="11">11월</option>
-							<option value="12">12월</option>
-						</select>
+							<button type="button" class="btn btn-sm btn-outline-secondary" id="btnNextMonth">
+								다음월 <i class="bi bi-chevron-right"></i>
+							</button>
+						</div>
 
-						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnNextMonth">
-							다음월 <i class="bi bi-chevron-right"></i>
-						</button>
-					</div>
-
-					<div class="input-group input-group-sm" style="width: 400px;">
+						<div class="input-group input-group-sm" style="width: 400px;">
 
 
 
 
-						<button type="button" class="btn btn-secondary" id="searchTypeText">전체 메모</button>
-						<button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent" id="searchTypeDropdown">
-							<span class="visually-hidden"></span>
-						</button>
+							<button type="button" class="btn btn-secondary" id="searchTypeText">전체 메모</button>
+							<button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent" id="searchTypeDropdown">
+								<span class="visually-hidden"></span>
+							</button>
 
-						<ul class="dropdown-menu" aria-labelledby="searchTypeDropdown" id="searchTypeMenu" style="max-height: 300px; overflow-y: auto;">
-							<li>
-								<div class="dropdown-item">
-									<input type="checkbox" class="form-check-input me-2" id="searchType_all" value="" checked>
-									<label class="form-check-label" for="searchType_all">전체</label>
-								</div>
-							</li>
-							<li><hr class="dropdown-divider"></li>
-							<!-- 메모 항목들이 여기에 동적으로 추가됩니다 -->
-						</ul>
+							<ul class="dropdown-menu" aria-labelledby="searchTypeDropdown" id="searchTypeMenu" style="max-height: 300px; overflow-y: auto;">
+								<li>
+									<div class="dropdown-item">
+										<input type="checkbox" class="form-check-input me-2" id="searchType_all" value="" checked>
+										<label class="form-check-label" for="searchType_all">전체</label>
+									</div>
+								</li>
+								<li><hr class="dropdown-divider"></li>
+								<!-- 메모 항목들이 여기에 동적으로 추가됩니다 -->
+							</ul>
 
-						<label for="searchText" class="form-label d-none">검색</label>
-						<input type="text" class="form-control" id="searchText" placeholder="이름 또는 내용 검색">
-						<button type="button" class="btn btn-sm btn-outline-primary" id="btnSearch"><i class="bi bi-search"></i> 검색</button>
-					</div>
+							<label for="searchText" class="form-label d-none">검색</label>
+							<input type="text" class="form-control" id="searchText" placeholder="이름 또는 내용 검색">
+							<button type="button" class="btn btn-sm btn-outline-primary" id="btnSearch"><i class="bi bi-search"></i> 검색</button>
+						</div>
 
-					<div class="btn-group">
-						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd"><i class="bi bi-plus-lg"></i> 일괄추가</button>
-						<button type="button" class="btn btn-sm btn-outline-danger" id="btnDelete"><i class="bi bi-trash"></i> 선택삭제</button>
+						<div class="btn-group">
+							<button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd"><i class="bi bi-plus-lg"></i> 일괄추가</button>
+							<button type="button" class="btn btn-sm btn-outline-danger" id="btnDelete"><i class="bi bi-trash"></i> 선택삭제</button>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<div class="card-body p-0 position-relative">
-			<!-- 로딩 스피너 -->
-			<div id="memoGridLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
-				<div class="spinner-border text-primary" role="status">
-					<span class="visually-hidden">로딩중...</span>
+			<div class="card-body p-0 position-relative">
+				<!-- 로딩 스피너 -->
+				<div id="memoGridLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
+					<div class="spinner-border text-primary" role="status">
+						<span class="visually-hidden">로딩중...</span>
+					</div>
 				</div>
+				<div id="memoGrid"></div>
 			</div>
-			<div id="memoGrid"></div>
 		</div>
 	</div>
+
+	<div class="col-lg-4">
+		<div class="card">
+			<div class="card-header d-flex justify-content-between align-items-center">
+				<div>메모 통계</div>
+				<div>
+					<select class="form-select form-select-sm d-inline-block" aria-label="Default select example" id="memoStaticsType">
+						<option selected>3개월간 1회 이상 메모 작성 인원</option>
+					</select>
+				</div>
+			</div>
+			<div class="card-body">
+				<div id="memoStaticsLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
+					<div class="spinner-border text-primary" role="status">
+						<span class="visually-hidden">로딩중...</span>
+					</div>
+				</div>
+				<div id="memoStatics"></div>
+			</div>
+		</div>
+	</div>
+	</div>
+
 </div>
 
 <!-- 메모 일괄추가/수정 Offcanvas -->

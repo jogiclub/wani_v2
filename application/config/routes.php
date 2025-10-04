@@ -195,3 +195,4 @@ $route['memos/update_memo'] = 'memos/update_memo';
 $route['memos/delete_memos'] = 'memos/delete_memos';
 $route['memos/get_memo_detail'] = 'memos/get_memo_detail';
 $route['memos/get_all_members'] = 'memos/get_all_members';
+$route['memos/get_memo_statistics'] = 'memos/get_memo_statistics';

@@ -380,6 +380,56 @@ class Memo_model extends CI_Model {
 	}
 
 	/**
+	 * 메모 통계 조회 (최근 3개월간 1회 이상 작성한 회원 수)
+	 */
+	public function get_memo_statistics($org_id)
+	{
+		// 3개월 전 날짜 계산
+		$three_months_ago = date('Y-m-d', strtotime('-3 months'));
+
+		// 조직의 전체 회원 수 조회
+		$this->db->select('COUNT(DISTINCT m.member_idx) as total_members');
+		$this->db->from('wb_member m');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		$query = $this->db->get();
+		$total_result = $query->row_array();
+		$total_members = $total_result['total_members'];
+
+		// 메모 타입 목록 조회
+		$this->load->model('Org_model');
+		$memo_types = $this->Org_model->get_memo_types($org_id);
+
+		// 각 메모 타입별로 최근 3개월간 작성한 회원 수 조회
+		$statistics = array();
+
+		foreach ($memo_types as $memo_type) {
+			$this->db->select('COUNT(DISTINCT memo.member_idx) as member_count');
+			$this->db->from('wb_memo memo');
+			$this->db->join('wb_member m', 'memo.member_idx = m.member_idx', 'inner');
+			$this->db->where('m.org_id', $org_id);
+			$this->db->where('memo.memo_type', $memo_type);
+			$this->db->where('memo.regi_date >=', $three_months_ago);
+			$this->db->where('memo.del_yn', 'N');
+			$this->db->where('m.del_yn', 'N');
+
+			$query = $this->db->get();
+			$result = $query->row_array();
+
+			$statistics[] = array(
+				'memo_type' => $memo_type,
+				'member_count' => $result['member_count']
+			);
+		}
+
+		return array(
+			'statistics' => $statistics,
+			'total_members' => $total_members,
+			'memo_types' => $memo_types
+		);
+	}
+
+	/**
 	 * 메모 일괄추가
 	 */
 	public function add_memos($member_idxs, $data)

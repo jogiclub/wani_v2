@@ -114,8 +114,8 @@ $this->load->view('header');
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<div>타임라인 통계</div>
 					<div>
-						<select class="form-select form-select-sm" aria-label="Default select example" style="width: 150px;" id="timelineStaticsType">
-							<option selected>달성율</option>
+						<select class="form-select form-select-sm d-inline-block" aria-label="Default select example" id="timelineStaticsType">
+							<option selected>전체 달성율</option>
 						</select></div>
 					</div>
 				<div class="card-body">
