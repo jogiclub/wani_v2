@@ -50,7 +50,7 @@ $(document).ready(function() {
 				width: 120
 			},
 			{
-				title: '날짜',
+				title: '출석일',
 				dataIndx: 'memo_date',
 				dataType: 'string',
 				width: 120,

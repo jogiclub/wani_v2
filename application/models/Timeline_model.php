@@ -208,4 +208,33 @@ class Timeline_model extends CI_Model {
 		return $query->result_array();
 	}
 
+	/**
+	 * 타임라인 타입별 통계 조회 (전체 데이터 기준)
+	 */
+	public function get_timeline_statistics($org_id)
+	{
+		$this->db->select('t.timeline_type, COUNT(DISTINCT t.member_idx) as member_count');
+		$this->db->from('wb_member_timeline t');
+		$this->db->join('wb_member m', 't.member_idx = m.member_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+
+		$this->db->group_by('t.timeline_type');
+		$query = $this->db->get();
+
+		return $query->result_array();
+	}
+
+	/**
+	 * 조직의 전체 회원 수 조회 (타임라인 통계용)
+	 */
+	public function get_org_total_member_count($org_id)
+	{
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+
+		return $this->db->count_all_results();
+	}
+
 }

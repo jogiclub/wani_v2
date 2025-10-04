@@ -188,6 +188,7 @@ $(document).ready(function() {
 		};
 
 		timelineGrid = pq.grid('#timelineGrid', gridOptions);
+		loadTimelineStatistics();
 	}
 
 	/**
@@ -498,6 +499,7 @@ $(document).ready(function() {
 		// 연/월 변경 이벤트
 		$('#historyYear, #historyMonth').on('change', function() {
 			searchTimelines();
+			loadTimelineStatistics(); // 통계도 함께 갱신
 		});
 
 		// 이전월 버튼
@@ -784,4 +786,89 @@ $(document).ready(function() {
 			$('#member_select').val(null).trigger('change');
 		}
 	}
+
+	/**
+	 * 타임라인 통계 로드 (전체 데이터 기준)
+	 */
+	function loadTimelineStatistics() {
+		var orgId = window.timelinePageData.currentOrgId;
+
+		if (!orgId) {
+			return;
+		}
+
+		// 로딩 표시
+		$('#timelineStaticsLoading').show();
+		$('#timelineStatics').empty();
+
+		$.ajax({
+			url: window.timelinePageData.baseUrl + 'timeline/get_timeline_statistics',
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				org_id: orgId
+			},
+			success: function(response) {
+				$('#timelineStaticsLoading').hide();
+
+				if (response.success) {
+					renderTimelineStatistics(response.data);
+				} else {
+					showToast('통계 조회 실패', response.message || '통계를 불러오는데 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				$('#timelineStaticsLoading').hide();
+				showToast('통계 조회 실패', '통계를 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 타임라인 통계 렌더링 (Bootstrap Progress 사용, 순서 유지)
+	 */
+	function renderTimelineStatistics(data) {
+		var statistics = data.statistics || [];
+		var totalMembers = data.total_members || 0;
+		var timelineTypes = data.timeline_types || [];
+
+		var html = '';
+
+		if (statistics.length === 0 || totalMembers === 0) {
+			html = '<div class="text-center text-muted py-4">통계 데이터가 없습니다.</div>';
+		} else {
+			// 타입명 매핑
+			var typeMap = {};
+			timelineTypes.forEach(function(type) {
+				typeMap[type] = type;
+			});
+
+			// Progress bar 색상 배열
+			var progressColors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+
+			// 이미 순서대로 정렬된 statistics 사용
+			statistics.forEach(function(stat, index) {
+				var typeName = typeMap[stat.timeline_type] || stat.timeline_type;
+				var memberCount = parseInt(stat.member_count) || 0;
+
+				// 소수점 2자리까지 계산
+				var percentage = totalMembers > 0 ? ((memberCount / totalMembers) * 100).toFixed(2) : '0.00';
+				var color = progressColors[index % progressColors.length];
+
+				html += '<div class="mb-3">';
+				html += '<div class="d-flex justify-content-between align-items-center mb-1">';
+				html += '<span class="fw-bold">' + typeName + '</span>';
+				html += '<span class="text-muted small">' + percentage + '% (' + memberCount + '명/' + totalMembers + '명)</span>';
+				html += '</div>';
+				html += '<div class="progress" role="progressbar" aria-label="' + typeName + '" aria-valuenow="' + percentage + '" aria-valuemin="0" aria-valuemax="100">';
+				html += '<div class="progress-bar bg-' + color + '" style="width: ' + percentage + '%"></div>';
+				html += '</div>';
+				html += '</div>';
+			});
+		}
+
+		$('#timelineStatics').html(html);
+	}
+
+
 });

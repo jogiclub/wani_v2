@@ -264,4 +264,56 @@ class Timeline extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '타임라인을 찾을 수 없습니다.'));
 		}
 	}
+
+
+	/**
+	 * 타임라인 통계 조회 (전체 데이터 기준)
+	 */
+	public function get_timeline_statistics()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 필요합니다.'
+			));
+			return;
+		}
+
+		// 타임라인 통계 조회 (전체 데이터)
+		$statistics = $this->Timeline_model->get_timeline_statistics($org_id);
+
+		// 전체 회원 수 조회
+		$total_members = $this->Timeline_model->get_org_total_member_count($org_id);
+
+		// 타입별 이름 조회 (순서 정보 포함)
+		$timeline_types = $this->Org_model->get_timeline_types($org_id);
+
+		// 통계 데이터를 타입 순서에 맞게 정렬
+		$ordered_statistics = array();
+		foreach ($timeline_types as $type) {
+			foreach ($statistics as $stat) {
+				if ($stat['timeline_type'] === $type) {
+					$ordered_statistics[] = $stat;
+					break;
+				}
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => array(
+				'statistics' => $ordered_statistics,
+				'total_members' => $total_members,
+				'timeline_types' => $timeline_types
+			)
+		));
+	}
+
+
 }
