@@ -193,7 +193,7 @@ $(document).ready(function () {
 			}
 		});
 
-		// 타임라인 추가 버튼 클릭
+		// 타임라인 일괄추가 버튼 클릭
 		$(document).off('click', '#addTimelineBtn').on('click', '#addTimelineBtn', function() {
 			saveTimeline();
 		});
@@ -220,7 +220,7 @@ $(document).ready(function () {
 			cancelEditTimeline();
 		});
 
-		// Enter 키로 타임라인 추가 기능
+		// Enter 키로 타임라인 일괄추가 기능
 		$(document).off('keydown', '#newTimelineContent').on('keydown', '#newTimelineContent', function(e) {
 			if (e.ctrlKey && e.keyCode === 13) {
 				saveTimeline();

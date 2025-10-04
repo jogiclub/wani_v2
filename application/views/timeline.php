@@ -5,10 +5,9 @@
 $this->load->view('header');
 ?>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
-<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 
 
@@ -33,26 +32,49 @@ $this->load->view('header');
 			<div class="row flex-column flex-lg-row">
 				<div class="d-flex justify-content-between flex-lg-row">
 
-						<div class="input-group input-group-sm" style="width: 300px;">
-							<label for="searchType" class="form-label d-none">항목</label>
-							<select class="form-select" id="searchType">
-								<option value="">전체</option>
-							</select>
-							<label for="searchText" class="form-label d-none">검색</label>
-							<input type="text" class="form-control" id="searchText" placeholder="이름 또는 내용 검색">
-							<button type="button" class="btn btn-sm btn-outline-primary" id="btnSearch"><i class="bi bi-search"></i> 검색</button>
-						</div>
+					<div class="input-group input-group-sm" style="width: 400px;">
+
+						<button type="button" class="btn btn-secondary" id="searchTypeText">전체 타임라인</button>
+						<button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" data-bs-reference="parent"  id="searchTypeDropdown" >
+							<span class="visually-hidden"></span>
+						</button>
+
+						
+						
+
+
+						<ul class="dropdown-menu" aria-labelledby="searchTypeDropdown" id="searchTypeMenu" style="max-height: 300px; overflow-y: auto;">
+							<li>
+								<div class="dropdown-item">
+									<input type="checkbox" class="form-check-input me-2" id="searchType_all" value="" checked>
+									<label class="form-check-label" for="searchType_all">전체</label>
+								</div>
+							</li>
+							<li><hr class="dropdown-divider"></li>
+							<!-- 타임라인 항목들이 여기에 동적으로 추가됩니다 -->
+						</ul>
+
+						<label for="searchText" class="form-label d-none">검색</label>
+						<input type="text" class="form-control" id="searchText" placeholder="이름 또는 내용 검색">
+						<button type="button" class="btn btn-sm btn-outline-primary" id="btnSearch"><i class="bi bi-search"></i> 검색</button>
+					</div>
 
 					<div class="btn-group">
-						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd"><i class="bi bi-plus-lg"></i> 추가</button>
-						<button type="button" class="btn btn-sm btn-outline-warning" id="btnEdit"><i class="bi bi-pencil"></i> 선택수정</button>
+						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd"><i class="bi bi-plus-lg"></i> 일괄추가</button>
+
 						<button type="button" class="btn btn-sm btn-outline-danger" id="btnDelete"><i class="bi bi-trash"></i> 선택삭제</button>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<div class="card-body p-0">
+		<div class="card-body p-0 position-relative">
+			<!-- 로딩 스피너 -->
+			<div id="timelineGridLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">로딩중...</span>
+				</div>
+			</div>
 			<div id="timelineGrid"></div>
 		</div>
 	</div>
@@ -60,10 +82,10 @@ $this->load->view('header');
 
 
 
-<!-- 타임라인 추가/수정 Offcanvas -->
+<!-- 타임라인 일괄추가/수정 Offcanvas -->
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" id="timelineOffcanvas" aria-labelledby="timelineOffcanvasLabel" style="width: 500px;">
 	<div class="offcanvas-header text-start">
-		<h5 class="offcanvas-title" id="timelineOffcanvasLabel">타임라인 추가</h5>
+		<h5 class="offcanvas-title" id="timelineOffcanvasLabel">타임라인 일괄추가</h5>
 		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">

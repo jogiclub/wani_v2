@@ -28,7 +28,7 @@ function initializeSelect2Elements() {
 	$('#edit_managed_menus, #edit_managed_areas').select2({
 		width: '100%',
 		placeholder: '선택해주세요',
-		allowClear: true,
+		allowClear: false,
 		dropdownParent: function() {
 			return $(this).closest('.modal-body');
 		}
@@ -154,14 +154,14 @@ function initializeBulkSelect2() {
 	$('#bulk_managed_menus').select2({
 		width: '100%',
 		placeholder: '관리 메뉴를 선택하세요 (선택하지 않으면 변경안함)',
-		allowClear: true,
+		allowClear: false,
 		dropdownParent: $('#bulkEditModal')
 	});
 
 	$('#bulk_managed_areas').select2({
 		width: '100%',
 		placeholder: '관리 그룹을 선택하세요 (선택하지 않으면 변경안함)',
-		allowClear: true,
+		allowClear: false,
 		dropdownParent: $('#bulkEditModal')
 	});
 }

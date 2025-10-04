@@ -47,7 +47,7 @@ $(document).ready(function () {
 			width: '100%',
 			placeholder: '직위/직분을 입력하거나 선택하세요',
 			tags: true,
-			allowClear: true,
+			allowClear: false,
 			tokenSeparators: [',', ' '],
 			createTag: function (params) {
 				const term = $.trim(params.term);
@@ -67,7 +67,7 @@ $(document).ready(function () {
 			width: '100%',
 			placeholder: '직책을 입력하거나 선택하세요',
 			tags: true,
-			allowClear: true,
+			allowClear: false,
 			tokenSeparators: [',', ' '],
 			createTag: function (params) {
 				const term = $.trim(params.term);
@@ -87,7 +87,7 @@ $(document).ready(function () {
 			width: '100%',
 			placeholder: '타임라인 이벤트를 입력하거나 선택하세요',
 			tags: true,
-			allowClear: true,
+			allowClear: false,
 			tokenSeparators: [',', ' '],
 			createTag: function (params) {
 				const term = $.trim(params.term);

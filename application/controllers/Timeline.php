@@ -50,7 +50,7 @@ class Timeline extends My_Controller
 	}
 
 	/**
-	 * 타임라인 목록 조회 (PQGrid용)
+	 * 타임라인 목록 조회
 	 */
 	public function get_timelines()
 	{
@@ -59,31 +59,31 @@ class Timeline extends My_Controller
 		}
 
 		$org_id = $this->input->post('org_id');
-		$timeline_type = $this->input->post('timeline_type');
+		$timeline_types = $this->input->post('timeline_types'); // 배열로 받음
 		$search_text = $this->input->post('search_text');
-		$page = $this->input->post('pq_curpage') ? $this->input->post('pq_curpage') : 1;
-		$rpp = $this->input->post('pq_rpp') ? $this->input->post('pq_rpp') : 20;
 
 		if (!$org_id) {
-			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 필요합니다.'
+			));
 			return;
 		}
 
-		$offset = ($page - 1) * $rpp;
-
+		// 필터 조건 설정
 		$filters = array(
-			'timeline_type' => $timeline_type,
+			'timeline_types' => $timeline_types,
 			'search_text' => $search_text
 		);
 
-		$timelines = $this->Timeline_model->get_timelines($org_id, $filters, $rpp, $offset);
+		$timelines = $this->Timeline_model->get_timelines($org_id, $filters);
 		$total_count = $this->Timeline_model->get_timelines_count($org_id, $filters);
 
 		echo json_encode(array(
 			'success' => true,
-			'data' => $timelines,
+			'curPage' => 1,
 			'totalRecords' => $total_count,
-			'curPage' => $page
+			'data' => $timelines
 		));
 	}
 
@@ -137,7 +137,7 @@ class Timeline extends My_Controller
 	}
 
 	/**
-	 * 타임라인 추가
+	 * 타임라인 일괄추가
 	 */
 	public function add_timeline()
 	{
@@ -173,7 +173,7 @@ class Timeline extends My_Controller
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '타임라인이 추가되었습니다.'));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '타임라인 추가에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '타임라인 일괄추가에 실패했습니다.'));
 		}
 	}
 

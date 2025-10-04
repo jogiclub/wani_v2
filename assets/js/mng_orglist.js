@@ -762,7 +762,7 @@
 					$('#edit_org_tag').select2({
 						width: '100%',
 						placeholder: '태그를 선택하거나 입력하세요',
-						allowClear: true,
+						allowClear: false,
 						tags: true,
 						tokenSeparators: [',', ' '],
 						createTag: function(params) {

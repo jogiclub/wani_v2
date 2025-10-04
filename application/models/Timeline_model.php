@@ -73,30 +73,29 @@ class Timeline_model extends CI_Model {
 	/**
 	 * 타임라인 목록 조회
 	 */
-	public function get_timelines($org_id, $filters = array(), $limit = 20, $offset = 0)
+	public function get_timelines($org_id, $filters = array())
 	{
 		$this->db->select('
-			t.idx,
-			t.member_idx,
-			m.member_name,
-			t.timeline_type,
-			t.timeline_date,
-			t.timeline_content,
-			t.regi_date,
-			t.modi_date,
-			t.user_id,
-			u.user_name as regi_user_name
-		');
+		t.idx,
+		t.timeline_type,
+		t.timeline_date,
+		t.timeline_content,
+		t.regi_date,
+		t.modi_date,
+		m.member_name,
+		u.user_name as regi_user_name
+	');
 		$this->db->from('wb_member_timeline t');
 		$this->db->join('wb_member m', 't.member_idx = m.member_idx', 'left');
 		$this->db->join('wb_user u', 't.user_id = u.user_id', 'left');
 		$this->db->where('m.org_id', $org_id);
-		$this->db->where('m.del_yn', 'N');
 
-		if (!empty($filters['timeline_type'])) {
-			$this->db->where('t.timeline_type', $filters['timeline_type']);
+		// 타임라인 타입 필터 (여러 개 선택 가능)
+		if (!empty($filters['timeline_types']) && is_array($filters['timeline_types'])) {
+			$this->db->where_in('t.timeline_type', $filters['timeline_types']);
 		}
 
+		// 검색어 필터
 		if (!empty($filters['search_text'])) {
 			$this->db->group_start();
 			$this->db->like('m.member_name', $filters['search_text']);
@@ -106,14 +105,13 @@ class Timeline_model extends CI_Model {
 
 		$this->db->order_by('t.timeline_date', 'DESC');
 		$this->db->order_by('t.regi_date', 'DESC');
-		$this->db->limit($limit, $offset);
 
 		$query = $this->db->get();
 		return $query->result_array();
 	}
 
 	/**
-	 * 타임라인 총 개수 조회
+	 * 타임라인 개수 조회
 	 */
 	public function get_timelines_count($org_id, $filters = array())
 	{
@@ -121,12 +119,13 @@ class Timeline_model extends CI_Model {
 		$this->db->from('wb_member_timeline t');
 		$this->db->join('wb_member m', 't.member_idx = m.member_idx', 'left');
 		$this->db->where('m.org_id', $org_id);
-		$this->db->where('m.del_yn', 'N');
 
-		if (!empty($filters['timeline_type'])) {
-			$this->db->where('t.timeline_type', $filters['timeline_type']);
+		// 타임라인 타입 필터 (여러 개 선택 가능)
+		if (!empty($filters['timeline_types']) && is_array($filters['timeline_types'])) {
+			$this->db->where_in('t.timeline_type', $filters['timeline_types']);
 		}
 
+		// 검색어 필터
 		if (!empty($filters['search_text'])) {
 			$this->db->group_start();
 			$this->db->like('m.member_name', $filters['search_text']);
@@ -140,7 +139,7 @@ class Timeline_model extends CI_Model {
 	}
 
 	/**
-	 * 타임라인 추가 (여러 회원)
+	 * 타임라인 일괄추가 (여러 회원)
 	 */
 	public function add_timelines($member_idxs, $data)
 	{

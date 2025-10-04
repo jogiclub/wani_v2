@@ -1,5 +1,4 @@
 /**
- * 파일 위치: assets/js/timeline.js
  * 역할: 타임라인 관리 화면 동작 제어
  */
 
@@ -17,6 +16,7 @@ $(document).ready(function() {
 
 	// 이벤트 바인딩
 	bindEvents();
+
 
 	/**
 	 * 역할: PQGrid 초기화 - cellClick 이벤트 추가
@@ -123,9 +123,17 @@ $(document).ready(function() {
 			method: 'POST',
 			url: baseUrl + 'timeline/get_timelines',
 			postData: function() {
+				// 선택된 타임라인 항목들 가져오기
+				const selectedTypes = [];
+				if (!$('#searchType_all').is(':checked')) {
+					$('.timeline-type-checkbox:checked').each(function() {
+						selectedTypes.push($(this).val());
+					});
+				}
+
 				return {
 					org_id: currentOrgId,
-					timeline_type: $('#searchType').val(),
+					timeline_types: selectedTypes,
 					search_text: $('#searchText').val()
 				};
 			},
@@ -144,25 +152,32 @@ $(document).ready(function() {
 			colModel: colModel,
 			dataModel: dataModel,
 			editable: false,
-			// pageModel: {
-			// 	type: 'remote',
-			// 	rPP: 20,
-			// 	rPPOptions: [10, 20, 50, 100]
-			// },
+			pageModel: { type: null },
 			selectionModel: { type: 'row', mode: 'block' },
 			numberCell: { show: false },
 			showTitle: false,
 			showToolbar: false,
 			showBottom: false,
+			showTop: false,
+			showHeader: true,
 			scrollModel: { autoFit: false },
 			strNoRows: '조회된 타임라인이 없습니다.',
+			loading: { show: false },
 			cellClick: function(event, ui) {
 				if (ui.dataIndx === 'pq_selected') {
 					handleCheckboxColumnClick(event, ui.rowData.idx);
+				} else {
+					// 체크박스 컬럼이 아닌 경우 수정 폼 열기
+					editTimeline(ui.rowData);
 				}
 			},
-			rowDblClick: function(event, ui) {
-				editTimeline(ui.rowData);
+			beforeRemoteRequest: function(event, ui) {
+				// 데이터 로드 시작 시 스피너 표시
+				showGridLoading();
+			},
+			load: function(event, ui) {
+				// 데이터 로드 완료 시 스피너 숨김
+				hideGridLoading();
 			}
 		};
 
@@ -170,7 +185,22 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 파일 위치: assets/js/timeline.js
+	 * 그리드 로딩 스피너 표시
+	 */
+	function showGridLoading() {
+		$('#timelineGridLoading').show();
+	}
+
+	/**
+	 * 그리드 로딩 스피너 숨김
+	 */
+	function hideGridLoading() {
+		$('#timelineGridLoading').hide();
+
+	}
+
+	/**
+	 
 	 * 역할: 체크박스 컬럼 클릭 핸들러
 	 */
 	function handleCheckboxColumnClick(event, idx) {
@@ -192,7 +222,7 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 파일 위치: assets/js/timeline.js
+	 
 	 * 역할: 전체 선택 체크박스 상태 업데이트
 	 */
 	function updateSelectAllCheckbox() {
@@ -215,20 +245,15 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 파일 위치: assets/js/timeline.js
+	 
 	 * 역할: 선택된 타임라인에 따라 버튼 활성화/비활성화
 	 */
 	function updateSelectedTimelineButtons() {
 		const checkedCount = $('.timeline-checkbox:checked').length;
 
 		if (checkedCount === 0) {
-			$('#btnEdit').prop('disabled', true);
 			$('#btnDelete').prop('disabled', true);
-		} else if (checkedCount === 1) {
-			$('#btnEdit').prop('disabled', false);
-			$('#btnDelete').prop('disabled', false);
 		} else {
-			$('#btnEdit').prop('disabled', true);
 			$('#btnDelete').prop('disabled', false);
 		}
 	}
@@ -258,14 +283,89 @@ $(document).ready(function() {
 	 * 타임라인 항목 셀렉트 업데이트
 	 */
 	function updateTimelineTypeSelect() {
-		$('#searchType, #timeline_type').empty();
-		$('#searchType').append('<option value="">전체</option>');
-		$('#timeline_type').append('<option value="">항목을 선택하세요</option>');
+		// 검색 드롭다운 메뉴 업데이트
+		const $searchMenu = $('#searchTypeMenu');
 
+		// 기존 항목 제거 (전체와 구분선은 유지)
+		$searchMenu.find('li:gt(1)').remove();
+
+		// 타임라인 항목들 추가
 		timelineTypes.forEach(function(type) {
-			$('#searchType').append(`<option value="${type}">${type}</option>`);
+			const itemId = 'searchType_' + type.replace(/\s+/g, '_');
+			const $li = $('<li></li>');
+			const $div = $('<div class="dropdown-item"></div>');
+			const $checkbox = $('<input type="checkbox" class="form-check-input me-2 timeline-type-checkbox">');
+			$checkbox.attr('id', itemId);
+			$checkbox.attr('value', type);
+			const $label = $('<label class="form-check-label"></label>');
+			$label.attr('for', itemId);
+			$label.text(type);
+
+			$div.append($checkbox);
+			$div.append($label);
+			$li.append($div);
+			$searchMenu.append($li);
+		});
+
+		// offcanvas의 항목 셀렉트 업데이트
+		$('#timeline_type').empty();
+		$('#timeline_type').append('<option value="">항목을 선택하세요</option>');
+		timelineTypes.forEach(function(type) {
 			$('#timeline_type').append(`<option value="${type}">${type}</option>`);
 		});
+
+		// 드롭다운 이벤트 바인딩
+		bindDropdownEvents();
+	}
+
+	/**
+	 * 드롭다운 이벤트 바인딩
+	 */
+	function bindDropdownEvents() {
+		// 전체 체크박스 클릭 이벤트
+		$('#searchType_all').on('change', function() {
+			const isChecked = $(this).is(':checked');
+			$('.timeline-type-checkbox').prop('checked', false);
+			if (isChecked) {
+				updateSearchTypeText();
+			}
+		});
+
+		// 개별 항목 체크박스 클릭 이벤트
+		$(document).off('change', '.timeline-type-checkbox').on('change', '.timeline-type-checkbox', function() {
+			// 개별 항목이 체크되면 전체 체크 해제
+			if ($(this).is(':checked')) {
+				$('#searchType_all').prop('checked', false);
+			}
+
+			// 모든 개별 항목이 체크 해제되면 전체 체크
+			if ($('.timeline-type-checkbox:checked').length === 0) {
+				$('#searchType_all').prop('checked', true);
+			}
+
+			updateSearchTypeText();
+		});
+
+		// 드롭다운 아이템 클릭 시 닫히지 않도록 방지
+		$('#searchTypeMenu .dropdown-item').on('click', function(e) {
+			e.stopPropagation();
+		});
+	}
+
+	/**
+	 * 선택된 타임라인 항목 텍스트 업데이트
+	 */
+	function updateSearchTypeText() {
+		const $allCheckbox = $('#searchType_all');
+		const $typeCheckboxes = $('.timeline-type-checkbox:checked');
+
+		if ($allCheckbox.is(':checked') || $typeCheckboxes.length === 0) {
+			$('#searchTypeText').text('전체');
+		} else if ($typeCheckboxes.length === 1) {
+			$('#searchTypeText').text($typeCheckboxes.first().val());
+		} else {
+			$('#searchTypeText').text($typeCheckboxes.length + '개 항목 선택');
+		}
 	}
 
 	/**
@@ -273,10 +373,9 @@ $(document).ready(function() {
 	 */
 	function initMemberSelect2() {
 		$('#member_select').select2({
-			theme: 'bootstrap-5',
 			width: '100%',
 			placeholder: '회원을 선택하세요',
-			allowClear: true,
+			allowClear: false,
 			multiple: true,
 			ajax: {
 				url: baseUrl + 'timeline/get_members_for_select',
@@ -308,7 +407,6 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 파일 위치: assets/js/timeline.js
 	 * 역할: 이벤트 바인딩 - 체크박스 이벤트 수정
 	 */
 	function bindEvents() {
@@ -320,7 +418,6 @@ $(document).ready(function() {
 		});
 
 		$('#btnAdd').on('click', showAddForm);
-		$('#btnEdit').on('click', showEditForm);
 		$('#btnDelete').on('click', showDeleteConfirm);
 
 		$('#btnSaveTimeline').on('click', saveTimeline);
@@ -343,27 +440,38 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 파일 위치: assets/js/timeline.js
+	 
 	 * 역할: 타임라인 검색 - 검색 후 버튼 상태 초기화
 	 */
 	function searchTimelines() {
+		showGridLoading();
 		timelineGrid.refreshDataAndView();
 
 		// 검색 후 버튼 비활성화
 		setTimeout(function() {
 			updateSelectAllCheckbox();
 			updateSelectedTimelineButtons();
+			hideGridLoading();
 		}, 100);
 	}
+
+
 	/**
 	 * 추가 폼 표시
 	 */
 	function showAddForm() {
 		resetForm();
 		$('#timeline_mode').val('add');
-		$('#timelineOffcanvasLabel').text('타임라인 추가');
+		$('#timelineOffcanvasLabel').text('타임라인 일괄추가');
 		$('#memberSelectDiv').show();
 		$('#memberNameDiv').hide();
+
+		// 오늘 날짜를 기본값으로 설정
+		const today = new Date();
+		const year = today.getFullYear();
+		const month = String(today.getMonth() + 1).padStart(2, '0');
+		const day = String(today.getDate()).padStart(2, '0');
+		$('#timeline_date').val(`${year}-${month}-${day}`);
 
 		initMemberSelect2();
 
@@ -463,7 +571,7 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 타임라인 추가
+	 * 타임라인 일괄추가
 	 */
 	function addTimeline() {
 		const formData = {
@@ -485,11 +593,11 @@ $(document).ready(function() {
 					bootstrap.Offcanvas.getInstance(document.getElementById('timelineOffcanvas')).hide();
 					searchTimelines();
 				} else {
-					showToast(response.message || '타임라인 추가에 실패했습니다.', 'error');
+					showToast(response.message || '타임라인 일괄추가에 실패했습니다.', 'error');
 				}
 			},
 			error: function() {
-				showToast('타임라인 추가에 실패했습니다.', 'error');
+				showToast('타임라인 일괄추가에 실패했습니다.', 'error');
 			}
 		});
 	}
@@ -541,7 +649,7 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 파일 위치: assets/js/timeline.js
+	 
 	 * 역할: 타임라인 삭제 - 체크박스 방식에 맞게 수정
 	 */
 	function deleteTimelines() {

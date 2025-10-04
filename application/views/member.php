@@ -488,7 +488,7 @@
 
 <script src="/assets/js/custom/split.min.js"></script>
 <script src="/assets/js/custom/jquery.fancytree-all-deps.min.js"></script>
-<script src="/assets/js/custom/pqgrid.min.js"></script>
+<script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.js"></script>
 
 <script>

@@ -284,8 +284,9 @@ footer .btn-add-org i{font-size:30px}
 
 
 /*select2*/
-.select2-container--default .select2-selection--multiple .select2-selection__choice__display{padding-left: 10px!important;}
-.select2-container--default .select2-search--inline .select2-search__field{min-height: 26px;}
+.select2-container--default .select2-selection--multiple{border: 1px solid #ced4da;}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__display{padding-left: 6px!important;}
+.select2-container--default .select2-search--inline .select2-search__field{min-height: 25px;margin-left: 10px !important;margin-top: 6px !important; position: relative;}
 
 
 /*fancytree-container*/
