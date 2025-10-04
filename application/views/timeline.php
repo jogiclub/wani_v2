@@ -43,8 +43,8 @@ $this->load->view('header');
 							<button type="button" class="btn btn-sm btn-outline-primary" id="btnSearch"><i class="bi bi-search"></i> 검색</button>
 						</div>
 
-					<div>
-						<button type="button" class="btn btn-sm btn-outline-success" id="btnAdd"><i class="bi bi-plus-lg"></i> 추가</button>
+					<div class="btn-group">
+						<button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd"><i class="bi bi-plus-lg"></i> 추가</button>
 						<button type="button" class="btn btn-sm btn-outline-warning" id="btnEdit"><i class="bi bi-pencil"></i> 선택수정</button>
 						<button type="button" class="btn btn-sm btn-outline-danger" id="btnDelete"><i class="bi bi-trash"></i> 선택삭제</button>
 					</div>
