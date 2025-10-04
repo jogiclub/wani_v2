@@ -61,6 +61,8 @@ class Timeline extends My_Controller
 		$org_id = $this->input->post('org_id');
 		$timeline_types = $this->input->post('timeline_types'); // 배열로 받음
 		$search_text = $this->input->post('search_text');
+		$year = $this->input->post('year');
+		$month = $this->input->post('month');
 
 		if (!$org_id) {
 			echo json_encode(array(
@@ -73,7 +75,9 @@ class Timeline extends My_Controller
 		// 필터 조건 설정
 		$filters = array(
 			'timeline_types' => $timeline_types,
-			'search_text' => $search_text
+			'search_text' => $search_text,
+			'year' => $year,
+			'month' => $month
 		);
 
 		$timelines = $this->Timeline_model->get_timelines($org_id, $filters);

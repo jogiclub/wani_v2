@@ -139,7 +139,9 @@ $(document).ready(function() {
 				return {
 					org_id: currentOrgId,
 					timeline_types: selectedTypes,
-					search_text: $('#searchText').val()
+					search_text: $('#searchText').val(),
+					year: $('#historyYear').val(),
+					month: $('#historyMonth').val()
 				};
 			},
 			getData: function(response) {
@@ -502,6 +504,43 @@ $(document).ready(function() {
 		$(document).on('change', '.timeline-checkbox', function() {
 			updateSelectAllCheckbox();
 			updateSelectedTimelineButtons();
+		});
+
+		// 연/월 변경 이벤트
+		$('#historyYear, #historyMonth').on('change', function() {
+			searchTimelines();
+		});
+
+		// 이전월 버튼
+		$('#btnPrevMonth').on('click', function() {
+			let year = parseInt($('#historyYear').val());
+			let month = parseInt($('#historyMonth').val());
+
+			month--;
+			if (month < 1) {
+				month = 12;
+				year--;
+			}
+
+			$('#historyYear').val(year);
+			$('#historyMonth').val(month);
+			searchTimelines();
+		});
+
+		// 다음월 버튼
+		$('#btnNextMonth').on('click', function() {
+			let year = parseInt($('#historyYear').val());
+			let month = parseInt($('#historyMonth').val());
+
+			month++;
+			if (month > 12) {
+				month = 1;
+				year++;
+			}
+
+			$('#historyYear').val(year);
+			$('#historyMonth').val(month);
+			searchTimelines();
 		});
 	}
 

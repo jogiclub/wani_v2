@@ -70,45 +70,6 @@ class Timeline_model extends CI_Model {
 	}
 
 
-	/**
-	 * 타임라인 목록 조회
-	 */
-	public function get_timelines($org_id, $filters = array())
-	{
-		$this->db->select('
-		t.idx,
-		t.timeline_type,
-		t.timeline_date,
-		t.timeline_content,
-		t.regi_date,
-		t.modi_date,
-		m.member_name,
-		u.user_name as regi_user_name
-	');
-		$this->db->from('wb_member_timeline t');
-		$this->db->join('wb_member m', 't.member_idx = m.member_idx', 'left');
-		$this->db->join('wb_user u', 't.user_id = u.user_id', 'left');
-		$this->db->where('m.org_id', $org_id);
-
-		// 타임라인 타입 필터 (여러 개 선택 가능)
-		if (!empty($filters['timeline_types']) && is_array($filters['timeline_types'])) {
-			$this->db->where_in('t.timeline_type', $filters['timeline_types']);
-		}
-
-		// 검색어 필터
-		if (!empty($filters['search_text'])) {
-			$this->db->group_start();
-			$this->db->like('m.member_name', $filters['search_text']);
-			$this->db->or_like('t.timeline_content', $filters['search_text']);
-			$this->db->group_end();
-		}
-
-		$this->db->order_by('t.timeline_date', 'DESC');
-		$this->db->order_by('t.regi_date', 'DESC');
-
-		$query = $this->db->get();
-		return $query->result_array();
-	}
 
 	/**
 	 * 타임라인 개수 조회
@@ -133,10 +94,18 @@ class Timeline_model extends CI_Model {
 			$this->db->group_end();
 		}
 
+		// 년/월 필터 (등록일 기준)
+		if (!empty($filters['year']) && !empty($filters['month'])) {
+			$year = $filters['year'];
+			$month = str_pad($filters['month'], 2, '0', STR_PAD_LEFT);
+			$this->db->where("DATE_FORMAT(t.regi_date, '%Y-%m') =", "{$year}-{$month}");
+		}
+
 		$query = $this->db->get();
 		$result = $query->row_array();
 		return $result['count'];
 	}
+
 
 	/**
 	 * 타임라인 일괄추가 (여러 회원)
@@ -193,15 +162,47 @@ class Timeline_model extends CI_Model {
 	}
 
 	/**
-	 * 회원별 타임라인 목록 조회
+	 * 타임라인 목록 조회
 	 */
-	public function get_timelines_by_member($member_idx)
+	public function get_timelines($org_id, $filters = array())
 	{
-		$this->db->select('*');
-		$this->db->from('wb_member_timeline');
-		$this->db->where('member_idx', $member_idx);
-		$this->db->order_by('timeline_date', 'DESC');
-		$this->db->order_by('regi_date', 'DESC');
+		$this->db->select('
+		t.idx,
+		t.timeline_type,
+		t.timeline_date,
+		t.timeline_content,
+		t.regi_date,
+		t.modi_date,
+		m.member_name,
+		u.user_name as regi_user_name
+	');
+		$this->db->from('wb_member_timeline t');
+		$this->db->join('wb_member m', 't.member_idx = m.member_idx', 'left');
+		$this->db->join('wb_user u', 't.user_id = u.user_id', 'left');
+		$this->db->where('m.org_id', $org_id);
+
+		// 타임라인 타입 필터 (여러 개 선택 가능)
+		if (!empty($filters['timeline_types']) && is_array($filters['timeline_types'])) {
+			$this->db->where_in('t.timeline_type', $filters['timeline_types']);
+		}
+
+		// 검색어 필터
+		if (!empty($filters['search_text'])) {
+			$this->db->group_start();
+			$this->db->like('m.member_name', $filters['search_text']);
+			$this->db->or_like('t.timeline_content', $filters['search_text']);
+			$this->db->group_end();
+		}
+
+		// 년/월 필터 (등록일 기준)
+		if (!empty($filters['year']) && !empty($filters['month'])) {
+			$year = $filters['year'];
+			$month = str_pad($filters['month'], 2, '0', STR_PAD_LEFT);
+			$this->db->where("DATE_FORMAT(t.regi_date, '%Y-%m') =", "{$year}-{$month}");
+		}
+
+		$this->db->order_by('t.timeline_date', 'DESC');
+		$this->db->order_by('t.regi_date', 'DESC');
 
 		$query = $this->db->get();
 		return $query->result_array();
