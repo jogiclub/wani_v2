@@ -623,7 +623,60 @@ $(document).ready(function () {
 		});
 	}
 
-// 전역으로 사용할 수 있도록 window 객체에 추가
+	// 초대 코드 갱신
+	$('#refreshInviteCode').on('click', function () {
+		showConfirmModal(
+			'초대 코드 갱신',
+			'초대 코드를 갱신하시겠습니까?<br>기존 코드는 더 이상 사용할 수 없게 됩니다.',
+			function () {
+				executeRefreshInviteCode();
+			}
+		);
+	});
+
+
+	/**
+	 * 초대 코드 갱신 실행
+	 */
+	function executeRefreshInviteCode() {
+		const orgId = $('#org_id').val();
+
+		if (!orgId) {
+			showToast('조직 정보를 가져올 수 없습니다.');
+			return;
+		}
+
+		const refreshBtn = $('#refreshInviteCode');
+		const originalText = refreshBtn.html();
+		refreshBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 갱신 중...');
+
+		$.ajax({
+			url: '/org/refresh_invite_code',
+			method: 'POST',
+			data: {
+				org_id: orgId
+			},
+			dataType: 'json',
+			success: function (response) {
+				if (response.success) {
+					showToast('초대 코드가 갱신되었습니다.');
+					// 초대 코드 입력란 업데이트
+					$('#inviteCodeInput').val(response.invite_code);
+				} else {
+					showToast(response.message || '초대 코드 갱신에 실패했습니다.');
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error('Error:', error);
+				showToast('초대 코드 갱신 중 오류가 발생했습니다.');
+			},
+			complete: function () {
+				refreshBtn.prop('disabled', false).html(originalText);
+			}
+		});
+	}
+
+	// 전역으로 사용할 수 있도록 window 객체에 추가
 	window.getOrgPositions = getOrgPositions;
 	window.getOrgDuties = getOrgDuties;
 	window.getOrgTimelines = getOrgTimelines;

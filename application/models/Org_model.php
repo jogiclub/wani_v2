@@ -767,6 +767,56 @@ class Org_model extends CI_Model {
 
 
 	/**
+	 * 초대 코드 갱신
+	 */
+	public function refresh_invite_code($org_id) {
+		// 새로운 초대코드 생성
+		$new_invite_code = $this->generate_new_invite_code();
+
+		// DB 업데이트
+		$data = array(
+			'invite_code' => $new_invite_code,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		$result = $this->db->update('wb_org', $data);
+
+		if ($result) {
+			log_message('info', "조직 {$org_id}의 초대코드가 {$new_invite_code}로 갱신되었습니다.");
+			return $new_invite_code;
+		}
+
+		return false;
+	}
+
+	/**
+	 * 중복되지 않는 초대코드 생성 (public 메서드)
+	 */
+	public function generate_new_invite_code() {
+		$max_attempts = 100;
+		$attempt = 0;
+
+		do {
+			$code = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'), 0, 5));
+
+			$this->db->where('invite_code', $code);
+			$this->db->where('del_yn', 'N');
+			$exists = $this->db->count_all_results('wb_org') > 0;
+
+			$attempt++;
+
+			if ($attempt >= $max_attempts) {
+				log_message('error', '초대코드 생성 시도 한계 도달');
+				break;
+			}
+		} while ($exists);
+
+		return $code;
+	}
+
+	/**
 	 * 조직의 타임라인 항목 조회
 	 */
 	public function get_timeline_types($org_id)

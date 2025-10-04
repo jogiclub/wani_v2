@@ -132,10 +132,13 @@
 								<div class="col-md-6">
 									<label class="form-label">초대 코드</label>
 									<div class="input-group">
-										<input type="text" class="form-control" readonly
+										<input type="text" class="form-control" id="inviteCodeInput" readonly
 											   value="<?php echo htmlspecialchars($selected_org_detail['invite_code']); ?>">
 										<button class="btn btn-outline-secondary" type="button" id="copyInviteCode">
 											<i class="bi bi-clipboard"></i> 복사
+										</button>
+										<button class="btn btn-outline-primary" type="button" id="refreshInviteCode">
+											<i class="bi bi-arrow-clockwise"></i> 코드갱신
 										</button>
 									</div>
 									<div class="form-text">* 다른 사용자가 이 조직에 참여할 때 사용하는 코드입니다.</div>

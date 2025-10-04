@@ -297,4 +297,43 @@ class Org extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
 		}
 	}
+
+	/**
+	 * 초대 코드 갱신
+	 */
+	public function refresh_invite_code() {
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
+			return;
+		}
+
+		// 권한 검증
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '초대 코드를 갱신할 권한이 없습니다.'));
+			return;
+		}
+
+		// 새로운 초대코드 생성 및 업데이트
+		$new_invite_code = $this->Org_model->refresh_invite_code($org_id);
+
+		if ($new_invite_code) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => '초대 코드가 갱신되었습니다.',
+				'invite_code' => $new_invite_code
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '초대 코드 갱신에 실패했습니다.'));
+		}
+	}
+
 }
