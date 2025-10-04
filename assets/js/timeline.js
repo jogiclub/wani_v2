@@ -8,8 +8,8 @@ $(document).ready(function() {
 	let timelineGrid;
 	let timelineTypes = [];
 
-	// 현재 연/월 초기화
-	initializeYearMonth();
+	// 전송 히스토리 년월 초기화
+	initHistoryYearMonth();
 
 	// PQGrid 초기화
 	initPQGrid();
@@ -20,8 +20,7 @@ $(document).ready(function() {
 	// 이벤트 바인딩
 	bindEvents();
 
-	// 전송 히스토리 년월 초기화
-	initHistoryYearMonth();
+
 
 	/**
 	 * 역할: PQGrid 초기화 - cellClick 이벤트 추가
@@ -206,17 +205,7 @@ $(document).ready(function() {
 
 	}
 
-	/**
-	 * 연/월 초기화
-	 */
-	function initializeYearMonth() {
-		const today = new Date();
-		const currentYear = today.getFullYear();
-		const currentMonth = today.getMonth() + 1;
 
-		$('#historyYear').val(currentYear);
-		$('#historyMonth').val(currentMonth);
-	}
 
 
 	/**
