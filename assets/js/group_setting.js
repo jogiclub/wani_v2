@@ -334,6 +334,7 @@ function updateManagementButtons(groupData) {
 		$('#btnDeleteGroup').prop('disabled', false);
 		$('#btnMoveGroup').prop('disabled', false);
 		$('#btnMoveGroupToTop').prop('disabled', false);
+		$('#btnMemberCardUrl').prop('disabled', false);
 	} else if (groupData.type === 'unassigned') {
 		// 미분류: 그룹생성만 가능
 		$('#btnAddGroup').prop('disabled', false);
@@ -665,3 +666,98 @@ function hideTreeSpinner() {
 	$('#treeSpinner').removeClass('d-flex').addClass('d-none');
 }
 
+
+
+/**
+ * 파일 위치: assets/js/group_setting.js
+ * 역할: 회원카드 URL 생성 및 복사 기능 (변수명 수정)
+ */
+
+// 회원카드 URL 버튼 클릭 이벤트
+$(document).on('click', '#btnMemberCardUrl', function() {
+	// Fancytree에서 현재 선택된 노드 가져오기
+	const tree = $('#groupTree').fancytree('getTree');
+	const activeNode = tree.getActiveNode();
+
+	if (!activeNode) {
+		showToast('그룹을 선택해주세요.', 'warning');
+		return;
+	}
+
+	const nodeKey = activeNode.key;
+	const nodeData = activeNode.data;
+
+	// 조직 노드가 선택된 경우
+	if (nodeKey.startsWith('org_')) {
+		showToast('소그룹을 선택해주세요.', 'warning');
+		return;
+	}
+
+	// 미분류 그룹이 선택된 경우
+	if (nodeKey.startsWith('unassigned_')) {
+		showToast('미분류 그룹은 회원카드 URL을 생성할 수 없습니다.', 'warning');
+		return;
+	}
+
+	const areaIdx = nodeData.area_idx;
+
+	// invite_code 생성 요청
+	generateInviteCode(areaIdx);
+});
+
+/**
+ * 파일 위치: assets/js/group_setting.js - generateInviteCode() 함수
+ * 역할: 초대코드 생성 및 URL 생성 (수정됨)
+ */
+function generateInviteCode(areaIdx) {
+	$.ajax({
+		url: window.groupSettingPageData.baseUrl + 'group_setting/generate_area_invite_code',
+		method: 'POST',
+		data: {
+			area_idx: areaIdx,
+			org_id: window.groupSettingPageData.currentOrgId
+		},
+		dataType: 'json',
+		success: function(response) {
+			if (response.success) {
+				// baseUrl이 이미 전체 URL을 포함하고 있으므로 그대로 사용
+				const memberCardUrl = window.groupSettingPageData.baseUrl +
+					'member_card/register/' +
+					window.groupSettingPageData.currentOrgId + '/' +
+					areaIdx + '/' +
+					response.invite_code;
+
+				// 모달에 URL 표시
+				$('#memberCardUrl').val(memberCardUrl);
+
+				// 모달 열기
+				const modal = new bootstrap.Modal(document.getElementById('memberCardUrlModal'));
+				modal.show();
+			} else {
+				showToast(response.message || '초대코드 생성에 실패했습니다.', 'error');
+			}
+		},
+		error: function() {
+			showToast('초대코드 생성 중 오류가 발생했습니다.', 'error');
+		}
+	});
+}
+
+// URL 복사 버튼 클릭 이벤트
+$(document).on('click', '#copyMemberCardUrl', function() {
+	const urlInput = document.getElementById('memberCardUrl');
+	urlInput.select();
+	urlInput.setSelectionRange(0, 99999); // 모바일 대응
+
+	try {
+		document.execCommand('copy');
+		showToast('URL이 복사되었습니다.', 'success');
+	} catch (err) {
+		// Clipboard API 사용 (최신 브라우저)
+		navigator.clipboard.writeText(urlInput.value).then(function() {
+			showToast('URL이 복사되었습니다.', 'success');
+		}, function() {
+			showToast('복사에 실패했습니다.', 'error');
+		});
+	}
+});

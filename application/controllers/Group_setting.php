@@ -350,5 +350,45 @@ class Group_setting extends My_Controller
 		}
 	}
 
+	/**
+	 * 역할: 조직의 초대코드 조회 (회원카드 URL용)
+	 */
+	public function generate_area_invite_code()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$area_idx = $this->input->post('area_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$area_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 권한 검증
+		$user_level = $this->Group_setting_model->get_org_user_level($user_id, $org_id);
+		if ($user_level < 8 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '초대코드를 조회할 권한이 없습니다.'));
+			return;
+		}
+
+		// 조직의 invite_code 조회
+		$this->load->model('Org_model');
+		$org_info = $this->Org_model->get_org_detail_by_id($org_id);
+
+		if (!$org_info || empty($org_info['invite_code'])) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'invite_code' => $org_info['invite_code']
+		));
+	}
+
 
 }

@@ -73,6 +73,10 @@ $this->load->view('header');
 									<i class="bi bi-arrow-right-square"></i> 그룹이동
 								</button>
 
+								<button type="button" class="btn btn-secondary " id="btnMemberCardUrl" disabled>
+									<i class="bi bi-arrow-right-square"></i> 회원카드 URL
+								</button>
+
 
 
 					</div>
@@ -152,6 +156,31 @@ $this->load->view('header');
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
 				<button type="button" class="btn btn-primary" id="confirmMoveGroupBtn">이동</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 회원카드 URL 모달 -->
+<div class="modal fade" id="memberCardUrlModal" tabindex="-1" aria-labelledby="memberCardUrlModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="memberCardUrlModalLabel">회원카드 URL</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p class="mb-3">아래의 URL을 신규 회원에게 전달하면 온라인으로 회원등록이 가능합니다.<br>
+					등록된 회원은 해당 소그룹에 자동 등록됩니다.</p>
+				<div class="input-group">
+					<input type="text" class="form-control" id="memberCardUrl" readonly>
+					<button class="btn btn-primary" type="button" id="copyMemberCardUrl">
+						<i class="bi bi-clipboard"></i> 복사하기
+					</button>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
 			</div>
 		</div>
 	</div>

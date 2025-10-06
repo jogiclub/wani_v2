@@ -559,6 +559,7 @@ class Member extends My_Controller
 	/**
 	 * 역할: 회원 추가 (상세정보 포함, 직위/직책 필드 추가)
 	 */
+
 	public function add_member()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -567,18 +568,23 @@ class Member extends My_Controller
 
 		$org_id = $this->input->post('org_id');
 		$member_name = $this->input->post('member_name');
-		$member_sex = $this->input->post('member_sex'); // 성별 추가
+		$member_sex = $this->input->post('member_sex');
 		$area_idx = $this->input->post('area_idx');
 
-		if (!$org_id || !$member_name) {
+		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
+		}
+
+		// member_name이 없으면 임시 이름으로 설정 (나중에 업데이트)
+		if (!$member_name || trim($member_name) === '') {
+			$member_name = '새회원';
 		}
 
 		$data = array(
 			'org_id' => $org_id,
 			'member_name' => $member_name,
-			'member_sex' => $member_sex ?: null, // 성별 저장
+			'member_sex' => $member_sex ?: null,
 			'area_idx' => $area_idx ?: null,
 			'regi_date' => date('Y-m-d H:i:s'),
 			'del_yn' => 'N',
@@ -591,10 +597,22 @@ class Member extends My_Controller
 		$result = $this->Member_model->add_member($data);
 
 		if ($result) {
+			// 방금 추가된 회원의 member_idx 가져오기
+			$member_idx = $this->db->insert_id();
+
+			// member_name이 "새회원"인 경우 member_idx를 포함한 이름으로 업데이트
+			if ($member_name === '새회원') {
+				$updated_name = '새회원_' . $member_idx;
+				$this->db->where('member_idx', $member_idx);
+				$this->db->update('wb_member', array('member_name' => $updated_name));
+				$member_name = $updated_name;
+			}
+
 			echo json_encode(array(
 				'success' => true,
 				'message' => $member_name . '님이 추가되었습니다.',
-				'member_name' => $member_name
+				'member_name' => $member_name,
+				'member_idx' => $member_idx
 			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '회원 추가에 실패했습니다.'));
