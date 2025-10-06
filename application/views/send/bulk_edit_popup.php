@@ -24,7 +24,7 @@
 				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 			</div>
 			<div class="card">
-				<div class="card-body">
+				<div class="card-body card-height">
 					<div id="bulkEditGrid"></div>
 				</div>
 				<div class="card-footer d-flex justify-content-between align-items-center">

@@ -147,7 +147,6 @@
 #memberOffcanvas .form-control,
 #memberOffcanvas .form-select {
 	border: 1px solid #ced4da;
-	border-radius: 6px;
 	padding: 0.75rem;
 	font-size: 1rem;
 	transition: all 0.3s ease;

@@ -41,7 +41,7 @@ class Member_model extends CI_Model
 	{
 		$user_id = $this->session->userdata('user_id');
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name,m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
@@ -232,7 +232,7 @@ class Member_model extends CI_Model
 		$area_ids[] = $area_idx; // 자기 자신도 포함
 
 		// 회원 조회
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address,m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address,m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where('m.org_id', $org_id);
@@ -301,7 +301,7 @@ class Member_model extends CI_Model
 			return array();
 		}
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where_in('m.member_idx', $member_indices);
@@ -338,7 +338,7 @@ class Member_model extends CI_Model
 			return array();
 		}
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
@@ -433,6 +433,7 @@ class Member_model extends CI_Model
 		$this->db->select('
         m.member_idx,
         m.member_name,
+        m.member_sex,
         m.member_phone,
         m.member_birth,
         m.org_id,
@@ -460,6 +461,7 @@ class Member_model extends CI_Model
         m.member_idx,
         m.org_id,
         m.member_name,
+        m.member_sex,
         m.member_nick,
         m.photo,
         m.leader_yn,
@@ -513,6 +515,7 @@ class Member_model extends CI_Model
         m.member_idx,
         m.org_id,
         m.member_name,
+        m.member_sex,
         m.member_nick,
         m.photo,
         m.leader_yn,
@@ -585,7 +588,7 @@ class Member_model extends CI_Model
 		}
 
 		$this->db->order_by('member_name', 'ASC');
-//		$this->db->limit(50);
+		$this->db->limit(50);
 
 		$query = $this->db->get();
 		return $query->result_array();

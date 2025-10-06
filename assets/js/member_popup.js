@@ -98,9 +98,9 @@ function sortAreasByHierarchy(areas) {
 	return hierarchicalAreas;
 }
 
-/**
- * 그리드 초기화 - 원본 컬럼 구조 사용
- */
+
+// 역할: 일괄편집 그리드 초기화 - 성별 필드를 select로 변경하여 한글 표시
+
 function initBulkEditGrid(data, originalColumns) {
 	const $grid = $('#bulkEditGrid');
 
@@ -136,8 +136,27 @@ function initBulkEditGrid(data, originalColumns) {
 				align: col.align || 'center'
 			};
 
+			// member_sex 컬럼을 select로 변경
+			if (col.dataIndx === 'member_sex') {
+				columnConfig.editor = {
+					type: 'select',
+					options: [
+						{ '': '성별' },
+						{ 'male': '남' },
+						{ 'female': '여' }
+					]
+				};
+
+				// 렌더링: male/female을 남/여로 표시
+				columnConfig.render = function(ui) {
+					const value = ui.cellData;
+					if (value === 'male') return '남';
+					if (value === 'female') return '여';
+					return value || '';
+				};
+			}
 			// area_name 컬럼을 select로 변경
-			if (col.dataIndx === 'area_name' && window.memberAreas && window.memberAreas.length > 0) {
+			else if (col.dataIndx === 'area_name' && window.memberAreas && window.memberAreas.length > 0) {
 				// 계층 구조로 정렬된 소그룹 데이터
 				const sortedAreas = sortAreasByHierarchy(window.memberAreas);
 
@@ -153,21 +172,18 @@ function initBulkEditGrid(data, originalColumns) {
 				columnConfig.editor = {
 					type: 'select',
 					options: selectOptions,
-					style: 'text-align: left;' // select 좌측 정렬
+					style: 'text-align: left;'
 				};
 
-				// 좌측 정렬
 				columnConfig.align = 'left';
 
 				// 렌더링: area_idx를 area_name으로 표시
 				columnConfig.render = function(ui) {
 					const rowData = ui.rowData;
 
-					// rowData에서 실제 값 가져오기
 					if (rowData.area_idx) {
 						const areaData = window.memberAreas.find(a => a.area_idx == rowData.area_idx);
 						if (areaData) {
-							// parent인지 child인지 확인하여 들여쓰기 적용
 							const parentIdx = areaData.parent_idx;
 							if (parentIdx && parentIdx !== '0' && parentIdx !== 0 && parentIdx !== '') {
 								return '\u3000' + areaData.area_name;
@@ -231,7 +247,7 @@ function initBulkEditGrid(data, originalColumns) {
 			if (ui.dataIndx === 'area_name') {
 				// 새 값이 비어있거나 '소그룹 선택'인 경우 이전 값 유지
 				if (!ui.newVal || ui.newVal === '' || ui.newVal === '소그룹 선택') {
-					return false; // 저장 취소 (이전 값 유지)
+					return false;
 				}
 			}
 		},
@@ -242,18 +258,16 @@ function initBulkEditGrid(data, originalColumns) {
 				const selectedAreaIdx = ui.newVal;
 
 				if (selectedAreaIdx && memberAreasMap[selectedAreaIdx]) {
-					// area_idx와 area_name 모두 업데이트
 					ui.rowData.area_idx = selectedAreaIdx;
 					ui.rowData.area_name = memberAreasMap[selectedAreaIdx];
 				} else if (selectedAreaIdx === '' || selectedAreaIdx === '소그룹 선택') {
-					// 빈 값 선택 시 - 실제로는 cellBeforeSave에서 막히므로 여기 도달 안함
 					ui.rowData.area_idx = '';
 					ui.rowData.area_name = '';
 				}
 
-				// 그리드 새로고침
 				$grid.pqGrid('refreshCell', { rowIndx: ui.rowIndx, dataIndx: 'area_name' });
 			}
+			// member_sex는 자동으로 male/female 값이 저장됨 (select의 value)
 		}
 	};
 

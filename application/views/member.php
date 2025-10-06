@@ -122,7 +122,7 @@
 			<ul class="nav nav-tabs" id="memberTab" role="tablist">
 
 				<li class="nav-item" role="presentation">
-					<button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">회원정보</button>
+					<button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-tab-pane" type="button" role="tab" aria-controls="profile-tab-pane" aria-selected="false">기본정보</button>
 				</li>
 				<li class="nav-item" role="presentation">
 					<button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">상세정보</button>
@@ -172,10 +172,10 @@
 							<div id="photoPreview" style="display: none;">
 								<img id="previewImage" src="" alt="미리보기" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
 								<div class="mt-2">
-									<button type="button" class="btn btn-sm btn-outline-primary" id="cropPhoto">
+									<button type="button" class="btn btn-xs btn-outline-primary" id="cropPhoto">
 										<i class="bi bi-crop"></i> 크롭
 									</button>
-									<button type="button" class="btn btn-sm btn-outline-danger" id="removePhoto">
+									<button type="button" class="btn btn-xs btn-outline-danger" id="removePhoto">
 										<i class="bi bi-trash"></i> 삭제
 									</button>
 								</div>
@@ -202,7 +202,14 @@
 						<!-- 개인정보 입력 필드들 -->
 						<div class="col-6 col-sm-4 mb-3">
 							<label for="member_name" class="form-label">이름 <span class="text-danger">*</span></label>
-							<input type="text" class="form-control" id="member_name" name="member_name" required>
+							<div class="input-group">
+								<input type="text" class="form-control" id="member_name" name="member_name" required>
+								<select class="form-select" aria-label="member sex" id="member_sex" name="member_sex" style=" max-width: 80px;">
+									<option selected>성별</option>
+									<option value="male">남</option>
+									<option value="female">여</option>
+								</select>
+							</div>
 						</div>
 
 						<div class="col-6 col-sm-4 mb-3">

@@ -701,6 +701,7 @@ $(document).ready(function () {
 			{ dataIndx: "member_idx", title: "회원번호" },
 			{ dataIndx: "area_name", title: "소그룹" },
 			{ dataIndx: "member_name", title: "이름" },
+			{ dataIndx: "member_sex", title: "성별" },
 			{ dataIndx: "member_nick", title: "닉네임" },
 			{ dataIndx: "position_name", title: "직위/직분" },
 			{ dataIndx: "duty_name", title: "직책" },
@@ -1349,6 +1350,20 @@ $(document).ready(function () {
 				editable: false,
 				align: "center",
 				frozen: true
+			},
+			{
+				title: "성별",
+				dataIndx: "member_sex",
+				width: 50,
+				editable: false,
+				align: "center",
+				frozen: true,
+				render: function (ui) {
+					if (!ui.cellData) return '';
+					if (ui.cellData === 'male') return '남';
+					if (ui.cellData === 'female') return '여';
+					return ui.cellData;
+				}
 			},
 			{
 				title: "직위/직분",
@@ -2308,6 +2323,7 @@ $(document).ready(function () {
 		const fieldMappings = {
 			'member_idx': memberData.member_idx,
 			'member_name': memberData.member_name,
+			'member_sex': memberData.member_sex,
 			'member_nick': memberData.member_nick || '',
 			'position_name': memberData.position_name || '',
 			'duty_name': memberData.duty_name || '',

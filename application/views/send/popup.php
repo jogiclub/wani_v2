@@ -11,7 +11,7 @@
 	<div class="row">
 		<div class="col-12 col-lg-6">
 			<div class="card">
-				<div class="card-body">
+				<div class="card-body card-height">
 					<!-- 발송 타입 선택 -->
 					<div class="mb-3">
 						<div class="d-flex justify-content-between align-items-center">
@@ -216,7 +216,7 @@
 		</div>
 		<div class="col-12 col-lg-6">
 			<div class="card">
-				<div class="card-body">
+				<div class="card-body card-height">
 					<!-- 메시지 템플릿 선택 -->
 					<div class="row mb-3">
 						<div class="col-12">

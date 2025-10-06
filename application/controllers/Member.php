@@ -566,63 +566,34 @@ class Member extends My_Controller
 		}
 
 		$org_id = $this->input->post('org_id');
+		$member_name = $this->input->post('member_name');
+		$member_sex = $this->input->post('member_sex'); // 성별 추가
 		$area_idx = $this->input->post('area_idx');
 
-		if (!$org_id) {
-			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+		if (!$org_id || !$member_name) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
-
-		// 권한 확인
-		if (!$this->check_org_access($org_id)) {
-			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
-			return;
-		}
-
-		// 기본 회원명 생성
-		$member_name = '새회원_' . date('md_His');
 
 		$data = array(
 			'org_id' => $org_id,
-			'area_idx' => $area_idx ?: null,
 			'member_name' => $member_name,
-			'member_nick' => '',
-			'position_name' => null,  // 새로 추가
-			'duty_name' => null,      // 새로 추가
-			'member_phone' => '',
-			'member_birth' => '',
-			'member_address' => '',
-			'member_address_detail' => '',
-			'member_etc' => '',
-			'grade' => 0,
-			'leader_yn' => 'N',
-			'new_yn' => 'N',
-			'del_yn' => 'N',
+			'member_sex' => $member_sex ?: null, // 성별 저장
+			'area_idx' => $area_idx ?: null,
 			'regi_date' => date('Y-m-d H:i:s'),
-			'modi_date' => date('Y-m-d H:i:s')
+			'del_yn' => 'N',
+			'leader_yn' => 'N',
+			'new_yn' => 'Y',
+			'grade' => 0
 		);
 
-		// 상세정보 처리
-		$detail_data = $this->input->post('detail_field');
-		if ($detail_data && is_array($detail_data)) {
-			// 빈 값들을 제거하고 JSON으로 저장
-			$filtered_detail = array();
-			foreach ($detail_data as $field_idx => $value) {
-				if ($value !== '' && $value !== null) {
-					$filtered_detail[$field_idx] = $value;
-				}
-			}
-			if (!empty($filtered_detail)) {
-				$data['member_detail'] = json_encode($filtered_detail, JSON_UNESCAPED_UNICODE);
-			}
-		}
-
+		$this->load->model('Member_model');
 		$result = $this->Member_model->add_member($data);
 
 		if ($result) {
 			echo json_encode(array(
 				'success' => true,
-				'message' => '회원이 추가되었습니다: ' . $member_name,
+				'message' => $member_name . '님이 추가되었습니다.',
 				'member_name' => $member_name
 			));
 		} else {
@@ -651,6 +622,7 @@ class Member extends My_Controller
 		// 기본 회원 정보 업데이트
 		$update_data = array(
 			'member_name' => $this->input->post('member_name'),
+			'member_sex' => $this->input->post('member_sex') ?: null,
 			'member_nick' => $this->input->post('member_nick'),
 			'position_name' => $this->input->post('position_name'),
 			'duty_name' => $this->input->post('duty_name'),
@@ -786,14 +758,12 @@ class Member extends My_Controller
 		$this->load->model('Member_model');
 		$this->load->model('Detail_field_model');
 
-		// 조직의 상세필드 정의 가져오기
 		$detail_fields = $this->Detail_field_model->get_detail_fields_by_org($org_id);
 		$detail_field_indices = array();
 		foreach ($detail_fields as $field) {
 			$detail_field_indices[] = (string)$field['field_idx'];
 		}
 
-		// 트랜잭션 시작
 		$this->db->trans_start();
 
 		$success_count = 0;
@@ -806,14 +776,13 @@ class Member extends My_Controller
 					? $member['member_idx']
 					: null;
 
-				// 기본 업데이트 데이터
 				$update_data = [
 					'member_name' => trim($member['member_name']),
 					'modi_date' => date('Y-m-d H:i:s')
 				];
 
-				// 기본 필드 처리
-				$basic_fields = ['position_name', 'member_phone', 'duty_name', 'member_nick',
+				// 기본 필드 처리 (member_sex 추가)
+				$basic_fields = ['member_sex', 'position_name', 'member_phone', 'duty_name', 'member_nick',
 					'member_birth', 'member_address', 'member_address_detail', 'member_etc'];
 
 				foreach ($basic_fields as $field) {
@@ -822,25 +791,20 @@ class Member extends My_Controller
 					}
 				}
 
-				// area_idx가 있으면 추가
 				if (isset($member['area_idx']) && $member['area_idx'] !== '') {
 					$update_data['area_idx'] = $member['area_idx'];
 				}
 
-				// member_detail 처리 (detail_ 접두사로 시작하는 필드들)
+				// member_detail 처리
 				$detail_data = array();
 				$has_detail_fields = false;
 
 				foreach ($member as $key => $value) {
-					// detail_로 시작하는 필드인지 확인
 					if (strpos($key, 'detail_') === 0) {
 						$has_detail_fields = true;
-						// detail_ 접두사 제거하여 field_idx 추출
 						$field_idx = str_replace('detail_', '', $key);
 
-						// 유효한 상세필드인지 확인 (빈 값도 처리)
 						if (in_array($field_idx, $detail_field_indices)) {
-							// 빈 값이 아닌 경우에만 저장 (빈 값은 해당 필드를 저장하지 않음)
 							if ($value !== '' && $value !== null) {
 								$detail_data[$field_idx] = trim($value);
 							}
@@ -848,16 +812,12 @@ class Member extends My_Controller
 					}
 				}
 
-				// 기존 회원인 경우 기존 member_detail과 병합
 				if ($member_idx && $has_detail_fields) {
 					$existing_member = $this->Member_model->get_member_by_idx($member_idx);
 					if ($existing_member && !empty($existing_member['member_detail'])) {
 						$existing_detail = json_decode($existing_member['member_detail'], true);
 						if (is_array($existing_detail)) {
-							// 기존 데이터에서 시작하여 새 데이터로 덮어쓰기
-							// 새 데이터에 없는 필드는 기존 값 유지
 							foreach ($existing_detail as $existing_key => $existing_value) {
-								// 현재 member 데이터에 해당 detail 필드가 없으면 기존 값 유지
 								if (!isset($member['detail_' . $existing_key])) {
 									$detail_data[$existing_key] = $existing_value;
 								}
@@ -866,19 +826,15 @@ class Member extends My_Controller
 					}
 				}
 
-				// member_detail JSON 저장 (빈 객체가 아닌 경우에만)
 				if (!empty($detail_data)) {
 					$update_data['member_detail'] = json_encode($detail_data, JSON_UNESCAPED_UNICODE);
 				} elseif ($has_detail_fields && $member_idx) {
-					// 모든 상세필드가 빈 값인 경우 member_detail을 null로 설정
 					$update_data['member_detail'] = null;
 				}
 
 				if ($member_idx) {
-					// 기존 회원 업데이트
 					$result = $this->Member_model->update_member($member_idx, $update_data, $org_id);
 				} else {
-					// 신규 회원 추가
 					$update_data['org_id'] = $org_id;
 					$update_data['regi_date'] = date('Y-m-d H:i:s');
 					$update_data['del_yn'] = 'N';

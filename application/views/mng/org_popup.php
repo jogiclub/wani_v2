@@ -30,7 +30,7 @@ include APPPATH . 'views/noheader.php';
 			</div>
 
 			<div class="card">
-				<div class="card-body">
+				<div class="card-body card-height">
 					<div id="bulkEditOrgGrid"></div>
 				</div>
 				<div class="card-footer d-flex justify-content-between align-items-center">
