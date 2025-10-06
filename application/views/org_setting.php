@@ -141,7 +141,9 @@
 											<i class="bi bi-arrow-clockwise"></i> 코드갱신
 										</button>
 									</div>
-									<div class="form-text">* 다른 사용자가 이 조직에 참여할 때 사용하는 코드입니다.</div>
+									<div class="form-text">* 다른 사용자가 이 조직에 참여할 때 사용하는 코드입니다.<br/>
+									* 보안을 위해 해당 코드는 자주 갱신해주세요!
+									</div>
 								</div>
 								<div class="col-md-6">
 									<label class="form-label">생성일</label>

@@ -10,27 +10,28 @@
 	</nav>
 	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
 		<h3 class="page-title mb-0">상세필드설정</h3>
-		<div class="col-6 my-1">
-			<div class="text-end" role="group" aria-label="Basic example">
-				<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFieldModal">
-					<i class="bi bi-plus-circle"></i> 필드 추가
-				</button>
-				<button type="button" class="btn btn-primary ms-2" id="saveOrderBtn" style="display: none;">
-					<i class="bi bi-save"></i> 순서 저장
-				</button>
-			</div>
-		</div>
 	</div>
 
 	<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
 		<div class="row">
 			<div class="col-lg-12">
 				<div class="card">
-					<div class="card-header">
-						<h5 class="card-title mb-0">
-							<i class="bi bi-input-cursor-text"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?>
+					<div class="card-header d-flex align-items-center justify-content-between">
+						<h5 class="card-title mb-0 d-flex ">
 							상세필드 관리
 						</h5>
+
+
+						<div role="group" aria-label="Basic example">
+								<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFieldModal">
+									<i class="bi bi-plus-circle"></i> 필드 추가
+								</button>
+								<button type="button" class="btn btn-primary ms-2" id="saveOrderBtn" style="display: none;">
+									<i class="bi bi-save"></i> 순서 저장
+								</button>
+						</div>
+
+
 					</div>
 					<div class="card-body card-height">
 						<?php if (isset($detail_fields) && !empty($detail_fields)): ?>

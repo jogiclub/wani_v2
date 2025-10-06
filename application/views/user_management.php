@@ -28,7 +28,7 @@ $this->load->view('header'); ?>
 					<div class="card-header">
 						<div class="row">
 							<h5 class="card-title col-md-6 mb-0 align-items-center">
-								<i class="bi bi-people"></i> <?php echo htmlspecialchars($selected_org_detail['org_name']); ?> 사용자 목록
+								사용자 목록
 							</h5>
 							<!-- 선택 권한 수정 버튼 -->
 							<div class="col-md-6 d-flex flex-column flex-md-row justify-content-start justify-content-md-end mt-2 mt-md-0 align-items-start align-items-md-center">
