@@ -12,7 +12,7 @@ $this->load->view('mng/header');
 
 
 <div class="container-fluid pt-2 pb-2">
-	<nav class="mb-3" aria-label="breadcrumb">
+	<nav class="mb-1" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="/mng">관리자홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">ORG</a></li>
@@ -27,8 +27,8 @@ $this->load->view('mng/header');
 	<div class="split-container">
 		<!-- 왼쪽: 그룹 트리 -->
 		<div class="split-pane" id="left-pane">
-			<div class="card h-100">
-				<div class="card-body p-0 position-relative">
+			<div class="card">
+				<div class="card-body card-height p-0 position-relative">
 					<!-- 트리 스피너 -->
 					<div id="treeSpinner" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
 						<div class="text-center">
@@ -45,7 +45,7 @@ $this->load->view('mng/header');
 
 		<!-- 오른쪽 조직 목록 -->
 		<div class="split-pane" id="right-pane">
-			<div class="card h-100">
+			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
 						<div class="col-12 col-lg-4 d-flex align-items-center">
@@ -83,7 +83,7 @@ $this->load->view('mng/header');
 					</div>
 				</div>
 
-				<div class="card-body p-0 position-relative">
+				<div class="card-body card-height p-0 position-relative">
 					<!-- 그리드 스피너 -->
 					<div id="gridSpinner" class="d-none justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
 						<div class="text-center">

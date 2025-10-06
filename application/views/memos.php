@@ -6,7 +6,7 @@ $this->load->view('header');
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 <div class="container-fluid pt-2 pb-2">
-	<nav class="mb-3" aria-label="breadcrumb">
+	<nav class="mb-1" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">MEMBER</a></li>
@@ -14,11 +14,11 @@ $this->load->view('header');
 		</ol>
 	</nav>
 
-	<div class="row align-items-center justify-content-between g-3 mb-3">
-		<h3 class="page-title col-12 my-1">메모관리</h3>
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
+		<h3 class="page-title mb-0">메모관리</h3>
 	</div>
 	<div class="row">
-	<div class="col-lg-8">
+	<div class="col-lg-9">
 		<!-- PQGrid 영역 -->
 		<div class="card">
 			<div class="card-header">
@@ -88,7 +88,7 @@ $this->load->view('header');
 				</div>
 			</div>
 
-			<div class="card-body p-0 position-relative">
+			<div class="card-body card-height p-0 position-relative">
 				<!-- 로딩 스피너 -->
 				<div id="memoGridLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
 					<div class="spinner-border text-primary" role="status">
@@ -100,17 +100,17 @@ $this->load->view('header');
 		</div>
 	</div>
 
-	<div class="col-lg-4">
+	<div class="col-lg-3">
 		<div class="card">
 			<div class="card-header d-flex justify-content-between align-items-center">
 				<div>메모 통계</div>
 				<div>
 					<select class="form-select form-select-sm d-inline-block" aria-label="Default select example" id="memoStaticsType">
-						<option selected>3개월간 1회 이상 메모 작성 인원</option>
+						<option selected>3개월간 1회 이상 메모 작성</option>
 					</select>
 				</div>
 			</div>
-			<div class="card-body">
+			<div class="card-body card-height">
 				<div id="memoStaticsLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
 					<div class="spinner-border text-primary" role="status">
 						<span class="visually-hidden">로딩중...</span>

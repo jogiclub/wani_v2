@@ -9,23 +9,23 @@ $this->load->view('header');
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
 
 <div class="container pt-2 pb-2">
-	<nav class="mb-3" aria-label="breadcrumb">
+	<nav class="mb-1" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">SETTING</a></li>
 			<li class="breadcrumb-item active">그룹설정</li>
 		</ol>
 	</nav>
-	<div class="row align-items-center justify-content-between g-3 mb-3">
-		<h3 class="page-title col-12 my-1">그룹설정</h3>
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
+		<h3 class="page-title mb-0">그룹설정</h3>
 	</div>
 
 	<!-- Split.js를 위한 단일 컨테이너 -->
 	<div class="split-container">
 		<!-- 왼쪽: 그룹 트리 -->
 		<div class="split-pane" id="left-pane">
-			<div class="card h-100">
-				<div class="card-body p-0 position-relative">
+			<div class="card">
+				<div class="card-body card-height p-0 position-relative">
 					<!-- 트리 스피너 -->
 					<div id="treeSpinner"
 						 class="d-flex justify-content-center align-items-center position-absolute h-100"
@@ -44,7 +44,7 @@ $this->load->view('header');
 
 		<!-- 오른쪽: 관리 버튼들 -->
 		<div class="split-pane" id="right-pane">
-			<div class="card h-100">
+			<div class="card">
 				<div class="card-header">
 					<div class="row">
 						<div class="col-12 d-flex align-items-center">
@@ -54,7 +54,7 @@ $this->load->view('header');
 						</div>
 					</div>
 				</div>
-				<div class="card-body d-flex flex-column justify-content-center align-items-center">
+				<div class="card-body card-height d-flex flex-column justify-content-center align-items-center">
 
 						<div class="btn-group-vertical" role="group" aria-label="Vertical button group" id="groupManagementButtons" style="display: none;">
 

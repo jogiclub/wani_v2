@@ -255,14 +255,17 @@ footer .btn-add-org i{font-size:30px}
 
 /*메뉴*/
 
-.sidebar{position: fixed; height: 100%; border-top:0!important; border-bottom:0!important; width: 200px}
+.sidebar{position: fixed; height: 100%; border-top:0!important; border-bottom:0!important; width: 200px; background: #fff!important;}
+.sidebar #sidebarMenu{background: #fff!important;}
 .sidebar h6.sidebar-heading{font-size: 12px; color:#999!important;}
-.sidebar ul.nav li a{color:#000; padding-top: 5px; padding-bottom: 5px}
-.sidebar ul.nav li a.active{color:#fff; background: #0d9af0; padding-top: 10px; padding-bottom: 10px}
+.sidebar ul.nav li a{color:#000; padding-top: 8px; padding-bottom: 8px;}
+.sidebar ul.nav li a:hover{color: #0d9af0; background: #E7F7FFFF;}
+.sidebar ul.nav li a.active{color:#fff; background: #0d9af0; }
 
 .breadcrumb .breadcrumb-item{font-size: 12px!important; padding-left: 5px}
 .breadcrumb .breadcrumb-item:first-child::before{display: none!important;}
 .breadcrumb .breadcrumb-item::before{content: '\F285'; font-family:'bootstrap-icons'; font-size: 12px; padding-right: 5px;}
+.breadcrumb-item.active{color:#007bff}
 
 .profile-area{}
 .profile-area .profile-img{}
@@ -270,7 +273,7 @@ footer .btn-add-org i{font-size:30px}
 
 @media screen and (max-width: 1200px){
 	 .sidebar{position: initial}
-	.card .card-body{height: auto!important;}
+	.card .card-body.card-height{height: auto!important;}
 }
 
 
@@ -279,7 +282,10 @@ footer .btn-add-org i{font-size:30px}
 
 .card .card-header{padding:15px; border: 0; border-bottom: 0;}
 .card .card-header .card-title{font-size: 20px; font-weight: 700;}
-.card .card-body{overflow: auto; height: calc(100vh - 290px);}
+
+
+.card .card-body.card-height{overflow: auto; height: calc(100vh - 260px);}
+
 .page-title{font-weight: 700;letter-spacing: -1px;}
 
 
@@ -303,7 +309,10 @@ ul.fancytree-container{border: 0!important;}
 .sortable-row.ui-sortable-helper td {background-color: #fff;}
 
 /* Split.js 관련 스타일 */
-.split-container {display: flex;height: calc(100vh - 200px); /* 헤더, breadcrumb 등 제외한 높이 */gap: 0;}
+.split-container {display: flex; gap: 0;}
+
+.card{border-radius: 0!important; border: 1px solid #ccc!important;}
+
 .split-pane {overflow: hidden;display: flex;flex-direction: column;}
 .split-pane .card {flex: 1;min-height: 0;border: 1px solid #dee2e6;border-radius: 8px;box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
 
@@ -329,7 +338,9 @@ span.fancytree-icon{margin-left: 0; margin-right: 0;background-image:none!import
 span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font-size: 15px; color: #e09529;}
 
 /* ParamQuery Grid 커스텀 스타일 */
-.pq-grid {font-family: "Pretendard Std Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;}
+.pq-grid {font-family: "Pretendard Std Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+	border-right: 0 !important;
+	border-left: 0 !important;}
 .pq-grid-header {background-color: #f8f9fa;border-bottom: 2px solid #dee2e6;}
 .pq-grid-header .pq-grid-col {height: 40px !important;line-height: 40px !important;}
 .pq-grid-cell {cursor: pointer;}
@@ -339,6 +350,7 @@ span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font
 .form-control, .form-select {border: 1px solid #ced4da;border-radius: 4px;}
 .form-control:focus, .form-select:focus {border-color: #007bff;box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);}
 .form-check-input:checked {background-color: #007bff;border-color: #007bff;}
+.pq-loading{display: none!important;}
 
 /* 스크롤바 스타일 */
 .tree-container::-webkit-scrollbar {width: 6px;}
@@ -364,3 +376,5 @@ span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font
 }
 .master-login{position: absolute;top: 60px;right: 10px;}
 #org-dropdown-menu {max-height: 500px;overflow-y: scroll;}
+
+

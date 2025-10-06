@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
 
 <div class="container-fluid pt-2 pb-2">
-	<nav class="mb-3" aria-label="breadcrumb">
+	<nav class="mb-1" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">MEMBER</a></li>
@@ -18,7 +18,7 @@
 		</ol>
 	</nav>
 	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
-		<h3 class="page-title  mb-0">출석관리</h3>
+		<h3 class="page-title mb-0">출석관리</h3>
 
 		<div class="page-tabs ">
 			<ul class="nav nav-pills" id="attendance-type-tabs" role="tablist">
@@ -37,8 +37,8 @@
 	<div class="split-container">
 		<!-- 왼쪽: 그룹 트리 -->
 		<div class="split-pane" id="left-pane">
-			<div class="card h-100">
-				<div class="card-body p-0 position-relative">
+			<div class="card">
+				<div class="card-body card-height p-0 position-relative">
 					<!-- 트리 스피너 -->
 					<div id="treeSpinner" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
 						<div class="text-center">
@@ -55,7 +55,7 @@
 
 		<!-- 오른쪽: 출석 목록 -->
 		<div class="split-pane" id="right-pane">
-			<div class="card h-100">
+			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
 						<div class="col-12 col-lg-4 d-flex align-items-center">
@@ -98,7 +98,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="card-body p-0 position-relative">
+				<div class="card-body card-height p-0 position-relative">
 					<!-- 그리드 스피너 -->
 					<div id="gridSpinner" class="d-none justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
 						<div class="text-center">
@@ -117,7 +117,7 @@
 </div>
 
 <!-- 출석 상세 정보 offcanvas -->
-<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel">
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel" style="width: 700px">
 	<div class="offcanvas-header text-start">
 		<h5 class="offcanvas-title" id="attendanceOffcanvasLabel"></h5>
 		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>

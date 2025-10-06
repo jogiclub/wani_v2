@@ -1,15 +1,15 @@
 <?php $this->load->view('header'); ?>
 
 <div class="container pt-2 pb-2">
-	<nav class="mb-3" aria-label="breadcrumb">
+	<nav class="mb-1" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">SETTING</a></li>
 			<li class="breadcrumb-item active">출석설정</li>
 		</ol>
 	</nav>
-	<div class="row align-items-center justify-content-between g-3 mb-4">
-		<h3 class="page-title col-6 my-1">출석설정</h3>
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
+		<h3 class="page-title mb-0">출석설정</h3>
 		<div class="col-6 my-1">
 			<div class="text-end" role="group" aria-label="Basic example">
 				<button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAttendanceTypeModal">
@@ -32,7 +32,7 @@
 							출석타입 관리
 						</h5>
 					</div>
-					<div class="card-body">
+					<div class="card-body card-height">
 						<?php if (isset($attendance_types) && !empty($attendance_types)): ?>
 							<div class="table-responsive">
 								<table class="table align-middle" style="min-width: 600px;">

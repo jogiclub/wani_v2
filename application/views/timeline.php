@@ -12,22 +12,22 @@ $this->load->view('header');
 
 
 <div class="container-fluid pt-2 pb-2">
-	<nav class="mb-3" aria-label="breadcrumb">
+	<nav class="mb-1" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">MEMBER</a></li>
 			<li class="breadcrumb-item active">타임라인관리</li>
 		</ol>
 	</nav>
-	
-	<div class="row align-items-center justify-content-between g-3 mb-3">
-		<h3 class="page-title col-12 my-1">타임라인관리</h3>
+
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
+		<h3 class="page-title mb-0">타임라인관리</h3>
 	</div>
 
 
 	<div class="row">
 		<!-- PQGrid 영역 -->
-		<div class="col-lg-8">
+		<div class="col-lg-9">
 			<div class="card col-12">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
@@ -98,7 +98,7 @@ $this->load->view('header');
 					</div>
 				</div>
 
-				<div class="card-body p-0 position-relative">
+				<div class="card-body card-height p-0 position-relative">
 					<!-- 로딩 스피너 -->
 					<div id="timelineGridLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
 						<div class="spinner-border text-primary" role="status">
@@ -109,7 +109,7 @@ $this->load->view('header');
 				</div>
 			</div>
 		</div>
-		<div class="col-lg-4">
+		<div class="col-lg-3">
 			<div class="card">
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<div>타임라인 통계</div>
@@ -118,7 +118,7 @@ $this->load->view('header');
 							<option selected>전체 달성율</option>
 						</select></div>
 					</div>
-				<div class="card-body">
+				<div class="card-body card-height">
 					<div id="timelineStaticsLoading" class="position-absolute top-50 start-50 translate-middle" style="z-index: 1000; display: none;">
 						<div class="spinner-border text-primary" role="status">
 							<span class="visually-hidden">로딩중...</span>

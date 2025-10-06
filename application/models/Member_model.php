@@ -585,7 +585,7 @@ class Member_model extends CI_Model
 		}
 
 		$this->db->order_by('member_name', 'ASC');
-		$this->db->limit(50);
+//		$this->db->limit(50);
 
 		$query = $this->db->get();
 		return $query->result_array();

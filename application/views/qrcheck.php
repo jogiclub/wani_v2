@@ -8,7 +8,7 @@
 <!-- ParamQuery CSS 및 JavaScript 추가 -->
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
-<div class="pt-3 pb-2 ">
+<div class="pt-3">
 	<div class="container-fluid">
 		<div class="row">
 			<div class="col-lg-5 mb-2">

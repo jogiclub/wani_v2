@@ -8,7 +8,7 @@ $this->load->view('header'); ?>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 <div class="container pt-2 pb-2">
-	<nav class="mb-3" aria-label="breadcrumb">
+	<nav class="mb-1" aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">관리</a></li>
@@ -16,8 +16,8 @@ $this->load->view('header'); ?>
 		</ol>
 	</nav>
 
-	<div class="row align-items-center justify-content-between g-3 mb-4">
-		<h3 class="page-title my-1">사용자관리</h3>
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
+		<h3 class="page-title mb-0">사용자관리</h3>
 
 	</div>
 
@@ -42,7 +42,7 @@ $this->load->view('header'); ?>
 							</div>
 						</div>
 					</div>
-					<div class="card-body">
+					<div class="card-body card-height">
 
 						<?php if (isset($org_users) && !empty($org_users)): ?>
 

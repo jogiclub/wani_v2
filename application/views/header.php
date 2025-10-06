@@ -33,7 +33,7 @@
 <link rel="stylesheet" href="/assets/css/common.css?<?php echo WB_VERSION; ?>">
 
 <?php if ($this->session->userdata('user_id')): ?>
-<header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start shadow bg-white">
+<header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start border-bottom bg-white">
 	<div class="header-start col-xl-6 col-10">
 		<a class="navbar-brand col-6 col-xl-1 me-0 px-3 fs-6 logo pe-0" href="#">
 			<img src="/assets/images/logo.png?ver=1">
@@ -200,7 +200,7 @@ function can_access_menu($menu_key, $user_managed_menus, $is_master, $user_level
 $is_master = $this->session->userdata('master_yn');
 ?>
 
-<div class="wrapper d-flex bg-light"></div>
+<div class="wrapper d-flex"></div>
 		<div class="sidebar border border-right p-0 bg-body-tertiary">
 			<div class="offcanvas-xl offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
 				<div class="offcanvas-header">
@@ -475,7 +475,7 @@ $is_master = $this->session->userdata('master_yn');
 
 
 
-		<main class="main mt-3" style="height: 85vh">
+		<main class="main pt-3 bg-light" style="height: calc(100vh - 60px);">
 			<?php endif; ?>
 
 

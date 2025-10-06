@@ -861,7 +861,7 @@ $(document).ready(function() {
 				html += '<span class="text-muted small">' + percentage + '% (' + memberCount + '명/' + totalMembers + '명)</span>';
 				html += '</div>';
 				html += '<div class="progress" role="progressbar" aria-label="' + typeName + '" aria-valuenow="' + percentage + '" aria-valuemin="0" aria-valuemax="100">';
-				html += '<div class="progress-bar bg-' + color + '" style="width: ' + percentage + '%"></div>';
+				html += '<div class="progress-bar progress-bar-striped progress-bar-animated bg-' + color + '" style="width: ' + percentage + '%"></div>';
 				html += '</div>';
 				html += '</div>';
 			});
