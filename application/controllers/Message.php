@@ -39,7 +39,10 @@ class Message extends MY_Controller
 			return;
 		}
 
-		// 최근 메시지 목록 조회 (읽음/안읽음 포함)
+		// 조직의 메시지에 현재 사용자 동기화
+		$this->Message_model->sync_user_to_org_messages($user_id, $org_id);
+
+		// 최근 메시지 목록 조회
 		$recent_messages = $this->Message_model->get_recent_messages($user_id, $org_id);
 		$unread_count = $this->Message_model->get_unread_count($user_id, $org_id);
 
@@ -61,6 +64,7 @@ class Message extends MY_Controller
 
 		$message_idx = $this->input->post('message_idx');
 		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->get_active_org_id();
 
 		if (!$message_idx) {
 			echo json_encode(array(
@@ -69,6 +73,9 @@ class Message extends MY_Controller
 			));
 			return;
 		}
+
+		// 조직의 메시지에 현재 사용자 동기화
+		$this->Message_model->sync_user_to_org_messages($user_id, $org_id);
 
 		// 메시지 소유권 확인
 		$message = $this->Message_model->get_message_by_idx($message_idx, $user_id);
@@ -116,6 +123,9 @@ class Message extends MY_Controller
 			return;
 		}
 
+		// 조직의 메시지에 현재 사용자 동기화
+		$this->Message_model->sync_user_to_org_messages($user_id, $org_id);
+
 		// 읽지 않은 메시지 목록 조회
 		$unread_messages = $this->Message_model->get_unread_messages($user_id, $org_id);
 		$message_ids = array_column($unread_messages, 'idx');
@@ -155,6 +165,7 @@ class Message extends MY_Controller
 
 		$message_idx = $this->input->post('message_idx');
 		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->get_active_org_id();
 
 		if (!$message_idx) {
 			echo json_encode(array(
@@ -163,6 +174,9 @@ class Message extends MY_Controller
 			));
 			return;
 		}
+
+		// 조직의 메시지에 현재 사용자 동기화
+		$this->Message_model->sync_user_to_org_messages($user_id, $org_id);
 
 		// 메시지 소유권 확인
 		$message = $this->Message_model->get_message_by_idx($message_idx, $user_id);
@@ -210,6 +224,9 @@ class Message extends MY_Controller
 			return;
 		}
 
+		// 조직의 메시지에 현재 사용자 동기화
+		$this->Message_model->sync_user_to_org_messages($user_id, $org_id);
+
 		// 모든 메시지 삭제
 		$result = $this->Message_model->delete_all_messages($user_id, $org_id);
 
@@ -225,5 +242,39 @@ class Message extends MY_Controller
 			));
 		}
 	}
+
+	/**
+	 * 완전히 삭제된 메시지 정리 (크론잡이나 관리자 기능으로 사용)
+	 */
+	public function clean_messages()
+	{
+		// 관리자 권한 확인
+		if ($this->session->userdata('master_yn') !== 'Y') {
+			show_404();
+		}
+
+		$org_id = $this->get_active_org_id();
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 정보를 찾을 수 없습니다.'
+			));
+			return;
+		}
+
+		$result = $this->Message_model->clean_deleted_messages($org_id);
+
+		if ($result) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => '삭제된 메시지가 정리되었습니다.'
+			));
+		} else {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '메시지 정리 중 오류가 발생했습니다.'
+			));
+		}
+	}
 }
-?>

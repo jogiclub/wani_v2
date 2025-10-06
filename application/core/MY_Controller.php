@@ -54,14 +54,14 @@ class MY_Controller extends CI_Controller
 		if ($current_org && isset($current_org['org_id'])) {
 			$this->load->model('Message_model');
 			try {
+				// 조직의 메시지에 현재 사용자 동기화
+				$this->Message_model->sync_user_to_org_messages($user_id, $current_org['org_id']);
+
+				// 메시지 조회
 				$unread_count = $this->Message_model->get_unread_count($user_id, $current_org['org_id']);
-				// 읽음/안읽음 포함된 최근 메시지 조회
 				$recent_messages = $this->Message_model->get_recent_messages($user_id, $current_org['org_id']);
 			} catch (Exception $e) {
-				// 메시지 조회 실패 시 로그 기록하고 기본값 유지
 				log_message('error', 'Message 조회 실패: ' . $e->getMessage());
-				$unread_count = 0;
-				$recent_messages = array();
 			}
 		}
 
