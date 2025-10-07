@@ -36,16 +36,27 @@ class Send extends MY_Controller
 			return;
 		}
 
-		// 선택된 회원 번호들 받기 (옵션)
-		$member_ids_json = $this->input->post('member_ids');
+		// 선택된 회원 번호들 받기 (배열 또는 JSON 문자열)
+		$member_ids_input = $this->input->post('member_ids');
 		$selected_members = array();
 
-		if (!empty($member_ids_json)) {
-			// JSON 문자열을 배열로 디코딩
-			$member_ids = json_decode($member_ids_json, true);
+		if (!empty($member_ids_input)) {
+			$member_ids = array();
 
-			if (is_array($member_ids) && !empty($member_ids)) {
-				// POST로 회원이 선택된 경우
+			// 배열인 경우와 JSON 문자열인 경우 모두 처리
+			if (is_array($member_ids_input)) {
+				// 회원 관리 페이지에서 배열로 전송된 경우
+				$member_ids = $member_ids_input;
+			} else if (is_string($member_ids_input)) {
+				// 메시지 알림에서 JSON 문자열로 전송된 경우
+				$decoded = json_decode($member_ids_input, true);
+				if (is_array($decoded)) {
+					$member_ids = $decoded;
+				}
+			}
+
+			// member_ids가 있으면 회원 정보 조회
+			if (!empty($member_ids) && is_array($member_ids)) {
 				$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
 			}
 		}

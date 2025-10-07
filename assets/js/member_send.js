@@ -5,10 +5,16 @@
 
 $(document).ready(function() {
 	// 선택문자 버튼 클릭 이벤트
+
 	$('#btnSendMember').on('click', function() {
 		handleSendMember();
 	});
 
+	// 헤더의 문자전송 버튼 클릭 이벤트
+	$('#navbarSend, #buttonSend').on('click', function(e) {
+		e.preventDefault();
+		handleNavbarSend();
+	});
 
 	// 체크박스 선택 변경 시 버튼 상태 업데이트
 	$(document).on('change', '.member-checkbox, #selectAllCheckbox', function() {
@@ -46,6 +52,28 @@ $(document).ready(function() {
 	// 초기 버튼 상태 설정
 	updateSendButtonState();
 });
+
+
+/**
+ * 헤더의 문자전송 버튼 클릭 처리
+ */
+function handleNavbarSend() {
+	// 회원 관리 페이지인지 확인
+	if (window.location.pathname.includes('/member')) {
+		// 회원 관리 페이지에서는 선택된 회원이 있으면 선택문자, 없으면 전체 발송 팝업
+		const selectedMembers = getSelectedMembers();
+
+		if (selectedMembers.length > 0) {
+			handleSendMember();
+		} else {
+			// 선택된 회원이 없으면 팝업만 열기
+			openSendPopup([]);
+		}
+	} else {
+		// 다른 페이지에서는 그냥 팝업 열기
+		openSendPopup([]);
+	}
+}
 
 /**
  * 선택문자 발송 처리
@@ -109,7 +137,6 @@ function getSelectedMembers() {
 		}
 	});
 
-	// console.log('선택된 회원 정보:', selectedMembers);
 	return selectedMembers;
 }
 
@@ -117,20 +144,6 @@ function getSelectedMembers() {
  * 문자 발송 팝업 열기
  */
 function openSendPopup(selectedMembers) {
-	if (selectedMembers.length === 0) {
-		showToast('발송 가능한 회원이 없습니다.', 'warning');
-		return;
-	}
-
-	// 회원 ID 목록 생성
-	const memberIds = selectedMembers.map(member => member.member_idx);
-
-	// 폼 데이터 생성
-	const formData = new FormData();
-	memberIds.forEach(id => {
-		formData.append('member_ids[]', id);
-	});
-
 	// 팝업 창 열기
 	const popupWindow = window.open('', 'sendPopup', 'width=1400,height=850,scrollbars=yes,resizable=yes');
 
@@ -141,13 +154,17 @@ function openSendPopup(selectedMembers) {
 		'target': 'sendPopup'
 	});
 
-	memberIds.forEach(id => {
-		tempForm.append($('<input>', {
-			'type': 'hidden',
-			'name': 'member_ids[]',
-			'value': id
-		}));
-	});
+	// 선택된 회원이 있는 경우에만 member_ids 전송
+	if (selectedMembers && selectedMembers.length > 0) {
+		const memberIds = selectedMembers.map(member => member.member_idx);
+		memberIds.forEach(id => {
+			tempForm.append($('<input>', {
+				'type': 'hidden',
+				'name': 'member_ids[]',
+				'value': id
+			}));
+		});
+	}
 
 	$('body').append(tempForm);
 	tempForm.submit();
@@ -163,13 +180,11 @@ function openSendPopup(selectedMembers) {
 	}, 1000);
 }
 
+
 /**
  * 선택문자 버튼 상태 업데이트 (개선된 버전)
  */
 function updateSendButtonState() {
-	// 디버깅을 위한 로그
-	// console.log('updateSendButtonState 호출됨');
-
 	// DOM이 완전히 로드될 때까지 잠시 대기
 	setTimeout(function() {
 		// 고유한 체크된 체크박스 수 계산
@@ -186,8 +201,6 @@ function updateSendButtonState() {
 
 		const selectedCount = uniqueCheckedBoxes.length;
 		const sendButton = $('#btnSendMember');
-
-		// console.log('선택된 회원 수:', selectedCount);
 
 		if (selectedCount > 0) {
 			sendButton.prop('disabled', false);
@@ -247,4 +260,3 @@ function showConfirmModal(title, message, confirmCallback, cancelCallback = null
 
 	confirmModal.modal('show');
 }
-
