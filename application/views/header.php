@@ -57,18 +57,21 @@
 				</button>
 			<?php endif; ?>
 
-			<button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-				<span class="visually-hidden">Toggle Dropdown</span>
-			</button>
 
-			<ul class="dropdown-menu" id="org-dropdown-menu">
-				<!-- 검색 박스 추가 -->
-				<li class="px-3 py-2">
-					<input type="text" class="form-control form-control-sm" id="org-search-input" placeholder="조직 검색 (2자 이상)">
-				</li>
-				<li><hr class="dropdown-divider"></li>
 
-				<?php if (isset($user_orgs) && !empty($user_orgs)): ?>
+			<?php if (isset($user_orgs) && count($user_orgs) > 1): ?>
+				<!-- 조직이 2개 이상일 때만 드롭다운 토글 버튼 표시 -->
+				<button type="button" class="btn btn-light dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+					<span class="visually-hidden">Toggle Dropdown</span>
+				</button>
+
+				<ul class="dropdown-menu" id="org-dropdown-menu">
+					<!-- 검색 박스 추가 -->
+					<li class="px-3 py-2">
+						<input type="text" class="form-control form-control-sm" id="org-search-input" placeholder="조직 검색 (2자 이상)">
+					</li>
+					<li><hr class="dropdown-divider"></li>
+
 					<?php
 					$prev_org_type = null;
 					$org_type_names = array(
@@ -114,16 +117,11 @@
 						<?php $prev_org_type = $org['org_type']; ?>
 					<?php endforeach; ?>
 
-					<li>
-						<hr class="dropdown-divider">
-					</li>
-				<?php endif; ?>
-				<li>
-					<a class="dropdown-item" href="<?php echo base_url('org'); ?>">
-						<i class="bi bi-gear me-2"></i>조직 관리
-					</a>
-				</li>
-			</ul>
+
+				</ul>
+
+
+			<?php endif; ?>
 		</div>
 	</div>
 	<div class="header-end d-flex justify-content-end px-3 gap-2 align-items-center">
