@@ -237,4 +237,43 @@ class Timeline_model extends CI_Model {
 		return $this->db->count_all_results();
 	}
 
+	/**
+	 * 파일 위치: application/models/Timeline_model.php
+	 * 역할: 진급 대상자 조회 (미분류 제외)
+	 */
+	public function get_upcoming_promotion_members($org_id, $promotion_types, $days = 7)
+	{
+		if (empty($promotion_types)) {
+			return array();
+		}
+
+		// 오늘부터 N일 후까지
+		$start_date = date('Y-m-d');
+		$end_date = date('Y-m-d', strtotime("+{$days} days"));
+
+		$this->db->select('
+        t.idx,
+        t.member_idx,
+        t.timeline_type,
+        t.timeline_date,
+        m.member_name,
+        a.area_name
+    ');
+		$this->db->from('wb_member_timeline t');
+		$this->db->join('wb_member m', 't.member_idx = m.member_idx');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where_in('t.timeline_type', $promotion_types);
+		$this->db->where('t.timeline_date >=', $start_date);
+		$this->db->where('t.timeline_date <=', $end_date);
+		// 미분류 그룹 제외
+		$this->db->where('(a.area_name IS NULL OR a.area_name != "미분류")');
+		$this->db->order_by('t.timeline_date', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
 }

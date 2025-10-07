@@ -226,7 +226,13 @@
 
 
 
+							<div class="alert alert-warning d-flex align-items-center" role="alert">
+								<i class="bi bi-info-square-fill me-2"></i>
 
+								<div>
+									미분류 회원들은 대상에서 제외됩니다.
+								</div>
+							</div>
 
 
 							<div class="d-flex justify-content-between align-items-center mb-3">

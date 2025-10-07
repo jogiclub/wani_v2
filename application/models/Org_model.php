@@ -193,7 +193,7 @@ class Org_model extends CI_Model {
 
 	public function get_all_orgs()
 	{
-		$this->db->select('org_id, org_name');
+		$this->db->select('org_id, org_name, auto_message');
 		$this->db->from('wb_org');
 		$this->db->where('del_yn', 'N');
 		$query = $this->db->get();

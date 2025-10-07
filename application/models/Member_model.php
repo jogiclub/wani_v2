@@ -597,19 +597,16 @@ class Member_model extends CI_Model
 
 	/**
 	 * 파일 위치: application/models/Member_model.php
-	 * 역할: 7일 이내 생일인 회원 조회 (조직별)
+	 * 역할: 7일 이내 생일인 회원 조회 (미분류 제외)
 	 */
 	public function get_upcoming_birthday_members($org_id, $days = 7)
 	{
-		// 오늘부터 7일 후까지의 날짜 범위
 		$dates = array();
 		for ($i = 0; $i <= $days; $i++) {
 			$date = date('m-d', strtotime("+{$i} days"));
 			$dates[] = $date;
 		}
 
-		// member_birth가 다양한 형식일 수 있으므로 처리
-		// 'YYYY-MM-DD', 'MM-DD', 'YYYYMMDD' 등의 형식 고려
 		$this->db->select('
         m.member_idx,
         m.member_name,
@@ -623,35 +620,28 @@ class Member_model extends CI_Model
 		$this->db->where('m.del_yn', 'N');
 		$this->db->where('m.member_birth IS NOT NULL');
 		$this->db->where('m.member_birth !=', '');
+		// 미분류 그룹 제외
+		$this->db->where('(a.area_name IS NULL OR a.area_name != "미분류")');
 		$this->db->order_by('m.member_birth', 'ASC');
 
 		$query = $this->db->get();
 		$all_members = $query->result_array();
 
-		// PHP에서 생일 필터링 (다양한 날짜 형식 처리)
 		$birthday_members = array();
 
 		foreach ($all_members as $member) {
 			$birth = $member['member_birth'];
-
-			// 다양한 형식의 생일을 MM-DD 형식으로 변환
 			$birth_md = null;
 
-			// YYYY-MM-DD 또는 YYYY/MM/DD 형식
 			if (preg_match('/^\d{4}[-\/]\d{2}[-\/]\d{2}$/', $birth)) {
 				$birth_md = date('m-d', strtotime($birth));
-			}
-			// MM-DD 또는 MM/DD 형식
-			else if (preg_match('/^\d{2}[-\/]\d{2}$/', $birth)) {
+			} else if (preg_match('/^\d{2}[-\/]\d{2}$/', $birth)) {
 				$birth_md = date('m-d', strtotime('2000-' . str_replace('/', '-', $birth)));
-			}
-			// YYYYMMDD 형식
-			else if (preg_match('/^\d{8}$/', $birth)) {
+			} else if (preg_match('/^\d{8}$/', $birth)) {
 				$birth_md = substr($birth, 4, 2) . '-' . substr($birth, 6, 2);
 				$birth_md = date('m-d', strtotime('2000-' . $birth_md));
 			}
 
-			// 7일 이내 생일인지 확인
 			if ($birth_md && in_array($birth_md, $dates)) {
 				$birthday_members[] = array(
 					'member_idx' => $member['member_idx'],
@@ -667,7 +657,200 @@ class Member_model extends CI_Model
 		return $birthday_members;
 	}
 
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 오늘 생일인 회원 조회 (미분류 제외)
+	 */
+	public function get_today_birthday_members($org_id)
+	{
+		$today = date('m-d');
 
+		$this->db->select('
+        m.member_idx,
+        m.member_name,
+        m.member_birth,
+        m.org_id,
+        a.area_name
+    ');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('m.member_birth IS NOT NULL');
+		$this->db->where('m.member_birth !=', '');
+		// 미분류 그룹 제외
+		$this->db->where('(a.area_name IS NULL OR a.area_name != "미분류")');
+		$this->db->order_by('m.member_birth', 'ASC');
+
+		$query = $this->db->get();
+		$all_members = $query->result_array();
+
+		$birthday_members = array();
+
+		foreach ($all_members as $member) {
+			$birth = $member['member_birth'];
+			$birth_md = null;
+
+			if (preg_match('/^\d{4}[-\/]\d{2}[-\/]\d{2}$/', $birth)) {
+				$birth_md = date('m-d', strtotime($birth));
+			} else if (preg_match('/^\d{2}[-\/]\d{2}$/', $birth)) {
+				$birth_md = date('m-d', strtotime('2000-' . str_replace('/', '-', $birth)));
+			} else if (preg_match('/^\d{8}$/', $birth)) {
+				$birth_md = substr($birth, 4, 2) . '-' . substr($birth, 6, 2);
+				$birth_md = date('m-d', strtotime('2000-' . $birth_md));
+			}
+
+			if ($birth_md && $birth_md === $today) {
+				$birthday_members[] = array(
+					'member_idx' => $member['member_idx'],
+					'member_name' => $member['member_name'],
+					'member_birth' => $member['member_birth'],
+					'birth_md' => $birth_md,
+					'area_name' => $member['area_name'],
+					'org_id' => $member['org_id']
+				);
+			}
+		}
+
+		return $birthday_members;
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 금주 미출석 회원 조회 (미분류 제외)
+	 */
+	public function get_absent_members_this_week($org_id)
+	{
+		// 가장 상단의 출석 타입 조회
+		$this->db->select('att_type_idx');
+		$this->db->from('wb_att_type');
+		$this->db->where('org_id', $org_id);
+		$this->db->order_by('att_type_order', 'ASC');
+		$this->db->limit(1);
+		$query = $this->db->get();
+		$att_type = $query->row_array();
+
+		if (!$att_type) {
+			return array();
+		}
+
+		$att_type_idx = $att_type['att_type_idx'];
+
+		// 이번 주 일요일 날짜 계산
+		$today = new DateTime();
+		$days_from_sunday = $today->format('w');
+		$this_sunday = clone $today;
+		if ($days_from_sunday > 0) {
+			$this_sunday->sub(new DateInterval('P' . $days_from_sunday . 'D'));
+		}
+		$sunday_date = $this_sunday->format('Y-m-d');
+
+		// 모든 활성 회원 조회 (미분류 제외)
+		$this->db->select('m.member_idx, m.member_name, a.area_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		// 미분류 그룹 제외
+		$this->db->where('(a.area_name IS NULL OR a.area_name != "미분류")');
+		$query = $this->db->get();
+		$all_members = $query->result_array();
+
+		$absent_members = array();
+
+		foreach ($all_members as $member) {
+			// 이번 주 출석 기록 확인
+			$this->db->select('att_idx');
+			$this->db->from('wb_member_att');
+			$this->db->where('member_idx', $member['member_idx']);
+			$this->db->where('org_id', $org_id);
+			$this->db->where('att_date', $sunday_date);
+			$this->db->where('att_type_idx', $att_type_idx);
+			$query = $this->db->get();
+
+			if ($query->num_rows() == 0) {
+				$absent_members[] = $member;
+			}
+		}
+
+		return $absent_members;
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 연속 미출석 회원 조회 (미분류 제외)
+	 */
+	public function get_absent_members_consecutive_weeks($org_id, $weeks = 2)
+	{
+		// 가장 상단의 출석 타입 조회
+		$this->db->select('att_type_idx');
+		$this->db->from('wb_att_type');
+		$this->db->where('org_id', $org_id);
+		$this->db->order_by('att_type_order', 'ASC');
+		$this->db->limit(1);
+		$query = $this->db->get();
+		$att_type = $query->row_array();
+
+		if (!$att_type) {
+			return array();
+		}
+
+		$att_type_idx = $att_type['att_type_idx'];
+
+		// 최근 N주의 일요일 날짜들 계산
+		$sunday_dates = array();
+		$today = new DateTime();
+		$days_from_sunday = $today->format('w');
+		$current_sunday = clone $today;
+		if ($days_from_sunday > 0) {
+			$current_sunday->sub(new DateInterval('P' . $days_from_sunday . 'D'));
+		}
+
+		for ($i = 0; $i < $weeks; $i++) {
+			$sunday_dates[] = $current_sunday->format('Y-m-d');
+			$current_sunday->sub(new DateInterval('P7D'));
+		}
+
+		// 모든 활성 회원 조회 (미분류 제외)
+		$this->db->select('m.member_idx, m.member_name, a.area_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		// 미분류 그룹 제외
+		$this->db->where('(a.area_name IS NULL OR a.area_name != "미분류")');
+		$query = $this->db->get();
+		$all_members = $query->result_array();
+
+		$absent_members = array();
+
+		foreach ($all_members as $member) {
+			$consecutive_absent = true;
+
+			// 모든 주차에 대해 출석 기록 확인
+			foreach ($sunday_dates as $sunday_date) {
+				$this->db->select('att_idx');
+				$this->db->from('wb_member_att');
+				$this->db->where('member_idx', $member['member_idx']);
+				$this->db->where('org_id', $org_id);
+				$this->db->where('att_date', $sunday_date);
+				$this->db->where('att_type_idx', $att_type_idx);
+				$query = $this->db->get();
+
+				// 한 주라도 출석 기록이 있으면 제외
+				if ($query->num_rows() > 0) {
+					$consecutive_absent = false;
+					break;
+				}
+			}
+
+			if ($consecutive_absent) {
+				$absent_members[] = $member;
+			}
+		}
+
+		return $absent_members;
+	}
 
 
 
