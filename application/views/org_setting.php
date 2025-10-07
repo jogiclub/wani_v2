@@ -197,7 +197,7 @@
 									<select class="form-select" id="timeline_names" name="timeline_names[]" multiple>
 										<!-- JavaScript로 기존 데이터 로드 -->
 									</select>
-									<div class="form-text">예: 입대, 진급, 제대, 파송, 입교, 세례, 결혼, 직분임명 등</div>
+									<div class="form-text">예: 입대, 진급, 전역, 파송, 입교, 세례, 결혼, 직분임명 등</div>
 								</div>
 								<div class="col-md-12 mb-3">
 									<label for="memos_names" class="form-label">메모 호칭</label><small class="text-warning"> * 쉼표로 구분</small>

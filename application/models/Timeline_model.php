@@ -275,5 +275,23 @@ class Timeline_model extends CI_Model {
 		return $query->result_array();
 	}
 
+	/**
+	 * 특정 회원들의 특정 타임라인 타입 존재 여부 확인
+	 */
+	public function check_timeline_exists($member_idxs, $timeline_types)
+	{
+		if (empty($member_idxs) || empty($timeline_types)) {
+			return false;
+		}
 
+		$this->db->select('COUNT(*) as count');
+		$this->db->from('wb_member_timeline');
+		$this->db->where_in('member_idx', $member_idxs);
+		$this->db->where_in('timeline_type', $timeline_types);
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		return isset($result['count']) && $result['count'] > 0;
+	}
 }

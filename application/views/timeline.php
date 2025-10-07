@@ -165,7 +165,10 @@ $this->load->view('header');
 				<label for="member_select" class="form-label">이름 <span class="text-danger">*</span></label>
 				<select class="form-select" id="member_select" name="member_idxs[]" multiple required>
 				</select>
-				<div class="form-text">여러 명을 선택할 수 있습니다. 선택된 항목을 드래그하여 순서를 변경할 수 있습니다.</div>
+				<div class="form-text">
+					여러 명을 선택할 수 있습니다. 선택된 항목을 드래그하여 순서를 변경할 수 있습니다.<br/>
+					입대 항목을 입력하면 진급 및 전역 항목을 자동으로 추가합니다.
+				</div>
 			</div>
 			<div class="mb-3" id="memberNameDiv" style="display: none;">
 				<label class="form-label">회원명</label>
@@ -197,6 +200,35 @@ $this->load->view('header');
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
 				<button type="button" class="btn btn-danger" id="confirmDeleteBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- 진급/전역 자동 생성 확인 모달 -->
+<div class="modal fade" id="promotionModal" tabindex="-1" aria-labelledby="promotionModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="promotionModalLabel">진급 및 전역 항목 생성</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>진급(일병), 진급(상병), 진급(병장), 전역 항목도 함께 생성하시겠습니까?</p>
+				<div class="alert alert-info mb-0">
+					<small>
+						입대일 기준으로 자동 계산됩니다.<br>
+						- 일병 진급: 입대일 + 2개월<br>
+						- 상병 진급: 입대일 + 8개월<br>
+						- 병장 진급: 입대일 + 14개월<br>
+						- 전역: 입대일 + 18개월
+					</small>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">아니오</button>
+				<button type="button" class="btn btn-primary" id="confirmPromotionBtn">예, 함께 생성</button>
 			</div>
 		</div>
 	</div>

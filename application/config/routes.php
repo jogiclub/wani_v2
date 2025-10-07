@@ -184,6 +184,9 @@ $route['timeline/update_timeline'] = 'timeline/update_timeline';
 $route['timeline/delete_timelines'] = 'timeline/delete_timelines';
 $route['timeline/get_timeline_detail'] = 'timeline/get_timeline_detail';
 $route['timeline/get_timeline_statistics'] = 'timeline/get_timeline_statistics';
+$route['timeline/check_promotion_exists'] = 'timeline/check_promotion_exists';
+$route['timeline/add_timeline_with_promotion'] = 'timeline/add_timeline_with_promotion';
+
 
 $route['memos'] = 'memos/index';
 $route['memos/index'] = 'memos/index';

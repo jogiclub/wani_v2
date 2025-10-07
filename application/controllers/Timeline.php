@@ -316,4 +316,158 @@ class Timeline extends My_Controller
 	}
 
 
+	/**
+	 * 회원들의 진급/전역 항목 존재 여부 체크
+	 */
+	public function check_promotion_exists()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idxs = $this->input->post('member_idxs');
+
+		if (!$member_idxs || !is_array($member_idxs)) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보가 필요합니다.'));
+			return;
+		}
+
+		$promotion_types = array('진급(일병)', '진급(상병)', '진급(병장)', '전역');
+		$has_promotion = $this->Timeline_model->check_timeline_exists($member_idxs, $promotion_types);
+
+		echo json_encode(array(
+			'success' => true,
+			'has_promotion' => $has_promotion
+		));
+	}
+
+	/**
+	 * 입대 타임라인 및 진급/전역 타임라인 일괄 생성
+	 */
+	public function add_timeline_with_promotion()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$member_idxs = $this->input->post('member_idxs');
+		$timeline_type = $this->input->post('timeline_type');
+		$timeline_date = $this->input->post('timeline_date');
+		$timeline_content = $this->input->post('timeline_content');
+		$include_promotion = $this->input->post('include_promotion');
+		$user_id = $this->session->userdata('user_id');
+
+		if (!$org_id || !$member_idxs || !$timeline_type || !$timeline_date) {
+			echo json_encode(array('success' => false, 'message' => '필수 항목을 입력해주세요.'));
+			return;
+		}
+
+		if (!is_array($member_idxs)) {
+			$member_idxs = array($member_idxs);
+		}
+
+		$member_count = count($member_idxs);
+		$this->db->trans_start();
+
+		try {
+			// 1. 입대 타임라인 추가 (선택된 모든 회원에게)
+			$enlistment_data = array(
+				'timeline_type' => $timeline_type,
+				'timeline_date' => $timeline_date,
+				'timeline_content' => $timeline_content,
+				'user_id' => $user_id
+			);
+			$this->Timeline_model->add_timelines($member_idxs, $enlistment_data);
+
+			$total_added = $member_count;
+
+			// 2. 진급 및 전역 타임라인 추가 (선택된 모든 회원에게 동일한 날짜로)
+			if ($include_promotion) {
+				$promotion_timelines = $this->calculate_promotion_dates($timeline_date);
+
+				foreach ($promotion_timelines as $promotion) {
+					$promotion_data = array(
+						'timeline_type' => $promotion['type'],
+						'timeline_date' => $promotion['date'],
+						'timeline_content' => '',
+						'user_id' => $user_id
+					);
+					// 각 진급 타입을 모든 선택된 회원에게 추가
+					$this->Timeline_model->add_timelines($member_idxs, $promotion_data);
+				}
+
+				// 입대 + 진급 4개 = 총 5개 타임라인 * 회원 수
+				$total_added = $member_count * 5;
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status()) {
+				$message = sprintf(
+					'%d명의 회원에게 총 %d개의 타임라인이 추가되었습니다.',
+					$member_count,
+					$total_added
+				);
+				echo json_encode(array(
+					'success' => true,
+					'message' => $message
+				));
+			} else {
+				throw new Exception('트랜잭션 실패');
+			}
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			echo json_encode(array(
+				'success' => false,
+				'message' => '타임라인 일괄추가에 실패했습니다: ' . $e->getMessage()
+			));
+		}
+	}
+
+	/**
+	 * 입대일 기준 진급 및 전역 날짜 계산
+	 */
+	private function calculate_promotion_dates($enlistment_date)
+	{
+		$date = new DateTime($enlistment_date);
+		$promotions = array();
+
+		// 일병 진급 (2개월 후)
+		$private_date = clone $date;
+		$private_date->modify('+2 months');
+		$promotions[] = array(
+			'type' => '진급(일병)',
+			'date' => $private_date->format('Y-m-d')
+		);
+
+		// 상병 진급 (8개월 후)
+		$corporal_date = clone $date;
+		$corporal_date->modify('+8 months');
+		$promotions[] = array(
+			'type' => '진급(상병)',
+			'date' => $corporal_date->format('Y-m-d')
+		);
+
+		// 병장 진급 (14개월 후)
+		$sergeant_date = clone $date;
+		$sergeant_date->modify('+14 months');
+		$promotions[] = array(
+			'type' => '진급(병장)',
+			'date' => $sergeant_date->format('Y-m-d')
+		);
+
+		// 전역 (18개월 후)
+		$discharge_date = clone $date;
+		$discharge_date->modify('+18 months');
+		$promotions[] = array(
+			'type' => '전역',
+			'date' => $discharge_date->format('Y-m-d')
+		);
+
+		return $promotions;
+	}
+
+
+
 }

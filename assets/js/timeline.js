@@ -660,11 +660,174 @@ $(document).ready(function() {
 				return;
 			}
 
-			addTimeline();
+			console.log('선택된 타임라인 타입:', timeline_type);
+			console.log('선택된 회원 수:', member_idxs.length);
+
+			// 입대 항목인 경우 진급/전역 항목 존재 여부 체크
+			if (timeline_type === '입대') {
+				checkPromotionTypesExist(member_idxs, timeline_date);
+			} else {
+				addTimeline();
+			}
 		} else {
 			updateTimeline();
 		}
 	}
+
+	/**
+	 * 타임라인 설정에 진급/전역 항목이 존재하는지 체크
+	 */
+	function checkPromotionTypesExist(member_idxs, enlistment_date) {
+		const memberCount = member_idxs.length;
+
+		// timelineTypes 배열에서 진급/전역 항목이 있는지 확인
+		const promotionTypes = ['진급(일병)', '진급(상병)', '진급(병장)', '전역'];
+		const hasPromotionTypes = promotionTypes.some(type => timelineTypes.includes(type));
+
+		console.log('타임라인 타입 목록:', timelineTypes);
+		console.log('진급/전역 항목 존재 여부:', hasPromotionTypes);
+
+		if (hasPromotionTypes) {
+			// 진급/전역 항목이 존재하면 모달 표시
+			showPromotionConfirmModal(member_idxs, enlistment_date, memberCount);
+		} else {
+			// 진급/전역 항목이 없으면 바로 저장
+			console.log('진급/전역 항목이 없어서 입대만 저장');
+			addTimeline();
+		}
+	}
+
+	/**
+	 * 진급/전역 항목 존재 여부 체크 및 모달 표시
+	 */
+	function checkAndShowPromotionModal(member_idxs, enlistment_date) {
+		// 선택된 회원 수 확인
+		const memberCount = member_idxs.length;
+
+		$.ajax({
+			url: baseUrl + 'timeline/check_promotion_exists',
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				member_idxs: member_idxs
+			},
+			success: function(response) {
+				if (response.success) {
+					if (response.has_promotion) {
+						// 진급/전역 항목이 하나라도 존재하면 모달 표시
+						showPromotionConfirmModal(member_idxs, enlistment_date, memberCount);
+					} else {
+						// 진급/전역 항목이 없으면 바로 저장
+						addTimeline();
+					}
+				} else {
+					showToast(response.message || '항목 확인에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('항목 확인에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 진급/전역 자동 생성 확인 모달 표시
+	 */
+	function showPromotionConfirmModal(member_idxs, enlistment_date, memberCount) {
+		console.log('모달 표시 - 회원 수:', memberCount);
+
+		// 모달 메시지 업데이트
+		const modalMessage = memberCount > 1
+			? `선택된 ${memberCount}명의 회원에게 진급(일병), 진급(상병), 진급(병장), 전역 항목도 함께 생성하시겠습니까?`
+			: '진급(일병), 진급(상병), 진급(병장), 전역 항목도 함께 생성하시겠습니까?';
+
+		$('#promotionModal .modal-body p').first().text(modalMessage);
+
+		const modal = new bootstrap.Modal(document.getElementById('promotionModal'));
+
+		// 확인 버튼 이벤트 (기존 이벤트 제거 후 새로 바인딩)
+		$('#confirmPromotionBtn').off('click').on('click', function() {
+			console.log('확인 버튼 클릭 - 진급/전역 포함 저장');
+			modal.hide();
+			// 모달 확인으로 닫혔음을 표시
+			$('#promotionModal').data('confirmed', true);
+			addTimelineWithPromotion();
+		});
+
+		// 모달이 완전히 닫힌 후 처리
+		$('#promotionModal').off('hidden.bs.modal').on('hidden.bs.modal', function(e) {
+			const isConfirmed = $(this).data('confirmed');
+			$(this).removeData('confirmed');
+
+			// 확인 버튼으로 닫힌 경우가 아니면 입대 항목만 저장
+			if (!isConfirmed) {
+				console.log('취소 버튼 클릭 - 입대만 저장');
+				addTimeline();
+			}
+		});
+
+		modal.show();
+	}
+
+	/**
+	 * 입대 및 진급/전역 항목 일괄 저장
+	 */
+	function addTimelineWithPromotion() {
+		const member_idxs = $('#member_select').val();
+
+		if (!member_idxs || member_idxs.length === 0) {
+			showToast('회원을 선택해주세요.', 'warning');
+			return;
+		}
+
+		const formData = {
+			org_id: currentOrgId,
+			member_idxs: member_idxs,
+			timeline_type: $('#timeline_type').val(),
+			timeline_date: $('#timeline_date').val(),
+			timeline_content: $('#timeline_content').val(),
+			include_promotion: true
+		};
+
+		console.log('진급 포함 저장 요청:', formData);
+
+		$.ajax({
+			url: baseUrl + 'timeline/add_timeline_with_promotion',
+			type: 'POST',
+			dataType: 'json',
+			data: formData,
+			success: function(response) {
+				console.log('진급 포함 저장 응답:', response);
+				if (response.success) {
+					showToast(response.message, 'success');
+					bootstrap.Offcanvas.getInstance(document.getElementById('timelineOffcanvas')).hide();
+					searchTimelines();
+					loadTimelineStatistics();
+				} else {
+					showToast(response.message || '타임라인 일괄추가에 실패했습니다.', 'error');
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('진급 포함 저장 에러:', error, xhr.responseText);
+				showToast('타임라인 일괄추가에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 날짜에 개월 수 더하기
+	 */
+	function addMonths(dateString, months) {
+		const date = new Date(dateString);
+		date.setMonth(date.getMonth() + months);
+
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+
+		return `${year}-${month}-${day}`;
+	}
+
 
 	/**
 	 * 타임라인 일괄추가
@@ -678,21 +841,26 @@ $(document).ready(function() {
 			timeline_content: $('#timeline_content').val()
 		};
 
+		console.log('타임라인 저장 요청:', formData);
+
 		$.ajax({
 			url: baseUrl + 'timeline/add_timeline',
 			type: 'POST',
 			dataType: 'json',
 			data: formData,
 			success: function(response) {
+				console.log('저장 응답:', response);
 				if (response.success) {
 					showToast(response.message, 'success');
 					bootstrap.Offcanvas.getInstance(document.getElementById('timelineOffcanvas')).hide();
 					searchTimelines();
+					loadTimelineStatistics(); // 통계 갱신 추가
 				} else {
 					showToast(response.message || '타임라인 일괄추가에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function(xhr, status, error) {
+				console.error('저장 에러:', error);
 				showToast('타임라인 일괄추가에 실패했습니다.', 'error');
 			}
 		});
