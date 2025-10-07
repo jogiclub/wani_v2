@@ -257,10 +257,14 @@ class Org extends My_Controller
 		$org_info = $this->Org_model->get_org_detail_by_id($org_id);
 
 		$config['protocol'] = 'smtp';
-		$config['smtp_host'] = 'your-smtp-host';
+
+		$config['smtp_host'] = 'smtp.gmail.com';
+		$config['smtp_user'] = 'hello@webhows.com'; // 실제 Gmail 주소로 변경
+		$config['smtp_pass'] = 'hzeh kaik dyuh utty'; // Gmail 앱 비밀번호로 변경
 		$config['smtp_port'] = 587;
-		$config['smtp_user'] = 'your-email@domain.com';
-		$config['smtp_pass'] = 'your-password';
+		$config['smtp_crypto'] = 'tls';
+
+
 		$config['charset'] = 'utf-8';
 		$config['mailtype'] = 'html';
 		$config['newline'] = "\r\n";
