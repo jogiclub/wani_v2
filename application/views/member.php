@@ -134,6 +134,9 @@
 					<button class="nav-link" id="memo-tab" data-bs-toggle="tab" data-bs-target="#memo-tab-pane" type="button" role="tab" aria-controls="contact-tab-pane" aria-selected="false">회원메모</button>
 				</li>
 				<li class="nav-item" role="presentation">
+					<button class="nav-link" id="mission-tab" data-bs-toggle="tab" data-bs-target="#mission-tab-pane" type="button" role="tab" aria-controls="mission-tab-pane" aria-selected="false">파송</button>
+				</li>
+				<li class="nav-item" role="presentation">
 					<button class="nav-link" id="editing-tab" data-bs-toggle="tab" data-bs-target="#editing-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">수정내역 <span class="badge badge-sm text-bg-warning">준비중</span></button>
 				</li>
 
@@ -143,6 +146,7 @@
 				<div class="tab-pane fade show active" id="profile-tab-pane" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="d-flex justify-content-end text-end">
+							<!--
 							<div class="form-check form-switch me-3">
 								<input type="checkbox" class="form-check-input" id="leader_yn" name="leader_yn">
 								<label class="form-check-label" for="leader_yn">리더</label>
@@ -150,7 +154,7 @@
 							<div class="form-check form-switch">
 								<input type="checkbox" class="form-check-input" id="new_yn" name="new_yn">
 								<label class="form-check-label" for="new_yn">새가족</label>
-							</div>
+							</div>-->
 						</div>
 					</div>
 
@@ -347,6 +351,41 @@
 						</div>
 					</div>
 				</div>
+
+				<div class="tab-pane fade" id="mission-tab-pane" role="tabpanel" aria-labelledby="mission-tab" tabindex="0">
+					<div class="row mt-3">
+						<div class="col-12">
+							<!-- 상단 버튼 영역 -->
+							<div class="mission-button-section pb-3 mb-3 border-bottom">
+								<div class="d-flex flex-wrap gap-2">
+									<button type="button" class="btn btn-sm btn-outline-primary" id="sendEmailToMemberBtn">
+										<i class="bi bi-envelope"></i> 회원에게이메일전송
+									</button>
+									<button type="button" class="btn btn-sm btn-outline-info" id="sendEmailToChurchBtn">
+										<i class="bi bi-envelope"></i> 결연교회이메일전송
+									</button>
+									<button type="button" class="btn btn-sm btn-outline-success" id="autoMatchChurchBtn">
+										<i class="bi bi-link-45deg"></i> 결연교회자동매칭
+									</button>
+									<button type="button" class="btn btn-sm btn-outline-dark" id="addMissionChurchBtn">
+										<i class="bi bi-plus-lg"></i> 파송교회수동추가
+									</button>
+								</div>
+							</div>
+
+							<!-- 파송 교회 목록 영역 -->
+							<div class="mission-church-list-section">
+								<div id="missionChurchList">
+									<div class="text-center text-muted py-3" id="emptyMissionChurchMessage">
+										파송 교회 정보를 불러오고 있습니다...
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
 				<div class="tab-pane fade" id="editing-tab-pane" role="tabpanel" aria-labelledby="editing-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="col-12">
@@ -480,6 +519,94 @@
 			<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllSelection()">
 				선택 해제
 			</button>
+		</div>
+	</div>
+</div>
+
+<!-- 파송교회 추가/수정 모달 -->
+<div class="modal fade" id="missionChurchModal" tabindex="-1" aria-labelledby="missionChurchModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="missionChurchModalLabel">파송교회 추가</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="missionChurchForm">
+					<input type="hidden" id="mission_church_idx" name="mission_church_idx">
+					<input type="hidden" id="mission_member_idx" name="mission_member_idx">
+
+					<div class="row">
+						<div class="col-md-4 mb-3">
+							<label for="church_region" class="form-label">지역</label>
+							<input type="text" class="form-control" id="church_region" name="church_region" placeholder="예: 경기 광명" required>
+						</div>
+						<div class="col-md-4 mb-3">
+							<label for="church_name" class="form-label">교회명</label>
+							<input type="text" class="form-control" id="church_name" name="church_name" placeholder="예: 오병이어교회" required>
+						</div>
+						<div class="col-md-4 mb-3">
+							<label for="pastor_name" class="form-label">담임목사명</label>
+							<input type="text" class="form-control" id="pastor_name" name="pastor_name" placeholder="예: 권영구">
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-md-4 mb-3">
+							<label for="contact_person" class="form-label">담당자</label>
+							<input type="text" class="form-control" id="contact_person" name="contact_person" placeholder="예: 홍길동">
+						</div>
+						<div class="col-md-4 mb-3">
+							<label for="contact_phone" class="form-label">연락처</label>
+							<input type="tel" class="form-control" id="contact_phone" name="contact_phone" placeholder="예: 010-2313-1234">
+						</div>
+						<div class="col-md-4 mb-3">
+							<label for="contact_email" class="form-label">이메일</label>
+							<input type="email" class="form-control" id="contact_email" name="contact_email" placeholder="예: jogiclub@gmail.com">
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label for="church_description" class="form-label">교회소개</label>
+							<textarea class="form-control" id="church_description" name="church_description" rows="3" placeholder="교회에 대한 간단한 소개를 입력하세요"></textarea>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label for="church_tags" class="form-label">태그</label>
+							<input type="text" class="form-control" id="church_tags" name="church_tags" placeholder="#태그1 #태그2 #태그3 (해시태그로 구분)">
+							<div class="form-text">
+								태그는 # 기호로 시작하고 공백으로 구분합니다. 예: #이웃 #하나님사랑 #대형교회
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="saveMissionChurchBtn">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 파송교회 삭제 확인 모달 -->
+<div class="modal fade" id="deleteMissionChurchModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">파송교회 삭제</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<p>이 파송교회 정보를 삭제하시겠습니까?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteMissionChurchBtn">삭제</button>
+			</div>
 		</div>
 	</div>
 </div>
