@@ -41,8 +41,15 @@
 
 		<div class="btn-group col-auto ms-2">
 			<?php if (isset($current_org) && $current_org): ?>
-				<button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
-					<?php echo htmlspecialchars($current_org['org_name']); ?>
+				<button type="button" class="btn btn-light text-truncate text-start d-flex align-items-center gap-2" id="current-org-btn">
+					<?php if (!empty($current_org['org_icon'])): ?>
+						<img src="<?php echo $current_org['org_icon']; ?>" alt="조직 로고" class="rounded-circle" width="24" height="24" style="object-fit: cover;">
+					<?php else: ?>
+						<div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 12px; font-weight: bold;">
+							<?php echo mb_substr($current_org['org_name'], 0, 1); ?>
+						</div>
+					<?php endif; ?>
+					<span class="text-truncate"><?php echo htmlspecialchars($current_org['org_name']); ?></span>
 				</button>
 			<?php else: ?>
 				<button type="button" class="btn btn-light text-truncate text-start" id="current-org-btn">
@@ -55,23 +62,58 @@
 			</button>
 
 			<ul class="dropdown-menu" id="org-dropdown-menu">
+				<!-- 검색 박스 추가 -->
+				<li class="px-3 py-2">
+					<input type="text" class="form-control form-control-sm" id="org-search-input" placeholder="조직 검색 (2자 이상)">
+				</li>
+				<li><hr class="dropdown-divider"></li>
+
 				<?php if (isset($user_orgs) && !empty($user_orgs)): ?>
+					<?php
+					$prev_org_type = null;
+					$org_type_names = array(
+						'church' => '교회',
+						'school' => '학교',
+						'company' => '회사',
+						'club' => '동아리',
+						'community' => '커뮤니티',
+						'organization' => '단체',
+						'other' => '기타'
+					);
+					?>
+
 					<?php foreach ($user_orgs as $org): ?>
-						<li>
-							<a class="dropdown-item org-selector"
+						<?php if ($prev_org_type !== null && $prev_org_type !== $org['org_type']): ?>
+							<li><hr class="dropdown-divider"></li>
+						<?php endif; ?>
+
+						<li class="org-item" data-org-type="<?php echo $org['org_type']; ?>">
+							<a class="dropdown-item org-selector d-flex align-items-center gap-2"
 							   href="#"
 							   data-org-id="<?php echo $org['org_id']; ?>"
 							   data-org-name="<?php echo htmlspecialchars($org['org_name']); ?>"
+							   data-org-type="<?php echo htmlspecialchars($org['org_type']); ?>"
+							   data-org-icon="<?php echo htmlspecialchars($org['org_icon'] ?? ''); ?>"
 								<?php if (isset($current_org) && $current_org['org_id'] == $org['org_id']): ?>
 									data-current="true"
 								<?php endif; ?>>
-								<?php echo htmlspecialchars($org['org_name']); ?>
+								<?php if (!empty($org['org_icon'])): ?>
+									<img src="<?php echo $org['org_icon']; ?>" alt="조직 로고" class="rounded-circle flex-shrink-0" width="24" height="24" style="object-fit: cover;">
+								<?php else: ?>
+									<div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; font-size: 12px; font-weight: bold;">
+										<?php echo mb_substr($org['org_name'], 0, 1); ?>
+									</div>
+								<?php endif; ?>
+								<span class="flex-grow-1 text-truncate"><?php echo htmlspecialchars($org['org_name']); ?></span>
 								<?php if (isset($current_org) && $current_org['org_id'] == $org['org_id']): ?>
-									<i class="bi bi-check-circle-fill text-primary ms-2"></i>
+									<i class="bi bi-check-circle-fill text-primary flex-shrink-0"></i>
 								<?php endif; ?>
 							</a>
 						</li>
+
+						<?php $prev_org_type = $org['org_type']; ?>
 					<?php endforeach; ?>
+
 					<li>
 						<hr class="dropdown-divider">
 					</li>

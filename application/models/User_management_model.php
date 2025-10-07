@@ -23,6 +23,7 @@ class User_management_model extends CI_Model
 		$this->db->join('wb_org_user', 'wb_org.org_id = wb_org_user.org_id');
 		$this->db->where('wb_org_user.user_id', $user_id);
 		$this->db->where('wb_org.del_yn', 'N');
+		$this->db->order_by('wb_org.org_type', 'ASC');
 		$this->db->order_by('wb_org.org_name', 'ASC');
 		$query = $this->db->get();
 		return $query->result_array();
@@ -36,6 +37,7 @@ class User_management_model extends CI_Model
 		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, 10 as level');
 		$this->db->from('wb_org');
 		$this->db->where('wb_org.del_yn', 'N');
+		$this->db->order_by('wb_org.org_type', 'ASC');
 		$this->db->order_by('wb_org.org_name', 'ASC');
 		$query = $this->db->get();
 		return $query->result_array();

@@ -1,253 +1,463 @@
-'use strict'
+/**
+ * 파일 위치: assets/js/common.js
+ * 역할: 전역 공통 JavaScript 함수 및 유틸리티
+ */
 
-function go_url(url) {
-	location.href = url;
-}
+// ========================================
+// 1. Toast 알림 함수
+// ========================================
 
-function open_url(url) {
-	window.open(url, "_blank");
-}
-
-function showToast(message, type = 'info', header = null) {
-	// 타입별 기본 헤더 설정
-	let defaultHeader = '알림';
-	switch(type) {
-		case 'success':
-			defaultHeader = '성공';
-			break;
-		case 'error':
-			defaultHeader = '오류';
-			break;
-		case 'warning':
-			defaultHeader = '경고';
-			break;
-		case 'info':
-		default:
-			defaultHeader = '알림';
-			break;
-	}
-
-	// 헤더가 제공되지 않으면 기본값 사용
-	const toastHeader = header || defaultHeader;
-
-	if ($('#liveToast').length > 0) {
-		// 타입별 아이콘 및 헤더 클래스 설정
-		let icon = '';
-		let headerClass = 'bg-primary text-white';
-
-		switch(type) {
-			case 'success':
-				icon = '<i class="bi bi-check-circle-fill  me-2"></i>';
-				headerClass = 'bg-success text-white';
-				break;
-			case 'error':
-				icon = '<i class="bi bi-exclamation-triangle-fill  me-2"></i>';
-				headerClass = 'bg-danger text-white';
-				break;
-			case 'warning':
-				icon = '<i class="bi bi-exclamation-triangle-fill  me-2"></i>';
-				headerClass = 'bg-warning text-dark';
-				break;
-			case 'info':
-			default:
-				icon = '<i class="bi bi-info-circle-fill me-2"></i>';
-				headerClass = 'bg-info text-white';
-				break;
-		}
-
-		$('#liveToast .toast-header').removeClass().addClass('toast-header ' + headerClass);
-		$('#liveToast .toast-header strong').html(icon + toastHeader);
-		$('#liveToast .toast-body').html(message);
-
-		const toast = new bootstrap.Toast($('#liveToast')[0], {
-			autohide: true,
-			delay: 3000
-		});
-		toast.show();
+/**
+ * Toast 메시지 표시
+ * @param {string} message - 표시할 메시지
+ * @param {string} type - 메시지 타입 (success, error, warning, info)
+ * @param {number} duration - 표시 시간 (밀리초, 기본값: 3000)
+ */
+function showToast(message, type = 'info', duration = 3000) {
+	const toastEl = document.getElementById('liveToast');
+	if (!toastEl) {
+		console.error('Toast 요소를 찾을 수 없습니다.');
 		return;
 	}
 
+	const toastBody = toastEl.querySelector('.toast-body');
+	const toastHeader = toastEl.querySelector('.toast-header strong');
 
+	// 메시지 타입에 따른 스타일 및 제목 설정
+	const typeConfig = {
+		success: { bg: 'bg-success', text: 'text-white', title: '성공', icon: 'bi-check-circle-fill' },
+		error: { bg: 'bg-danger', text: 'text-white', title: '오류', icon: 'bi-x-circle-fill' },
+		warning: { bg: 'bg-warning', text: 'text-dark', title: '경고', icon: 'bi-exclamation-triangle-fill' },
+		info: { bg: 'bg-info', text: 'text-white', title: '알림', icon: 'bi-info-circle-fill' }
+	};
 
+	const config = typeConfig[type] || typeConfig.info;
+
+	// 기존 클래스 제거
+	toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info', 'text-white', 'text-dark');
+	toastEl.classList.add(config.bg, config.text);
+
+	// 메시지 및 제목 설정
+	if (toastHeader) {
+		toastHeader.textContent = config.title;
+	}
+	if (toastBody) {
+		toastBody.textContent = message;
+	}
+
+	// Toast 표시
+	const toast = new bootstrap.Toast(toastEl, {
+		autohide: true,
+		delay: duration
+	});
+	toast.show();
 }
 
+// ========================================
+// 2. Confirm 모달 함수
+// ========================================
 
-// 확인 모달 표시 함수
-function showConfirmModal(title, message, confirmCallback, cancelCallback = null) {
-	// Bootstrap 모달이 있으면 사용
-	if ($('#confirmModal').length > 0) {
-		$('#confirmModal .modal-title').text(title);
-		$('#confirmModal .modal-body').text(message);
+/**
+ * Confirm 모달 표시
+ * @param {string} message - 확인 메시지
+ * @param {function} onConfirm - 확인 버튼 클릭 시 실행할 콜백 함수
+ * @param {string} title - 모달 제목 (기본값: '확인')
+ * @param {string} confirmText - 확인 버튼 텍스트 (기본값: '확인')
+ * @param {string} cancelText - 취소 버튼 텍스트 (기본값: '취소')
+ */
+function showConfirm(message, onConfirm, title = '확인', confirmText = '확인', cancelText = '취소') {
+	const modalEl = document.getElementById('confirmModal');
+	if (!modalEl) {
+		console.error('Confirm 모달 요소를 찾을 수 없습니다.');
+		return;
+	}
 
-		$('#confirmModal .btn-primary').off('click').on('click', function() {
-			$('#confirmModal').modal('hide');
-			if (typeof confirmCallback === 'function') {
-				confirmCallback();
+	// 모달 내용 설정
+	const modalTitle = modalEl.querySelector('.modal-title');
+	const modalBody = modalEl.querySelector('.modal-body');
+	const confirmBtn = modalEl.querySelector('.modal-footer .btn-primary');
+	const cancelBtn = modalEl.querySelector('.modal-footer .btn-secondary');
+
+	if (modalTitle) modalTitle.textContent = title;
+	if (modalBody) modalBody.textContent = message;
+	if (confirmBtn) confirmBtn.textContent = confirmText;
+	if (cancelBtn) cancelBtn.textContent = cancelText;
+
+	// 모달 표시
+	const modal = new bootstrap.Modal(modalEl);
+	modal.show();
+
+	// 확인 버튼 이벤트 (기존 이벤트 제거 후 새로 등록)
+	if (confirmBtn) {
+		const newConfirmBtn = confirmBtn.cloneNode(true);
+		confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+		newConfirmBtn.addEventListener('click', function () {
+			modal.hide();
+			if (typeof onConfirm === 'function') {
+				onConfirm();
 			}
 		});
-
-		$('#confirmModal .btn-secondary').off('click').on('click', function() {
-			$('#confirmModal').modal('hide');
-			if (typeof cancelCallback === 'function') {
-				cancelCallback();
-			}
-		});
-
-		$('#confirmModal').modal('show');
-	} else {
-		// 모달이 없으면 confirm 사용
-		if (confirm(title + '\n\n' + message)) {
-			if (typeof confirmCallback === 'function') {
-				confirmCallback();
-			}
-		} else {
-			if (typeof cancelCallback === 'function') {
-				cancelCallback();
-			}
-		}
 	}
 }
 
-function getCookie(name) {
-	const value = `; ${document.cookie}`;
-	const parts = value.split(`; ${name}=`);
-	if (parts.length === 2) return parts.pop().split(';').shift();
-	return null;
-}
+// ========================================
+// 3. 조직 관리 기능
+// ========================================
 
-$(document).ready(function() {
-	// 통합 조직 선택 이벤트 처리 (.org-selector와 .org-selector-item 모두 처리)
-	$(document).on('click', '.org-selector, .org-selector-item', function(e) {
+/**
+ * 조직 선택 및 localStorage 저장
+ */
+function initOrgSelector() {
+	// 조직 선택 이벤트
+	$(document).on('click', '.org-selector', function (e) {
 		e.preventDefault();
 
 		const orgId = $(this).data('org-id');
 		const orgName = $(this).data('org-name');
+		const orgIcon = $(this).data('org-icon') || '';
 
-		if (!orgId) {
-			showToast('조직 정보를 가져올 수 없습니다.');
-			return;
-		}
+		// localStorage에 마지막 선택 조직 저장
+		localStorage.setItem('lastSelectedOrgId', orgId);
+		localStorage.setItem('lastSelectedOrgName', orgName);
+		localStorage.setItem('lastSelectedOrgIcon', orgIcon);
 
-		// 현재 선택된 조직과 동일한 경우 처리하지 않음
-		const currentOrgBtn = $('#current-org-btn');
-		if (currentOrgBtn.text().trim() === orgName || $(this).hasClass('active')) {
-			return;
-		}
-
-		// 로딩 상태 표시
-		const originalText = currentOrgBtn.text();
-		currentOrgBtn.text('변경 중...');
-
-		// 조직 변경을 위한 폼 생성 및 제출
-		const form = $('<form>', {
-			'method': 'POST',
-			'action': window.location.href
+		// 서버에 조직 전환 요청
+		$.ajax({
+			url: window.location.href,
+			type: 'POST',
+			data: { org_id: orgId },
+			success: function () {
+				location.reload();
+			},
+			error: function () {
+				showToast('조직 전환 중 오류가 발생했습니다.', 'error');
+			}
 		});
-
-		// CSRF 토큰이 있으면 추가
-		const csrfToken = $('meta[name="csrf-token"]').attr('content');
-		if (csrfToken) {
-			form.append($('<input>', {
-				'type': 'hidden',
-				'name': 'csrf_token',
-				'value': csrfToken
-			}));
-		}
-
-		form.append($('<input>', {
-			'type': 'hidden',
-			'name': 'org_id',
-			'value': orgId
-		}));
-
-		// 페이지 새로고침 전 상태 저장
-		try {
-			sessionStorage.setItem('org_change_timestamp', Date.now());
-			sessionStorage.setItem('selected_org_id', orgId);
-			sessionStorage.setItem('selected_org_name', orgName);
-		} catch (error) {
-			console.warn('sessionStorage 저장 실패:', error);
-		}
-
-		// 폼을 body에 추가하고 제출
-		$('body').append(form);
-
-		// 오류 발생 시 복구를 위한 타이머
-		const timeoutId = setTimeout(function() {
-			currentOrgBtn.text(originalText);
-			showToast('조직 변경이 지연되고 있습니다. 페이지를 새로고침해주세요.');
-		}, 10000);
-
-		// 폼 제출 전 이벤트 리스너 등록
-		form.on('submit', function() {
-			clearTimeout(timeoutId);
-		});
-
-		form.submit();
 	});
 
-	// 페이지 로드 시 조직 변경 성공 여부 확인
-	try {
-		const changeTimestamp = sessionStorage.getItem('org_change_timestamp');
-		const goToDashboard = sessionStorage.getItem('go_to_dashboard_after_org_change');
+	// 페이지 로드 시 localStorage의 조직이 현재 선택된 조직과 다른 경우 자동 전환
+	const lastSelectedOrgId = localStorage.getItem('lastSelectedOrgId');
+	const currentOrgId = $('.org-selector[data-current="true"]').data('org-id');
 
-		if (changeTimestamp) {
-			const timeDiff = Date.now() - parseInt(changeTimestamp);
-			// 5초 이내의 변경이면 성공으로 간주
-			if (timeDiff < 5000) {
-				const orgName = sessionStorage.getItem('selected_org_name');
-				if (orgName) {
-					showToast(orgName + ' 조직으로 변경되었습니다.');
+	if (lastSelectedOrgId && currentOrgId && lastSelectedOrgId != currentOrgId) {
+		// localStorage의 조직이 사용자의 조직 목록에 있는지 확인
+		const orgExists = $('.org-selector[data-org-id="' + lastSelectedOrgId + '"]').length > 0;
 
-					// 대시보드 이동 플래그가 있으면 대시보드로 이동
-					if (goToDashboard === 'true') {
-						setTimeout(function() {
-							window.location.href = '/dashboard/';
-						}, 1500);
-					}
+		if (orgExists) {
+			// 자동으로 마지막 선택한 조직으로 전환 (조용히)
+			$.ajax({
+				url: window.location.href,
+				type: 'POST',
+				data: { org_id: lastSelectedOrgId },
+				success: function () {
+					// 필요시 페이지 새로고침
+					// location.reload();
+				}
+			});
+		}
+	}
+}
+
+/**
+ * 조직 검색 기능 초기화
+ */
+function initOrgSearch() {
+	// 검색 입력 시 필터링
+	$('#org-search-input').on('input', function (e) {
+		e.stopPropagation();
+
+		const searchText = $(this).val().trim();
+		const $orgItems = $('#org-dropdown-menu .org-item');
+
+		// 2자 미만이면 전체 표시
+		if (searchText.length < 2) {
+			$orgItems.show();
+			return;
+		}
+
+		// 2자 이상일 때 필터링
+		$orgItems.each(function () {
+			const orgName = $(this).find('.org-selector').data('org-name');
+			if (!orgName) return;
+
+			const isMatch = orgName.toLowerCase().includes(searchText.toLowerCase());
+			$(this).toggle(isMatch);
+		});
+	});
+
+	// 드롭다운이 열릴 때 검색창 초기화
+	$('.dropdown-toggle-split').on('click', function () {
+		setTimeout(function () {
+			$('#org-search-input').val('');
+			$('#org-dropdown-menu .org-item').show();
+		}, 100);
+	});
+
+	// 검색 입력란 클릭 시 드롭다운 닫힘 방지
+	$('#org-search-input').on('click', function (e) {
+		e.stopPropagation();
+	});
+
+	// 검색 입력란에서 Enter 키 방지
+	$('#org-search-input').on('keydown', function (e) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+		}
+	});
+}
+
+// ========================================
+// 4. 메시지 관리 기능
+// ========================================
+
+/**
+ * 메시지 읽음 처리
+ */
+function markMessageAsRead(messageIdx) {
+	$.ajax({
+		url: '/message/mark_as_read',
+		type: 'POST',
+		data: { message_idx: messageIdx },
+		dataType: 'json',
+		success: function (response) {
+			if (response.success) {
+				// 메시지 항목 읽음 표시 업데이트
+				const $messageItem = $('[data-message-idx="' + messageIdx + '"]');
+				$messageItem.addClass('message-read');
+				$messageItem.find('.bi-envelope-fill').removeClass('bi-envelope-fill text-warning')
+					.addClass('bi-envelope-open-fill text-secondary');
+
+				// 읽지 않은 메시지 수 업데이트
+				updateUnreadMessageCount();
+			} else {
+				showToast(response.message || '메시지 읽음 처리 실패', 'error');
+			}
+		},
+		error: function () {
+			showToast('메시지 읽음 처리 중 오류가 발생했습니다.', 'error');
+		}
+	});
+}
+
+/**
+ * 읽지 않은 메시지 수 업데이트
+ */
+function updateUnreadMessageCount() {
+	$.ajax({
+		url: '/message/get_unread_count',
+		type: 'GET',
+		dataType: 'json',
+		success: function (response) {
+			if (response.success) {
+				const count = response.unread_count;
+				const $badge = $('#unread-message-badge');
+				const $navMessage = $('#navbarMessage');
+
+				if (count > 0) {
+					$badge.text(count).show();
+					$navMessage.removeClass('border-secondary')
+						.addClass('bg-warning');
+					$navMessage.find('i').removeClass('text-secondary')
+						.addClass('text-white');
+				} else {
+					$badge.hide();
+					$navMessage.removeClass('bg-warning')
+						.addClass('border border-secondary');
+					$navMessage.find('i').removeClass('text-white')
+						.addClass('text-secondary');
 				}
 			}
-			// 세션 스토리지 정리
-			sessionStorage.removeItem('org_change_timestamp');
-			sessionStorage.removeItem('selected_org_id');
-			sessionStorage.removeItem('selected_org_name');
-			sessionStorage.removeItem('go_to_dashboard_after_org_change');
-		}
-	} catch (error) {
-		console.warn('sessionStorage 확인 실패:', error);
-	}
-
-
-	/**
-	 * 역할: 문자발송 버튼 클릭 시 팝업 열기
-	 */
-	$('#buttonSend').on('click', function(e) {
-		e.preventDefault();
-
-		// 현재 조직이 선택되어 있는지 확인
-		const currentOrgId = getCookie('activeOrg');
-
-		if (!currentOrgId) {
-			showToast('조직을 먼저 선택해주세요.', 'warning');
-			return;
-		}
-
-		// 팝업 크기 설정
-		const popupWidth = 1400;
-		const popupHeight = 900;
-		const left = (screen.width - popupWidth) / 2;
-		const top = (screen.height - popupHeight) / 2;
-
-		// 팝업 열기
-		const popup = window.open(
-			'/send/popup',
-			'sendPopup',
-			`width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`
-		);
-
-		if (!popup) {
-			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
 		}
 	});
+}
 
+// ========================================
+// 5. 유틸리티 함수
+// ========================================
+
+/**
+ * 날짜 포맷팅 (YYYY-MM-DD)
+ * @param {Date|string} date - 포맷팅할 날짜
+ * @returns {string} - 포맷된 날짜 문자열
+ */
+function formatDate(date) {
+	const d = new Date(date);
+	const year = d.getFullYear();
+	const month = String(d.getMonth() + 1).padStart(2, '0');
+	const day = String(d.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+}
+
+/**
+ * 날짜 포맷팅 (YYYY-MM-DD HH:mm:ss)
+ * @param {Date|string} date - 포맷팅할 날짜
+ * @returns {string} - 포맷된 날짜시간 문자열
+ */
+function formatDateTime(date) {
+	const d = new Date(date);
+	const year = d.getFullYear();
+	const month = String(d.getMonth() + 1).padStart(2, '0');
+	const day = String(d.getDate()).padStart(2, '0');
+	const hours = String(d.getHours()).padStart(2, '0');
+	const minutes = String(d.getMinutes()).padStart(2, '0');
+	const seconds = String(d.getSeconds()).padStart(2, '0');
+	return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+/**
+ * 전화번호 포맷팅
+ * @param {string} phone - 전화번호
+ * @returns {string} - 포맷된 전화번호
+ */
+function formatPhone(phone) {
+	if (!phone) return '';
+	const cleaned = String(phone).replace(/\D/g, '');
+
+	if (cleaned.length === 10) {
+		return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+	} else if (cleaned.length === 11) {
+		return cleaned.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+	}
+	return phone;
+}
+
+/**
+ * 숫자 천단위 콤마
+ * @param {number} num - 숫자
+ * @returns {string} - 포맷된 숫자 문자열
+ */
+function numberWithCommas(num) {
+	if (!num && num !== 0) return '';
+	return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * 문자열 자르기 (말줄임표 추가)
+ * @param {string} str - 문자열
+ * @param {number} maxLength - 최대 길이
+ * @returns {string} - 잘린 문자열
+ */
+function truncateString(str, maxLength) {
+	if (!str) return '';
+	if (str.length <= maxLength) return str;
+	return str.substring(0, maxLength) + '...';
+}
+
+/**
+ * 로딩 스피너 표시/숨김
+ * @param {string} elementId - 스피너 요소 ID
+ * @param {boolean} show - 표시 여부
+ */
+function toggleSpinner(elementId, show) {
+	const spinner = document.getElementById(elementId);
+	if (spinner) {
+		spinner.style.display = show ? 'flex' : 'none';
+	}
+}
+
+/**
+ * 현재 메뉴 활성화 표시
+ */
+function setActiveMenu() {
+	const currentPath = window.location.pathname;
+	$('.nav-link').each(function () {
+		const href = $(this).attr('href');
+		if (href && currentPath.includes(href)) {
+			$(this).addClass('active');
+		}
+	});
+}
+
+/**
+ * 이미지 미리보기
+ * @param {HTMLInputElement} input - 파일 입력 요소
+ * @param {string} previewId - 미리보기 이미지 요소 ID
+ */
+function previewImage(input, previewId) {
+	if (input.files && input.files[0]) {
+		const reader = new FileReader();
+		reader.onload = function (e) {
+			const preview = document.getElementById(previewId);
+			if (preview) {
+				if (preview.tagName === 'IMG') {
+					preview.src = e.target.result;
+				} else {
+					preview.style.backgroundImage = `url(${e.target.result})`;
+				}
+			}
+		};
+		reader.readAsDataURL(input.files[0]);
+	}
+}
+
+// ========================================
+// 6. 관리자 로그인 기능
+// ========================================
+
+/**
+ * 관리자 계정으로 돌아가기
+ */
+function returnToAdmin() {
+	showConfirm('관리자 계정으로 돌아가시겠습니까?', function () {
+		$.ajax({
+			url: '/user_management/return_to_admin',
+			type: 'POST',
+			dataType: 'json',
+			success: function (response) {
+				if (response.success) {
+					location.reload();
+				} else {
+					showToast(response.message || '오류가 발생했습니다.', 'error');
+				}
+			},
+			error: function () {
+				showToast('오류가 발생했습니다.', 'error');
+			}
+		});
+	});
+}
+
+// ========================================
+// 7. 문서 준비 완료 시 실행
+// ========================================
+
+$(document).ready(function () {
+	// 조직 관리 기능 초기화
+	initOrgSelector();
+	initOrgSearch();
+
+	// 현재 메뉴 활성화
+	setActiveMenu();
+
+	// 툴팁 초기화
+	const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+	tooltipTriggerList.map(function (tooltipTriggerEl) {
+		return new bootstrap.Tooltip(tooltipTriggerEl);
+	});
+
+	// 팝오버 초기화
+	const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+	popoverTriggerList.map(function (popoverTriggerEl) {
+		return new bootstrap.Popover(popoverTriggerEl);
+	});
+
+	// AJAX 전역 설정
+	$.ajaxSetup({
+		headers: {
+			'X-Requested-With': 'XMLHttpRequest'
+		},
+		error: function (xhr, status, error) {
+			if (xhr.status === 401) {
+				showToast('로그인이 필요합니다.', 'warning');
+				setTimeout(function () {
+					location.href = '/login';
+				}, 1500);
+			} else if (xhr.status === 403) {
+				showToast('접근 권한이 없습니다.', 'error');
+			} else if (xhr.status === 500) {
+				showToast('서버 오류가 발생했습니다.', 'error');
+			}
+		}
+	});
 });
