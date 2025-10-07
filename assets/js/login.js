@@ -19,7 +19,7 @@ $(document).ready(function() {
 				if (response.success) {
 					showToast(response.message, 'success');
 					setTimeout(function() {
-						window.location.href = '/dashboard';
+						window.location.href = response.redirect_url || '/dashboard';
 					}, 1500);
 				} else {
 					showToast(response.message, 'error');
@@ -79,6 +79,13 @@ $(document).ready(function() {
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
+					// localStorage에 새로 생성한 조직 저장
+					if (response.org_id) {
+						localStorage.setItem('lastSelectedOrgId', response.org_id);
+						localStorage.setItem('lastSelectedOrgName', response.org_name);
+						localStorage.setItem('lastSelectedOrgIcon', '');
+					}
+
 					showToast(response.message, 'success');
 					$('#createOrgModal').modal('hide');
 
@@ -121,4 +128,3 @@ $(document).ready(function() {
 		}
 	});
 });
-

@@ -283,11 +283,13 @@ class Login extends CI_Controller
 				return;
 			}
 
-			redirect('qrcheck');
+			// 중간 리다이렉트 페이지로 이동
+			$this->load->view('login_redirect', ['redirect_url' => '/qrcheck']);
 		} else {
 			redirect('login/join');
 		}
 	}
+
 
 	/**
 	 * 로그인 성공 후 조직 정보 설정 및 초대 상태 업데이트
@@ -303,6 +305,7 @@ class Login extends CI_Controller
 			: $this->Org_model->get_user_orgs_master($user_id);
 
 		if (!empty($user_orgs)) {
+			// 첫 번째 조직을 임시 기본 조직으로 설정 (localStorage 확인 전)
 			$default_org = $user_orgs[0];
 
 			$this->input->set_cookie('activeOrg', $default_org['org_id'], 86400);
@@ -311,11 +314,74 @@ class Login extends CI_Controller
 				'current_org_name' => $default_org['org_name']
 			]);
 
-			log_message('info', "사용자 {$user_id}의 기본 조직이 {$default_org['org_id']}로 설정되었습니다.");
+			log_message('info', "사용자 {$user_id}의 임시 기본 조직이 {$default_org['org_id']}로 설정되었습니다.");
 			return true;
 		}
 
 		return false;
+	}
+
+	/**
+	 * localStorage에서 전달받은 조직으로 기본 조직 설정 (AJAX)
+	 */
+	public function set_default_org()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		if (!$user_id) {
+			echo json_encode(['success' => false, 'message' => '로그인이 필요합니다.']);
+			return;
+		}
+
+		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			echo json_encode(['success' => false, 'message' => '조직 ID가 필요합니다.']);
+			return;
+		}
+
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 사용자의 조직 목록 가져오기
+		$user_orgs = ($master_yn === "N")
+			? $this->Org_model->get_user_orgs($user_id)
+			: $this->Org_model->get_user_orgs_master($user_id);
+
+		// 해당 조직이 사용자의 조직 목록에 있는지 확인
+		$org_exists = false;
+		$selected_org = null;
+
+		foreach ($user_orgs as $org) {
+			if ($org['org_id'] == $org_id) {
+				$org_exists = true;
+				$selected_org = $org;
+				break;
+			}
+		}
+
+		if (!$org_exists) {
+			echo json_encode(['success' => false, 'message' => '해당 조직에 접근 권한이 없습니다.']);
+			return;
+		}
+
+		// 쿠키와 세션에 선택한 조직 설정
+		$this->input->set_cookie('activeOrg', $org_id, 86400);
+		$this->session->set_userdata([
+			'current_org_id' => $org_id,
+			'current_org_name' => $selected_org['org_name']
+		]);
+
+		log_message('info', "사용자 {$user_id}의 기본 조직이 localStorage 기반으로 {$org_id}로 설정되었습니다.");
+
+		echo json_encode([
+			'success' => true,
+			'message' => '조직이 설정되었습니다.',
+			'org_id' => $org_id,
+			'org_name' => $selected_org['org_name']
+		]);
 	}
 
 	/**
@@ -382,9 +448,19 @@ class Login extends CI_Controller
 
 		echo json_encode([
 			'success' => $join_result,
-			'message' => $join_result ? '회원가입이 완료되었습니다.' : '회원가입 중 오류가 발생했습니다.'
+			'message' => $join_result ? '회원가입이 완료되었습니다.' : '회원가입 중 오류가 발생했습니다.',
+			'redirect_url' => '/login/redirect_after_join'
 		]);
 	}
+
+	/**
+	 * 회원가입 후 리다이렉트
+	 */
+	public function redirect_after_join()
+	{
+		$this->load->view('login_redirect', ['redirect_url' => '/qrcheck']);
+	}
+
 
 	/**
 	 * 초대코드 처리 및 조직 가입
@@ -491,6 +567,7 @@ class Login extends CI_Controller
 			return;
 		}
 
+		// localStorage에 새로 생성한 조직 저장
 		$this->input->set_cookie('activeOrg', $org_id, 86400);
 		$this->session->set_userdata([
 			'current_org_id' => $org_id,
@@ -503,6 +580,7 @@ class Login extends CI_Controller
 			'success' => true,
 			'message' => '조직이 성공적으로 생성되었습니다.',
 			'org_id' => $org_id,
+			'org_name' => $org_name,
 			'redirect_url' => base_url('org')
 		]);
 	}

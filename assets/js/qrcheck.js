@@ -167,7 +167,7 @@ function displayMembers(members) {
 	memberList.empty();
 
 	if (members.length === 0) {
-		memberList.append('<div class="no-member">조회된 회원이 없습니다.<br>오른쪽 하단의 회원 추가 버튼을 선택하여 첫번째 회원을 추가해보세요!</div>');
+		memberList.append('<div class="no-member">조회된 회원이 없습니다.</div>');
 		return;
 	}
 

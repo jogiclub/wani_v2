@@ -33,8 +33,8 @@
 <link rel="stylesheet" href="/assets/css/common.css?<?php echo WB_VERSION; ?>">
 
 <?php if ($this->session->userdata('user_id')): ?>
-<header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start border-bottom bg-white">
-	<div class="header-start col-xl-6 col-10">
+<header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-between border-bottom bg-white">
+	<div class="header-start">
 		<a class="navbar-brand col-6 col-xl-1 me-0 px-3 fs-6 logo pe-0" href="#">
 			<img src="/assets/images/logo.png?ver=1">
 		</a>
@@ -126,7 +126,7 @@
 			</ul>
 		</div>
 	</div>
-	<div class="header-end col-xl-6 col-2 d-flex justify-content-end px-3 gap-2 align-items-center">
+	<div class="header-end d-flex justify-content-end px-3 gap-2 align-items-center">
 		<div id="navbarSearch" class="navbar-search collapse">
 			<input class="form-control rounded-0 border-0" type="text" placeholder="Search" aria-label="Search">
 		</div>
