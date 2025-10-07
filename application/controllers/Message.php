@@ -277,4 +277,83 @@ class Message extends MY_Controller
 			));
 		}
 	}
+
+
+	/**
+	 * 파일 위치: application/controllers/Message.php
+	 * 역할: 메시지와 연결된 회원 정보 조회
+	 */
+	public function get_message_members()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$message_idx = $this->input->post('message_idx');
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->get_active_org_id();
+
+		if (!$message_idx) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '메시지 정보가 없습니다.'
+			));
+			return;
+		}
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 정보를 찾을 수 없습니다.'
+			));
+			return;
+		}
+
+		$message = $this->Message_model->get_message_by_idx($message_idx, $user_id);
+
+		if (!$message) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '메시지를 찾을 수 없습니다.'
+			));
+			return;
+		}
+
+		if ($message['org_id'] != $org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '권한이 없습니다.'
+			));
+			return;
+		}
+
+		$member_list = array();
+
+		if (!empty($message['member_idx_list'])) {
+			$member_idx_array = json_decode($message['member_idx_list'], true);
+
+			if (is_array($member_idx_array) && !empty($member_idx_array)) {
+				$this->load->model('Member_model');
+
+				foreach ($member_idx_array as $member_idx) {
+					$member = $this->Member_model->get_member_by_idx($member_idx);
+
+					if ($member && $member['org_id'] == $org_id && $member['del_yn'] === 'N') {
+						$member_list[] = array(
+							'member_idx' => $member['member_idx'],
+							'member_name' => $member['member_name'],
+							'member_phone' => $member['member_phone'],
+							'position_name' => $member['position_name'],
+							'area_name' => $member['area_name']
+						);
+					}
+				}
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'members' => $member_list
+		));
+	}
 }

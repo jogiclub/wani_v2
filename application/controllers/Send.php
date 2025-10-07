@@ -17,7 +17,8 @@ class Send extends MY_Controller
 	}
 
 	/**
-	 * 문자 발송 팝업 표시
+	 * 파일 위치: application/controllers/Send.php
+	 * 역할: 문자 발송 팝업 표시
 	 */
 	public function popup()
 	{
@@ -36,12 +37,17 @@ class Send extends MY_Controller
 		}
 
 		// 선택된 회원 번호들 받기 (옵션)
-		$member_ids = $this->input->post('member_ids');
+		$member_ids_json = $this->input->post('member_ids');
 		$selected_members = array();
 
-		if (!empty($member_ids)) {
-			// POST로 회원이 선택된 경우
-			$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
+		if (!empty($member_ids_json)) {
+			// JSON 문자열을 배열로 디코딩
+			$member_ids = json_decode($member_ids_json, true);
+
+			if (is_array($member_ids) && !empty($member_ids)) {
+				// POST로 회원이 선택된 경우
+				$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
+			}
 		}
 
 		// 발신번호 목록 조회 (인증 상태 포함)

@@ -13,15 +13,16 @@ class Send_model extends CI_Model
 	}
 
 	/**
-	 * 선택된 회원들의 정보 조회
+	 * 파일 위치: application/models/Send_model.php
+	 * 역할: 선택된 회원들의 정보 조회
 	 */
 	public function get_selected_members($member_ids, $org_id)
 	{
-		if (empty($member_ids)) {
+		if (empty($member_ids) || !is_array($member_ids)) {
 			return array();
 		}
 
-		$this->db->select('m.member_idx, m.member_name, m.member_phone, a.area_name');
+		$this->db->select('m.member_idx, m.member_name, m.member_phone, m.position_name, a.area_name');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where('m.org_id', $org_id);

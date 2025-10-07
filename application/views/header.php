@@ -441,6 +441,9 @@ $is_master = $this->session->userdata('master_yn');
 												<i class="bi bi-check-circle me-1"></i>읽음
 											</button>
 										<?php endif; ?>
+										<button class="btn btn-sm btn-outline-success send-message" data-message-idx="<?php echo $message['idx']; ?>">
+											<i class="bi bi-chat-text me-1"></i>문자전송
+										</button>
 										<button class="btn btn-sm btn-outline-danger delete-message" data-message-idx="<?php echo $message['idx']; ?>">
 											<i class="bi bi-trash me-1"></i>삭제
 										</button>

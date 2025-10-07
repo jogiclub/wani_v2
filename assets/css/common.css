@@ -378,3 +378,4 @@ span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font
 #org-dropdown-menu {max-height: 500px;overflow-y: scroll;}
 
 
+.msg-comment{word-break: keep-all;}

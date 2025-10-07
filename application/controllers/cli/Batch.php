@@ -86,7 +86,6 @@ class Batch extends CI_Controller
 		$this->load->model('Member_model');
 
 		try {
-			// 모든 조직 목록 가져오기 (auto_message 포함)
 			$orgs = $this->Org_model->get_all_orgs();
 
 			if (empty($orgs)) {
@@ -105,23 +104,19 @@ class Batch extends CI_Controller
 				$auto_message_json = $org['auto_message'];
 				$total_orgs++;
 
-				// auto_message가 null이거나 비어있으면 스킵
 				if (empty($auto_message_json) || $auto_message_json === 'null') {
 					echo "조직 {$org_name}({$org_id}): 자동 메시지 설정 없음 - 스킵\n";
 					continue;
 				}
 
-				// auto_message JSON 파싱
 				$auto_message = json_decode($auto_message_json, true);
 
-				// JSON 파싱 실패 시 스킵
 				if (!is_array($auto_message)) {
 					echo "조직 {$org_name}({$org_id}): 자동 메시지 설정 파싱 실패 - 스킵\n";
 					log_message('error', "조직 {$org_id} auto_message JSON 파싱 실패");
 					continue;
 				}
 
-				// birth7 설정이 true가 아니면 스킵
 				if (!isset($auto_message['birth7']) || $auto_message['birth7'] !== true) {
 					echo "조직 {$org_name}({$org_id}): 7일 이내 생일 알림 비활성화 - 스킵\n";
 					continue;
@@ -130,47 +125,42 @@ class Batch extends CI_Controller
 				$active_orgs++;
 				echo "조직 {$org_name}({$org_id}) 생일 회원 확인 중...\n";
 
-				// 7일 이내 생일인 회원 조회
 				$birthday_members = $this->Member_model->get_upcoming_birthday_members($org_id, 7);
 
-				// 생일자가 없으면 메시지 생성하지 않음
 				if (empty($birthday_members)) {
 					echo "생일자 없음\n";
 					continue;
 				}
 
-				// 생일자 정보 정리
 				$member_count = count($birthday_members);
 				$member_list = array();
+				$member_idx_list = array();
 
 				foreach ($birthday_members as $member) {
 					$birth_date = $member['birth_md'];
 					$formatted_date = date('n/j', strtotime('2000-' . $birth_date));
 					$member_list[] = "{$member['member_name']}({$formatted_date})";
+					$member_idx_list[] = $member['member_idx'];
 				}
 
-				// 메시지 제목 및 내용 생성
-				$message_title = "7일 이내 {$member_count}명의 생일 회원이 있습니다.";
+				$message_title = "7일 이내 {$member_count}명의 생일 회원";
 				$message_content = "{$member_count}명의 회원에게 축하메시지를 보내주세요!\n" .
 					implode(', ', $member_list) . "님";
 
-				// 메시지 데이터 준비
 				$message_data = array(
 					'message_date' => date('Y-m-d H:i:s'),
 					'message_type' => 'BIRTHDAY',
 					'message_title' => $message_title,
-					'message_content' => $message_content
+					'message_content' => $message_content,
+					'member_idx_list' => json_encode($member_idx_list)
 				);
 
-				// 조직의 모든 사용자에게 메시지 발송
 				$result = $this->Message_model->send_message_to_org($org_id, $message_data);
 
 				if ($result) {
 					$success_count++;
 					$message_sent_count += $member_count;
 					echo "생일 알림 메시지 생성 완료 ({$member_count}명)\n";
-
-					// 상세 로그
 					log_message('info', "조직 {$org_id}에 생일 알림 메시지 생성: " . implode(', ', $member_list));
 				} else {
 					echo "메시지 생성 실패\n";
@@ -251,9 +241,11 @@ class Batch extends CI_Controller
 
 				$member_count = count($birthday_members);
 				$member_list = array();
+				$member_idx_list = array();
 
 				foreach ($birthday_members as $member) {
 					$member_list[] = $member['member_name'];
+					$member_idx_list[] = $member['member_idx'];
 				}
 
 				$message_title = "오늘 {$member_count}명의 생일입니다!";
@@ -263,7 +255,8 @@ class Batch extends CI_Controller
 					'message_date' => date('Y-m-d H:i:s'),
 					'message_type' => 'BIRTHDAY_TODAY',
 					'message_title' => $message_title,
-					'message_content' => $message_content
+					'message_content' => $message_content,
+					'member_idx_list' => json_encode($member_idx_list)
 				);
 
 				$result = $this->Message_model->send_message_to_org($org_id, $message_data);
@@ -340,7 +333,6 @@ class Batch extends CI_Controller
 					continue;
 				}
 
-				// 조직의 timeline_name 확인
 				$org_detail = $this->Org_model->get_org_detail_by_id($org_id);
 				if (!$org_detail || empty($org_detail['timeline_name'])) {
 					echo "조직 {$org_name}({$org_id}): timeline_name 설정 없음 - 스킵\n";
@@ -353,7 +345,6 @@ class Batch extends CI_Controller
 					continue;
 				}
 
-				// 진급 관련 타임라인 타입 추출
 				$promotion_types = array();
 				foreach ($timeline_names as $timeline_name) {
 					if (strpos($timeline_name, '진급') !== false) {
@@ -378,10 +369,12 @@ class Batch extends CI_Controller
 
 				$member_count = count($promotion_members);
 				$member_list = array();
+				$member_idx_list = array();
 
 				foreach ($promotion_members as $member) {
 					$formatted_date = date('n/j', strtotime($member['timeline_date']));
 					$member_list[] = "{$member['member_name']}({$member['timeline_type']}, {$formatted_date})";
+					$member_idx_list[] = $member['member_idx'];
 				}
 
 				$message_title = "{$member_count}명의 진급 대상자가 있습니다.";
@@ -391,7 +384,8 @@ class Batch extends CI_Controller
 					'message_date' => date('Y-m-d H:i:s'),
 					'message_type' => 'PROMOTION',
 					'message_title' => $message_title,
-					'message_content' => $message_content
+					'message_content' => $message_content,
+					'member_idx_list' => json_encode($member_idx_list)
 				);
 
 				$result = $this->Message_model->send_message_to_org($org_id, $message_data);
@@ -480,9 +474,11 @@ class Batch extends CI_Controller
 
 				$member_count = count($absent_members);
 				$member_list = array();
+				$member_idx_list = array();
 
 				foreach ($absent_members as $member) {
 					$member_list[] = $member['member_name'];
+					$member_idx_list[] = $member['member_idx'];
 				}
 
 				$message_title = "금주 미출석 회원 {$member_count}명";
@@ -492,7 +488,8 @@ class Batch extends CI_Controller
 					'message_date' => date('Y-m-d H:i:s'),
 					'message_type' => 'ABSENCE_1WEEK',
 					'message_title' => $message_title,
-					'message_content' => $message_content
+					'message_content' => $message_content,
+					'member_idx_list' => json_encode($member_idx_list)
 				);
 
 				$result = $this->Message_model->send_message_to_org($org_id, $message_data);
@@ -581,9 +578,11 @@ class Batch extends CI_Controller
 
 				$member_count = count($absent_members);
 				$member_list = array();
+				$member_idx_list = array();
 
 				foreach ($absent_members as $member) {
 					$member_list[] = $member['member_name'];
+					$member_idx_list[] = $member['member_idx'];
 				}
 
 				$message_title = "2주간 연속 미출석 회원 {$member_count}명";
@@ -593,7 +592,8 @@ class Batch extends CI_Controller
 					'message_date' => date('Y-m-d H:i:s'),
 					'message_type' => 'ABSENCE_2WEEK',
 					'message_title' => $message_title,
-					'message_content' => $message_content
+					'message_content' => $message_content,
+					'member_idx_list' => json_encode($member_idx_list)
 				);
 
 				$result = $this->Message_model->send_message_to_org($org_id, $message_data);
@@ -682,9 +682,11 @@ class Batch extends CI_Controller
 
 				$member_count = count($absent_members);
 				$member_list = array();
+				$member_idx_list = array();
 
 				foreach ($absent_members as $member) {
 					$member_list[] = $member['member_name'];
+					$member_idx_list[] = $member['member_idx'];
 				}
 
 				$message_title = "5주간 연속 미출석 회원 {$member_count}명";
@@ -694,7 +696,8 @@ class Batch extends CI_Controller
 					'message_date' => date('Y-m-d H:i:s'),
 					'message_type' => 'ABSENCE_5WEEK',
 					'message_title' => $message_title,
-					'message_content' => $message_content
+					'message_content' => $message_content,
+					'member_idx_list' => json_encode($member_idx_list)
 				);
 
 				$result = $this->Message_model->send_message_to_org($org_id, $message_data);

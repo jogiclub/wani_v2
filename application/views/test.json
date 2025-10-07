@@ -1,111 +1,110 @@
 [
 	{
-		"member_idx": "2708",
-		"org_id": "1",
-		"member_name": "김하은",
-		"member_nick": "",
-		"photo": "/uploads/member_photos/1/member_2708_1737282601.png",
-		"member_phone": "010-8558-5116",
-		"member_address": "",
-		"member_address_detail": "",
-		"member_etc": "12",
-		"leader_yn": "Y",
-		"new_yn": "N",
-		"member_birth": "",
-		"grade": "0",
-		"position_name": "목자",
-		"duty_name": "",
-		"regi_date": "",
-		"modi_date": "2025-10-02+09:08:33",
-		"area_idx": "105",
-		"area_name": "1학년+김하은",
-		"area_order": "21",
-		"detail_2": "",
-		"detail_8": "",
-		"detail_13": "",
-		"detail_16": "",
-		"detail_1": ""
+		"user_id": "jogiclub@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
 	},
 	{
-		"member_idx": "2709",
-		"org_id": "1",
-		"member_name": "김나연",
-		"member_nick": "",
-		"photo": "/assets/images/photo_no.png",
-		"member_phone": "010-8512-6198",
-		"member_address": "",
-		"member_address_detail": "",
-		"member_etc": "",
-		"leader_yn": "N",
-		"new_yn": "N",
-		"member_birth": "",
-		"grade": "0",
-		"position_name": "",
-		"duty_name": "",
-		"regi_date": "",
-		"modi_date": "2025-10-02+09:08:33",
-		"area_idx": "105",
-		"area_name": "1학년+김하은",
-		"area_order": "21",
-		"detail_2": "",
-		"detail_8": "",
-		"detail_13": "",
-		"detail_16": "",
-		"detail_1": "",
-		"pq_cellselect": "[object+Object]"
+		"user_id": "miele5252@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
 	},
 	{
-		"member_idx": "2711",
-		"org_id": "1",
-		"member_name": "박서윤",
-		"member_nick": "",
-		"photo": "/assets/images/photo_no.png",
-		"member_phone": "010-4310-3114",
-		"member_address": "",
-		"member_address_detail": "",
-		"member_etc": "",
-		"leader_yn": "N",
-		"new_yn": "N",
-		"member_birth": "",
-		"grade": "0",
-		"position_name": "",
-		"duty_name": "",
-		"regi_date": "",
-		"modi_date": "2025-10-02+09:08:33",
-		"area_idx": "105",
-		"area_name": "1학년+김하은",
-		"area_order": "21",
-		"detail_2": "",
-		"detail_8": "",
-		"detail_13": "",
-		"detail_16": "",
-		"detail_1": ""
+		"user_id": "jeon7831@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
 	},
 	{
-		"member_idx": "2710",
-		"org_id": "1",
-		"member_name": "최예림",
-		"member_nick": "안녕+예림!",
-		"photo": "/assets/images/photo_no.png",
-		"member_phone": "010-9598-1367",
-		"member_address": "",
-		"member_address_detail": "",
-		"member_etc": "",
-		"leader_yn": "N",
-		"new_yn": "N",
-		"member_birth": "2009-06-24",
-		"grade": "0",
-		"position_name": "",
-		"duty_name": "",
-		"regi_date": "",
-		"modi_date": "2025-10-02+09:08:33",
-		"area_idx": "105",
-		"area_name": "1학년+김하은",
-		"area_order": "21",
-		"detail_2": "",
-		"detail_8": "",
-		"detail_13": "",
-		"detail_16": "",
-		"detail_1": ""
+		"user_id": "rywlswwkd1@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "oobbggii@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "ljw1202@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3477941019",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3477910846",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3478107692",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3498576497",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3488374845",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "sdt7497@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3679749923",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3678090581",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "ac57650@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "kakao_3832085029",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "jogiclub@52ch.kr",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
+	},
+	{
+		"user_id": "djaggi.neoaria@gmail.com",
+		"read_yn": "N",
+		"read_date": "0000-00-00 00:00:00",
+		"del_yn": "N"
 	}
 ]

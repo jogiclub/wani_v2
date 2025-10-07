@@ -172,6 +172,9 @@ $(document).ready(function() {
                                     <i class="bi bi-check-circle me-1"></i>읽음
                                 </button>
                                 ` : ''}
+                                <button class="btn btn-sm btn-outline-success send-message" data-message-idx="${messageIdx}">
+                                	<i class="bi bi-chat-text me-1"></i>문자전송
+                                	</button>
                                 <button class="btn btn-sm btn-outline-danger delete-message" data-message-idx="${messageIdx}">
                                     <i class="bi bi-trash me-1"></i>삭제
                                 </button>
@@ -529,4 +532,79 @@ $(document).ready(function() {
 	setTimeout(function() {
 		updateUnreadCount();
 	}, 1000);
+
+	// 문자전송 버튼 클릭 이벤트
+	$(document).on('click', '.send-message', function(e) {
+		e.stopPropagation();
+
+		const messageIdx = $(this).data('message-idx');
+
+		if (!messageIdx) {
+			if (typeof showToast === 'function') {
+				showToast('메시지 정보를 찾을 수 없습니다.', 'error');
+			}
+			return;
+		}
+
+		$.ajax({
+			url: '/message/get_message_members',
+			type: 'POST',
+			data: { message_idx: messageIdx },
+			dataType: 'json',
+			timeout: 10000,
+			success: function(response) {
+				if (response && response.success) {
+					if (response.members && response.members.length > 0) {
+						const memberIds = response.members.map(m => m.member_idx);
+						openSendPopup(memberIds);
+					} else {
+						if (typeof showToast === 'function') {
+							showToast('해당 메시지와 연결된 회원 정보가 없습니다.', 'warning');
+						}
+					}
+				} else {
+					if (typeof showToast === 'function') {
+						showToast(response.message || '회원 정보를 불러올 수 없습니다.', 'error');
+					}
+				}
+			},
+			error: function() {
+				if (typeof showToast === 'function') {
+					showToast('회원 정보 조회 중 오류가 발생했습니다.', 'error');
+				}
+			}
+		});
+	});
+
+	/**
+	 * 문자전송 팝업 열기 함수
+	 */
+	function openSendPopup(memberIds) {
+		const popupWidth = 1400;
+		const popupHeight = 900;
+		const left = (screen.width - popupWidth) / 2;
+		const top = (screen.height - popupHeight) / 2;
+
+		const form = document.createElement('form');
+		form.method = 'POST';
+		form.action = 'https://wani.im/send/popup';
+		form.target = 'sendPopup';
+		form.style.display = 'none';
+
+		const input = document.createElement('input');
+		input.type = 'hidden';
+		input.name = 'member_ids';
+		input.value = JSON.stringify(memberIds);
+
+		form.appendChild(input);
+		document.body.appendChild(form);
+
+		// 팝업 창 열기
+		window.open('', 'sendPopup', `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+
+		form.submit();
+		document.body.removeChild(form);
+	}
+
+
 });
