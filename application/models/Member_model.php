@@ -595,7 +595,77 @@ class Member_model extends CI_Model
 	}
 
 
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 7일 이내 생일인 회원 조회 (조직별)
+	 */
+	public function get_upcoming_birthday_members($org_id, $days = 7)
+	{
+		// 오늘부터 7일 후까지의 날짜 범위
+		$dates = array();
+		for ($i = 0; $i <= $days; $i++) {
+			$date = date('m-d', strtotime("+{$i} days"));
+			$dates[] = $date;
+		}
 
+		// member_birth가 다양한 형식일 수 있으므로 처리
+		// 'YYYY-MM-DD', 'MM-DD', 'YYYYMMDD' 등의 형식 고려
+		$this->db->select('
+        m.member_idx,
+        m.member_name,
+        m.member_birth,
+        m.org_id,
+        a.area_name
+    ');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('m.member_birth IS NOT NULL');
+		$this->db->where('m.member_birth !=', '');
+		$this->db->order_by('m.member_birth', 'ASC');
+
+		$query = $this->db->get();
+		$all_members = $query->result_array();
+
+		// PHP에서 생일 필터링 (다양한 날짜 형식 처리)
+		$birthday_members = array();
+
+		foreach ($all_members as $member) {
+			$birth = $member['member_birth'];
+
+			// 다양한 형식의 생일을 MM-DD 형식으로 변환
+			$birth_md = null;
+
+			// YYYY-MM-DD 또는 YYYY/MM/DD 형식
+			if (preg_match('/^\d{4}[-\/]\d{2}[-\/]\d{2}$/', $birth)) {
+				$birth_md = date('m-d', strtotime($birth));
+			}
+			// MM-DD 또는 MM/DD 형식
+			else if (preg_match('/^\d{2}[-\/]\d{2}$/', $birth)) {
+				$birth_md = date('m-d', strtotime('2000-' . str_replace('/', '-', $birth)));
+			}
+			// YYYYMMDD 형식
+			else if (preg_match('/^\d{8}$/', $birth)) {
+				$birth_md = substr($birth, 4, 2) . '-' . substr($birth, 6, 2);
+				$birth_md = date('m-d', strtotime('2000-' . $birth_md));
+			}
+
+			// 7일 이내 생일인지 확인
+			if ($birth_md && in_array($birth_md, $dates)) {
+				$birthday_members[] = array(
+					'member_idx' => $member['member_idx'],
+					'member_name' => $member['member_name'],
+					'member_birth' => $member['member_birth'],
+					'birth_md' => $birth_md,
+					'area_name' => $member['area_name'],
+					'org_id' => $member['org_id']
+				);
+			}
+		}
+
+		return $birthday_members;
+	}
 
 
 

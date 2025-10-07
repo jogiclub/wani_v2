@@ -28,7 +28,7 @@
 
 		<?php if (isset($selected_org_detail) && $selected_org_detail): ?>
 			<div class="row">
-				<div class="col-lg-8">
+				<div class="col-lg-4">
 					<div class="card">
 						<div class="card-header">
 							<h5 class="card-title mb-0">								
@@ -45,7 +45,7 @@
 									<label class="form-label">조직 아이콘</label>
 									<div class="d-flex align-items-center gap-3">
 										<div class="row">
-										<div class="org-icon-preview col-md-3">
+										<div class="org-icon-preview col-md-12">
 											<?php if ($selected_org_detail['org_icon']): ?>
 												<img src="<?php echo $selected_org_detail['org_icon']; ?>" alt="조직 아이콘" class="circle" width="100" height="100" style="object-fit: cover; border: 1px solid #ddd;" id="iconPreview">
 											<?php else: ?>
@@ -54,7 +54,7 @@
 												</div>
 											<?php endif; ?>
 										</div>
-										<div class="col-md-9 mt-3">
+										<div class="col-md-12 mt-3">
 											<div class="input-group">
 												<input type="file" class="form-control" id="orgIconFile" accept=".jpg,.jpeg,.png">
 												<button type="button" class="btn btn-primary btn-sm" id="uploadIconBtn"><i class="bi bi-upload"></i> 아이콘 업로드</button>
@@ -129,7 +129,7 @@
 							<?php endif; ?>
 
 							<div class="row mb-3">
-								<div class="col-md-6">
+								<div class="col-md-12">
 									<label class="form-label">초대 코드</label>
 									<div class="input-group">
 										<input type="text" class="form-control" id="inviteCodeInput" readonly
@@ -145,7 +145,7 @@
 									* 보안을 위해 해당 코드는 자주 갱신해주세요!
 									</div>
 								</div>
-								<div class="col-md-6">
+								<div class="col-md-12 mt-3">
 									<label class="form-label">생성일</label>
 									<input type="text" class="form-control" readonly
 										   value="<?php echo date('Y-m-d H:i', strtotime($selected_org_detail['regi_date'])); ?>">
@@ -215,7 +215,73 @@
 						</div>
 					</div>
 				</div>
+				<div class="col-lg-4 mt-4 mt-md-0">
+					<div class="card">
+						<div class="card-header">
+							<h5 class="card-title mb-0">
+								알림메시지 설정
+							</h5>
+						</div>
+						<div class="card-body card-height">
 
+
+
+
+
+
+							<div class="d-flex justify-content-between align-items-center mb-3">
+								<div class="form-check form-switch ">
+									<input class="form-check-input me-1" type="checkbox" role="switch" id="switchCheck-birth7">
+									<label class="form-check-label" for="switchCheck-birth7">7일 이내 생일인 회원 알림</label>
+								</div>
+								<small class="text-danger">매주 월요일 오전 2시</small>
+							</div>
+
+							<div class="d-flex justify-content-between align-items-center mb-3">
+								<div class="form-check form-switch ">
+									<input class="form-check-input me-1" type="checkbox" role="switch" id="switchCheck-birthToday">
+									<label class="form-check-label" for="switchCheck-birthToday">오늘 생일인 회원 알림</label>
+								</div>
+								<small class="text-danger">매일 오전 2시 30분</small>
+							</div>
+
+							<div class="d-flex justify-content-between align-items-center mb-3">
+								<div class="form-check form-switch ">
+									<input class="form-check-input me-1" type="checkbox" role="switch" id="switchCheck-promotion">
+									<label class="form-check-label" for="switchCheck-promotion">입대일 기준 진급 대상자 알림</label>
+								</div>
+								<small class="text-danger">매일 오전 3시</small>
+							</div>
+
+							<div class="d-flex justify-content-between align-items-center mb-3">
+								<div class="form-check form-switch ">
+									<input class="form-check-input me-1" type="checkbox" role="switch" id="switchCheck-Absence1Week">
+									<label class="form-check-label" for="switchCheck-Absence1Week">금주 미출석 회원 알림</label>
+								</div>
+								<small class="text-danger">매주 일요일 오후 12시</small>
+							</div>
+
+							<div class="d-flex justify-content-between align-items-center mb-3">
+								<div class="form-check form-switch ">
+									<input class="form-check-input me-1" type="checkbox" role="switch" id="switchCheck-Absence2Week">
+									<label class="form-check-label" for="switchCheck-Absence2Week">2주간 미출석 회원 알림</label>
+								</div>
+								<small class="text-danger">매주 일요일 오후 12시</small>
+							</div>
+
+
+							<div class="d-flex justify-content-between align-items-center mb-3">
+								<div class="form-check form-switch ">
+									<input class="form-check-input me-1" type="checkbox" role="switch" id="switchCheck-Absence5Week">
+									<label class="form-check-label" for="switchCheck-Absence5Week">5주간 미출석 회원 알림</label>
+								</div>
+								<small class="text-danger">매주 일요일 오후 12시</small>
+							</div>
+
+
+						</div>
+					</div>
+				</div>
 			</div>
 		<?php endif; ?>
 	</form>

@@ -75,7 +75,8 @@ class Org_model extends CI_Model {
 
 
 	/**
-	 * 조직 정보 업데이트
+	 * 파일 위치: application/models/Org_model.php
+	 * 역할: 조직 정보 업데이트 (알림 메시지 설정을 JSON으로 저장)
 	 */
 	public function update_org_info($org_id, $data) {
 		// JSON 데이터 처리
@@ -93,6 +94,22 @@ class Org_model extends CI_Model {
 
 		if (isset($data['memo_name']) && is_array($data['memo_name'])) {
 			$data['memo_name'] = json_encode($data['memo_name'], JSON_UNESCAPED_UNICODE);
+		}
+
+		// 알림 메시지 설정 JSON 처리 (추가)
+		if (isset($data['auto_message'])) {
+			// 이미 JSON 문자열인 경우 그대로 사용, 배열인 경우 JSON으로 변환
+			if (is_array($data['auto_message'])) {
+				$data['auto_message'] = json_encode($data['auto_message'], JSON_UNESCAPED_UNICODE);
+			}
+			// JSON 유효성 검증
+			if (is_string($data['auto_message'])) {
+				$decoded = json_decode($data['auto_message'], true);
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					log_message('error', '알림 메시지 JSON 파싱 오류: ' . json_last_error_msg());
+					unset($data['auto_message']);
+				}
+			}
 		}
 
 		$this->db->where('org_id', $org_id);
@@ -174,7 +191,14 @@ class Org_model extends CI_Model {
 	}
 
 
-
+	public function get_all_orgs()
+	{
+		$this->db->select('org_id, org_name');
+		$this->db->from('wb_org');
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 
 	/**
 	 * 미분류를 제외한 모든 조직 조회 (전체 선택용)
@@ -309,35 +333,36 @@ class Org_model extends CI_Model {
 	}
 
 	/**
-	 * 조직 상세 정보 조회
+	 * 역할: 조직 상세 정보 조회 (auto_message 컬럼 추가)
 	 */
 	public function get_org_detail_by_id($org_id)
 	{
 		$this->db->select('
-            org_id,
-            org_code,
-            org_name,
-            org_type,
-            org_desc,
-            org_rep,
-            org_manager,
-            org_phone,
-            org_address_postno,
-            org_address,
-            org_address_detail,
-            org_tag,
-            org_icon,
-            leader_name,
-            new_name,
-            invite_code,
-            position_name,
-            duty_name,
-            timeline_name,
-            memo_name,
-            category_idx,
-            regi_date,
-            modi_date
-        ');
+		org_id,
+		org_code,
+		org_name,
+		org_type,
+		org_desc,
+		org_rep,
+		org_manager,
+		org_phone,
+		org_address_postno,
+		org_address,
+		org_address_detail,
+		org_tag,
+		org_icon,
+		leader_name,
+		new_name,
+		invite_code,
+		position_name,
+		duty_name,
+		timeline_name,
+		memo_name,
+		auto_message,
+		category_idx,
+		regi_date,
+		modi_date
+	');
 		$this->db->from('wb_org');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');

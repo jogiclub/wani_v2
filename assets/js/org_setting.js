@@ -133,7 +133,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 기존 데이터 로드
+	 * 기존 데이터 로드 함수에 알림 설정 로드 추가
 	 */
 	function loadExistingData() {
 		const orgId = $('#org_id').val();
@@ -148,7 +148,7 @@ $(document).ready(function () {
 				if (response.success && response.data) {
 					const data = response.data;
 
-					// 직위/직분 데이터 로드
+					// 직위/직분 데이터 로드 (기존 코드 유지)
 					if (data.position_name) {
 						try {
 							const positions = JSON.parse(data.position_name);
@@ -164,7 +164,7 @@ $(document).ready(function () {
 						}
 					}
 
-					// 직책 데이터 로드
+					// 직책 데이터 로드 (기존 코드 유지)
 					if (data.duty_name) {
 						try {
 							const duties = JSON.parse(data.duty_name);
@@ -180,7 +180,7 @@ $(document).ready(function () {
 						}
 					}
 
-					// 타임라인 데이터 로드
+					// 타임라인 데이터 로드 (기존 코드 유지)
 					if (data.timeline_name) {
 						try {
 							const timelines = JSON.parse(data.timeline_name);
@@ -196,7 +196,7 @@ $(document).ready(function () {
 						}
 					}
 
-					// 메모 데이터 로드 (수정됨)
+					// 메모 데이터 로드 (기존 코드 유지)
 					if (data.memo_name) {
 						try {
 							const memos = JSON.parse(data.memo_name);
@@ -211,6 +211,24 @@ $(document).ready(function () {
 							console.error('메모 데이터 파싱 오류:', e);
 						}
 					}
+
+					// 알림 메시지 설정 로드 (추가)
+					if (data.auto_message) {
+						try {
+							const autoMessage = typeof data.auto_message === 'string'
+								? JSON.parse(data.auto_message)
+								: data.auto_message;
+
+							$('#switchCheck-birth7').prop('checked', autoMessage.birth7 || false);
+							$('#switchCheck-birthToday').prop('checked', autoMessage.birthToday || false);
+							$('#switchCheck-promotion').prop('checked', autoMessage.promotion || false);
+							$('#switchCheck-Absence1Week').prop('checked', autoMessage.absence1Week || false);
+							$('#switchCheck-Absence2Week').prop('checked', autoMessage.absence2Week || false);
+							$('#switchCheck-Absence5Week').prop('checked', autoMessage.absence5Week || false);
+						} catch (e) {
+							console.error('알림 설정 파싱 오류:', e);
+						}
+					}
 				}
 			},
 			error: function (xhr, status, error) {
@@ -220,10 +238,20 @@ $(document).ready(function () {
 	}
 
 	/**
-	* 조직 정보 저장
-	 **/
+	 * 조직 정보 저장 (기존 함수 수정)
+	 */
 	$('#orgSettingForm').on('submit', function (e) {
 		e.preventDefault();
+
+		// 알림 메시지 설정 데이터 수집 (추가)
+		const autoMessage = {
+			birth7: $('#switchCheck-birth7').is(':checked'),
+			birthToday: $('#switchCheck-birthToday').is(':checked'),
+			promotion: $('#switchCheck-promotion').is(':checked'),
+			absence1Week: $('#switchCheck-Absence1Week').is(':checked'),
+			absence2Week: $('#switchCheck-Absence2Week').is(':checked'),
+			absence5Week: $('#switchCheck-Absence5Week').is(':checked')
+		};
 
 		const formData = {
 			org_id: $('#org_id').val(),
@@ -235,10 +263,11 @@ $(document).ready(function () {
 			position_names: $('#position_names').val() || [],
 			duty_names: $('#duty_names').val() || [],
 			timeline_names: $('#timeline_names').val() || [],
-			memo_names: $('#memos_names').val() || []
+			memo_names: $('#memos_names').val() || [],
+			auto_message: JSON.stringify(autoMessage) // 추가
 		};
 
-		// 필수 항목 검증
+		// 필수 항목 검증 (기존 코드 유지)
 		if (!formData.org_name) {
 			showToast('조직명을 입력해주세요.');
 			$('#org_name').focus();
@@ -257,7 +286,7 @@ $(document).ready(function () {
 			return;
 		}
 
-		// 저장 중 상태 표시
+		// 저장 중 상태 표시 (기존 코드 유지)
 		const submitBtn = $(this).find('button[type="submit"]');
 		const originalText = submitBtn.html();
 		submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 저장 중...');
@@ -285,7 +314,6 @@ $(document).ready(function () {
 			}
 		});
 	});
-
 	// 아이콘 업로드
 	$('#uploadIconBtn').on('click', function () {
 		const fileInput = $('#orgIconFile')[0];

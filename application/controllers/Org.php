@@ -54,7 +54,8 @@ class Org extends My_Controller
 	}
 
 	/**
-	 * 조직 정보 업데이트
+	 * 파일 위치: application/controllers/Org.php
+	 * 역할: 조직 정보 업데이트 (알림 메시지 설정 포함)
 	 */
 	public function update_org_info() {
 		if (!$this->input->is_ajax_request()) {
@@ -67,6 +68,7 @@ class Org extends My_Controller
 		$org_desc = $this->input->post('org_desc');
 		$leader_name = $this->input->post('leader_name');
 		$new_name = $this->input->post('new_name');
+		$auto_message = $this->input->post('auto_message'); // 추가
 
 		// 직위/직분, 직책, 타임라인 데이터 처리
 		$position_names = $this->input->post('position_names');
@@ -112,6 +114,11 @@ class Org extends My_Controller
 
 		if (!empty($memo_names) && is_array($memo_names)) {
 			$update_data['memo_name'] = $memo_names;
+		}
+
+		// 알림 메시지 설정 처리 (추가)
+		if (!empty($auto_message)) {
+			$update_data['auto_message'] = $auto_message;
 		}
 
 		$result = $this->Org_model->update_org_info($org_id, $update_data);
