@@ -32,6 +32,7 @@ $(document).ready(function () {
 	function initializePage() {
 		showAllSpinners();
 		bindMissionTabEvents(); // 추가
+		bindAutoMatchModalEvents(); // 추가
 
 		if (typeof $.fn.pqGrid === 'undefined') {
 			console.error('ParamQuery 라이브러리가 로드되지 않았습니다.');
@@ -4165,17 +4166,276 @@ $(document).ready(function () {
 		showToast('결연교회 이메일 전송 기능은 준비 중입니다.', 'info');
 	}
 
+
+
+
 	/**
-	 * 결연교회 자동매칭
+	 * 자동매칭 모달 이벤트 바인딩
 	 */
-	function autoMatchChurch() {
-		if (!currentMemberMissionIdx) {
-			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+	function bindAutoMatchModalEvents() {
+		// 전체 선택 체크박스
+		$(document).off('change', '#selectAllMatchChurch').on('change', '#selectAllMatchChurch', function() {
+			const isChecked = $(this).is(':checked');
+			$('.match-church-checkbox').prop('checked', isChecked);
+			updateMatchSelectionInfo();
+		});
+
+		// 개별 체크박스
+		$(document).off('change', '.match-church-checkbox').on('change', '.match-church-checkbox', function() {
+			updateMatchSelectAllCheckbox();
+			updateMatchSelectionInfo();
+		});
+
+		// 검색 버튼
+		$(document).off('click', '#searchMatchChurchBtn').on('click', '#searchMatchChurchBtn', function() {
+			searchMatchChurch();
+		});
+
+		// 동일지역 자동매칭 버튼
+		$(document).off('click', '#autoMatchByRegionBtn').on('click', '#autoMatchByRegionBtn', function() {
+			autoMatchByRegion();
+		});
+
+		// 추가 확인 버튼
+		$(document).off('click', '#confirmMatchChurchBtn').on('click', '#confirmMatchChurchBtn', function() {
+			confirmAddMatchedChurches();
+		});
+
+		// Enter 키로 검색
+		$(document).off('keypress', '#matchSearchKeyword').on('keypress', '#matchSearchKeyword', function(e) {
+			if (e.which === 13) {
+				e.preventDefault();
+				searchMatchChurch();
+			}
+		});
+	}
+
+	/**
+	 * 교회 검색
+	 */
+	function searchMatchChurch() {
+		const searchType = $('#matchSearchType').val();
+		const keyword = $('#matchSearchKeyword').val().trim();
+
+		if (!keyword) {
+			showToast('검색어를 입력하세요.', 'warning');
 			return;
 		}
 
-		showToast('결연교회 자동매칭 기능은 준비 중입니다.', 'info');
+		const searchData = {
+			org_id: selectedOrgId,
+			search_type: searchType,
+			keyword: keyword
+		};
+
+		$.ajax({
+			url: '/member/search_match_church',
+			method: 'POST',
+			data: searchData,
+			dataType: 'json',
+			beforeSend: function() {
+				$('#matchChurchListBody').html(`
+				<tr>
+					<td colspan="5" class="text-center py-4">
+						<div class="spinner-border text-primary" role="status">
+							<span class="visually-hidden">검색 중...</span>
+						</div>
+					</td>
+				</tr>
+			`);
+			},
+			success: function(response) {
+				if (response.success) {
+					renderMatchChurchList(response.data);
+				} else {
+					showToast(response.message, 'error');
+					$('#matchChurchListBody').html(`
+					<tr>
+						<td colspan="5" class="text-center text-muted py-4">
+							검색 결과가 없습니다.
+						</td>
+					</tr>
+				`);
+				}
+			},
+			error: function() {
+				showToast('검색 중 오류가 발생했습니다.', 'error');
+			}
+		});
 	}
+
+	/**
+	 * 동일지역 자동매칭
+	 */
+	function autoMatchByRegion() {
+		const btn = $('#autoMatchByRegionBtn');
+		const originalHtml = btn.html();
+
+		btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 매칭 중...');
+
+		$.ajax({
+			url: '/member/auto_match_by_region',
+			method: 'POST',
+			data: {
+				member_idx: currentMemberMissionIdx,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success && response.data && response.data.length > 0) {
+					renderMatchChurchList(response.data);
+					showToast(`${response.data.length}개의 교회를 찾았습니다.`, 'success');
+				} else {
+					showToast(response.message || '동일 지역 교회를 찾을 수 없습니다.', 'info');
+					$('#matchChurchListBody').html(`
+					<tr>
+						<td colspan="5" class="text-center text-muted py-4">
+							동일 지역 교회를 찾을 수 없습니다.
+						</td>
+					</tr>
+				`);
+				}
+			},
+			error: function() {
+				showToast('자동매칭 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				btn.prop('disabled', false).html(originalHtml);
+			}
+		});
+	}
+
+	/**
+	 * 매칭 교회 목록 렌더링
+	 */
+	function renderMatchChurchList(churches) {
+		const tbody = $('#matchChurchListBody');
+		tbody.empty();
+
+		if (!churches || churches.length === 0) {
+			tbody.html(`
+			<tr>
+				<td colspan="5" class="text-center text-muted py-4">
+					검색 결과가 없습니다.
+				</td>
+			</tr>
+		`);
+			return;
+		}
+
+		churches.forEach(function(church) {
+			const tags = church.org_tag ? church.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+			const tagsHtml = tags.map(tag => `<span class="badge bg-secondary me-1">${escapeHtml(tag)}</span>`).join('');
+
+			const row = `
+			<tr>
+				<td>
+					<input type="checkbox" class="form-check-input match-church-checkbox" 
+						data-church='${JSON.stringify(church).replace(/'/g, "&apos;")}'>
+				</td>
+				<td>${escapeHtml(church.org_name || '')}</td>
+				<td>${escapeHtml(church.org_rep || '')}</td>
+				<td>${escapeHtml(church.org_address || '')}</td>
+				<td>${tagsHtml}</td>
+			</tr>
+		`;
+			tbody.append(row);
+		});
+
+		$('#selectAllMatchChurch').prop('checked', false);
+		updateMatchSelectionInfo();
+	}
+
+	/**
+	 * 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateMatchSelectAllCheckbox() {
+		const totalCheckboxes = $('.match-church-checkbox').length;
+		const checkedCheckboxes = $('.match-church-checkbox:checked').length;
+		const selectAllCheckbox = $('#selectAllMatchChurch');
+
+		if (checkedCheckboxes === 0) {
+			selectAllCheckbox.prop('checked', false).prop('indeterminate', false);
+		} else if (checkedCheckboxes === totalCheckboxes) {
+			selectAllCheckbox.prop('checked', true).prop('indeterminate', false);
+		} else {
+			selectAllCheckbox.prop('checked', false).prop('indeterminate', true);
+		}
+	}
+
+	/**
+	 * 선택 정보 업데이트
+	 */
+	function updateMatchSelectionInfo() {
+		const checkedCount = $('.match-church-checkbox:checked').length;
+
+		$('#matchSelectedCount').text(checkedCount);
+
+		if (checkedCount > 0) {
+			$('#matchSelectionInfo').show();
+			$('#confirmMatchChurchBtn').prop('disabled', false);
+		} else {
+			$('#matchSelectionInfo').hide();
+			$('#confirmMatchChurchBtn').prop('disabled', true);
+		}
+	}
+
+	/**
+	 * 선택된 교회 추가 확인
+	 */
+	function confirmAddMatchedChurches() {
+		const selectedChurches = [];
+
+		$('.match-church-checkbox:checked').each(function() {
+			const churchData = $(this).data('church');
+			selectedChurches.push(churchData);
+		});
+
+		if (selectedChurches.length === 0) {
+			showToast('추가할 교회를 선택하세요.', 'warning');
+			return;
+		}
+
+		// 확인 후 저장
+		saveMatchedChurches(selectedChurches);
+	}
+
+	/**
+	 * 선택된 교회 저장
+	 */
+	function saveMatchedChurches(churches) {
+		const btn = $('#confirmMatchChurchBtn');
+		const originalHtml = btn.html();
+
+		btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 추가 중...');
+
+		$.ajax({
+			url: '/member/save_matched_churches',
+			method: 'POST',
+			data: {
+				member_idx: currentMemberMissionIdx,
+				org_id: selectedOrgId,
+				churches: JSON.stringify(churches)
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message, 'success');
+					$('#autoMatchChurchModal').modal('hide');
+					loadTransferOrgList(currentMemberMissionIdx);
+				} else {
+					showToast(response.message, 'error');
+				}
+			},
+			error: function() {
+				showToast('교회 추가 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				btn.prop('disabled', false).html(originalHtml);
+			}
+		});
+	}
+
 
 
 	/**
@@ -4307,7 +4567,7 @@ $(document).ready(function () {
 
 
 	/**
-	 * 결연교회 자동매칭 실행
+	 * 결연교회 자동매칭 모달 열기
 	 */
 	function autoMatchChurch() {
 		if (!currentMemberMissionIdx) {
@@ -4320,35 +4580,22 @@ $(document).ready(function () {
 			return;
 		}
 
-		// 로딩 표시
-		const btn = $('#autoMatchChurchBtn');
-		const originalHtml = btn.html();
-		btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 매칭 중...');
+		// 모달 초기화
+		$('#matchSearchKeyword').val('');
+		$('#matchSearchType').val('church_name');
+		$('#matchChurchListBody').html(`
+		<tr>
+			<td colspan="5" class="text-center text-muted py-4">
+				검색 버튼을 클릭하거나 동일지역 자동매칭을 실행하세요.
+			</td>
+		</tr>
+	`);
+		$('#matchSelectionInfo').hide();
+		$('#confirmMatchChurchBtn').prop('disabled', true);
+		$('#selectAllMatchChurch').prop('checked', false);
 
-		$.ajax({
-			url: '/member/auto_match_church',
-			method: 'POST',
-			data: {
-				member_idx: currentMemberMissionIdx,
-				org_id: selectedOrgId
-			},
-			dataType: 'json',
-			success: function(response) {
-				if (response.success) {
-					showToast(response.message, 'success');
-					// 파송교회 목록 새로고침
-					loadTransferOrgList(currentMemberMissionIdx);
-				} else {
-					showToast(response.message, 'info');
-				}
-			},
-			error: function() {
-				showToast('결연교회 자동매칭 중 오류가 발생했습니다.', 'error');
-			},
-			complete: function() {
-				btn.prop('disabled', false).html(originalHtml);
-			}
-		});
+		// 모달 표시
+		$('#autoMatchChurchModal').modal('show');
 	}
 
 });

@@ -1959,4 +1959,148 @@ class Member extends My_Controller
 		}
 	}
 
+	/**
+	 * 결연교회 검색
+	 */
+	public function search_match_church()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$org_id = $this->input->post('org_id');
+			$search_type = $this->input->post('search_type');
+			$keyword = $this->input->post('keyword');
+
+			if (empty($org_id) || empty($search_type) || empty($keyword)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 파라미터가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$this->load->model('Transfer_org_model');
+			$results = $this->Transfer_org_model->search_churches($org_id, $search_type, $keyword);
+
+			echo json_encode([
+				'success' => true,
+				'data' => $results,
+				'message' => count($results) . '개의 교회를 찾았습니다.'
+			]);
+
+		} catch (Exception $e) {
+			log_message('error', '교회 검색 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '검색 중 오류가 발생했습니다.'
+			]);
+		}
+	}
+
+	/**
+	 * 동일지역 자동매칭
+	 */
+	public function auto_match_by_region()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+
+			if (empty($member_idx) || empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 파라미터가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$this->load->model('Transfer_org_model');
+			$results = $this->Transfer_org_model->search_churches_by_member_address($member_idx, $org_id);
+
+			if (empty($results)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '동일 지역에서 교회를 찾을 수 없습니다.',
+					'data' => []
+				]);
+				return;
+			}
+
+			echo json_encode([
+				'success' => true,
+				'data' => $results,
+				'message' => count($results) . '개의 교회를 찾았습니다.'
+			]);
+
+		} catch (Exception $e) {
+			log_message('error', '동일지역 매칭 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '자동매칭 중 오류가 발생했습니다.',
+				'data' => []
+			]);
+		}
+	}
+
+	/**
+	 * 선택된 교회 일괄 저장
+	 */
+	public function save_matched_churches()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+			$churches_json = $this->input->post('churches');
+
+			if (empty($member_idx) || empty($org_id) || empty($churches_json)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 파라미터가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$churches = json_decode($churches_json, true);
+
+			if (empty($churches) || !is_array($churches)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '추가할 교회 정보가 없습니다.'
+				]);
+				return;
+			}
+
+			$this->load->model('Transfer_org_model');
+			$result = $this->Transfer_org_model->insert_matched_churches($member_idx, $org_id, $churches);
+
+			if (!$result['success']) {
+				echo json_encode([
+					'success' => false,
+					'message' => '교회 저장 중 오류가 발생했습니다.'
+				]);
+				return;
+			}
+
+			$message = $result['success_count'] . '개의 교회가 추가되었습니다.';
+			if ($result['skip_count'] > 0) {
+				$message .= ' (' . $result['skip_count'] . '개는 이미 등록된 교회입니다.)';
+			}
+
+			echo json_encode([
+				'success' => true,
+				'message' => $message
+			]);
+
+		} catch (Exception $e) {
+			log_message('error', '교회 저장 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '교회 저장 중 오류가 발생했습니다.'
+			]);
+		}
+	}
 }

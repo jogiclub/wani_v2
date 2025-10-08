@@ -614,6 +614,80 @@
 	</div>
 </div>
 
+<!-- 결연교회 자동매칭 모달 -->
+<div class="modal fade" id="autoMatchChurchModal" tabindex="-1" aria-labelledby="autoMatchChurchModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="autoMatchChurchModalLabel">결연교회 자동매칭</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<!-- 검색 영역 -->
+				<div class="row mb-3">
+					<div class="col-md-3">
+						<select class="form-select" id="matchSearchType">
+							<option value="church_name">교회명</option>
+							<option value="pastor_name">담임목사</option>
+							<option value="region">지역</option>
+							<option value="tag">태그</option>
+						</select>
+					</div>
+					<div class="col-md-6">
+						<input type="text" class="form-control" id="matchSearchKeyword" placeholder="검색어를 입력하세요">
+					</div>
+					<div class="col-md-3">
+						<div class="btn-group w-100">
+							<button type="button" class="btn btn-primary" id="searchMatchChurchBtn">
+								<i class="bi bi-search"></i> 검색
+							</button>
+							<button type="button" class="btn btn-success" id="autoMatchByRegionBtn">
+								<i class="bi bi-geo-alt"></i> 동일지역 자동매칭
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- 결과 목록 영역 -->
+				<div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+					<table class="table table-hover">
+						<thead class="sticky-top bg-white">
+						<tr>
+							<th style="width: 50px;">
+								<input type="checkbox" id="selectAllMatchChurch" class="form-check-input">
+							</th>
+							<th>교회명</th>
+							<th>담임목사</th>
+							<th>지역</th>
+							<th>태그</th>
+						</tr>
+						</thead>
+						<tbody id="matchChurchListBody">
+						<tr>
+							<td colspan="5" class="text-center text-muted py-4">
+								검색 버튼을 클릭하거나 동일지역 자동매칭을 실행하세요.
+							</td>
+						</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<!-- 선택 정보 -->
+				<div class="alert alert-info mt-3" id="matchSelectionInfo" style="display: none;">
+					<i class="bi bi-info-circle"></i>
+					<span id="matchSelectedCount">0</span>개의 교회가 선택되었습니다.
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmMatchChurchBtn" disabled>
+					<i class="bi bi-plus-lg"></i> 추가
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 <?php $this->load->view('footer'); ?>
 
