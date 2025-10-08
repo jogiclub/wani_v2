@@ -1728,14 +1728,14 @@ class Member extends My_Controller
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
 				'transfer_org_id' => $this->input->post('transfer_org_id') ?: null,
-				'church_region' => $this->input->post('church_region'),
-				'church_name' => $this->input->post('church_name'),
+				'transfer_region' => $this->input->post('transfer_region'),
+				'transfer_name' => $this->input->post('transfer_name'),
 				'pastor_name' => $this->input->post('pastor_name'),
 				'contact_person' => $this->input->post('contact_person'),
 				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
-				'church_description' => $this->input->post('church_description'),
-				'org_tag' => $this->input->post('org_tag'), // church_tags → org_tag
+				'transfer_description' => $this->input->post('transfer_description'),
+				'org_tag' => $this->input->post('org_tag'), // transfer_tags → org_tag
 				'regi_date' => date('Y-m-d H:i:s'),
 				'modi_date' => date('Y-m-d H:i:s'),
 				'del_yn' => 'N'
@@ -1793,14 +1793,14 @@ class Member extends My_Controller
 			$data = [
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
-				'church_region' => $this->input->post('church_region'),
-				'church_name' => $this->input->post('church_name'),
+				'transfer_region' => $this->input->post('transfer_region'),
+				'transfer_name' => $this->input->post('transfer_name'),
 				'pastor_name' => $this->input->post('pastor_name'),
 				'contact_person' => $this->input->post('contact_person'),
 				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
-				'church_description' => $this->input->post('church_description'),
-				'org_tag' => $this->input->post('org_tag'), // church_tags → org_tag
+				'transfer_description' => $this->input->post('transfer_description'),
+				'org_tag' => $this->input->post('org_tag'), // transfer_tags → org_tag
 				'modi_date' => date('Y-m-d H:i:s')
 			];
 

@@ -369,7 +369,7 @@
 										<button type="button" class="btn btn-sm btn-outline-success" id="autoMatchChurchBtn">
 											<i class="bi bi-link-45deg"></i> 결연교회 자동매칭
 										</button>
-										<button type="button" class="btn btn-sm btn-outline-dark" id="addMissionChurchBtn">
+										<button type="button" class="btn btn-sm btn-outline-dark" id="addTransferOrgBtn">
 											<i class="bi bi-plus-lg"></i> 파송교회 수동추가
 										</button>
 									</div>
@@ -377,9 +377,9 @@
 							</div>
 
 							<!-- 파송 교회 목록 영역 -->
-							<div class="mission-church-list-section">
-								<div id="missionChurchList">
-									<div class="text-center text-muted py-3" id="emptyMissionChurchMessage">
+							<div class="transfer-org-list-section">
+								<div id="transferOrgList">
+									<div class="text-center text-muted py-3" id="emptyTransferOrgMessage">
 										파송 교회 정보를 불러오고 있습니다...
 									</div>
 								</div>
@@ -527,26 +527,26 @@
 </div>
 
 <!-- 파송교회 추가/수정 모달 -->
-<div class="modal fade" id="missionChurchModal" tabindex="-1" aria-labelledby="missionChurchModalLabel" aria-hidden="true">
+<div class="modal fade" id="transferOrgModal" tabindex="-1" aria-labelledby="transferOrgModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="missionChurchModalLabel">파송교회 추가</h5>
+				<h5 class="modal-title" id="transferOrgModalLabel">파송교회 추가</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
-				<form id="missionChurchForm">
+				<form id="transferOrgForm">
 					<input type="hidden" id="transfer_org_idx" name="transfer_org_idx">
-					<input type="hidden" id="mission_member_idx" name="mission_member_idx">
+					<input type="hidden" id="transfer_member_idx" name="transfer_member_idx">
 
 					<div class="row">
 						<div class="col-md-4 mb-3">
-							<label for="church_region" class="form-label">지역</label>
-							<input type="text" class="form-control" id="church_region" name="church_region" placeholder="예: 경기 광명" required>
+							<label for="transfer_region" class="form-label">지역</label>
+							<input type="text" class="form-control" id="transfer_region" name="transfer_region" placeholder="예: 경기 광명" required>
 						</div>
 						<div class="col-md-4 mb-3">
-							<label for="church_name" class="form-label">교회명</label>
-							<input type="text" class="form-control" id="church_name" name="church_name" placeholder="예: 오병이어교회" required>
+							<label for="transfer_name" class="form-label">교회명</label>
+							<input type="text" class="form-control" id="transfer_name" name="transfer_name" placeholder="예: 오병이어교회" required>
 						</div>
 						<div class="col-md-4 mb-3">
 							<label for="pastor_name" class="form-label">담임목사명</label>
@@ -571,8 +571,8 @@
 
 					<div class="row">
 						<div class="col-12 mb-3">
-							<label for="church_description" class="form-label">교회소개</label>
-							<textarea class="form-control" id="church_description" name="church_description" rows="3" placeholder="교회에 대한 간단한 소개를 입력하세요"></textarea>
+							<label for="transfer_description" class="form-label">교회소개</label>
+							<textarea class="form-control" id="transfer_description" name="transfer_description" rows="3" placeholder="교회에 대한 간단한 소개를 입력하세요"></textarea>
 						</div>
 					</div>
 
@@ -589,14 +589,14 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-primary" id="saveMissionChurchBtn">저장</button>
+				<button type="button" class="btn btn-primary" id="saveTransferOrgBtn">저장</button>
 			</div>
 		</div>
 	</div>
 </div>
 
 <!-- 파송교회 삭제 확인 모달 -->
-<div class="modal fade" id="deleteMissionChurchModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="deleteTransferOrgModal" tabindex="-1" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -608,7 +608,7 @@
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-danger" id="confirmDeleteMissionChurchBtn">삭제</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteTransferOrgBtn">삭제</button>
 			</div>
 		</div>
 	</div>

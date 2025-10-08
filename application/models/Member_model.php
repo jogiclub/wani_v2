@@ -927,12 +927,11 @@ class Member_model extends CI_Model
 		}
 
 		// 2. wb_transfer_org 테이블에서 해당 ID 목록을 조회합니다.
-		$this->db->select('mmc.transfer_org_id AS idx, mmc.*, o.org_name as church_name_from_org');
-		$this->db->from('wb_transfer_org mmc'); // 테이블 이름 wb_transfer_org
-		$this->db->join('wb_org o', 'mmc.transfer_org_id = o.org_id', 'left');
-		$this->db->where_in('mmc.transfer_org_id', $transfer_org_ids); // JSON에 저장된 ID 목록으로 필터링
-		$this->db->where('mmc.del_yn', 'N');
-		$this->db->order_by('mmc.regi_date', 'DESC');
+		$this->db->select('transfer_org_id AS idx, transfer_org_name, transfer_org_address, transfer_org_phone, transfer_org_rep, transfer_org_manager, transfer_org_email, transfer_org_desc, transfer_org_tag, regi_date, modi_date');
+		$this->db->from('wb_transfer_org');
+		$this->db->where_in('transfer_org_id', $transfer_org_ids);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('regi_date', 'DESC');
 
 		$query = $this->db->get();
 		return $query->result_array();
@@ -941,13 +940,14 @@ class Member_model extends CI_Model
 	public function insert_transfer_org($data)
 	{
 		$insert_data = [
-			'transfer_org_name' => $data['church_name'] ?? null,
-			'org_address' => $data['church_region'] ?? null,
-			'org_phone' => $data['contact_phone'] ?? null,
-			'org_rep' => $data['pastor_name'] ?? null,
-			'org_manager' => $data['contact_person'] ?? null,
-			'org_desc' => $data['church_description'] ?? null,
-			'org_tag' => $data['org_tag'] ?? null, // church_tags → org_tag
+			'transfer_org_name' => $data['transfer_name'] ?? null,
+			'transfer_org_address' => $data['transfer_region'] ?? null,
+			'transfer_org_phone' => $data['contact_phone'] ?? null,
+			'transfer_org_rep' => $data['pastor_name'] ?? null,
+			'transfer_org_manager' => $data['contact_person'] ?? null,
+			'transfer_org_email' => $data['contact_email'] ?? null,
+			'transfer_org_desc' => $data['transfer_description'] ?? null,
+			'transfer_org_tag' => $data['org_tag'] ?? null,
 			'regi_date' => $data['regi_date'],
 			'modi_date' => $data['modi_date'],
 			'del_yn' => $data['del_yn']
@@ -978,13 +978,14 @@ class Member_model extends CI_Model
 
 		// 수정할 데이터 매핑
 		$update_data = [
-			'transfer_org_name' => $data['church_name'] ?? null,
-			'org_address' => $data['church_region'] ?? null,
-			'org_phone' => $data['contact_phone'] ?? null,
-			'org_rep' => $data['pastor_name'] ?? null,
-			'org_manager' => $data['contact_person'] ?? null,
-			'org_desc' => $data['church_description'] ?? null,
-			'org_tag' => $data['org_tag'] ?? null, // church_tags → org_tag
+			'transfer_org_name' => $data['transfer_name'] ?? null,
+			'transfer_org_address' => $data['transfer_region'] ?? null,
+			'transfer_org_phone' => $data['contact_phone'] ?? null,
+			'transfer_org_rep' => $data['pastor_name'] ?? null,
+			'transfer_org_manager' => $data['contact_person'] ?? null,
+			'transfer_org_email' => $data['contact_email'] ?? null,
+			'transfer_org_desc' => $data['transfer_description'] ?? null,
+			'transfer_org_tag' => $data['org_tag'] ?? null,
 			'modi_date' => $data['modi_date']
 		];
 
