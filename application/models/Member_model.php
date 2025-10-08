@@ -853,15 +853,84 @@ class Member_model extends CI_Model
 	}
 
 	/**
-	 * 회원의 파송교회 목록 조회
+	 * (내부 함수) wb_member.transfer_org_json 필드를 업데이트합니다.
+	 * 해당 회원의 파송교회 ID 목록을 JSON 배열로 저장합니다.
+	 *
+	 * @param int $member_idx 회원 ID
+	 * @param int $org_id 조직 ID
+	 * @param int $id_to_link wb_transfer_org의 PK (transfer_org_id)
+	 * @param string $action 'add' 또는 'delete'
+	 * @return bool 업데이트 성공 여부
+	 */
+	private function _update_member_transfer_orgs_json_link($member_idx, $org_id, $id_to_link, $action) {
+		// 1. 현재 JSON 데이터 가져오기
+		$this->db->select('transfer_org_json');
+		$this->db->from('wb_member');
+		$this->db->where('member_idx', $member_idx);
+		$query = $this->db->get();
+		$row = $query->row_array();
+
+		$current_ids = [];
+		if ($row && !empty($row['transfer_org_json'])) {
+			$ids_from_json = json_decode($row['transfer_org_json'], true);
+			if (is_array($ids_from_json)) {
+				// 배열 내의 모든 항목을 문자열로 변환하고 고유값만 유지
+				$current_ids = array_map('strval', array_unique(array_filter($ids_from_json)));
+			}
+		}
+
+		$id_to_link_str = (string)$id_to_link;
+
+		// 2. ID 목록 수정
+		if ($action === 'add') {
+			if (!in_array($id_to_link_str, $current_ids)) {
+				$current_ids[] = $id_to_link_str;
+			}
+		} elseif ($action === 'delete') {
+			$current_ids = array_values(array_diff($current_ids, [$id_to_link_str]));
+		}
+
+		// 3. JSON으로 인코딩 후 저장 (예: ['11', '15'])
+		$json_data = json_encode($current_ids, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE);
+
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_member', [
+			'transfer_org_json' => $json_data,
+			'modi_date' => date('Y-m-d H:i:s')
+		]);
+	}
+
+	/**
+	 * 회원의 파송교회 목록 조회 (wb_transfer_org에서 조회)
+	 * wb_member.transfer_org_json 필드를 참조하여 조회합니다.
 	 */
 	public function get_member_transfer_orgs($member_idx, $org_id)
 	{
-		$this->db->select('mmc.*, o.org_name as church_name_from_org');
-		$this->db->from('wb_member_transfer_org mmc');
-		$this->db->join('wb_org o', 'mmc.church_org_id = o.org_id', 'left');
-		$this->db->where('mmc.member_idx', $member_idx);
-		$this->db->where('mmc.org_id', $org_id);
+		// 1. wb_member.transfer_org_json에서 연결된 transfer_org_id 목록을 가져옵니다.
+		$this->db->select('transfer_org_json');
+		$this->db->from('wb_member');
+		$this->db->where('member_idx', $member_idx);
+		$query = $this->db->get();
+		$row = $query->row_array();
+
+		$transfer_org_ids = [];
+		if ($row && !empty($row['transfer_org_json'])) {
+			$ids_from_json = json_decode($row['transfer_org_json'], true);
+			if (is_array($ids_from_json)) {
+				$transfer_org_ids = array_map('strval', array_unique(array_filter($ids_from_json)));
+			}
+		}
+
+		if (empty($transfer_org_ids)) {
+			return array();
+		}
+
+		// 2. wb_transfer_org 테이블에서 해당 ID 목록을 조회합니다.
+		$this->db->select('mmc.transfer_org_id AS idx, mmc.*, o.org_name as church_name_from_org');
+		$this->db->from('wb_transfer_org mmc'); // 테이블 이름 wb_transfer_org
+		$this->db->join('wb_org o', 'mmc.transfer_org_id = o.org_id', 'left');
+		$this->db->where_in('mmc.transfer_org_id', $transfer_org_ids); // JSON에 저장된 ID 목록으로 필터링
 		$this->db->where('mmc.del_yn', 'N');
 		$this->db->order_by('mmc.regi_date', 'DESC');
 
@@ -870,24 +939,88 @@ class Member_model extends CI_Model
 	}
 
 	/**
-	 * 파송교회 추가
+	 * 파송교회 추가 (wb_transfer_org에 삽입 및 wb_member.transfer_org_json 업데이트)
 	 */
 	public function insert_transfer_org($data)
 	{
-		$this->db->insert('wb_member_transfer_org', $data);
-		return $this->db->insert_id();
+		$insert_data = [
+			'transfer_org_name' => $data['church_name'] ?? null,
+			'org_address' => $data['church_region'] ?? null,
+			'org_phone' => $data['contact_phone'] ?? null,
+			'org_rep' => $data['pastor_name'] ?? null,
+			'org_manager' => $data['contact_person'] ?? null,
+			'org_desc' => $data['church_description'] ?? null,
+			'org_tag' => $data['church_tags'] ?? null,
+			'regi_date' => $data['regi_date'],
+			'modi_date' => $data['modi_date'],
+			'del_yn' => $data['del_yn']
+		];
+
+		$this->db->trans_start();
+
+		// 1. wb_transfer_org에 상세 정보 저장
+		$this->db->insert('wb_transfer_org', $insert_data);
+		$insert_id = $this->db->insert_id();
+
+		if ($insert_id) {
+			// 2. wb_member.transfer_org_json 필드 업데이트 (새 ID 연결)
+			$this->_update_member_transfer_orgs_json_link($data['member_idx'], $data['org_id'], $insert_id, 'add');
+		}
+
+		$this->db->trans_complete();
+
+		return $this->db->trans_status() === TRUE ? $insert_id : false;
 	}
 
-	public function update_transfer_org($idx, $org_id, $data)
+	/**
+	 * 파송교회 수정 (wb_transfer_org의 상세 정보를 수정)
+	 */
+	public function update_transfer_org($transfer_org_id, $org_id, $data)
 	{
-		$this->db->where('idx', $idx);
-		$this->db->where('org_id', $org_id);
-		$this->db->where('del_yn', 'N');
+		$member_idx = $data['member_idx']; // Contextual check
 
-		return $this->db->update('wb_member_transfer_org', $data);
+		// 수정할 데이터 매핑 (strict list to prevent PK inclusion)
+		$update_data = [
+			'transfer_org_name' => $data['church_name'] ?? null,
+			'org_address' => $data['church_region'] ?? null,
+			'org_phone' => $data['contact_phone'] ?? null,
+			'org_rep' => $data['pastor_name'] ?? null,
+			'org_manager' => $data['contact_person'] ?? null,
+			'org_desc' => $data['church_description'] ?? null,
+			'org_tag' => $data['church_tags'] ?? null,
+			'modi_date' => $data['modi_date'] // modi_date는 controller에서 설정되어 넘어옴
+		];
+
+		// **CRITICAL FIX:** Ensure the Primary Key is NOT in the SET clause.
+		// CI의 DB 드라이버는 $update_data에 PK가 포함되어 있으면 SET 절에 추가하려고 시도합니다.
+		if (isset($update_data['transfer_org_id'])) {
+			unset($update_data['transfer_org_id']);
+		}
+
+		$this->db->trans_start();
+
+		// 1. wb_transfer_org 상세 정보 수정.
+		// WHERE 절에 PK를 사용
+		$this->db->where('transfer_org_id', $transfer_org_id);
+		$this->db->where('del_yn', 'N');
+		// $update_data에는 PK가 포함되지 않음
+		$result = $this->db->update('wb_transfer_org', $update_data);
+
+		if ($result) {
+			// 2. wb_member.transfer_org_json 필드 업데이트 (업데이트 시에는 링크 변동 없음)
+			// 'add' 액션을 사용하여 현재 ID가 여전히 링크되어 있도록 보장
+			$this->_update_member_transfer_orgs_json_link($member_idx, $org_id, $transfer_org_id, 'add');
+		}
+
+		$this->db->trans_complete();
+
+		return $this->db->trans_status() === TRUE ? $result : false;
 	}
 
-	public function delete_transfer_org($idx, $org_id)
+	/**
+	 * 파송교회 삭제 (wb_transfer_org에서 논리적 삭제 및 wb_member.transfer_org_json 업데이트)
+	 */
+	public function delete_transfer_org($transfer_org_id, $org_id, $member_idx)
 	{
 		$data = [
 			'del_yn' => 'Y',
@@ -895,17 +1028,27 @@ class Member_model extends CI_Model
 			'modi_date' => date('Y-m-d H:i:s')
 		];
 
-		$this->db->where('idx', $idx);
-		$this->db->where('org_id', $org_id);
+		$this->db->trans_start();
 
-		return $this->db->update('wb_member_transfer_org', $data);
+		// 1. wb_transfer_org 논리적 삭제. transfer_org_id (PK)로만 조회합니다.
+		$this->db->where('transfer_org_id', $transfer_org_id);
+		$result = $this->db->update('wb_transfer_org', $data);
+
+		if ($result) {
+			// 2. wb_member.transfer_org_json 필드에서 해당 ID 제거
+			$this->_update_member_transfer_orgs_json_link($member_idx, $org_id, $transfer_org_id, 'delete');
+		}
+
+		$this->db->trans_complete();
+
+		return $this->db->trans_status() === TRUE ? $result : false;
 	}
 
 
 	/**
-	* 선택 가능한 결연교회 목록 조회
-	* wb_org_category에서 '결연교회' 카테고리 하위의 모든 교회 조회
-	*/
+	 * 선택 가능한 결연교회 목록 조회
+	 * wb_org_category에서 '결연교회' 카테고리 하위의 모든 교회 조회
+	 */
 	public function get_available_churches()
 	{
 		// 1. '결연교회' 카테고리 찾기
@@ -958,7 +1101,3 @@ class Member_model extends CI_Model
 	}
 
 }
-
-
-
-

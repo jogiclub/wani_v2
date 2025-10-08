@@ -98,7 +98,8 @@ $(document).ready(function () {
 		// 파송교회 수정 버튼 (동적 요소용 이벤트 위임)
 		$(document).off('click', '.btn-mission-edit').on('click', '.btn-mission-edit', function() {
 			const idx = $(this).data('idx');
-			const churchData = getMissionChurchDataFromElement($(this).closest('.mission-church-item'));
+			// FIX: 저장된 데이터를 직접 가져오도록 변경
+			const churchData = $(this).closest('.mission-church-item').data('churchData');
 			openMissionChurchModal('edit', idx, churchData);
 		});
 
@@ -3054,7 +3055,7 @@ $(document).ready(function () {
 			if (offcanvasInstance) {
 				offcanvasInstance.hide();
 			}
-			loadMemberData();
+			// loadMemberData();
 			refreshGroupTree();
 		}
 	}
@@ -3460,7 +3461,7 @@ $(document).ready(function () {
 
 				if (response.success) {
 					// 그리드 새로고침
-					loadMemberData();
+					// loadMemberData();
 					// 트리 새로고침 (인원수 변경 가능성)
 					refreshGroupTree();
 				}
@@ -3674,53 +3675,7 @@ $(document).ready(function () {
 		$('#selectedQrPrintModal').modal('hide');
 	});
 
-	/**
-	 * Confirm 모달 표시 함수 (공통 함수)
-	 */
-	function showConfirmModal(title, message, onConfirm, onCancel) {
-		// 기존 확인 모달이 있으면 제거
-		$('#confirmModal').remove();
 
-		const modalHtml = `
-        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">${title}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>${message}</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                        <button type="button" class="btn btn-primary" id="confirmYes">확인</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-		$('body').append(modalHtml);
-
-		// 확인 버튼 클릭 이벤트
-		$('#confirmYes').on('click', function() {
-			$('#confirmModal').modal('hide');
-			if (typeof onConfirm === 'function') {
-				onConfirm();
-			}
-		});
-
-		// 모달 닫힘 이벤트
-		$('#confirmModal').on('hidden.bs.modal', function() {
-			$(this).remove();
-			if (typeof onCancel === 'function') {
-				onCancel();
-			}
-		});
-
-		$('#confirmModal').modal('show');
-	}
 
 
 	/**
@@ -3877,24 +3832,30 @@ $(document).ready(function () {
 
 		form.reset();
 
+		// FIX 1: hidden field 초기화 (이전 값이 남아있거나 0으로 초기화되는 것 방지)
+		$('#transfer_org_idx').val('');
+
 		if (mode === 'add') {
 			$('#missionChurchModalLabel').text('파송교회 추가');
-			$('#transfer_org_idx').val('');
 			$('#mission_member_idx').val(currentMemberMissionIdx);
+
 		} else if (mode === 'edit' && churchData) {
 			$('#missionChurchModalLabel').text('파송교회 수정');
+
+			// FIX 2: transfer_org_id (idx)를 hidden field에 설정
 			$('#transfer_org_idx').val(idx);
 			$('#mission_member_idx').val(currentMemberMissionIdx);
 
-			// 폼 데이터 채우기
-			$('#church_region').val(churchData.church_region || '');
-			$('#church_name').val(churchData.church_name || '');
-			$('#pastor_name').val(churchData.pastor_name || '');
-			$('#contact_person').val(churchData.contact_person || '');
-			$('#contact_phone').val(churchData.contact_phone || '');
+			// 폼 데이터 채우기 (새로운 필드 이름으로 매핑)
+			$('#church_region').val(churchData.org_address || '');
+			$('#church_name').val(churchData.transfer_org_name || '');
+			$('#pastor_name').val(churchData.org_rep || '');
+			$('#contact_person').val(churchData.org_manager || '');
+			$('#contact_phone').val(churchData.org_phone || '');
 			$('#contact_email').val(churchData.contact_email || '');
-			$('#church_description').val(churchData.church_description || '');
-			$('#church_tags').val(churchData.church_tags || '');
+			$('#church_description').val(churchData.org_desc || '');
+			$('#church_tags').val(churchData.org_tag || '');
+			$('#transfer_org_id').val(churchData.transfer_org_id || '');
 		}
 
 		modal.modal('show');
@@ -3965,7 +3926,9 @@ $(document).ready(function () {
 
 		churchList.forEach(function(church) {
 			const churchHtml = createMissionChurchItemHtml(church);
-			listContainer.append(churchHtml);
+			const $item = $(churchHtml);
+			$item.data('churchData', church); // FIX: 전체 객체를 DOM 요소에 저장
+			listContainer.append($item);
 		});
 	}
 
@@ -3973,15 +3936,16 @@ $(document).ready(function () {
 	 * 파송교회 아이템 HTML 생성
 	 */
 	function createMissionChurchItemHtml(church) {
-		const tags = church.church_tags ? church.church_tags.split(' ').filter(tag => tag.trim().startsWith('#')) : [];
+		// church.church_tags -> church.org_tag
+		const tags = church.org_tag ? church.org_tag.split(' ').filter(tag => tag.trim().startsWith('#')) : [];
 		const tagsHtml = tags.map(tag => `<span class="mission-church-tag">${escapeHtml(tag)}</span>`).join('');
 
 		return `
 		<div class="mission-church-item border p-3 rounded mb-2" data-idx="${church.idx}">
 			<div class="mission-church-header d-flex justify-content-between align-items-center pb-2">
 				<h5 class="mission-church-title mb-0">
-					${escapeHtml(church.church_region || '')} <b>${escapeHtml(church.church_name || '')}</b>
-					${church.pastor_name ? '(' + escapeHtml(church.pastor_name) + ' 담임목사)' : ''}
+					${escapeHtml(church.org_address || '')} <b>${escapeHtml(church.transfer_org_name || '')}</b> 
+					${church.org_rep ? '(' + escapeHtml(church.org_rep) + ' 담임목사)' : ''} 
 				</h5>
 				<div class="mission-church-actions">
 					<button type="button" class="btn btn-xs btn-outline-secondary btn-mission-edit" data-idx="${church.idx}">수정</button>
@@ -3990,16 +3954,16 @@ $(document).ready(function () {
 			</div>
 			
 			<div class="mission-church-info d-flex justify-content-start align-items-center mb-1">
-				${church.contact_person ? `
+				${church.org_manager ? ` 
 					<div class="mission-church-info-item me-3">
 						<i class="bi bi-person"></i>
-						<span>${escapeHtml(church.contact_person)}</span>
+						<span>${escapeHtml(church.org_manager)}</span>
 					</div>
 				` : ''}
-				${church.contact_phone ? `
+				${church.org_phone ? ` 
 					<div class="mission-church-info-item me-3">
 						<i class="bi bi-telephone"></i>
-						<span>${escapeHtml(church.contact_phone)}</span>
+						<span>${escapeHtml(church.org_phone)}</span>
 					</div>
 				` : ''}
 				${church.contact_email ? `
@@ -4010,9 +3974,9 @@ $(document).ready(function () {
 				` : ''}
 			</div>
 			
-			${church.church_description ? `
+			${church.org_desc ? ` 
 				<div class="mission-church-description">
-					${escapeHtml(church.church_description)}
+					${escapeHtml(church.org_desc)}
 				</div>
 			` : ''}
 			
@@ -4048,10 +4012,18 @@ $(document).ready(function () {
 			contact_phone: $('#contact_phone').val().trim(),
 			contact_email: $('#contact_email').val().trim(),
 			church_description: $('#church_description').val().trim(),
-			church_tags: $('#church_tags').val().trim()
+			church_tags: $('#church_tags').val().trim(),
+			transfer_org_id: $('#transfer_org_id').val() || null // transfer_org_id 추가
 		};
 
 		const url = formData.idx ? '/member/update_transfer_org' : '/member/save_transfer_org';
+
+		// FIX 3: 수정 모드에서 idx가 0이나 null이면 저장 중단 (PK 누락 오류 방지)
+		if (url.includes('update_transfer_org') && (!formData.idx || formData.idx === '0')) {
+			showToast('수정할 파송교회 정보가 누락되었습니다. (PK 오류)', 'error');
+			return;
+		}
+
 
 		$.ajax({
 			url: url,
@@ -4078,6 +4050,8 @@ $(document).ready(function () {
 	 */
 	function showDeleteMissionChurchModal(idx) {
 		$('#confirmDeleteMissionChurchBtn').data('idx', idx);
+		// FIX 4: member_idx를 confirm 버튼에 저장 (deleteMissionChurch에서 사용)
+		$('#confirmDeleteMissionChurchBtn').data('member-idx', currentMemberMissionIdx);
 		$('#deleteMissionChurchModal').modal('show');
 	}
 
@@ -4085,12 +4059,16 @@ $(document).ready(function () {
 	 * 파송교회 삭제 실행
 	 */
 	function deleteMissionChurch(idx) {
+		// FIX 5: confirmDeleteMissionChurchBtn에서 member_idx를 가져옵니다.
+		const memberIdx = $('#confirmDeleteMissionChurchBtn').data('member-idx');
+
 		$.ajax({
 			url: '/member/delete_transfer_org',
 			method: 'POST',
 			data: {
 				idx: idx,
-				org_id: selectedOrgId
+				org_id: selectedOrgId,
+				member_idx: memberIdx // FIX 6: member_idx 추가
 			},
 			dataType: 'json',
 			success: function(response) {
@@ -4113,25 +4091,9 @@ $(document).ready(function () {
 	 */
 
 	function getMissionChurchDataFromElement(element) {
-		// 데이터를 data 속성에서 직접 가져오는 방식으로 수정
-		const idx = element.data('idx');
-
-		// 실제 데이터를 element의 data 속성이나 텍스트에서 추출
-		const titleText = element.find('.mission-church-title').text().trim();
-		const titleParts = titleText.split('-');
-		const regionAndChurch = titleParts[0].trim().split(' ');
-
-		return {
-			idx: idx,
-			church_region: regionAndChurch.slice(0, -1).join(' '),
-			church_name: regionAndChurch[regionAndChurch.length - 1],
-			pastor_name: titleParts[1] ? titleParts[1].trim() : '',
-			contact_person: element.find('.bi-person').parent().find('span').text().trim(),
-			contact_phone: element.find('.bi-telephone').parent().find('span').text().trim(),
-			contact_email: element.find('.bi-envelope').parent().find('span').text().trim(),
-			church_description: element.find('.mission-church-description').text().trim(),
-			church_tags: Array.from(element.find('.mission-church-tag')).map(tag => $(tag).text()).join(' ')
-		};
+		// FIX: bindMissionTabEvents에서 직접 데이터를 가져오므로, 이 함수는 사용되지 않습니다.
+		// 만약 호출된다면 저장된 데이터를 반환합니다.
+		return element.data('churchData') || {};
 	}
 	/**
 	 * 회원에게 이메일 전송

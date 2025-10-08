@@ -1284,59 +1284,6 @@ function formatNumber(num) {
 	return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-function showConfirmModal(title, message, confirmCallback, cancelCallback = null) {
-	let confirmModal = $('#dynamicConfirmModal');
-	if (confirmModal.length === 0) {
-		confirmModal = $(`
-			<div class="modal fade" id="dynamicConfirmModal" tabindex="-1" aria-labelledby="dynamicConfirmModalLabel" aria-hidden="true">
-				<div class="modal-dialog">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title" id="dynamicConfirmModalLabel"></h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-						</div>
-						<div class="modal-body"></div>
-						<div class="modal-footer">
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="modalCancelBtn">취소</button>
-							<button type="button" class="btn btn-primary" id="modalConfirmBtn">확인</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		`);
-		$('body').append(confirmModal);
-	}
-
-	confirmModal.find('.modal-title').text(title);
-	confirmModal.find('.modal-body').html(message.replace(/\n/g, '<br>'));
-
-	confirmModal.find('#modalConfirmBtn').off('click').on('click', function() {
-		const modalInstance = bootstrap.Modal.getInstance(confirmModal[0]);
-		if (modalInstance) {
-			modalInstance.hide();
-		} else {
-			confirmModal.modal('hide');
-		}
-		if (confirmCallback) {
-			confirmCallback();
-		}
-	});
-
-	confirmModal.find('#modalCancelBtn').off('click').on('click', function() {
-		const modalInstance = bootstrap.Modal.getInstance(confirmModal[0]);
-		if (modalInstance) {
-			modalInstance.hide();
-		} else {
-			confirmModal.modal('hide');
-		}
-		if (cancelCallback) {
-			cancelCallback();
-		}
-	});
-
-	const modalInstance = new bootstrap.Modal(confirmModal[0]);
-	modalInstance.show();
-}
 
 
 /**

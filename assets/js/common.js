@@ -101,6 +101,56 @@ function showConfirm(message, onConfirm, title = '확인', confirmText = '확인
 	}
 }
 
+/**
+ * Confirm 모달 표시 함수 (공통 함수)
+ */
+function showConfirmModal(title, message, onConfirm, onCancel) {
+	// 기존 확인 모달이 있으면 제거
+	$('#confirmModal').remove();
+
+	const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                        <button type="button" class="btn btn-primary" id="confirmYes">확인</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+	$('body').append(modalHtml);
+
+	// 확인 버튼 클릭 이벤트
+	$('#confirmYes').on('click', function() {
+		$('#confirmModal').modal('hide');
+		if (typeof onConfirm === 'function') {
+			onConfirm();
+		}
+	});
+
+	// 모달 닫힘 이벤트
+	$('#confirmModal').on('hidden.bs.modal', function() {
+		$(this).remove();
+		if (typeof onCancel === 'function') {
+			onCancel();
+		}
+	});
+
+	$('#confirmModal').modal('show');
+}
+
+
+
 // ========================================
 // 3. 조직 관리 기능
 // ========================================

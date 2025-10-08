@@ -537,51 +537,6 @@ $(document).ready(function () {
 		document.body.removeChild(textArea);
 	}
 
-	/**
-	 * 확인 모달 표시 (Bootstrap 모달 사용)
-	 */
-	function showConfirmModal(title, message, onConfirm) {
-		// 기존 확인 모달이 있으면 제거
-		$('#confirmModal').remove();
-
-		const modalHtml = `
-			<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-				<div class="modal-dialog">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title" id="confirmModalLabel">${title}</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-						</div>
-						<div class="modal-body">
-							${message}
-						</div>
-						<div class="modal-footer">
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-							<button type="button" class="btn btn-primary" id="confirmModalBtn">확인</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		`;
-
-		$('body').append(modalHtml);
-
-		// 확인 버튼 이벤트
-		$('#confirmModalBtn').on('click', function () {
-			$('#confirmModal').modal('hide');
-			if (typeof onConfirm === 'function') {
-				onConfirm();
-			}
-		});
-
-		// 모달 표시
-		$('#confirmModal').modal('show');
-
-		// 모달이 닫힌 후 DOM에서 제거
-		$('#confirmModal').on('hidden.bs.modal', function () {
-			$(this).remove();
-		});
-	}
 
 
 	/**

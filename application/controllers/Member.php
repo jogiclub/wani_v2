@@ -1715,7 +1715,6 @@ class Member extends My_Controller
 		try {
 			$member_idx = $this->input->post('member_idx');
 			$org_id = $this->input->post('org_id');
-			$church_org_id = $this->input->post('church_org_id');
 
 			if (empty($member_idx) || empty($org_id)) {
 				echo json_encode([
@@ -1725,31 +1724,32 @@ class Member extends My_Controller
 				return;
 			}
 
+			// wb_transfer_org에 저장할 데이터와 member_idx, org_id를 포함하여 모델로 전달
 			$data = [
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
-				'church_org_id' => $church_org_id ?: null,
-				'church_region' => $this->input->post('church_region'),
-				'church_name' => $this->input->post('church_name'),
-				'pastor_name' => $this->input->post('pastor_name'),
-				'contact_person' => $this->input->post('contact_person'),
-				'contact_phone' => $this->input->post('contact_phone'),
+				'transfer_org_id' => $this->input->post('transfer_org_id') ?: null,
+				'church_region' => $this->input->post('church_region'), // org_address에 매핑
+				'church_name' => $this->input->post('church_name'), // transfer_org_name에 매핑
+				'pastor_name' => $this->input->post('pastor_name'), // org_rep에 매핑
+				'contact_person' => $this->input->post('contact_person'), // org_manager에 매핑
+				'contact_phone' => $this->input->post('contact_phone'), // org_phone에 매핑
 				'contact_email' => $this->input->post('contact_email'),
-				'church_description' => $this->input->post('church_description'),
-				'church_tags' => $this->input->post('church_tags'),
+				'church_description' => $this->input->post('church_description'), // org_desc에 매핑
+				'church_tags' => $this->input->post('church_tags'), // org_tag에 매핑
 				'regi_date' => date('Y-m-d H:i:s'),
 				'modi_date' => date('Y-m-d H:i:s'),
 				'del_yn' => 'N'
 			];
 
 			$this->load->model('Member_model');
-			$result = $this->Member_model->insert_transfer_org($data);
+			$result_transfer_org_id = $this->Member_model->insert_transfer_org($data);
 
-			if ($result) {
+			if ($result_transfer_org_id) {
 				echo json_encode([
 					'success' => true,
 					'message' => '파송교회가 추가되었습니다.',
-					'idx' => $result
+					'idx' => $result_transfer_org_id // wb_transfer_org.transfer_org_id
 				]);
 			} else {
 				echo json_encode([
@@ -1768,6 +1768,8 @@ class Member extends My_Controller
 
 
 	}
+
+
 	/**
 	 * 파송교회 수정
 	 * POST /member/update_transfer_org
@@ -1777,10 +1779,11 @@ class Member extends My_Controller
 		$this->output->set_content_type('application/json');
 
 		try {
-			$idx = $this->input->post('idx');
+			$transfer_org_id = $this->input->post('idx'); // wb_transfer_org.transfer_org_id
 			$org_id = $this->input->post('org_id');
+			$member_idx = $this->input->post('member_idx');
 
-			if (empty($idx) || empty($org_id)) {
+			if (empty($transfer_org_id) || empty($org_id) || empty($member_idx)) {
 				echo json_encode([
 					'success' => false,
 					'message' => '필수 파라미터가 누락되었습니다.'
@@ -1788,8 +1791,10 @@ class Member extends My_Controller
 				return;
 			}
 
+			// wb_transfer_org에 저장할 데이터와 member_idx, org_id를 포함하여 모델로 전달
 			$data = [
-				'church_org_id' => $this->input->post('church_org_id') ?: null,
+				'member_idx' => $member_idx,
+				'org_id' => $org_id,
 				'church_region' => $this->input->post('church_region'),
 				'church_name' => $this->input->post('church_name'),
 				'pastor_name' => $this->input->post('pastor_name'),
@@ -1802,7 +1807,7 @@ class Member extends My_Controller
 			];
 
 			$this->load->model('Member_model');
-			$result = $this->Member_model->update_transfer_org($idx, $org_id, $data);
+			$result = $this->Member_model->update_transfer_org($transfer_org_id, $org_id, $data);
 
 			if ($result) {
 				echo json_encode([
@@ -1834,10 +1839,11 @@ class Member extends My_Controller
 		$this->output->set_content_type('application/json');
 
 		try {
-			$idx = $this->input->post('idx');
+			$transfer_org_id = $this->input->post('idx');
 			$org_id = $this->input->post('org_id');
+			$member_idx = $this->input->post('member_idx');
 
-			if (empty($idx) || empty($org_id)) {
+			if (empty($transfer_org_id) || empty($org_id) || empty($member_idx)) {
 				echo json_encode([
 					'success' => false,
 					'message' => '필수 파라미터가 누락되었습니다.'
@@ -1846,7 +1852,7 @@ class Member extends My_Controller
 			}
 
 			$this->load->model('Member_model');
-			$result = $this->Member_model->delete_transfer_org($idx, $org_id);
+			$result = $this->Member_model->delete_transfer_org($transfer_org_id, $org_id, $member_idx);
 
 			if ($result) {
 				echo json_encode([
