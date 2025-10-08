@@ -4305,6 +4305,52 @@ $(document).ready(function () {
 		});
 	}
 
+
+	/**
+	 * 결연교회 자동매칭 실행
+	 */
+	function autoMatchChurch() {
+		if (!currentMemberMissionIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		if (!selectedOrgId) {
+			showToast('조직 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		// 로딩 표시
+		const btn = $('#autoMatchChurchBtn');
+		const originalHtml = btn.html();
+		btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 매칭 중...');
+
+		$.ajax({
+			url: '/member/auto_match_church',
+			method: 'POST',
+			data: {
+				member_idx: currentMemberMissionIdx,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message, 'success');
+					// 파송교회 목록 새로고침
+					loadTransferOrgList(currentMemberMissionIdx);
+				} else {
+					showToast(response.message, 'info');
+				}
+			},
+			error: function() {
+				showToast('결연교회 자동매칭 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				btn.prop('disabled', false).html(originalHtml);
+			}
+		});
+	}
+
 });
 
 

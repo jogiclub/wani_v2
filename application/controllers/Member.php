@@ -1680,18 +1680,18 @@ class Member extends My_Controller
 			if (empty($member_idx) || empty($org_id)) {
 				echo json_encode([
 					'success' => false,
-					'message' => '필수 파라미터가 누락되었습니다.'
+					'message' => '필수 정보가 누락되었습니다.'
 				]);
 				return;
 			}
 
-			$this->load->model('Member_model');
-			$transfer_orgs = $this->Member_model->get_member_transfer_orgs($member_idx, $org_id);
+			// Transfer_org_model 로드
+			$this->load->model('Transfer_org_model');
+			$transfer_orgs = $this->Transfer_org_model->get_member_transfer_orgs($member_idx, $org_id);
 
 			echo json_encode([
 				'success' => true,
-				'data' => $transfer_orgs,
-				'message' => '파송교회 목록을 조회했습니다.'
+				'data' => $transfer_orgs
 			]);
 
 		} catch (Exception $e) {
@@ -1719,7 +1719,7 @@ class Member extends My_Controller
 			if (empty($member_idx) || empty($org_id)) {
 				echo json_encode([
 					'success' => false,
-					'message' => '필수 파라미터가 누락되었습니다.'
+					'message' => '필수 정보가 누락되었습니다.'
 				]);
 				return;
 			}
@@ -1727,7 +1727,6 @@ class Member extends My_Controller
 			$data = [
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
-				'transfer_org_id' => $this->input->post('transfer_org_id') ?: null,
 				'transfer_region' => $this->input->post('transfer_region'),
 				'transfer_name' => $this->input->post('transfer_name'),
 				'pastor_name' => $this->input->post('pastor_name'),
@@ -1735,33 +1734,35 @@ class Member extends My_Controller
 				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
 				'transfer_description' => $this->input->post('transfer_description'),
-				'org_tag' => $this->input->post('org_tag'), // transfer_tags → org_tag
+				'org_tag' => $this->input->post('org_tag'),
+				'transfer_org_id' => $this->input->post('transfer_org_id'),
 				'regi_date' => date('Y-m-d H:i:s'),
 				'modi_date' => date('Y-m-d H:i:s'),
 				'del_yn' => 'N'
 			];
 
-			$this->load->model('Member_model');
-			$result_transfer_org_id = $this->Member_model->insert_transfer_org($data);
+			// Transfer_org_model 로드
+			$this->load->model('Transfer_org_model');
+			$result = $this->Transfer_org_model->insert_transfer_org($data);
 
-			if ($result_transfer_org_id) {
+			if ($result) {
 				echo json_encode([
 					'success' => true,
-					'message' => '파송교회가 추가되었습니다.',
-					'idx' => $result_transfer_org_id
+					'message' => '파송교회가 저장되었습니다.',
+					'transfer_org_id' => $result
 				]);
 			} else {
 				echo json_encode([
 					'success' => false,
-					'message' => '파송교회 추가에 실패했습니다.'
+					'message' => '파송교회 저장에 실패했습니다.'
 				]);
 			}
 
 		} catch (Exception $e) {
-			log_message('error', '파송교회 추가 오류: ' . $e->getMessage());
+			log_message('error', '파송교회 저장 오류: ' . $e->getMessage());
 			echo json_encode([
 				'success' => false,
-				'message' => '파송교회 추가 중 오류가 발생했습니다.'
+				'message' => '파송교회 저장 중 오류가 발생했습니다.'
 			]);
 		}
 	}
@@ -1778,21 +1779,20 @@ class Member extends My_Controller
 		$this->output->set_content_type('application/json');
 
 		try {
-			$transfer_org_id = $this->input->post('idx');
+			$idx = $this->input->post('idx');
 			$org_id = $this->input->post('org_id');
 			$member_idx = $this->input->post('member_idx');
 
-			if (empty($transfer_org_id) || empty($org_id) || empty($member_idx)) {
+			if (empty($idx) || empty($org_id) || empty($member_idx)) {
 				echo json_encode([
 					'success' => false,
-					'message' => '필수 파라미터가 누락되었습니다.'
+					'message' => '필수 정보가 누락되었습니다.'
 				]);
 				return;
 			}
 
 			$data = [
 				'member_idx' => $member_idx,
-				'org_id' => $org_id,
 				'transfer_region' => $this->input->post('transfer_region'),
 				'transfer_name' => $this->input->post('transfer_name'),
 				'pastor_name' => $this->input->post('pastor_name'),
@@ -1800,17 +1800,18 @@ class Member extends My_Controller
 				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
 				'transfer_description' => $this->input->post('transfer_description'),
-				'org_tag' => $this->input->post('org_tag'), // transfer_tags → org_tag
+				'org_tag' => $this->input->post('org_tag'),
 				'modi_date' => date('Y-m-d H:i:s')
 			];
 
-			$this->load->model('Member_model');
-			$result = $this->Member_model->update_transfer_org($transfer_org_id, $org_id, $data);
+			// Transfer_org_model 로드
+			$this->load->model('Transfer_org_model');
+			$result = $this->Transfer_org_model->update_transfer_org($idx, $org_id, $data);
 
 			if ($result) {
 				echo json_encode([
 					'success' => true,
-					'message' => '파송교회 정보가 수정되었습니다.'
+					'message' => '파송교회가 수정되었습니다.'
 				]);
 			} else {
 				echo json_encode([
@@ -1845,13 +1846,14 @@ class Member extends My_Controller
 			if (empty($transfer_org_id) || empty($org_id) || empty($member_idx)) {
 				echo json_encode([
 					'success' => false,
-					'message' => '필수 파라미터가 누락되었습니다.'
+					'message' => '필수 정보가 누락되었습니다.'
 				]);
 				return;
 			}
 
-			$this->load->model('Member_model');
-			$result = $this->Member_model->delete_transfer_org($transfer_org_id, $org_id, $member_idx);
+			// Transfer_org_model 로드
+			$this->load->model('Transfer_org_model');
+			$result = $this->Transfer_org_model->delete_transfer_org($transfer_org_id, $org_id, $member_idx);
 
 			if ($result) {
 				echo json_encode([
@@ -1875,7 +1877,7 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 결연교회 목록 조회 (선택 옵션용)
+	 * 결연교회 목록 조회
 	 * POST /member/get_available_churches
 	 */
 	public function get_available_churches()
@@ -1888,13 +1890,14 @@ class Member extends My_Controller
 			if (empty($org_id)) {
 				echo json_encode([
 					'success' => false,
-					'message' => '조직 정보가 누락되었습니다.'
-				]);
-				return;
-			}
+				   'message' => '조직 정보가 누락되었습니다.'
+            ]);
+            return;
+        }
 
-			$this->load->model('Member_model');
-			$churches = $this->Member_model->get_available_churches();
+			// Transfer_org_model 로드
+			$this->load->model('Transfer_org_model');
+			$churches = $this->Transfer_org_model->get_available_churches();
 
 			echo json_encode([
 				'success' => true,
@@ -1910,6 +1913,50 @@ class Member extends My_Controller
 		}
 	}
 
+	/**
+	 * 결연교회 자동매칭
+	 * POST /member/auto_match_church
+	 */
+	public function auto_match_church()
+	{
+		$this->output->set_content_type('application/json');
 
+		try {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+
+			if (empty($member_idx) || empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 정보가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			// Transfer_org_model 로드
+			$this->load->model('Transfer_org_model');
+			$result = $this->Transfer_org_model->auto_match_transfer_church($member_idx, $org_id);
+
+			if ($result['success']) {
+				echo json_encode([
+					'success' => true,
+					'message' => $result['message'],
+					'matched_count' => $result['matched_count']
+				]);
+			} else {
+				echo json_encode([
+					'success' => false,
+					'message' => $result['message']
+				]);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '결연교회 자동매칭 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '결연교회 자동매칭 중 오류가 발생했습니다.'
+			]);
+		}
+	}
 
 }
