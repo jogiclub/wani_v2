@@ -542,30 +542,30 @@
 					<div class="row">
 						<div class="col-md-4 mb-3">
 							<label for="transfer_region" class="form-label">지역</label>
-							<input type="text" class="form-control" id="transfer_region" name="transfer_region" placeholder="예: 경기 광명" required>
+							<input type="text" class="form-control" id="transfer_region" name="transfer_region" placeholder="" required>
 						</div>
 						<div class="col-md-4 mb-3">
 							<label for="transfer_name" class="form-label">교회명</label>
-							<input type="text" class="form-control" id="transfer_name" name="transfer_name" placeholder="예: 오병이어교회" required>
+							<input type="text" class="form-control" id="transfer_name" name="transfer_name" placeholder="" required>
 						</div>
 						<div class="col-md-4 mb-3">
 							<label for="pastor_name" class="form-label">담임목사명</label>
-							<input type="text" class="form-control" id="pastor_name" name="pastor_name" placeholder="예: 권영구">
+							<input type="text" class="form-control" id="pastor_name" name="pastor_name" placeholder="">
 						</div>
 					</div>
 
 					<div class="row">
 						<div class="col-md-4 mb-3">
 							<label for="contact_person" class="form-label">담당자</label>
-							<input type="text" class="form-control" id="contact_person" name="contact_person" placeholder="예: 홍길동">
+							<input type="text" class="form-control" id="contact_person" name="contact_person" placeholder="">
 						</div>
 						<div class="col-md-4 mb-3">
 							<label for="contact_phone" class="form-label">연락처</label>
-							<input type="tel" class="form-control" id="contact_phone" name="contact_phone" placeholder="예: 010-2313-1234">
+							<input type="tel" class="form-control" id="contact_phone" name="contact_phone" placeholder="010-0000-0000">
 						</div>
 						<div class="col-md-4 mb-3">
 							<label for="contact_email" class="form-label">이메일</label>
-							<input type="email" class="form-control" id="contact_email" name="contact_email" placeholder="예: jogiclub@gmail.com">
+							<input type="email" class="form-control" id="contact_email" name="contact_email" placeholder="OOO@OOO.com">
 						</div>
 					</div>
 
@@ -581,7 +581,7 @@
 							<label for="org_tags" class="form-label">태그</label>
 							<select class="form-select" id="org_tags" name="org_tags" multiple style="width: 100%"></select>
 							<div class="form-text">
-								입력 후 스페이스바를 클릭하세요!
+								입력 후 쉼표(')를 입력하세요.
 							</div>
 						</div>
 					</div>

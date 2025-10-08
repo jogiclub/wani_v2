@@ -4003,12 +4003,12 @@ $(document).ready(function () {
 			<div class="mission-church-item border rounded p-3 mb-3" data-church-data='${JSON.stringify(church)}'>
 				<div class="d-flex justify-content-between align-items-center">
 					<div class="flex-grow-1">
-						<h5 class="mb-2">
-							<i class="bi bi-geo-alt"></i> ${church.transfer_org_address || '지역 미등록'}
-							<strong class="ms-2">${church.transfer_org_name || '교회명 미등록'}</strong>
+						<h5 class="mb-2">							
+							<strong>${church.transfer_org_name || '교회명 미등록'}</strong>
 							<small class="ms-2">${church.transfer_org_rep} 담임목사</small>
 						</h5>
-						<div class="text-muted d-flex justify-content-start align-items-center">							
+						<div class=""><i class="bi bi-geo-alt"></i> ${church.transfer_org_address || '지역 미등록'}</div>
+						<div class="text-muted d-flex justify-content-start align-items-center">												
 							${church.transfer_org_manager ? '<span class="me-3"><i class="bi bi-person-badge"></i> ' + church.transfer_org_manager + '</span>': ''}
 							${church.transfer_org_phone ? '<span class="me-3"><i class="bi bi-telephone"></i> ' + church.transfer_org_phone + '</span>': ''}
 							${church.transfer_org_email ? '<span class="me-3"><i class="bi bi-envelope"></i> ' + church.transfer_org_email + '</span>': ''}
@@ -4016,7 +4016,7 @@ $(document).ready(function () {
 						${church.transfer_org_desc ? '<div class="mt-2 text-muted small">' + church.transfer_org_desc + '</div>' : ''}
 						${tagsHtml}
 					</div>
-					<div class="ms-3">
+					<div class="btn-group">
 						<button type="button" class="btn btn-sm btn-outline-primary btn-mission-edit" data-idx="${church.idx}">
 							<i class="bi bi-pencil"></i>
 						</button>
