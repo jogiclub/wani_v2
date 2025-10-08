@@ -40,7 +40,7 @@ class Transfer_org_model extends CI_Model
 		}
 
 		// 2. wb_transfer_org 테이블에서 해당 ID 목록을 조회합니다.
-		$this->db->select('transfer_org_id AS idx, transfer_org_name, transfer_org_address, transfer_org_phone, transfer_org_rep, transfer_org_manager, transfer_org_email, transfer_org_desc, transfer_org_tag, transfer_org_id, regi_date, modi_date');
+		$this->db->select('transfer_org_id AS idx, transfer_org_name, transfer_org_address, transfer_org_phone, transfer_org_rep, transfer_org_manager, transfer_org_email, transfer_org_desc, transfer_org_tag, regi_date, modi_date');
 		$this->db->from('wb_transfer_org');
 		$this->db->where_in('transfer_org_id', $transfer_org_ids);
 		$this->db->where('del_yn', 'N');
@@ -67,7 +67,6 @@ class Transfer_org_model extends CI_Model
 			'transfer_org_email' => $data['contact_email'] ?? null,
 			'transfer_org_desc' => $data['transfer_description'] ?? null,
 			'transfer_org_tag' => $data['org_tag'] ?? null,
-			'transfer_org_id' => $data['transfer_org_id'] ?? null,
 			'regi_date' => $data['regi_date'],
 			'modi_date' => $data['modi_date'],
 			'del_yn' => $data['del_yn']
@@ -178,7 +177,8 @@ class Transfer_org_model extends CI_Model
 		// 1. '결연교회' 카테고리 찾기
 		$this->db->select('category_idx');
 		$this->db->from('wb_org_category');
-		$this->db->where('category_name', '결연교회');
+		$this->db->where('category_idx', '160');
+//		$this->db->where('category_name', '결연교회');
 		$category_query = $this->db->get();
 
 		if ($category_query->num_rows() == 0) {
@@ -199,7 +199,13 @@ class Transfer_org_model extends CI_Model
 		$this->db->order_by('org_name', 'ASC');
 
 		$query = $this->db->get();
+
+//		print_r($this->db->last_query());
+//		exit;
+
 		return $query->result_array();
+
+
 	}
 
 	/**
@@ -211,7 +217,7 @@ class Transfer_org_model extends CI_Model
 	 */
 	public function auto_match_transfer_church($member_idx, $org_id)
 	{
-		// 1. 회원 정보 조회
+		// 1. 회원 정보 조회 (주소 포함)
 		$this->db->select('member_address, member_name');
 		$this->db->from('wb_member');
 		$this->db->where('member_idx', $member_idx);
@@ -233,22 +239,25 @@ class Transfer_org_model extends CI_Model
 		if (empty($member_address)) {
 			return [
 				'success' => false,
-				'message' => '회원의 주소 정보가 없습니다.',
+				'message' => '회원의 주소 정보가 없어 매칭을 진행할 수 없습니다.',
 				'matched_count' => 0
 			];
 		}
 
 		// 2. 회원 주소에서 앞 두 단어 추출
-		$member_address_parts = preg_split('/\s+/', $member_address);
+		// 주소 파싱 함수를 별도로 만들거나, 여기에서 직접 처리합니다.
+		$member_address_parts = preg_split('/\s+/', $member_address, 3); // 최대 3개 분할
+
+		// 주소가 최소 두 단어 이상인지 확인 (예: '경북 포항시')
 		if (count($member_address_parts) < 2) {
 			return [
 				'success' => false,
-				'message' => '회원 주소 형식이 올바르지 않습니다.',
+				'message' => '회원 주소 형식이 올바르지 않아 매칭을 진행할 수 없습니다.',
 				'matched_count' => 0
 			];
 		}
 
-		$member_region = $member_address_parts[0] . ' ' . $member_address_parts[1];
+		$member_region = $member_address_parts[0] . ' ' . $member_address_parts[1]; // 예: '경북 포항시'
 
 		// 3. 결연교회 목록 조회
 		$available_churches = $this->get_available_churches();
@@ -261,11 +270,13 @@ class Transfer_org_model extends CI_Model
 			];
 		}
 
-		// 4. 이미 등록된 파송교회 org_id 목록 조회
-		$existing_transfer_org_ids = $this->get_member_transfer_org_ids($member_idx, $org_id);
+		// 4. 이미 등록된 파송교회의 주소 목록 조회 (중복 방지)
+		$existing_addresses = $this->get_member_transfer_org_addresses($member_idx, $org_id);
 
-		// 5. 주소 매칭 및 자동 추가
+
+		// 5. 주소 매칭 및 자동 추가 (앞 두 단어 일치 로직 복원)
 		$matched_count = 0;
+		$matched_churches = [];
 		$this->db->trans_start();
 
 		foreach ($available_churches as $church) {
@@ -276,28 +287,33 @@ class Transfer_org_model extends CI_Model
 			}
 
 			// 교회 주소에서 앞 두 단어 추출
-			$church_address_parts = preg_split('/\s+/', $church_address);
+			$church_address_parts = preg_split('/\s+/', $church_address, 3);
 			if (count($church_address_parts) < 2) {
 				continue;
 			}
 
 			$church_region = $church_address_parts[0] . ' ' . $church_address_parts[1];
 
-			// 앞 두 단어가 일치하는지 확인
+			// **회원 주소의 앞 두 단어와 교회 주소의 앞 두 단어가 일치하는지 확인**
 			if ($member_region === $church_region) {
-				// 이미 등록된 교회인지 확인 (org_id 기반)
-				if (!in_array($church['org_id'], $existing_transfer_org_ids)) {
+
+				// 이미 등록된 주소인지 확인 (중복 방지)
+				if (!in_array($church_address, $existing_addresses)) {
+
 					// wb_transfer_org에 추가
 					$transfer_data = [
-						'transfer_org_address' => $church['org_address'],
+						'transfer_org_address' => $church_address,
 						'transfer_org_name' => $church['org_name'],
 						'transfer_org_phone' => $church['org_phone'],
 						'transfer_org_rep' => $church['org_rep'],
-						'transfer_org_id' => $church['org_id'],
 						'regi_date' => date('Y-m-d H:i:s'),
 						'modi_date' => date('Y-m-d H:i:s'),
 						'del_yn' => 'N'
 					];
+
+					// org_id는 wb_transfer_org에 없으므로, $church['org_id']는 저장하지 않습니다.
+					// (현재 테이블 구조는 transfer_org_desc, tag 등을 허용)
+					// CI Model은 $data 배열에 없는 키는 DB에 저장하지 않습니다.
 
 					$this->db->insert('wb_transfer_org', $transfer_data);
 					$new_transfer_org_id = $this->db->insert_id();
@@ -306,6 +322,7 @@ class Transfer_org_model extends CI_Model
 						// wb_member.transfer_org_json 업데이트
 						$this->update_member_transfer_orgs_json_link($member_idx, $org_id, $new_transfer_org_id, 'add');
 						$matched_count++;
+						$matched_churches[] = $church['org_name'];
 					}
 				}
 			}
@@ -316,7 +333,7 @@ class Transfer_org_model extends CI_Model
 		if ($this->db->trans_status() === FALSE) {
 			return [
 				'success' => false,
-				'message' => '자동매칭 중 오류가 발생했습니다.',
+				'message' => '자동매칭 중 데이터베이스 오류가 발생했습니다.',
 				'matched_count' => 0
 			];
 		}
@@ -325,25 +342,27 @@ class Transfer_org_model extends CI_Model
 			return [
 				'success' => true,
 				'message' => $matched_count . '개의 결연교회가 자동으로 매칭되었습니다.',
-				'matched_count' => $matched_count
+				'matched_count' => $matched_count,
+				'matched_churches' => $matched_churches
 			];
 		} else {
+			// 매칭된 교회가 0개인 경우, 요청하신대로 토스트 메시지에 표시될 메시지를 반환합니다.
 			return [
 				'success' => false,
-				'message' => '매칭되는 결연교회가 없습니다.',
+				'message' => '회원 주소와 일치하는 결연교회가 없습니다.',
 				'matched_count' => 0
 			];
 		}
 	}
 
 	/**
-	 * 회원의 파송교회 org_id 목록 조회 (중복 방지용)
+	 * 회원의 파송교회 주소 목록 조회 (중복 방지용)
 	 *
 	 * @param int $member_idx 회원 ID
 	 * @param int $org_id 조직 ID
-	 * @return array org_id 배열
+	 * @return array 주소 배열
 	 */
-	private function get_member_transfer_org_ids($member_idx, $org_id)
+	private function get_member_transfer_org_addresses($member_idx, $org_id)
 	{
 		// wb_member.transfer_org_json에서 해당 회원의 파송교회 ID 목록을 가져옴
 		$this->db->select('transfer_org_json');
@@ -357,27 +376,27 @@ class Transfer_org_model extends CI_Model
 		}
 
 		$row = $query->row_array();
-		$transfer_org_ids = [];
+		$addresses = [];
 
 		if (!empty($row['transfer_org_json'])) {
 			$ids_from_json = json_decode($row['transfer_org_json'], true);
-			if (is_array($ids_from_json)) {
-				// transfer_org_id 목록에서 실제 org_id를 가져옴
-				$this->db->select('transfer_org_id');
+			if (is_array($ids_from_json) && !empty($ids_from_json)) {
+				// transfer_org_id 목록에서 주소 조회
+				$this->db->select('transfer_org_address');
 				$this->db->from('wb_transfer_org');
 				$this->db->where_in('transfer_org_id', $ids_from_json);
 				$this->db->where('del_yn', 'N');
 				$query2 = $this->db->get();
 
 				foreach ($query2->result_array() as $row2) {
-					if (!empty($row2['transfer_org_id'])) {
-						$transfer_org_ids[] = $row2['transfer_org_id'];
+					if (!empty($row2['transfer_org_address'])) {
+						$addresses[] = $row2['transfer_org_address'];
 					}
 				}
 			}
 		}
 
-		return $transfer_org_ids;
+		return $addresses;
 	}
 
 	/**
