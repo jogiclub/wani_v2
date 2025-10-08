@@ -11,6 +11,7 @@
 
 <!-- Croppie CSS -->
 <link href="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-1" aria-label="breadcrumb">
@@ -577,10 +578,10 @@
 
 					<div class="row">
 						<div class="col-12 mb-3">
-							<label for="church_tags" class="form-label">태그</label>
-							<input type="text" class="form-control" id="church_tags" name="church_tags" placeholder="#태그1 #태그2 #태그3 (해시태그로 구분)">
+							<label for="org_tags" class="form-label">태그</label>
+							<select class="form-select" id="org_tags" name="org_tags" multiple style="width: 100%"></select>
 							<div class="form-text">
-								태그는 # 기호로 시작하고 공백으로 구분합니다. 예: #이웃 #하나님사랑 #대형교회
+								입력 후 스페이스바를 클릭하세요!
 							</div>
 						</div>
 					</div>
@@ -634,5 +635,6 @@
 	/*출석관리 메뉴 active*/
 	$('.menu-21').addClass('active');
 </script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/member.js?<?php echo WB_VERSION; ?>"></script>
-<script src="/assets/js/member_send.js?<?php echo WB_VERSION; ?>"></script>

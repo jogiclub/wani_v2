@@ -1724,19 +1724,18 @@ class Member extends My_Controller
 				return;
 			}
 
-			// wb_transfer_org에 저장할 데이터와 member_idx, org_id를 포함하여 모델로 전달
 			$data = [
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
 				'transfer_org_id' => $this->input->post('transfer_org_id') ?: null,
-				'church_region' => $this->input->post('church_region'), // org_address에 매핑
-				'church_name' => $this->input->post('church_name'), // transfer_org_name에 매핑
-				'pastor_name' => $this->input->post('pastor_name'), // org_rep에 매핑
-				'contact_person' => $this->input->post('contact_person'), // org_manager에 매핑
-				'contact_phone' => $this->input->post('contact_phone'), // org_phone에 매핑
+				'church_region' => $this->input->post('church_region'),
+				'church_name' => $this->input->post('church_name'),
+				'pastor_name' => $this->input->post('pastor_name'),
+				'contact_person' => $this->input->post('contact_person'),
+				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
-				'church_description' => $this->input->post('church_description'), // org_desc에 매핑
-				'church_tags' => $this->input->post('church_tags'), // org_tag에 매핑
+				'church_description' => $this->input->post('church_description'),
+				'org_tag' => $this->input->post('org_tag'), // church_tags → org_tag
 				'regi_date' => date('Y-m-d H:i:s'),
 				'modi_date' => date('Y-m-d H:i:s'),
 				'del_yn' => 'N'
@@ -1749,7 +1748,7 @@ class Member extends My_Controller
 				echo json_encode([
 					'success' => true,
 					'message' => '파송교회가 추가되었습니다.',
-					'idx' => $result_transfer_org_id // wb_transfer_org.transfer_org_id
+					'idx' => $result_transfer_org_id
 				]);
 			} else {
 				echo json_encode([
@@ -1765,9 +1764,9 @@ class Member extends My_Controller
 				'message' => '파송교회 추가 중 오류가 발생했습니다.'
 			]);
 		}
-
-
 	}
+
+
 
 
 	/**
@@ -1779,7 +1778,7 @@ class Member extends My_Controller
 		$this->output->set_content_type('application/json');
 
 		try {
-			$transfer_org_id = $this->input->post('idx'); // wb_transfer_org.transfer_org_id
+			$transfer_org_id = $this->input->post('idx');
 			$org_id = $this->input->post('org_id');
 			$member_idx = $this->input->post('member_idx');
 
@@ -1791,7 +1790,6 @@ class Member extends My_Controller
 				return;
 			}
 
-			// wb_transfer_org에 저장할 데이터와 member_idx, org_id를 포함하여 모델로 전달
 			$data = [
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
@@ -1802,7 +1800,7 @@ class Member extends My_Controller
 				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
 				'church_description' => $this->input->post('church_description'),
-				'church_tags' => $this->input->post('church_tags'),
+				'org_tag' => $this->input->post('org_tag'), // church_tags → org_tag
 				'modi_date' => date('Y-m-d H:i:s')
 			];
 
@@ -1829,6 +1827,7 @@ class Member extends My_Controller
 			]);
 		}
 	}
+
 
 	/**
 	 * 파송교회 삭제

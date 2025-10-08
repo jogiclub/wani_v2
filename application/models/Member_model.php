@@ -938,9 +938,6 @@ class Member_model extends CI_Model
 		return $query->result_array();
 	}
 
-	/**
-	 * 파송교회 추가 (wb_transfer_org에 삽입 및 wb_member.transfer_org_json 업데이트)
-	 */
 	public function insert_transfer_org($data)
 	{
 		$insert_data = [
@@ -950,7 +947,7 @@ class Member_model extends CI_Model
 			'org_rep' => $data['pastor_name'] ?? null,
 			'org_manager' => $data['contact_person'] ?? null,
 			'org_desc' => $data['church_description'] ?? null,
-			'org_tag' => $data['church_tags'] ?? null,
+			'org_tag' => $data['org_tag'] ?? null, // church_tags → org_tag
 			'regi_date' => $data['regi_date'],
 			'modi_date' => $data['modi_date'],
 			'del_yn' => $data['del_yn']
@@ -977,9 +974,9 @@ class Member_model extends CI_Model
 	 */
 	public function update_transfer_org($transfer_org_id, $org_id, $data)
 	{
-		$member_idx = $data['member_idx']; // Contextual check
+		$member_idx = $data['member_idx'];
 
-		// 수정할 데이터 매핑 (strict list to prevent PK inclusion)
+		// 수정할 데이터 매핑
 		$update_data = [
 			'transfer_org_name' => $data['church_name'] ?? null,
 			'org_address' => $data['church_region'] ?? null,
@@ -987,28 +984,24 @@ class Member_model extends CI_Model
 			'org_rep' => $data['pastor_name'] ?? null,
 			'org_manager' => $data['contact_person'] ?? null,
 			'org_desc' => $data['church_description'] ?? null,
-			'org_tag' => $data['church_tags'] ?? null,
-			'modi_date' => $data['modi_date'] // modi_date는 controller에서 설정되어 넘어옴
+			'org_tag' => $data['org_tag'] ?? null, // church_tags → org_tag
+			'modi_date' => $data['modi_date']
 		];
 
-		// **CRITICAL FIX:** Ensure the Primary Key is NOT in the SET clause.
-		// CI의 DB 드라이버는 $update_data에 PK가 포함되어 있으면 SET 절에 추가하려고 시도합니다.
+		// PK가 SET 절에 포함되지 않도록 확인
 		if (isset($update_data['transfer_org_id'])) {
 			unset($update_data['transfer_org_id']);
 		}
 
 		$this->db->trans_start();
 
-		// 1. wb_transfer_org 상세 정보 수정.
-		// WHERE 절에 PK를 사용
+		// 1. wb_transfer_org 상세 정보 수정
 		$this->db->where('transfer_org_id', $transfer_org_id);
 		$this->db->where('del_yn', 'N');
-		// $update_data에는 PK가 포함되지 않음
 		$result = $this->db->update('wb_transfer_org', $update_data);
 
 		if ($result) {
-			// 2. wb_member.transfer_org_json 필드 업데이트 (업데이트 시에는 링크 변동 없음)
-			// 'add' 액션을 사용하여 현재 ID가 여전히 링크되어 있도록 보장
+			// 2. wb_member.transfer_org_json 필드 업데이트
 			$this->_update_member_transfer_orgs_json_link($member_idx, $org_id, $transfer_org_id, 'add');
 		}
 
