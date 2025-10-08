@@ -1,9 +1,4 @@
-<?php
-/**
- * 파일 위치: application/views/member_card.php
- * 역할: 회원카드 URL을 통한 회원 등록 페이지
- */
-?>
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>

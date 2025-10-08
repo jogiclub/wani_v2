@@ -9,27 +9,6 @@ class Member_model extends CI_Model
 	}
 
 
-	public function add_member($data)
-	{
-		$this->db->insert('wb_member', $data);
-		return $this->db->affected_rows() > 0;
-	}
-
-
-	/**
-	 * 소그룹명으로 area_idx 찾기
-	 */
-	public function get_area_by_name($org_id, $area_name)
-	{
-		$this->db->select('area_idx, area_name');
-		$this->db->from('tb_area');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('area_name', $area_name);
-		$this->db->where('del_yn', 'N');
-		$query = $this->db->get();
-
-		return $query->row_array();
-	}
 
 
 	/**
@@ -851,4 +830,59 @@ class Member_model extends CI_Model
 
 		return $absent_members;
 	}
+
+
+	/**
+	 * 회원 패스코드 생성 (6자리 영문+숫자)
+	 */
+	public function generate_member_passcode()
+	{
+		$characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 혼동되는 문자 제외 (I, O, 0, 1 등)
+		$passcode = '';
+
+		for ($i = 0; $i < 6; $i++) {
+			$passcode .= $characters[rand(0, strlen($characters) - 1)];
+		}
+
+		// 중복 확인
+		$this->db->where('member_passcode', $passcode);
+		$query = $this->db->get('wb_member');
+
+		if ($query->num_rows() > 0) {
+			return $this->generate_member_passcode(); // 중복 시 재생성
+		}
+
+		return $passcode;
+	}
+	/**
+	 * 회원 패스코드로 회원 정보 조회
+	 */
+	public function get_member_by_passcode($member_idx, $passcode)
+	{
+		$this->db->select('m.*, a.area_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.member_idx', $member_idx);
+		$this->db->where('m.member_passcode', $passcode);
+		$this->db->where('m.del_yn', 'N');
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+	/**
+	 * 회원 추가 시 패스코드 자동 생성 (기존 add_member 함수 수정)
+	 */
+	public function add_member($data)
+	{
+		// 패스코드가 없으면 자동 생성
+		if (empty($data['member_passcode'])) {
+			$data['member_passcode'] = $this->generate_member_passcode();
+		}
+
+		$this->db->insert('wb_member', $data);
+		return $this->db->affected_rows() > 0;
+	}
+
+
 }

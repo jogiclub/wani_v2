@@ -568,16 +568,16 @@ class Mypage extends CI_Controller
 
 
 
-    public function get_org_members() {
-        if ($this->input->is_ajax_request()) {
-            $org_id = $this->input->post('org_id');
-
-            $this->load->model('Member_model');
-            $members = $this->Member_model->get_org_members($org_id);
-
-            echo json_encode($members);
-        }
-    }
+//    public function get_org_members() {
+//        if ($this->input->is_ajax_request()) {
+//            $org_id = $this->input->post('org_id');
+//
+//            $this->load->model('Member_model');
+//            $members = $this->Member_model->get_org_members($org_id);
+//
+//            echo json_encode($members);
+//        }
+//    }
 
     public function print_qr() {
         $org_id = $this->input->get('org_id');

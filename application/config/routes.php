@@ -199,3 +199,12 @@ $route['memos/delete_memos'] = 'memos/delete_memos';
 $route['memos/get_memo_detail'] = 'memos/get_memo_detail';
 $route['memos/get_all_members'] = 'memos/get_all_members';
 $route['memos/get_memo_statistics'] = 'memos/get_memo_statistics';
+
+// Offer 컨트롤러 관련 라우팅 (결연교회 추천)
+$route['offer'] = 'offer/index';
+$route['offer/(:num)/(:num)/(:any)'] = 'offer/index/$1/$2/$3';
+$route['offer/select_church'] = 'offer/select_church';
+
+// Member_card 컨트롤러 관련 라우팅 (기존 코드와 함께 유지)
+$route['member_card/register/(:num)/(:num)/(:any)'] = 'member_card/register/$1/$2/$3';
+$route['member_card/save_member'] = 'member_card/save_member';

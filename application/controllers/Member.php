@@ -2103,4 +2103,117 @@ class Member extends My_Controller
 			]);
 		}
 	}
+
+	// 파일 위치: application/controllers/Member.php
+// 역할: 회원에게 결연교회 추천 문자 전송 기능
+
+
+	/**
+	 * 회원에게 결연교회 추천 링크 전송
+	 */
+	public function send_offer_link()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		// 회원 정보 조회
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 패스코드가 없으면 생성
+		if (empty($member['member_passcode'])) {
+			$passcode = $this->Member_model->generate_member_passcode();
+
+			$this->db->where('member_idx', $member_idx);
+			$this->db->update('wb_member', array(
+				'member_passcode' => $passcode,
+				'modi_date' => date('Y-m-d H:i:s')
+			));
+
+			$member['member_passcode'] = $passcode;
+		}
+
+		// Offer 링크 생성
+		$offer_url = base_url('offer/' . $org_id . '/' . $member_idx . '/' . $member['member_passcode']);
+
+		echo json_encode(array(
+			'success' => true,
+			'offer_url' => $offer_url,
+			'member_name' => $member['member_name'],
+			'member_phone' => $member['member_phone']
+		));
+	}
+
+
+
+	/**
+	 * 회원의 파송교회 목록 조회 (선택 상태 포함)
+	 */
+	public function get_member_transfer_orgs()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$this->load->model('Transfer_org_model');
+
+		$transfer_orgs = $this->Transfer_org_model->get_member_transfer_orgs($member_idx, $org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $transfer_orgs
+		));
+	}
+
+	/**
+	 * 파송교회 목록 조회 (선택 상태 포함)
+	 */
+	public function get_transfer_orgs()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$this->load->model('Transfer_org_model');
+
+		// 선택 상태를 포함한 파송교회 목록 조회
+		$transfer_orgs = $this->Transfer_org_model->get_member_transfer_orgs_with_selection($member_idx, $org_id);
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $transfer_orgs
+		));
+	}
+
 }

@@ -11,7 +11,7 @@ class Transfer_org_model extends CI_Model
 	}
 
 	/**
-	 * 파송교회 목록 조회
+	 * 파송교회 목록 조회 (선택 상태 포함)
 	 */
 	public function get_member_transfer_orgs($member_idx, $org_id)
 	{
@@ -22,11 +22,24 @@ class Transfer_org_model extends CI_Model
 		$query = $this->db->get();
 		$row = $query->row_array();
 
-		$transfer_org_ids = [];
+		$transfer_org_data = array();
+		$selected_orgs = array();
+
 		if ($row && !empty($row['transfer_org_json'])) {
-			$ids_from_json = json_decode($row['transfer_org_json'], true);
-			if (is_array($ids_from_json)) {
-				$transfer_org_ids = array_map('strval', array_unique(array_filter($ids_from_json)));
+			$json_data = json_decode($row['transfer_org_json'], true);
+
+			if (is_array($json_data)) {
+				foreach ($json_data as $key => $value) {
+					if ($value === 'selected') {
+						$selected_orgs[] = $key;
+					} else {
+						$transfer_org_data[] = $value;
+					}
+				}
+
+				// 숫자형 ID들도 포함
+				$transfer_org_ids = array_merge($transfer_org_data, $selected_orgs);
+				$transfer_org_ids = array_map('strval', array_unique(array_filter($transfer_org_ids)));
 			}
 		}
 
@@ -41,7 +54,16 @@ class Transfer_org_model extends CI_Model
 		$this->db->order_by('regi_date', 'DESC');
 
 		$query = $this->db->get();
-		return $query->result_array();
+		$results = $query->result_array();
+
+		// 선택 상태 표시 추가
+		foreach ($results as &$result) {
+			if (in_array($result['idx'], $selected_orgs)) {
+				$result['is_selected'] = 'selected';
+			}
+		}
+
+		return $results;
 	}
 
 	/**
@@ -438,5 +460,77 @@ class Transfer_org_model extends CI_Model
 		}
 
 		return $addresses;
+	}
+
+
+	/**
+	 * wb_org 테이블에서 교회 정보를 조회하여 transfer_org로 변환
+	 */
+	public function get_org_as_transfer_org($org_id)
+	{
+		$this->db->select('org_id, org_name, org_address, org_phone, org_rep, org_tag');
+		$this->db->from('wb_org');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+	/**
+	 * 파송교회 목록 조회 (선택 상태 포함)
+	 */
+	public function get_member_transfer_orgs_with_selection($member_idx, $org_id)
+	{
+		$this->db->select('transfer_org_json');
+		$this->db->from('wb_member');
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+		$row = $query->row_array();
+
+		$transfer_org_ids = array();
+		$selected_org_ids = array();
+
+		if ($row && !empty($row['transfer_org_json'])) {
+			$json_data = json_decode($row['transfer_org_json'], true);
+
+			if (is_array($json_data)) {
+				foreach ($json_data as $key => $value) {
+					if ($value === 'selected') {
+						// 문자열 key는 org_id를 나타냄
+						$selected_org_ids[] = $key;
+					} else if (is_numeric($value)) {
+						// 숫자 value는 transfer_org_id
+						$transfer_org_ids[] = $value;
+					}
+				}
+			}
+		}
+
+		// transfer_org_id와 선택된 org_id를 모두 포함
+		$all_ids = array_merge($transfer_org_ids, $selected_org_ids);
+
+		if (empty($all_ids)) {
+			return array();
+		}
+
+		$this->db->select('transfer_org_id AS idx, transfer_org_name, transfer_org_address, transfer_org_phone, transfer_org_rep, transfer_org_manager, transfer_org_email, transfer_org_desc, transfer_org_tag, regi_date, modi_date');
+		$this->db->from('wb_transfer_org');
+		$this->db->where_in('transfer_org_id', $all_ids);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('regi_date', 'DESC');
+
+		$query = $this->db->get();
+		$results = $query->result_array();
+
+		// 선택 상태 표시 추가
+		foreach ($results as &$result) {
+			if (in_array($result['idx'], $selected_org_ids)) {
+				$result['is_selected'] = 'selected';
+			}
+		}
+
+		return $results;
 	}
 }

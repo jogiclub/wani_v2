@@ -360,10 +360,10 @@
 							<div class="mission-button-section pb-3 mb-3 border-bottom">
 								<div class="d-flex justify-content-end flex-wrap gap-2">
 									<div class="btn-group">
-										<button type="button" class="btn btn-sm btn-outline-primary" id="sendEmailToMemberBtn">
+										<button type="button" class="btn btn-sm btn-outline-primary" id="offerToMemberBtn">
 											<i class="bi bi-envelope"></i> 회원에게 교회추천
 										</button>
-										<button type="button" class="btn btn-sm btn-outline-info" id="sendEmailToChurchBtn">
+										<button type="button" class="btn btn-sm btn-outline-info" id="offerToChurchBtn">
 											<i class="bi bi-envelope"></i> 파송교회에 회원정보 전달
 										</button>
 										<button type="button" class="btn btn-sm btn-outline-success" id="autoMatchChurchBtn">
@@ -687,7 +687,47 @@
 		</div>
 	</div>
 </div>
+<!-- 결연교회 추천 문자 전송 모달 -->
+<div class="modal fade" id="sendOfferModal" tabindex="-1" aria-labelledby="sendOfferModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="sendOfferModalLabel">
+					<i class="bi bi-chat-dots"></i> 회원에게 문자 전송
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-info mb-3">
+					<small>
+						아래의 URL을 포함한 안내 메시지를 전달합니다.
+					</small>
+				</div>
 
+				<div class="border rounded p-3 bg-light">
+					<p class="mb-2"><strong>결연교회 추천</strong></p>
+					<div class="input-group mb-2">
+						<input type="text" class="form-control" id="offerUrlInput" readonly>
+						<button class="btn btn-outline-secondary" type="button" id="copyOfferUrlBtn">
+							<i class="bi bi-clipboard"></i> 복사
+						</button>
+					</div>
+				</div>
+
+				<div class="mt-3 text-muted small">
+					<i class="bi bi-info-circle"></i>
+					이 링크는 72시간 동안 유효합니다.
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+				<button type="button" class="btn btn-primary" id="sendOfferSmsBtn">
+					<i class="bi bi-send"></i> 문자발송
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <?php $this->load->view('footer'); ?>
 
