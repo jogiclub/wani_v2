@@ -1667,9 +1667,9 @@ class Member extends My_Controller
 
 	/**
 	 * 파송교회 목록 조회
-	 * POST /member/get_mission_church_list
+	 * POST /member/get_transfer_org_list
 	 */
-	public function get_mission_church_list()
+	public function get_transfer_org_list()
 	{
 		$this->output->set_content_type('application/json');
 
@@ -1686,11 +1686,11 @@ class Member extends My_Controller
 			}
 
 			$this->load->model('Member_model');
-			$mission_churches = $this->Member_model->get_member_mission_churches($member_idx, $org_id);
+			$transfer_orgs = $this->Member_model->get_member_transfer_orgs($member_idx, $org_id);
 
 			echo json_encode([
 				'success' => true,
-				'data' => $mission_churches,
+				'data' => $transfer_orgs,
 				'message' => '파송교회 목록을 조회했습니다.'
 			]);
 
@@ -1706,9 +1706,9 @@ class Member extends My_Controller
 
 	/**
 	 * 파송교회 추가
-	 * POST /member/save_mission_church
+	 * POST /member/save_transfer_org
 	 */
-	public function save_mission_church()
+	public function save_transfer_org()
 	{
 		$this->output->set_content_type('application/json');
 
@@ -1743,7 +1743,7 @@ class Member extends My_Controller
 			];
 
 			$this->load->model('Member_model');
-			$result = $this->Member_model->insert_mission_church($data);
+			$result = $this->Member_model->insert_transfer_org($data);
 
 			if ($result) {
 				echo json_encode([
@@ -1770,9 +1770,9 @@ class Member extends My_Controller
 	}
 	/**
 	 * 파송교회 수정
-	 * POST /member/update_mission_church
+	 * POST /member/update_transfer_org
 	 */
-	public function update_mission_church()
+	public function update_transfer_org()
 	{
 		$this->output->set_content_type('application/json');
 
@@ -1802,7 +1802,7 @@ class Member extends My_Controller
 			];
 
 			$this->load->model('Member_model');
-			$result = $this->Member_model->update_mission_church($idx, $org_id, $data);
+			$result = $this->Member_model->update_transfer_org($idx, $org_id, $data);
 
 			if ($result) {
 				echo json_encode([
@@ -1827,9 +1827,9 @@ class Member extends My_Controller
 
 	/**
 	 * 파송교회 삭제
-	 * POST /member/delete_mission_church
+	 * POST /member/delete_transfer_org
 	 */
-	public function delete_mission_church()
+	public function delete_transfer_org()
 	{
 		$this->output->set_content_type('application/json');
 
@@ -1846,7 +1846,7 @@ class Member extends My_Controller
 			}
 
 			$this->load->model('Member_model');
-			$result = $this->Member_model->delete_mission_church($idx, $org_id);
+			$result = $this->Member_model->delete_transfer_org($idx, $org_id);
 
 			if ($result) {
 				echo json_encode([

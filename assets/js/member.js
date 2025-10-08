@@ -137,7 +137,7 @@ $(document).ready(function () {
 		if (!memberIdx) return;
 
 		$.ajax({
-			url: '/member/get_mission_church_list',
+			url: '/member/get_transfer_org_list',
 			method: 'POST',
 			data: {
 				member_idx: memberIdx,
@@ -3879,11 +3879,11 @@ $(document).ready(function () {
 
 		if (mode === 'add') {
 			$('#missionChurchModalLabel').text('파송교회 추가');
-			$('#mission_church_idx').val('');
+			$('#transfer_org_idx').val('');
 			$('#mission_member_idx').val(currentMemberMissionIdx);
 		} else if (mode === 'edit' && churchData) {
 			$('#missionChurchModalLabel').text('파송교회 수정');
-			$('#mission_church_idx').val(idx);
+			$('#transfer_org_idx').val(idx);
 			$('#mission_member_idx').val(currentMemberMissionIdx);
 
 			// 폼 데이터 채우기
@@ -3977,7 +3977,7 @@ $(document).ready(function () {
 		const tagsHtml = tags.map(tag => `<span class="mission-church-tag">${escapeHtml(tag)}</span>`).join('');
 
 		return `
-		<div class="mission-church-item border p-3 rounded" data-idx="${church.idx}">
+		<div class="mission-church-item border p-3 rounded mb-2" data-idx="${church.idx}">
 			<div class="mission-church-header d-flex justify-content-between align-items-center pb-2">
 				<h5 class="mission-church-title mb-0">
 					${escapeHtml(church.church_region || '')} <b>${escapeHtml(church.church_name || '')}</b>
@@ -4038,7 +4038,7 @@ $(document).ready(function () {
 		}
 
 		const formData = {
-			idx: $('#mission_church_idx').val() || null,
+			idx: $('#transfer_org_idx').val() || null,
 			member_idx: $('#mission_member_idx').val(),
 			org_id: selectedOrgId,
 			church_region: $('#church_region').val().trim(),
@@ -4051,7 +4051,7 @@ $(document).ready(function () {
 			church_tags: $('#church_tags').val().trim()
 		};
 
-		const url = formData.idx ? '/member/update_mission_church' : '/member/save_mission_church';
+		const url = formData.idx ? '/member/update_transfer_org' : '/member/save_transfer_org';
 
 		$.ajax({
 			url: url,
@@ -4086,7 +4086,7 @@ $(document).ready(function () {
 	 */
 	function deleteMissionChurch(idx) {
 		$.ajax({
-			url: '/member/delete_mission_church',
+			url: '/member/delete_transfer_org',
 			method: 'POST',
 			data: {
 				idx: idx,

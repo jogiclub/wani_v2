@@ -855,10 +855,10 @@ class Member_model extends CI_Model
 	/**
 	 * 회원의 파송교회 목록 조회
 	 */
-	public function get_member_mission_churches($member_idx, $org_id)
+	public function get_member_transfer_orgs($member_idx, $org_id)
 	{
 		$this->db->select('mmc.*, o.org_name as church_name_from_org');
-		$this->db->from('wb_member_mission_church mmc');
+		$this->db->from('wb_member_transfer_org mmc');
 		$this->db->join('wb_org o', 'mmc.church_org_id = o.org_id', 'left');
 		$this->db->where('mmc.member_idx', $member_idx);
 		$this->db->where('mmc.org_id', $org_id);
@@ -872,22 +872,22 @@ class Member_model extends CI_Model
 	/**
 	 * 파송교회 추가
 	 */
-	public function insert_mission_church($data)
+	public function insert_transfer_org($data)
 	{
-		$this->db->insert('wb_member_mission_church', $data);
+		$this->db->insert('wb_member_transfer_org', $data);
 		return $this->db->insert_id();
 	}
 
-	public function update_mission_church($idx, $org_id, $data)
+	public function update_transfer_org($idx, $org_id, $data)
 	{
 		$this->db->where('idx', $idx);
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');
 
-		return $this->db->update('wb_member_mission_church', $data);
+		return $this->db->update('wb_member_transfer_org', $data);
 	}
 
-	public function delete_mission_church($idx, $org_id)
+	public function delete_transfer_org($idx, $org_id)
 	{
 		$data = [
 			'del_yn' => 'Y',
@@ -898,7 +898,7 @@ class Member_model extends CI_Model
 		$this->db->where('idx', $idx);
 		$this->db->where('org_id', $org_id);
 
-		return $this->db->update('wb_member_mission_church', $data);
+		return $this->db->update('wb_member_transfer_org', $data);
 	}
 
 

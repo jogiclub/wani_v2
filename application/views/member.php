@@ -535,7 +535,7 @@
 			</div>
 			<div class="modal-body">
 				<form id="missionChurchForm">
-					<input type="hidden" id="mission_church_idx" name="mission_church_idx">
+					<input type="hidden" id="transfer_org_idx" name="transfer_org_idx">
 					<input type="hidden" id="mission_member_idx" name="mission_member_idx">
 
 					<div class="row">
