@@ -95,11 +95,21 @@ $(document).ready(function () {
 			saveTransferOrg();
 		});
 
-		// 파송교회 수정 버튼 (동적 요소용 이벤트 위임)
+		// 파송교회 수정 버튼 (수정된 버전)
 		$(document).off('click', '.btn-mission-edit').on('click', '.btn-mission-edit', function() {
 			const idx = $(this).data('idx');
-			const transferData = $(this).closest('.transfer-org-item').data('transferData');
-			openTransferOrgModal('edit', idx, transferData);
+			// 가장 가까운 .mission-church-item에서 data-church-data 속성으로 데이터 가져오기
+			const churchItem = $(this).closest('.mission-church-item');
+			const transferData = churchItem.data('church-data');
+
+			console.log('수정 버튼 클릭 - idx:', idx);
+			console.log('수정 버튼 클릭 - transferData:', transferData);
+
+			if (transferData) {
+				openTransferOrgModal('edit', idx, transferData);
+			} else {
+				showToast('파송교회 정보를 찾을 수 없습니다.', 'error');
+			}
 		});
 
 		// 파송교회 삭제 버튼
@@ -3991,17 +4001,17 @@ $(document).ready(function () {
 
 			const churchItem = `
 			<div class="mission-church-item border rounded p-3 mb-3" data-church-data='${JSON.stringify(church)}'>
-				<div class="d-flex justify-content-between align-items-start">
+				<div class="d-flex justify-content-between align-items-center">
 					<div class="flex-grow-1">
-						<h6 class="mb-2">
+						<h5 class="mb-2">
 							<i class="bi bi-geo-alt"></i> ${church.transfer_org_address || '지역 미등록'}
 							<strong class="ms-2">${church.transfer_org_name || '교회명 미등록'}</strong>
-						</h6>
-						<div class="text-muted small">
-							${church.transfer_org_rep ? '<i class="bi bi-person"></i> 담임목사: ' + church.transfer_org_rep : ''}
-							${church.transfer_org_manager ? '<br><i class="bi bi-person-badge"></i> 담당자: ' + church.transfer_org_manager : ''}
-							${church.transfer_org_phone ? '<br><i class="bi bi-telephone"></i> 연락처: ' + church.transfer_org_phone : ''}
-							${church.transfer_org_email ? '<br><i class="bi bi-envelope"></i> 이메일: ' + church.transfer_org_email : ''}
+							<small class="ms-2">${church.transfer_org_rep} 담임목사</small>
+						</h5>
+						<div class="text-muted d-flex justify-content-start align-items-center">							
+							${church.transfer_org_manager ? '<span class="me-3"><i class="bi bi-person-badge"></i> ' + church.transfer_org_manager + '</span>': ''}
+							${church.transfer_org_phone ? '<span class="me-3"><i class="bi bi-telephone"></i> ' + church.transfer_org_phone + '</span>': ''}
+							${church.transfer_org_email ? '<span class="me-3"><i class="bi bi-envelope"></i> ' + church.transfer_org_email + '</span>': ''}
 						</div>
 						${church.transfer_org_desc ? '<div class="mt-2 text-muted small">' + church.transfer_org_desc + '</div>' : ''}
 						${tagsHtml}
