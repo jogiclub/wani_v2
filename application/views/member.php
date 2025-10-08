@@ -361,10 +361,10 @@
 								<div class="d-flex justify-content-end flex-wrap gap-2">
 									<div class="btn-group">
 										<button type="button" class="btn btn-sm btn-outline-primary" id="sendEmailToMemberBtn">
-											<i class="bi bi-envelope"></i> 회원에게 이메일전송
+											<i class="bi bi-envelope"></i> 회원에게 교회추천
 										</button>
 										<button type="button" class="btn btn-sm btn-outline-info" id="sendEmailToChurchBtn">
-											<i class="bi bi-envelope"></i> 파송교회 이메일전송
+											<i class="bi bi-envelope"></i> 파송교회에 회원정보 전달
 										</button>
 										<button type="button" class="btn btn-sm btn-outline-success" id="autoMatchChurchBtn">
 											<i class="bi bi-link-45deg"></i> 결연교회 자동매칭
