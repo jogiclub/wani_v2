@@ -1665,6 +1665,246 @@ class Member extends My_Controller
 	}
 
 
+	/**
+	 * 파송교회 목록 조회
+	 * POST /member/get_mission_church_list
+	 */
+	public function get_mission_church_list()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+
+			if (empty($member_idx) || empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 파라미터가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$this->load->model('Member_model');
+			$mission_churches = $this->Member_model->get_member_mission_churches($member_idx, $org_id);
+
+			echo json_encode([
+				'success' => true,
+				'data' => $mission_churches,
+				'message' => '파송교회 목록을 조회했습니다.'
+			]);
+
+		} catch (Exception $e) {
+			log_message('error', '파송교회 목록 조회 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '파송교회 목록 조회 중 오류가 발생했습니다.'
+			]);
+		}
+	}
+
+
+	/**
+	 * 파송교회 추가
+	 * POST /member/save_mission_church
+	 */
+	public function save_mission_church()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+			$church_org_id = $this->input->post('church_org_id');
+
+			if (empty($member_idx) || empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 파라미터가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$data = [
+				'member_idx' => $member_idx,
+				'org_id' => $org_id,
+				'church_org_id' => $church_org_id ?: null,
+				'church_region' => $this->input->post('church_region'),
+				'church_name' => $this->input->post('church_name'),
+				'pastor_name' => $this->input->post('pastor_name'),
+				'contact_person' => $this->input->post('contact_person'),
+				'contact_phone' => $this->input->post('contact_phone'),
+				'contact_email' => $this->input->post('contact_email'),
+				'church_description' => $this->input->post('church_description'),
+				'church_tags' => $this->input->post('church_tags'),
+				'regi_date' => date('Y-m-d H:i:s'),
+				'modi_date' => date('Y-m-d H:i:s'),
+				'del_yn' => 'N'
+			];
+
+			$this->load->model('Member_model');
+			$result = $this->Member_model->insert_mission_church($data);
+
+			if ($result) {
+				echo json_encode([
+					'success' => true,
+					'message' => '파송교회가 추가되었습니다.',
+					'idx' => $result
+				]);
+			} else {
+				echo json_encode([
+					'success' => false,
+					'message' => '파송교회 추가에 실패했습니다.'
+				]);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '파송교회 추가 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '파송교회 추가 중 오류가 발생했습니다.'
+			]);
+		}
+
+
+	}
+	/**
+	 * 파송교회 수정
+	 * POST /member/update_mission_church
+	 */
+	public function update_mission_church()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$idx = $this->input->post('idx');
+			$org_id = $this->input->post('org_id');
+
+			if (empty($idx) || empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 파라미터가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$data = [
+				'church_org_id' => $this->input->post('church_org_id') ?: null,
+				'church_region' => $this->input->post('church_region'),
+				'church_name' => $this->input->post('church_name'),
+				'pastor_name' => $this->input->post('pastor_name'),
+				'contact_person' => $this->input->post('contact_person'),
+				'contact_phone' => $this->input->post('contact_phone'),
+				'contact_email' => $this->input->post('contact_email'),
+				'church_description' => $this->input->post('church_description'),
+				'church_tags' => $this->input->post('church_tags'),
+				'modi_date' => date('Y-m-d H:i:s')
+			];
+
+			$this->load->model('Member_model');
+			$result = $this->Member_model->update_mission_church($idx, $org_id, $data);
+
+			if ($result) {
+				echo json_encode([
+					'success' => true,
+					'message' => '파송교회 정보가 수정되었습니다.'
+				]);
+			} else {
+				echo json_encode([
+					'success' => false,
+					'message' => '파송교회 수정에 실패했습니다.'
+				]);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '파송교회 수정 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '파송교회 수정 중 오류가 발생했습니다.'
+			]);
+		}
+	}
+
+	/**
+	 * 파송교회 삭제
+	 * POST /member/delete_mission_church
+	 */
+	public function delete_mission_church()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$idx = $this->input->post('idx');
+			$org_id = $this->input->post('org_id');
+
+			if (empty($idx) || empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 파라미터가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$this->load->model('Member_model');
+			$result = $this->Member_model->delete_mission_church($idx, $org_id);
+
+			if ($result) {
+				echo json_encode([
+					'success' => true,
+					'message' => '파송교회가 삭제되었습니다.'
+				]);
+			} else {
+				echo json_encode([
+					'success' => false,
+					'message' => '파송교회 삭제에 실패했습니다.'
+				]);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '파송교회 삭제 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '파송교회 삭제 중 오류가 발생했습니다.'
+			]);
+		}
+	}
+
+	/**
+	 * 결연교회 목록 조회 (선택 옵션용)
+	 * POST /member/get_available_churches
+	 */
+	public function get_available_churches()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$org_id = $this->input->post('org_id');
+
+			if (empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '조직 정보가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			$this->load->model('Member_model');
+			$churches = $this->Member_model->get_available_churches();
+
+			echo json_encode([
+				'success' => true,
+				'data' => $churches
+			]);
+
+		} catch (Exception $e) {
+			log_message('error', '결연교회 목록 조회 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '결연교회 목록 조회 중 오류가 발생했습니다.'
+			]);
+		}
+	}
+
 
 
 }

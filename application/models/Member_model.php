@@ -852,7 +852,110 @@ class Member_model extends CI_Model
 		return $absent_members;
 	}
 
+	/**
+	 * 회원의 파송교회 목록 조회
+	 */
+	public function get_member_mission_churches($member_idx, $org_id)
+	{
+		$this->db->select('mmc.*, o.org_name as church_name_from_org');
+		$this->db->from('wb_member_mission_church mmc');
+		$this->db->join('wb_org o', 'mmc.church_org_id = o.org_id', 'left');
+		$this->db->where('mmc.member_idx', $member_idx);
+		$this->db->where('mmc.org_id', $org_id);
+		$this->db->where('mmc.del_yn', 'N');
+		$this->db->order_by('mmc.regi_date', 'DESC');
 
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 파송교회 추가
+	 */
+	public function insert_mission_church($data)
+	{
+		$this->db->insert('wb_member_mission_church', $data);
+		return $this->db->insert_id();
+	}
+
+	public function update_mission_church($idx, $org_id, $data)
+	{
+		$this->db->where('idx', $idx);
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+
+		return $this->db->update('wb_member_mission_church', $data);
+	}
+
+	public function delete_mission_church($idx, $org_id)
+	{
+		$data = [
+			'del_yn' => 'Y',
+			'del_date' => date('Y-m-d H:i:s'),
+			'modi_date' => date('Y-m-d H:i:s')
+		];
+
+		$this->db->where('idx', $idx);
+		$this->db->where('org_id', $org_id);
+
+		return $this->db->update('wb_member_mission_church', $data);
+	}
+
+
+	/**
+	* 선택 가능한 결연교회 목록 조회
+	* wb_org_category에서 '결연교회' 카테고리 하위의 모든 교회 조회
+	*/
+	public function get_available_churches()
+	{
+		// 1. '결연교회' 카테고리 찾기
+		$this->db->select('category_idx');
+		$this->db->from('wb_org_category');
+		$this->db->where('category_name', '결연교회');
+		$category_query = $this->db->get();
+
+		if ($category_query->num_rows() == 0) {
+			return [];
+		}
+
+		$category_idx = $category_query->row()->category_idx;
+
+		// 2. 하위 카테고리들 재귀적으로 찾기
+		$category_indices = $this->get_child_categories($category_idx);
+		$category_indices[] = $category_idx; // 자기 자신도 포함
+
+		// 3. 해당 카테고리들의 교회 조회
+		$this->db->select('org_id, org_name, org_address, org_phone, org_rep');
+		$this->db->from('wb_org');
+		$this->db->where_in('category_idx', $category_indices);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('org_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 하위 카테고리 재귀 조회
+	 */
+	private function get_child_categories($parent_idx)
+	{
+		$result = [];
+
+		$this->db->select('category_idx');
+		$this->db->from('wb_org_category');
+		$this->db->where('parent_idx', $parent_idx);
+		$query = $this->db->get();
+
+		foreach ($query->result_array() as $row) {
+			$result[] = $row['category_idx'];
+			// 재귀적으로 하위 카테고리 조회
+			$children = $this->get_child_categories($row['category_idx']);
+			$result = array_merge($result, $children);
+		}
+
+		return $result;
+	}
 
 }
 

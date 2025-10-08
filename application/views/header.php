@@ -314,6 +314,12 @@ $is_master = $this->session->userdata('master_yn');
 								</a>
 							</li>
 							
+							<li class="nav-item">
+								<a class="nav-link d-flex align-items-center gap-1 menu-26" href="<?php echo base_url('transport'); ?>">
+									<i class="bi bi-pin-map"></i> 파송노트
+								</a>
+							</li>
+							
 						</ul>
 					<?php endif; ?>
 

@@ -3868,113 +3868,142 @@ $(document).ready(function () {
 	}
 
 
+	/**
+	 * 파송교회 모달 열기
+	 */
+	function openMissionChurchModal(mode, idx = null, churchData = null) {
+		const modal = $('#missionChurchModal');
+		const form = $('#missionChurchForm')[0];
 
-});
+		form.reset();
 
+		if (mode === 'add') {
+			$('#missionChurchModalLabel').text('파송교회 추가');
+			$('#mission_church_idx').val('');
+			$('#mission_member_idx').val(currentMemberMissionIdx);
+		} else if (mode === 'edit' && churchData) {
+			$('#missionChurchModalLabel').text('파송교회 수정');
+			$('#mission_church_idx').val(idx);
+			$('#mission_member_idx').val(currentMemberMissionIdx);
 
+			// 폼 데이터 채우기
+			$('#church_region').val(churchData.church_region || '');
+			$('#church_name').val(churchData.church_name || '');
+			$('#pastor_name').val(churchData.pastor_name || '');
+			$('#contact_person').val(churchData.contact_person || '');
+			$('#contact_phone').val(churchData.contact_phone || '');
+			$('#contact_email').val(churchData.contact_email || '');
+			$('#church_description').val(churchData.church_description || '');
+			$('#church_tags').val(churchData.church_tags || '');
+		}
 
-/**
- * 상세필드 값 렌더링
- */
-function renderDetailFieldValue(value, fieldType) {
-	if (!value) return '';
-
-	switch(fieldType) {
-		case 'checkbox':
-			return value === 'Y' ? '<i class="bi bi-check-circle-fill text-success"></i>' : '';
-		case 'date':
-			return formatDateOnly(value);
-		case 'textarea':
-			// 긴 텍스트는 일부만 표시
-			return value.length > 50 ? value.substring(0, 50) + '...' : value;
-		default:
-			return escapeHtml(value);
-	}
-}
-
-
-/**
- * 날짜만 포맷팅 (yyyy-mm-dd)
- */
-function formatDateOnly(dateString) {
-	if (!dateString) return '';
-	const date = new Date(dateString);
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, '0');
-	const day = String(date.getDate()).padStart(2, '0');
-	return `${year}-${month}-${day}`;
-}
-
-
-/**
- * HTML 이스케이프 함수
- */
-function escapeHtml(text) {
-	if (!text) return '';
-	const map = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		"'": '&#039;'
-	};
-	return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
-
-/**
- * 파송교회 목록 렌더링
- */
-function renderMissionChurchList(churchList) {
-	const listContainer = $('#missionChurchList');
-	listContainer.empty();
-
-	if (!churchList || churchList.length === 0) {
-		listContainer.html('<div class="text-center text-muted py-3" id="emptyMissionChurchMessage">등록된 파송교회가 없습니다.</div>');
-		return;
+		modal.modal('show');
 	}
 
-	churchList.forEach(function(church) {
-		const churchHtml = createMissionChurchItemHtml(church);
-		listContainer.append(churchHtml);
-	});
-}
 
-/**
- * 파송교회 아이템 HTML 생성
- */
-function createMissionChurchItemHtml(church) {
-	const tags = church.church_tags ? church.church_tags.split(' ').filter(tag => tag.trim().startsWith('#')) : [];
-	const tagsHtml = tags.map(tag => `<span class="mission-church-tag">${escapeHtml(tag)}</span>`).join('');
 
-	return `
-		<div class="mission-church-item" data-idx="${church.idx}">
-			<div class="mission-church-header">
-				<h6 class="mission-church-title">
-					${escapeHtml(church.church_region || '')} ${escapeHtml(church.church_name || '')}
-					${church.pastor_name ? ' - ' + escapeHtml(church.pastor_name) : ''}
-				</h6>
+	/**
+	 * 상세필드 값 렌더링
+	 */
+	function renderDetailFieldValue(value, fieldType) {
+		if (!value) return '';
+
+		switch(fieldType) {
+			case 'checkbox':
+				return value === 'Y' ? '<i class="bi bi-check-circle-fill text-success"></i>' : '';
+			case 'date':
+				return formatDateOnly(value);
+			case 'textarea':
+				// 긴 텍스트는 일부만 표시
+				return value.length > 50 ? value.substring(0, 50) + '...' : value;
+			default:
+				return escapeHtml(value);
+		}
+	}
+
+
+	/**
+	 * 날짜만 포맷팅 (yyyy-mm-dd)
+	 */
+	function formatDateOnly(dateString) {
+		if (!dateString) return '';
+		const date = new Date(dateString);
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	}
+
+
+	/**
+	 * HTML 이스케이프 함수
+	 */
+	function escapeHtml(text) {
+		if (!text) return '';
+		const map = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;'
+		};
+		return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+	}
+
+
+	/**
+	 * 파송교회 목록 렌더링
+	 */
+	function renderMissionChurchList(churchList) {
+		const listContainer = $('#missionChurchList');
+		listContainer.empty();
+
+		if (!churchList || churchList.length === 0) {
+			listContainer.html('<div class="text-center text-muted py-3" id="emptyMissionChurchMessage">등록된 파송교회가 없습니다.</div>');
+			return;
+		}
+
+		churchList.forEach(function(church) {
+			const churchHtml = createMissionChurchItemHtml(church);
+			listContainer.append(churchHtml);
+		});
+	}
+
+	/**
+	 * 파송교회 아이템 HTML 생성
+	 */
+	function createMissionChurchItemHtml(church) {
+		const tags = church.church_tags ? church.church_tags.split(' ').filter(tag => tag.trim().startsWith('#')) : [];
+		const tagsHtml = tags.map(tag => `<span class="mission-church-tag">${escapeHtml(tag)}</span>`).join('');
+
+		return `
+		<div class="mission-church-item border p-3 rounded" data-idx="${church.idx}">
+			<div class="mission-church-header d-flex justify-content-between align-items-center pb-2">
+				<h5 class="mission-church-title mb-0">
+					${escapeHtml(church.church_region || '')} <b>${escapeHtml(church.church_name || '')}</b>
+					${church.pastor_name ? '(' + escapeHtml(church.pastor_name) + ' 담임목사)' : ''}
+				</h5>
 				<div class="mission-church-actions">
-					<button type="button" class="btn btn-sm btn-outline-secondary btn-mission-edit" data-idx="${church.idx}">수정</button>
-					<button type="button" class="btn btn-sm btn-outline-danger btn-mission-delete" data-idx="${church.idx}">삭제</button>
+					<button type="button" class="btn btn-xs btn-outline-secondary btn-mission-edit" data-idx="${church.idx}">수정</button>
+					<button type="button" class="btn btn-xs btn-outline-danger btn-mission-delete" data-idx="${church.idx}">삭제</button>
 				</div>
 			</div>
 			
-			<div class="mission-church-info">
+			<div class="mission-church-info d-flex justify-content-start align-items-center mb-1">
 				${church.contact_person ? `
-					<div class="mission-church-info-item">
+					<div class="mission-church-info-item me-3">
 						<i class="bi bi-person"></i>
 						<span>${escapeHtml(church.contact_person)}</span>
 					</div>
 				` : ''}
 				${church.contact_phone ? `
-					<div class="mission-church-info-item">
+					<div class="mission-church-info-item me-3">
 						<i class="bi bi-telephone"></i>
 						<span>${escapeHtml(church.contact_phone)}</span>
 					</div>
 				` : ''}
 				${church.contact_email ? `
-					<div class="mission-church-info-item">
+					<div class="mission-church-info-item me-3">
 						<i class="bi bi-envelope"></i>
 						<span>${escapeHtml(church.contact_email)}</span>
 					</div>
@@ -3988,186 +4017,161 @@ function createMissionChurchItemHtml(church) {
 			` : ''}
 			
 			${tagsHtml ? `
-				<div class="mission-church-tags">
+				<div class="mission-church-tags text-secondary">
 					${tagsHtml}
 				</div>
 			` : ''}
 		</div>
 	`;
-}
-
-/**
- * 파송교회 모달 열기
- */
-function openMissionChurchModal(mode, idx = null, churchData = null) {
-	const modal = $('#missionChurchModal');
-	const form = $('#missionChurchForm')[0];
-
-	form.reset();
-
-	if (mode === 'add') {
-		$('#missionChurchModalLabel').text('파송교회 추가');
-		$('#mission_church_idx').val('');
-		$('#mission_member_idx').val(currentMemberMissionIdx);
-	} else if (mode === 'edit' && churchData) {
-		$('#missionChurchModalLabel').text('파송교회 수정');
-		$('#mission_church_idx').val(idx);
-		$('#mission_member_idx').val(currentMemberMissionIdx);
-
-		// 폼 데이터 채우기
-		$('#church_region').val(churchData.church_region || '');
-		$('#church_name').val(churchData.church_name || '');
-		$('#pastor_name').val(churchData.pastor_name || '');
-		$('#contact_person').val(churchData.contact_person || '');
-		$('#contact_phone').val(churchData.contact_phone || '');
-		$('#contact_email').val(churchData.contact_email || '');
-		$('#church_description').val(churchData.church_description || '');
-		$('#church_tags').val(churchData.church_tags || '');
 	}
 
-	modal.modal('show');
-}
 
-/**
- * 파송교회 저장
- */
-function saveMissionChurch() {
-	const form = $('#missionChurchForm')[0];
+	/**
+	 * 파송교회 저장
+	 */
+	function saveMissionChurch() {
+		const form = $('#missionChurchForm')[0];
 
-	if (!form.checkValidity()) {
-		form.reportValidity();
-		return;
-	}
-
-	const formData = {
-		idx: $('#mission_church_idx').val() || null,
-		member_idx: $('#mission_member_idx').val(),
-		org_id: selectedOrgId,
-		church_region: $('#church_region').val().trim(),
-		church_name: $('#church_name').val().trim(),
-		pastor_name: $('#pastor_name').val().trim(),
-		contact_person: $('#contact_person').val().trim(),
-		contact_phone: $('#contact_phone').val().trim(),
-		contact_email: $('#contact_email').val().trim(),
-		church_description: $('#church_description').val().trim(),
-		church_tags: $('#church_tags').val().trim()
-	};
-
-	const url = formData.idx ? '/member/update_mission_church' : '/member/save_mission_church';
-
-	$.ajax({
-		url: url,
-		method: 'POST',
-		data: formData,
-		dataType: 'json',
-		success: function(response) {
-			if (response.success) {
-				$('#missionChurchModal').modal('hide');
-				loadMissionChurchList(currentMemberMissionIdx);
-				showToast(response.message || '파송교회 정보가 저장되었습니다.', 'success');
-			} else {
-				showToast(response.message || '파송교회 저장에 실패했습니다.', 'error');
-			}
-		},
-		error: function() {
-			showToast('파송교회 저장에 실패했습니다.', 'error');
+		if (!form.checkValidity()) {
+			form.reportValidity();
+			return;
 		}
-	});
-}
 
-/**
- * 파송교회 삭제 확인 모달 표시
- */
-function showDeleteMissionChurchModal(idx) {
-	$('#confirmDeleteMissionChurchBtn').data('idx', idx);
-	$('#deleteMissionChurchModal').modal('show');
-}
+		const formData = {
+			idx: $('#mission_church_idx').val() || null,
+			member_idx: $('#mission_member_idx').val(),
+			org_id: selectedOrgId,
+			church_region: $('#church_region').val().trim(),
+			church_name: $('#church_name').val().trim(),
+			pastor_name: $('#pastor_name').val().trim(),
+			contact_person: $('#contact_person').val().trim(),
+			contact_phone: $('#contact_phone').val().trim(),
+			contact_email: $('#contact_email').val().trim(),
+			church_description: $('#church_description').val().trim(),
+			church_tags: $('#church_tags').val().trim()
+		};
 
-/**
- * 파송교회 삭제 실행
- */
-function deleteMissionChurch(idx) {
-	$.ajax({
-		url: '/member/delete_mission_church',
-		method: 'POST',
-		data: {
+		const url = formData.idx ? '/member/update_mission_church' : '/member/save_mission_church';
+
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: formData,
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					$('#missionChurchModal').modal('hide');
+					loadMissionChurchList(currentMemberMissionIdx);
+					showToast(response.message || '파송교회 정보가 저장되었습니다.', 'success');
+				} else {
+					showToast(response.message || '파송교회 저장에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('파송교회 저장에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 파송교회 삭제 확인 모달 표시
+	 */
+	function showDeleteMissionChurchModal(idx) {
+		$('#confirmDeleteMissionChurchBtn').data('idx', idx);
+		$('#deleteMissionChurchModal').modal('show');
+	}
+
+	/**
+	 * 파송교회 삭제 실행
+	 */
+	function deleteMissionChurch(idx) {
+		$.ajax({
+			url: '/member/delete_mission_church',
+			method: 'POST',
+			data: {
+				idx: idx,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					$('#deleteMissionChurchModal').modal('hide');
+					loadMissionChurchList(currentMemberMissionIdx);
+					showToast('파송교회가 삭제되었습니다.', 'success');
+				} else {
+					showToast(response.message || '파송교회 삭제에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('파송교회 삭제에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 요소에서 파송교회 데이터 추출
+	 */
+
+	function getMissionChurchDataFromElement(element) {
+		// 데이터를 data 속성에서 직접 가져오는 방식으로 수정
+		const idx = element.data('idx');
+
+		// 실제 데이터를 element의 data 속성이나 텍스트에서 추출
+		const titleText = element.find('.mission-church-title').text().trim();
+		const titleParts = titleText.split('-');
+		const regionAndChurch = titleParts[0].trim().split(' ');
+
+		return {
 			idx: idx,
-			org_id: selectedOrgId
-		},
-		dataType: 'json',
-		success: function(response) {
-			if (response.success) {
-				$('#deleteMissionChurchModal').modal('hide');
-				loadMissionChurchList(currentMemberMissionIdx);
-				showToast('파송교회가 삭제되었습니다.', 'success');
-			} else {
-				showToast(response.message || '파송교회 삭제에 실패했습니다.', 'error');
-			}
-		},
-		error: function() {
-			showToast('파송교회 삭제에 실패했습니다.', 'error');
+			church_region: regionAndChurch.slice(0, -1).join(' '),
+			church_name: regionAndChurch[regionAndChurch.length - 1],
+			pastor_name: titleParts[1] ? titleParts[1].trim() : '',
+			contact_person: element.find('.bi-person').parent().find('span').text().trim(),
+			contact_phone: element.find('.bi-telephone').parent().find('span').text().trim(),
+			contact_email: element.find('.bi-envelope').parent().find('span').text().trim(),
+			church_description: element.find('.mission-church-description').text().trim(),
+			church_tags: Array.from(element.find('.mission-church-tag')).map(tag => $(tag).text()).join(' ')
+		};
+	}
+	/**
+	 * 회원에게 이메일 전송
+	 */
+	function sendEmailToMember() {
+		if (!currentMemberMissionIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
 		}
-	});
-}
 
-/**
- * 요소에서 파송교회 데이터 추출
- */
-
-function getMissionChurchDataFromElement(element) {
-	// 데이터를 data 속성에서 직접 가져오는 방식으로 수정
-	const idx = element.data('idx');
-
-	// 실제 데이터를 element의 data 속성이나 텍스트에서 추출
-	const titleText = element.find('.mission-church-title').text().trim();
-	const titleParts = titleText.split('-');
-	const regionAndChurch = titleParts[0].trim().split(' ');
-
-	return {
-		idx: idx,
-		church_region: regionAndChurch.slice(0, -1).join(' '),
-		church_name: regionAndChurch[regionAndChurch.length - 1],
-		pastor_name: titleParts[1] ? titleParts[1].trim() : '',
-		contact_person: element.find('.bi-person').parent().find('span').text().trim(),
-		contact_phone: element.find('.bi-telephone').parent().find('span').text().trim(),
-		contact_email: element.find('.bi-envelope').parent().find('span').text().trim(),
-		church_description: element.find('.mission-church-description').text().trim(),
-		church_tags: Array.from(element.find('.mission-church-tag')).map(tag => $(tag).text()).join(' ')
-	};
-}
-/**
- * 회원에게 이메일 전송
- */
-function sendEmailToMember() {
-	if (!currentMemberMissionIdx) {
-		showToast('회원 정보를 찾을 수 없습니다.', 'error');
-		return;
+		showToast('회원에게 이메일 전송 기능은 준비 중입니다.', 'info');
 	}
 
-	showToast('회원에게 이메일 전송 기능은 준비 중입니다.', 'info');
-}
+	/**
+	 * 결연교회 이메일 전송
+	 */
+	function sendEmailToChurch() {
+		if (!currentMemberMissionIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
 
-/**
- * 결연교회 이메일 전송
- */
-function sendEmailToChurch() {
-	if (!currentMemberMissionIdx) {
-		showToast('회원 정보를 찾을 수 없습니다.', 'error');
-		return;
+		showToast('결연교회 이메일 전송 기능은 준비 중입니다.', 'info');
 	}
 
-	showToast('결연교회 이메일 전송 기능은 준비 중입니다.', 'info');
-}
+	/**
+	 * 결연교회 자동매칭
+	 */
+	function autoMatchChurch() {
+		if (!currentMemberMissionIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
 
-/**
- * 결연교회 자동매칭
- */
-function autoMatchChurch() {
-	if (!currentMemberMissionIdx) {
-		showToast('회원 정보를 찾을 수 없습니다.', 'error');
-		return;
+		showToast('결연교회 자동매칭 기능은 준비 중입니다.', 'info');
 	}
 
-	showToast('결연교회 자동매칭 기능은 준비 중입니다.', 'info');
-}
+
+
+
+});
+
 
