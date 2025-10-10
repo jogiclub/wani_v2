@@ -1589,7 +1589,48 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 타임라인 항목 수정
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 타임라인 단건 조회
+	 */
+	public function get_timeline()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$idx = $this->input->post('idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Timeline_model');
+		$timeline = $this->Timeline_model->get_timeline_by_idx($idx);
+
+		if (!$timeline) {
+			echo json_encode(array('success' => false, 'message' => '타임라인을 찾을 수 없습니다.'));
+			return;
+		}
+
+		$member = $this->Member_model->get_member_by_idx($timeline['member_idx']);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		echo json_encode(array('success' => true, 'data' => $timeline));
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 타임라인 항목 수정
 	 */
 	public function update_timeline()
 	{
@@ -1603,27 +1644,38 @@ class Member extends My_Controller
 		$timeline_content = $this->input->post('timeline_content');
 		$org_id = $this->input->post('org_id');
 
-		// 필수 데이터 확인
 		if (!$idx || !$timeline_type || !$timeline_date || !$org_id) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
 
-		// 권한 확인
 		if (!$this->check_org_access($org_id)) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
 			return;
 		}
 
-		$update_data = array(
+		$this->load->model('Timeline_model');
+		$timeline = $this->Timeline_model->get_timeline_by_idx($idx);
+
+		if (!$timeline) {
+			echo json_encode(array('success' => false, 'message' => '타임라인을 찾을 수 없습니다.'));
+			return;
+		}
+
+		$member = $this->Member_model->get_member_by_idx($timeline['member_idx']);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$data = array(
 			'timeline_type' => $timeline_type,
 			'timeline_date' => $timeline_date,
 			'timeline_content' => $timeline_content ?: '',
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		$this->load->model('Timeline_model');
-		$result = $this->Timeline_model->update_timeline($idx, $update_data);
+		$result = $this->Timeline_model->update_timeline($idx, $data);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '타임라인이 수정되었습니다.'));
@@ -1633,7 +1685,8 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 타임라인 항목 삭제
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 타임라인 항목 삭제
 	 */
 	public function delete_timeline()
 	{
@@ -1644,19 +1697,30 @@ class Member extends My_Controller
 		$idx = $this->input->post('idx');
 		$org_id = $this->input->post('org_id');
 
-		// 필수 데이터 확인
 		if (!$idx || !$org_id) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
 
-		// 권한 확인
 		if (!$this->check_org_access($org_id)) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
 			return;
 		}
 
 		$this->load->model('Timeline_model');
+		$timeline = $this->Timeline_model->get_timeline_by_idx($idx);
+
+		if (!$timeline) {
+			echo json_encode(array('success' => false, 'message' => '타임라인을 찾을 수 없습니다.'));
+			return;
+		}
+
+		$member = $this->Member_model->get_member_by_idx($timeline['member_idx']);
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
 		$result = $this->Timeline_model->delete_timeline($idx);
 
 		if ($result) {

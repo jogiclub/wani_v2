@@ -291,28 +291,11 @@
 				<div class="tab-pane fade" id="timeline-tab-pane" role="tabpanel" aria-labelledby="timeline-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="col-12">
-							<!-- 새 타임라인 입력 영역 -->
-							<div class="timeline-input-section pb-3 mb-3 border-bottom">
-								<div class="row align-items-end">
-									<div class="col-3">
-										<select class="form-select form-select-sm" id="newTimelineType">
-											<option value="">항목 선택</option>
-										</select>
-									</div>
-									<div class="col-3">
-
-										<input type="date" class="form-control form-control-sm" id="newTimelineDate">
-									</div>
-									<div class="col-4">
-
-										<input type="text" class="form-control form-control-sm" id="newTimelineContent" placeholder="내용을 입력하세요">
-									</div>
-									<div class="col-2 d-flex align-items-end">
-										<button type="button" class="btn btn-sm btn-outline-primary w-100" id="addTimelineBtn">
-											<i class="bi bi-plus-lg"></i> 추가
-										</button>
-									</div>
-								</div>
+							<!-- 추가 버튼 -->
+							<div class="d-flex justify-content-end mb-3">
+								<button type="button" class="btn btn-sm btn-primary" id="addTimelineBtn">
+									<i class="bi bi-plus-lg"></i> 추가
+								</button>
 							</div>
 
 							<!-- 타임라인 목록 영역 -->
@@ -810,7 +793,64 @@
 	</div>
 </div>
 
+<!-- 타임라인 추가/수정 모달 -->
+<div class="modal fade" id="timelineModal" tabindex="-1" aria-labelledby="timelineModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="timelineModalLabel">타임라인 추가</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="timelineForm">
+					<input type="hidden" id="timeline_idx" name="idx">
+					<input type="hidden" id="timeline_member_idx" name="member_idx">
 
+					<div class="mb-3">
+						<label for="timeline_type" class="form-label">항목 <span class="text-danger">*</span></label>
+						<select class="form-select" id="timeline_type" name="timeline_type" required>
+							<option value="">항목을 선택하세요</option>
+						</select>
+					</div>
+
+					<div class="mb-3">
+						<label for="timeline_date" class="form-label">날짜 <span class="text-danger">*</span></label>
+						<input type="date" class="form-control" id="timeline_date" name="timeline_date" required>
+					</div>
+
+					<div class="mb-3">
+						<label for="timeline_content" class="form-label">내용</label>
+						<textarea class="form-control" id="timeline_content" name="timeline_content" rows="3" placeholder="내용을 입력하세요"></textarea>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="saveTimelineBtn">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 타임라인 삭제 확인 모달 -->
+<div class="modal fade" id="deleteTimelineModal" tabindex="-1" aria-labelledby="deleteTimelineModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="deleteTimelineModalLabel">타임라인 삭제</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>이 타임라인을 삭제하시겠습니까?</p>
+				<p class="text-danger">이 작업은 되돌릴 수 없습니다.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteTimelineBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <?php $this->load->view('footer'); ?>
 

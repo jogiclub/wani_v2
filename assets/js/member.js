@@ -24,8 +24,6 @@ $(document).ready(function () {
 	let editingTransferOrgIdx = null;       // 현재 수정 중인 파송교회 ID
 
 
-
-
 	/**
 	 * 회원에게 결연교회 추천 링크 전송
 	 */
@@ -89,7 +87,7 @@ $(document).ready(function () {
 	 */
 	function bindMissionTabEvents() {
 		// 파송 탭 클릭 시 파송교회 목록 로드
-		$('#mission-tab').off('shown.bs.tab').on('shown.bs.tab', function() {
+		$('#mission-tab').off('shown.bs.tab').on('shown.bs.tab', function () {
 			const memberIdx = $('#member_idx').val();
 			if (memberIdx) {
 				currentMemberMissionIdx = memberIdx;
@@ -98,7 +96,7 @@ $(document).ready(function () {
 		});
 
 		// 1. 회원에게 교회추천 버튼 (변경된 ID)
-		$(document).off('click', '#offerToMemberBtn').on('click', '#offerToMemberBtn', function() {
+		$(document).off('click', '#offerToMemberBtn').on('click', '#offerToMemberBtn', function () {
 			if (!currentMemberMissionIdx) {
 				showToast('회원 정보를 찾을 수 없습니다.', 'error');
 				return;
@@ -107,7 +105,7 @@ $(document).ready(function () {
 		});
 
 		// 2. 파송교회에 회원정보 전달 버튼 (변경된 ID)
-		$(document).off('click', '#offerToChurchBtn').on('click', '#offerToChurchBtn', function() {
+		$(document).off('click', '#offerToChurchBtn').on('click', '#offerToChurchBtn', function () {
 			if (!currentMemberMissionIdx) {
 				showToast('회원 정보를 찾을 수 없습니다.', 'error');
 				return;
@@ -131,7 +129,7 @@ $(document).ready(function () {
 					org_id: selectedOrgId
 				},
 				dataType: 'json',
-				success: function(response) {
+				success: function (response) {
 					if (!response.success || !response.member) {
 						showToast('회원 정보를 찾을 수 없습니다.', 'error');
 						return;
@@ -148,7 +146,7 @@ $(document).ready(function () {
 							org_id: selectedOrgId
 						},
 						dataType: 'json',
-						success: function(churchResponse) {
+						success: function (churchResponse) {
 							if (!churchResponse.success) {
 								showToast('파송교회가 결정되지 않았습니다.', 'warning');
 								return;
@@ -175,12 +173,12 @@ $(document).ready(function () {
 							// 7. 모달 표시
 							$('#sendMemberInfoModal').modal('show');
 						},
-						error: function() {
+						error: function () {
 							showToast('파송교회 정보 조회 중 오류가 발생했습니다.', 'error');
 						}
 					});
 				},
-				error: function() {
+				error: function () {
 					showToast('회원 정보 조회 중 오류가 발생했습니다.', 'error');
 				}
 			});
@@ -225,7 +223,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		/**
 		 * 이메일 전송 버튼 이벤트
 		 */
-		$(document).off('click', '#sendEmailBtn').on('click', '#sendEmailBtn', function() {
+		$(document).off('click', '#sendEmailBtn').on('click', '#sendEmailBtn', function () {
 			const email = $('#churchEmail').val().trim();
 			const message = $('#emailMessage').val();
 
@@ -252,7 +250,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					message: message
 				},
 				dataType: 'json',
-				success: function(response) {
+				success: function (response) {
 					if (response.success) {
 						showToast('이메일이 전송되었습니다.', 'success');
 						$('#sendMemberInfoModal').modal('hide');
@@ -260,7 +258,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 						showToast(response.message || '이메일 전송에 실패했습니다.', 'error');
 					}
 				},
-				error: function() {
+				error: function () {
 					showToast('이메일 전송 중 오류가 발생했습니다.', 'error');
 				}
 			});
@@ -268,7 +266,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 
 		// 3. 결연교회 자동매칭 버튼 - 모달 열기로 복원
-		$(document).off('click', '#autoMatchChurchBtn').on('click', '#autoMatchChurchBtn', function() {
+		$(document).off('click', '#autoMatchChurchBtn').on('click', '#autoMatchChurchBtn', function () {
 			if (!currentMemberMissionIdx) {
 				showToast('회원 정보를 찾을 수 없습니다.', 'error');
 				return;
@@ -277,17 +275,17 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 
 		// 4. 파송교회 수동추가 버튼
-		$(document).off('click', '#addTransferOrgBtn').on('click', '#addTransferOrgBtn', function() {
+		$(document).off('click', '#addTransferOrgBtn').on('click', '#addTransferOrgBtn', function () {
 			openTransferOrgModal('add');
 		});
 
 		// 파송교회 저장 버튼
-		$(document).off('click', '#saveTransferOrgBtn').on('click', '#saveTransferOrgBtn', function() {
+		$(document).off('click', '#saveTransferOrgBtn').on('click', '#saveTransferOrgBtn', function () {
 			saveTransferOrg();
 		});
 
 		// 파송교회 수정 버튼
-		$(document).off('click', '.btn-mission-edit').on('click', '.btn-mission-edit', function() {
+		$(document).off('click', '.btn-mission-edit').on('click', '.btn-mission-edit', function () {
 			const idx = $(this).data('idx');
 			const churchItem = $(this).closest('.mission-church-item');
 			const transferData = churchItem.data('church-data');
@@ -300,13 +298,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 
 		// 파송교회 삭제 버튼
-		$(document).off('click', '.btn-mission-delete').on('click', '.btn-mission-delete', function() {
+		$(document).off('click', '.btn-mission-delete').on('click', '.btn-mission-delete', function () {
 			const idx = $(this).data('idx');
 			showDeleteTransferOrgModal(idx);
 		});
 
 		// 파송교회 삭제 확인
-		$(document).off('click', '#confirmDeleteTransferOrgBtn').on('click', '#confirmDeleteTransferOrgBtn', function() {
+		$(document).off('click', '#confirmDeleteTransferOrgBtn').on('click', '#confirmDeleteTransferOrgBtn', function () {
 			const idx = $(this).data('idx');
 			deleteTransferOrg(idx);
 		});
@@ -328,14 +326,14 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					renderTransferOrgList(response.data);
 				} else {
 					showToast(response.message || '파송교회 목록을 불러오는데 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('파송교회 목록을 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -355,7 +353,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				gutterSize: 7,                // divider 두께
 				cursor: 'col-resize',         // 커서 스타일
 				direction: 'horizontal',      // 수평 분할
-				onDragEnd: function(sizes) {
+				onDragEnd: function (sizes) {
 					// 크기 조정 완료 시 그리드 리프레시
 					if (memberGrid) {
 						try {
@@ -440,7 +438,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		bindMemberSearchEvents();
 
 		// 윈도우 리사이즈 이벤트
-		$(window).on('resize', debounce(function() {
+		$(window).on('resize', debounce(function () {
 			if (memberGrid) {
 				try {
 					memberGrid.pqGrid("refresh");
@@ -456,58 +454,58 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 */
 	function bindTimelineTabEvents() {
 		// 타임라인 탭 클릭 시 타임라인 목록 로드
-		$('#timeline-tab').off('shown.bs.tab').on('shown.bs.tab', function() {
+		$('#timeline-tab').off('shown.bs.tab').on('shown.bs.tab', function () {
 			const memberIdx = $('#member_idx').val();
 			if (memberIdx) {
 				currentMemberTimelineIdx = memberIdx;
 				loadTimelineTypes();
-				loadTimelineList(memberIdx);
+
 			}
 		});
 
 		// 타임라인 일괄추가 버튼 클릭
-		$(document).off('click', '#addTimelineBtn').on('click', '#addTimelineBtn', function() {
+		$(document).off('click', '#addTimelineBtn').on('click', '#addTimelineBtn', function () {
 			saveTimeline();
 		});
 
 		// 타임라인 목록 내 버튼 이벤트 (동적 요소용 이벤트 위임)
-		$(document).off('click', '.btn-timeline-edit').on('click', '.btn-timeline-edit', function() {
+		$(document).off('click', '.btn-timeline-edit').on('click', '.btn-timeline-edit', function () {
 			const idx = $(this).data('idx');
 			const timelineData = getTimelineDataFromElement($(this).closest('.timeline-item'));
 			startEditTimeline(idx, timelineData);
 		});
 
-		$(document).off('click', '.btn-timeline-delete').on('click', '.btn-timeline-delete', function() {
+		$(document).off('click', '.btn-timeline-delete').on('click', '.btn-timeline-delete', function () {
 			const idx = $(this).data('idx');
 			showDeleteTimelineModal(idx);
 		});
 
-		$(document).off('click', '.btn-timeline-save').on('click', '.btn-timeline-save', function() {
+		$(document).off('click', '.btn-timeline-save').on('click', '.btn-timeline-save', function () {
 			const idx = $(this).data('idx');
 			const timelineData = getTimelineDataFromEditForm($(this).closest('.timeline-item'));
 			updateTimeline(idx, timelineData);
 		});
 
-		$(document).off('click', '.btn-timeline-cancel').on('click', '.btn-timeline-cancel', function() {
+		$(document).off('click', '.btn-timeline-cancel').on('click', '.btn-timeline-cancel', function () {
 			cancelEditTimeline();
 		});
 
 		// Enter 키로 타임라인 일괄추가 기능
-		$(document).off('keydown', '#newTimelineContent').on('keydown', '#newTimelineContent', function(e) {
+		$(document).off('keydown', '#newTimelineContent').on('keydown', '#newTimelineContent', function (e) {
 			if (e.ctrlKey && e.keyCode === 13) {
 				saveTimeline();
 			}
 		});
 
 		// 타임라인 수정 중 ESC 키로 취소
-		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function(e) {
+		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function (e) {
 			if (e.keyCode === 27) {
 				cancelEditTimeline();
 			}
 		});
 
 		// 타임라인 수정 중 Ctrl + Enter로 저장
-		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function(e) {
+		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function (e) {
 			if (e.ctrlKey && e.keyCode === 13) {
 				const idx = $(this).closest('.timeline-item').data('idx');
 				const timelineData = getTimelineDataFromEditForm($(this).closest('.timeline-item'));
@@ -517,30 +515,28 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 	/**
-	 * 조직의 타임라인 호칭 목록 로드
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 타임라인 타입 목록 로드
 	 */
-	function loadTimelineTypes() {
-		if (!selectedOrgId) return;
-
+	function loadTimelineTypes(orgId) {
 		$.ajax({
-			url: '/member/get_timeline_types',
-			method: 'POST',
-			data: { org_id: selectedOrgId },
+			url: window.memberPageData.baseUrl + 'timeline/get_timeline_types',
+			type: 'POST',
+			data: { org_id: orgId },
 			dataType: 'json',
 			success: function(response) {
-				if (response.success) {
-					timelineTypes = response.data || [];
-					populateTimelineTypeSelect();
-				} else {
-					console.error('타임라인 호칭 로드 실패:', response.message);
-					timelineTypes = [];
-					populateTimelineTypeSelect();
+				if (response.success && response.data) {
+					const select = $('#timeline_type');
+					select.empty();
+					select.append('<option value="">항목을 선택하세요</option>');
+
+					response.data.forEach(function(type) {
+						select.append(`<option value="${type}">${type}</option>`);
+					});
 				}
 			},
 			error: function() {
-				console.error('타임라인 호칭 로드 중 오류 발생');
-				timelineTypes = [];
-				populateTimelineTypeSelect();
+				console.error('타임라인 타입 로드 실패');
 			}
 		});
 	}
@@ -552,139 +548,61 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const select = $('#newTimelineType');
 		select.html('<option value="">항목 선택</option>');
 
-		timelineTypes.forEach(function(type) {
+		timelineTypes.forEach(function (type) {
 			select.append(`<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`);
 		});
 	}
 
-	/**
-	 * 타임라인 목록 로드
-	 */
-	function loadTimelineList(memberIdx) {
-		if (!memberIdx) return;
 
-		$.ajax({
-			url: '/member/get_timeline_list',
-			method: 'POST',
-			data: {
-				member_idx: memberIdx,
-				org_id: selectedOrgId,
-				page: 1,
-				limit: 50
-			},
-			dataType: 'json',
-			success: function(response) {
-				if (response.success) {
-					renderTimelineList(response.data);
-				} else {
-					showToast('타임라인 목록을 불러오는데 실패했습니다.', 'error');
-				}
-			},
-			error: function() {
-				showToast('타임라인 목록을 불러오는데 실패했습니다.', 'error');
-			}
-		});
-	}
 
-	/**
-	 * 타임라인 목록 렌더링
-	 */
-	function renderTimelineList(timelineList) {
-		const timelineListContainer = $('#timelineList');
-		timelineListContainer.empty();
-
-		if (!timelineList || timelineList.length === 0) {
-			timelineListContainer.html('<div class="text-center text-muted py-3" id="emptyTimelineMessage">등록된 타임라인이 없습니다.</div>');
-			return;
-		}
-
-		// 날짜별로 정렬 (최신순)
-		timelineList.sort(function(a, b) {
-			return new Date(b.timeline_date) - new Date(a.timeline_date);
-		});
-
-		timelineList.forEach(function(timeline, index) {
-			const timelineHtml = createTimelineItemHtml(timeline);
-			timelineListContainer.append(timelineHtml);
-
-			// 타임라인 연결선 추가 (마지막 항목이 아닌 경우)
-			if (index < timelineList.length - 1) {
-				timelineListContainer.append('<div class="timeline-connector">|</div>');
-			}
-		});
-	}
-
-	/**
-	 * 타임라인 아이템 HTML 생성
-	 */
-	function createTimelineItemHtml(timeline) {
-		const formattedDate = formatTimelineDate(timeline.timeline_date);
-		const regDate = formatMemoDateTime(timeline.regi_date);
-
-		return `
-			<div class="timeline-item" data-idx="${timeline.idx}">
-				<div class="row align-items-center">				
-					<div class="col-9">
-						<div class="timeline-content">
-							<span class="timeline-date">${formattedDate}</span>
-							<span class="timeline-type">${escapeHtml(timeline.timeline_type)}</span>
-							<span class="timeline-text">${escapeHtml(timeline.timeline_content || '')}</span>
-						</div>						
-					</div>
-					<div class="col-3 d-flex justify-content-end">
-						<div class="btn-group">
-							<button type="button" class="btn btn-sm btn-outline-secondary btn-timeline-edit" data-idx="${timeline.idx}">수정</button>
-							<button type="button" class="btn btn-sm btn-outline-danger btn-timeline-delete" data-idx="${timeline.idx}">삭제</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		`;
-	}
 
 	/**
 	 * 타임라인 저장
 	 */
 	function saveTimeline() {
-		const timelineType = $('#newTimelineType').val().trim();
-		const timelineDate = $('#newTimelineDate').val();
-		const timelineContent = $('#newTimelineContent').val().trim();
+		const idx = $('#timeline_idx').val();
+		const memberIdx = $('#timeline_member_idx').val();
+		const timelineType = $('#timeline_type').val();
+		const timelineDate = $('#timeline_date').val();
+		const timelineContent = $('#timeline_content').val();
+		const orgId = $('#org_id').val();
 
-		if (!timelineType) {
-			showToast('타임라인 항목을 선택해주세요.', 'warning');
+		// 값 검증
+		if (!timelineType || timelineType.trim() === '') {
+			showToast('항목을 선택해주세요.', 'error');
 			return;
 		}
 
-		if (!timelineDate) {
-			showToast('날짜를 선택해주세요.', 'warning');
+		if (!timelineDate || timelineDate.trim() === '') {
+			showToast('날짜를 입력해주세요.', 'error');
 			return;
 		}
 
-		if (!currentMemberTimelineIdx) {
-			showToast('회원 정보를 찾을 수 없습니다.', 'error');
-			return;
+		const url = idx ? 'member/update_timeline' : 'member/save_timeline';
+		const data = {
+			member_idx: memberIdx,
+			timeline_type: timelineType,
+			timeline_date: timelineDate,
+			timeline_content: timelineContent || '',
+			org_id: orgId
+		};
+
+		if (idx) {
+			data.idx = idx;
 		}
 
 		$.ajax({
-			url: '/member/save_timeline',
-			method: 'POST',
-			data: {
-				member_idx: currentMemberTimelineIdx,
-				timeline_type: timelineType,
-				timeline_date: timelineDate,
-				timeline_content: timelineContent,
-				org_id: selectedOrgId
-			},
+			url: window.memberPageData.baseUrl + url,
+			type: 'POST',
+			data: data,
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					$('#newTimelineType').val('');
-					$('#newTimelineDate').val('');
-					$('#newTimelineContent').val('');
-					loadTimelineList(currentMemberTimelineIdx);
-					showToast('타임라인이 저장되었습니다.', 'success');
+					showToast(response.message, 'success');
+					bootstrap.Modal.getInstance(document.getElementById('timelineModal')).hide();
+					loadMemberTimeline(memberIdx, orgId);
 				} else {
-					showToast(response.message || '타임라인 저장에 실패했습니다.', 'error');
+					showToast(response.message, 'error');
 				}
 			},
 			error: function() {
@@ -710,7 +628,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 */
 	function createTimelineEditHtml(timelineData) {
 		let typeOptions = '<option value="">타임라인 항목 선택</option>';
-		timelineTypes.forEach(function(type) {
+		timelineTypes.forEach(function (type) {
 			const selected = type === timelineData.timeline_type ? 'selected' : '';
 			typeOptions += `<option value="${escapeHtml(type)}" ${selected}>${escapeHtml(type)}</option>`;
 		});
@@ -745,7 +663,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 */
 	function cancelEditTimeline() {
 		if (editingTimelineIdx) {
-			loadTimelineList(currentMemberTimelineIdx);
+
 			editingTimelineIdx = null;
 		}
 	}
@@ -775,16 +693,16 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
-					loadTimelineList(currentMemberTimelineIdx);
+
 					editingTimelineIdx = null;
 					showToast('타임라인이 수정되었습니다.', 'success');
 				} else {
 					showToast(response.message || '타임라인 수정에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('타임라인 수정에 실패했습니다.', 'error');
 			}
 		});
@@ -817,7 +735,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		$('#deleteTimelineModal').remove();
 		$('body').append(modalHtml);
 
-		$('#confirmDeleteTimelineBtn').on('click', function() {
+		$('#confirmDeleteTimelineBtn').on('click', function () {
 			const timelineIdx = $(this).data('idx');
 			deleteTimeline(timelineIdx);
 		});
@@ -825,32 +743,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		$('#deleteTimelineModal').modal('show');
 	}
 
-	/**
-	 * 타임라인 삭제 실행
-	 */
-	function deleteTimeline(idx) {
-		$.ajax({
-			url: '/member/delete_timeline',
-			method: 'POST',
-			data: {
-				idx: idx,
-				org_id: selectedOrgId
-			},
-			dataType: 'json',
-			success: function(response) {
-				if (response.success) {
-					$('#deleteTimelineModal').modal('hide');
-					loadTimelineList(currentMemberTimelineIdx);
-					showToast('타임라인이 삭제되었습니다.', 'success');
-				} else {
-					showToast(response.message || '타임라인 삭제에 실패했습니다.', 'error');
-				}
-			},
-			error: function() {
-				showToast('타임라인 삭제에 실패했습니다.', 'error');
-			}
-		});
-	}
+
 
 	/**
 	 * 타임라인용 날짜 형식화
@@ -970,18 +863,18 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 */
 	function getExcelExportColumns() {
 		return [
-			{ dataIndx: "member_idx", title: "회원번호" },
-			{ dataIndx: "area_name", title: "소그룹" },
-			{ dataIndx: "member_name", title: "이름" },
-			{ dataIndx: "member_sex", title: "성별" },
-			{ dataIndx: "member_nick", title: "닉네임" },
-			{ dataIndx: "position_name", title: "직위/직분" },
-			{ dataIndx: "duty_name", title: "직책" },
-			{ dataIndx: "member_phone", title: "휴대폰번호" },
-			{ dataIndx: "member_birth", title: "생년월일" },
-			{ dataIndx: "member_address", title: "주소" },
-			{ dataIndx: "member_address_detail", title: "상세주소" },
-			{ dataIndx: "member_etc", title: "특이사항" },
+			{dataIndx: "member_idx", title: "회원번호"},
+			{dataIndx: "area_name", title: "소그룹"},
+			{dataIndx: "member_name", title: "이름"},
+			{dataIndx: "member_sex", title: "성별"},
+			{dataIndx: "member_nick", title: "닉네임"},
+			{dataIndx: "position_name", title: "직위/직분"},
+			{dataIndx: "duty_name", title: "직책"},
+			{dataIndx: "member_phone", title: "휴대폰번호"},
+			{dataIndx: "member_birth", title: "생년월일"},
+			{dataIndx: "member_address", title: "주소"},
+			{dataIndx: "member_address_detail", title: "상세주소"},
+			{dataIndx: "member_etc", title: "특이사항"},
 			{
 				dataIndx: "regi_date",
 				title: "등록일",
@@ -1023,7 +916,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const searchButton = $('#button-search');
 
 		// 검색 버튼 클릭 이벤트만 활성화
-		searchButton.on('click', function() {
+		searchButton.on('click', function () {
 			const searchText = searchInput.val().trim();
 			if (searchText) {
 				filterMemberGrid(searchText);
@@ -1033,7 +926,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 
 		// Enter 키 이벤트
-		searchInput.on('keypress', function(e) {
+		searchInput.on('keypress', function (e) {
 			if (e.which === 13) {
 				e.preventDefault();
 				const searchText = $(this).val().trim();
@@ -1046,7 +939,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 
 		// 입력 필드 초기화 시 필터 해제
-		searchInput.on('input', function() {
+		searchInput.on('input', function () {
 			const searchText = $(this).val().trim();
 			if (searchText === '') {
 				clearMemberGridFilter();
@@ -1069,7 +962,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			}
 
 
-
 			// 그리드 데이터 직접 필터링 방식 사용
 			const allData = memberGrid.pqGrid("option", "dataModel.data");
 
@@ -1084,7 +976,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			}
 
 			// 이름과 휴대폰번호에서 검색
-			const filteredData = window.originalGridData.filter(function(member) {
+			const filteredData = window.originalGridData.filter(function (member) {
 				const memberName = (member.member_name || '').toLowerCase();
 				const memberPhone = (member.member_phone || '').toLowerCase();
 				const searchLower = searchText.toLowerCase();
@@ -1095,7 +987,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			// 필터링된 데이터로 그리드 업데이트
 			memberGrid.pqGrid("option", "dataModel.data", filteredData);
 			memberGrid.pqGrid("refreshDataAndView");
-
 
 
 			// 검색 결과에 따른 toast 메시지 표시
@@ -1132,7 +1023,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
 	/**
 	 * 검색 상태 초기화
 	 */
@@ -1152,13 +1042,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 */
 	function setupCleanupEvents() {
 		// 페이지 떠날 때 정리
-		$(window).on('beforeunload', function() {
+		$(window).on('beforeunload', function () {
 			destroyCroppie();
 			destroySplitJS();
 		});
 
 		// offcanvas 닫힐 때 정리
-		$('#memberOffcanvas').on('hidden.bs.offcanvas', function() {
+		$('#memberOffcanvas').on('hidden.bs.offcanvas', function () {
 			destroyCroppie();
 			// 메모 관련 정리
 			currentMemberIdx = null;
@@ -1166,7 +1056,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			$('#deleteMemoModal').remove(); // 메모 삭제 모달 제거
 		});
 	}
-
 
 
 	/**
@@ -1216,11 +1105,10 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	function setupFancytreeInstance(treeData) {
 		$("#groupTree").fancytree({
 			source: treeData,
-			activate: function(event, data) {
+			activate: function (event, data) {
 				const node = data.node;
 				const nodeKey = node.key;
 				const nodeTitle = node.title;
-
 
 
 				// 검색 상태 초기화
@@ -1357,8 +1245,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
-
 	/**
 	 * ParamQuery Grid 초기화 (개선된 버전 - 컬럼 순서 변경 이벤트 추가)
 	 */
@@ -1390,7 +1276,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				vertical: true
 			},
 			freezeCols: isMobile ? 0 : 4,
-			numberCell: { show: false },
+			numberCell: {show: false},
 			title: false,
 			strNoRows: '회원 정보가 없습니다',
 			resizable: true,
@@ -1398,25 +1284,25 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			hoverMode: 'row',
 			wrap: false,
 			columnBorders: true,
-			cellClick: function(event, ui) {
+			cellClick: function (event, ui) {
 				handleGridCellClick(event, ui);
 			},
-			cellDblClick: function(event, ui) {
+			cellDblClick: function (event, ui) {
 				handleGridCellClick(event, ui);
 			},
-			complete: function() {
+			complete: function () {
 
-				setTimeout(function() {
+				setTimeout(function () {
 					removeDuplicateCheckboxes();
 					bindMobileTouchEvents();
 				}, 100);
 			},
 			// 컬럼 순서 변경 이벤트 추가
-			columnOrder: function(evt, ui) {
+			columnOrder: function (evt, ui) {
 
 
 				// 변경된 컬럼 순서 저장
-				setTimeout(function() {
+				setTimeout(function () {
 					if (memberGrid) {
 						const currentColModel = memberGrid.pqGrid("option", "colModel");
 						saveColumnOrder(currentColModel);
@@ -1480,7 +1366,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				vertical: true
 			},
 			freezeCols: isMobile ? 0 : 4,
-			numberCell: { show: false },
+			numberCell: {show: false},
 			title: false,
 			strNoRows: '회원 정보가 없습니다',
 			resizable: true,
@@ -1488,17 +1374,17 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			hoverMode: 'row',
 			wrap: false,
 			columnBorders: true,
-			cellClick: function(event, ui) {
+			cellClick: function (event, ui) {
 				handleGridCellClick(event, ui);
 			},
 			// 모바일 터치 지원을 위한 추가 이벤트
-			cellDblClick: function(event, ui) {
+			cellDblClick: function (event, ui) {
 				// 더블클릭도 동일하게 처리
 				handleGridCellClick(event, ui);
 			},
 			// 그리드 렌더링 완료 후 모바일 터치 이벤트 바인딩
-			complete: function() {
-				setTimeout(function() {
+			complete: function () {
+				setTimeout(function () {
 					removeDuplicateCheckboxes();
 					bindMobileTouchEvents(); // 모바일 터치 이벤트 추가
 				}, 100);
@@ -1517,7 +1403,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		// 그리드 컨테이너에 직접 터치 이벤트 바인딩 (수정된 버전)
 		$('#memberGrid').off('touchend.mobile click.mobile')
-			.on('touchend.mobile click.mobile', 'td', function(e) {
+			.on('touchend.mobile click.mobile', 'td', function (e) {
 				e.preventDefault();
 				e.stopPropagation();
 
@@ -1560,7 +1446,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 						} else {
 							// 일반 셀인 경우 회원 정보 수정 창 열기
 							clearTimeout(window.memberCellClickTimeout);
-							window.memberCellClickTimeout = setTimeout(function() {
+							window.memberCellClickTimeout = setTimeout(function () {
 								openMemberOffcanvas('edit', rowData);
 							}, 200);
 						}
@@ -1699,7 +1585,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		// 상세필드 컬럼 동적 추가
 		if (detailFields && Array.isArray(detailFields) && detailFields.length > 0) {
 
-			detailFields.forEach(function(field) {
+			detailFields.forEach(function (field) {
 				if (field.is_active === 'Y') {
 					const fieldColumn = {
 						title: field.field_name,
@@ -1707,7 +1593,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 						width: 150,
 						editable: false,
 						align: field.field_type === 'textarea' ? 'left' : 'center',
-						render: function(ui) {
+						render: function (ui) {
 							return renderDetailFieldValue(ui.cellData, field.field_type);
 						}
 					};
@@ -1740,7 +1626,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				}
 			}
 		);
-
 
 
 		// 저장된 컬럼 순서가 있으면 재정렬
@@ -1794,7 +1679,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		// 기타 컬럼인 경우 - 회원 정보 수정 창 열기
 		clearTimeout(window.memberCellClickTimeout);
-		window.memberCellClickTimeout = setTimeout(function() {
+		window.memberCellClickTimeout = setTimeout(function () {
 			openMemberOffcanvas('edit', rowData);
 		}, 200);
 	}
@@ -1844,7 +1729,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			const uniqueCheckboxes = getUniqueCheckboxes();
 
 
-			uniqueCheckboxes.forEach(function(checkbox) {
+			uniqueCheckboxes.forEach(function (checkbox) {
 				$(checkbox).prop('checked', isChecked);
 			});
 
@@ -1869,7 +1754,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const uniqueCheckboxes = [];
 		const seenMemberIds = new Set();
 
-		$('.member-checkbox').each(function() {
+		$('.member-checkbox').each(function () {
 			const memberIdx = $(this).data('member-idx');
 			if (!seenMemberIds.has(memberIdx)) {
 				seenMemberIds.add(memberIdx);
@@ -1906,7 +1791,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const uniqueCheckedBoxes = [];
 		const seenMemberIds = new Set();
 
-		$('.member-checkbox:checked').each(function() {
+		$('.member-checkbox:checked').each(function () {
 			const memberIdx = $(this).data('member-idx');
 			if (!seenMemberIds.has(memberIdx)) {
 				seenMemberIds.add(memberIdx);
@@ -1940,7 +1825,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		// 모달에 메시지 설정 및 소그룹 옵션 로드
 		$('#moveMessage').text(message);
-		loadMoveAreaOptions(selectedOrgId, function() {
+		loadMoveAreaOptions(selectedOrgId, function () {
 			setupMoveConfirmButton(selectedMembers);
 			$('#moveMemberModal').modal('show');
 		});
@@ -1959,7 +1844,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 			if (groupNode && groupNode.children) {
 				function addAreaOptionsRecursively(nodes, depth = 0) {
-					nodes.forEach(function(node) {
+					nodes.forEach(function (node) {
 						const areaData = node.data;
 						if (areaData.type === 'area') {
 							const indent = '　'.repeat(depth);
@@ -1991,7 +1876,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 이동 확인 버튼 설정
 	 */
 	function setupMoveConfirmButton(selectedMembers) {
-		$('#confirmMoveBtn').off('click').on('click', function() {
+		$('#confirmMoveBtn').off('click').on('click', function () {
 			const moveToAreaIdx = $('#moveToAreaIdx').val();
 
 			if (!moveToAreaIdx) {
@@ -2036,14 +1921,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				console.error('회원 이동 실패:', error);
 				showToast('회원 이동에 실패했습니다.', 'error');
 			},
-			complete: function() {
+			complete: function () {
 				$('#confirmMoveBtn').prop('disabled', false).html('이동');
 			}
 		});
 	}
-
-
-
 
 
 	/**
@@ -2129,7 +2011,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 삭제 확인 버튼 설정
 	 */
 	function setupDeleteConfirmButton(selectedMembers, isUnassigned) {
-		$('#confirmDeleteBtn').off('click').on('click', function() {
+		$('#confirmDeleteBtn').off('click').on('click', function () {
 			const deleteType = isUnassigned ? 'unassigned' : 'area';
 			executeMemberDelete(selectedMembers, deleteType);
 			$('#deleteMemberModal').modal('hide');
@@ -2164,7 +2046,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			}
 		});
 	}
-
 
 
 	/**
@@ -2261,7 +2142,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
 	/**
 	 * 회원 데이터 로드 (상세필드 포함)
 	 */
@@ -2306,7 +2186,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		}
 
 
-
 		// 그리드가 없거나 상세필드 구조가 변경된 경우에만 재생성
 		if (!memberGrid) {
 
@@ -2331,13 +2210,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				memberGrid.pqGrid("refreshDataAndView");
 
 				// 잠시 대기 후 실제 데이터 설정
-				setTimeout(function() {
+				setTimeout(function () {
 
 					memberGrid.pqGrid("option", "dataModel.data", response.data || []);
 					memberGrid.pqGrid("refreshDataAndView");
 
 					// 체크박스 관련 처리
-					setTimeout(function() {
+					setTimeout(function () {
 						removeDuplicateCheckboxes();
 						$('.member-checkbox').prop('checked', false);
 						$('#selectAllCheckbox').prop('checked', false);
@@ -2376,7 +2255,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const activeDetailFields = detailFields.filter(field => field.is_active === 'Y');
 
 
-
 		// 개수가 다르면 재생성 필요
 		return currentDetailCols.length !== activeDetailFields.length;
 	}
@@ -2389,7 +2267,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const seenMemberIds = new Set();
 		const checkboxesToRemove = [];
 
-		$('.member-checkbox').each(function() {
+		$('.member-checkbox').each(function () {
 			const memberIdx = $(this).data('member-idx');
 
 			if (seenMemberIds.has(memberIdx)) {
@@ -2402,7 +2280,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 
 		// 중복된 체크박스들 제거
-		checkboxesToRemove.forEach(function(checkbox) {
+		checkboxesToRemove.forEach(function (checkbox) {
 			$(checkbox).closest('td').html(''); // 해당 셀을 비움
 		});
 
@@ -2416,7 +2294,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		if (!orgNameElement.length) return;
 
 		let displayText = '';
-		switch(type) {
+		switch (type) {
 			case 'org':
 				displayText = `${title} - 전체 회원`;
 				break;
@@ -2449,8 +2327,8 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		if (mode === 'edit' && memberData) {
 			// 소그룹 옵션과 직위/직책 옵션을 모두 로드한 후 데이터 채우기
-			loadAreaOptionsWithCallback(selectedOrgId, function() {
-				loadPositionsAndDuties(selectedOrgId, function() {
+			loadAreaOptionsWithCallback(selectedOrgId, function () {
+				loadPositionsAndDuties(selectedOrgId, function () {
 					populateFormData(memberData);
 					// 메모 관련 초기화
 					currentMemberIdx = memberData.member_idx;
@@ -2503,7 +2381,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 			if (groupNode && groupNode.children) {
 				function addAreaOptionsRecursively(nodes, depth = 0) {
-					nodes.forEach(function(node) {
+					nodes.forEach(function (node) {
 						const areaData = node.data;
 						if (areaData.type === 'area') {
 							const indent = '　'.repeat(depth);
@@ -2607,7 +2485,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			'org_id': memberData.org_id
 		};
 
-		Object.keys(fieldMappings).forEach(function(fieldName) {
+		Object.keys(fieldMappings).forEach(function (fieldName) {
 			const element = $('#' + fieldName);
 			if (element.length) {
 				element.val(fieldMappings[fieldName]);
@@ -2623,6 +2501,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			$('#photoUpload').hide();
 		}
 	}
+
 	/**
 	 * Offcanvas 표시 및 정리 이벤트 설정
 	 */
@@ -2630,7 +2509,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const offcanvasInstance = new bootstrap.Offcanvas(offcanvas[0]);
 		offcanvasInstance.show();
 
-		offcanvas.off('hidden.bs.offcanvas.croppie').on('hidden.bs.offcanvas.croppie', function() {
+		offcanvas.off('hidden.bs.offcanvas.croppie').on('hidden.bs.offcanvas.croppie', function () {
 			destroyCroppie();
 		});
 	}
@@ -2642,7 +2521,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 */
 	function bindMemoTabEvents() {
 		// 메모 탭 클릭 시 메모 목록 로드
-		$('#memo-tab').off('shown.bs.tab').on('shown.bs.tab', function() {
+		$('#memo-tab').off('shown.bs.tab').on('shown.bs.tab', function () {
 			const memberIdx = $('#member_idx').val();
 			if (memberIdx) {
 				currentMemberIdx = memberIdx;
@@ -2652,17 +2531,17 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 
 		// 메모 추가 버튼 클릭
-		$(document).off('click', '#addMemoBtn').on('click', '#addMemoBtn', function() {
+		$(document).off('click', '#addMemoBtn').on('click', '#addMemoBtn', function () {
 			openMemoModal('add');
 		});
 
 		// 메모 저장 버튼 클릭
-		$(document).off('click', '#saveMemoBtn').on('click', '#saveMemoBtn', function() {
+		$(document).off('click', '#saveMemoBtn').on('click', '#saveMemoBtn', function () {
 			saveMemoFromModal();
 		});
 
 		// 메모 수정 버튼 클릭
-		$(document).off('click', '.btn-memo-edit').on('click', '.btn-memo-edit', function() {
+		$(document).off('click', '.btn-memo-edit').on('click', '.btn-memo-edit', function () {
 			const idx = $(this).data('idx');
 			const memoItem = $(this).closest('.memo-item');
 			const memoType = memoItem.find('.memo-type').text().trim();
@@ -2673,7 +2552,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 
 		// 메모 삭제 버튼 클릭
-		$(document).off('click', '.btn-memo-delete').on('click', '.btn-memo-delete', function() {
+		$(document).off('click', '.btn-memo-delete').on('click', '.btn-memo-delete', function () {
 			const idx = $(this).data('idx');
 			showDeleteMemoModal(idx);
 		});
@@ -2714,7 +2593,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			method: 'POST',
 			data: data,
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					bootstrap.Modal.getInstance(document.getElementById('memoModal')).hide();
 					loadMemoList(currentMemberIdx);
@@ -2723,7 +2602,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '처리에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('처리 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -2784,7 +2663,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success && response.data) {
 					memoTypes = response.data;
 					updateMemoTypeSelect();
@@ -2793,7 +2672,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					updateMemoTypeSelect();
 				}
 			},
-			error: function() {
+			error: function () {
 				console.error('메모 항목 목록을 불러오는데 실패했습니다.');
 				memoTypes = [];
 				updateMemoTypeSelect();
@@ -2809,7 +2688,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		let selectHtml = '<option value="">항목 선택</option>';
 
 		if (memoTypes && memoTypes.length > 0) {
-			selectHtml += memoTypes.map(function(type) {
+			selectHtml += memoTypes.map(function (type) {
 				return `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`;
 			}).join('');
 		}
@@ -2854,14 +2733,14 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				limit: 20
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					renderMemoList(response.data);
 				} else {
 					showToast('메모 목록을 불러오는데 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('메모 목록을 불러오는데 실패했습니다.', 'error');
 			}
 		});
@@ -2880,7 +2759,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			return;
 		}
 
-		memoList.forEach(function(memo, index) {
+		memoList.forEach(function (memo, index) {
 			const memoHtml = createMemoItemHtml(memo);
 			memoListContainer.append(memoHtml);
 
@@ -2956,7 +2835,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					$('#newMemoContent').val('');
 					loadMemoList(currentMemberIdx);
@@ -2965,7 +2844,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '메모 저장에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('메모 저장에 실패했습니다.', 'error');
 			}
 		});
@@ -3020,7 +2899,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					loadMemoList(currentMemberIdx);
 					editingMemoIdx = null;
@@ -3029,7 +2908,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '메모 수정에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('메모 수정에 실패했습니다.', 'error');
 			}
 		});
@@ -3043,7 +2922,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const modal = new bootstrap.Modal(document.getElementById('deleteMemoModal'));
 		modal.show();
 
-		$('#confirmDeleteMemoBtn').off('click').on('click', function() {
+		$('#confirmDeleteMemoBtn').off('click').on('click', function () {
 			deleteMemo(deletingMemoIdx);
 		});
 	}
@@ -3065,7 +2944,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					const modalElement = document.getElementById('deleteMemoModal');
 					const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -3079,7 +2958,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '메모 삭제에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('메모 삭제에 실패했습니다.', 'error');
 			}
 		});
@@ -3127,7 +3006,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		$('#delete_photo').remove();
 
 		const reader = new FileReader();
-		reader.onload = function(e) {
+		reader.onload = function (e) {
 			$('#previewImage').attr('src', e.target.result);
 			$('#photoPreview').show();
 			$('#photoUpload').hide();
@@ -3189,7 +3068,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		croppieInstance.bind({
 			url: imageSrc
-		}).catch(function(error) {
+		}).catch(function (error) {
 			console.error('Croppie 바인딩 오류:', error);
 			showToast('이미지 로드에 실패했습니다.', 'error');
 			cancelCrop();
@@ -3207,14 +3086,14 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		croppieInstance.result({
 			type: 'canvas',
-			size: { width: 200, height: 200 },
+			size: {width: 200, height: 200},
 			format: 'jpeg',
 			quality: 0.9,
 			circle: true
-		}).then(function(croppedImage) {
+		}).then(function (croppedImage) {
 			$('#previewImage').attr('src', croppedImage);
 
-			dataURLtoFile(croppedImage, 'cropped_image.jpg').then(function(file) {
+			dataURLtoFile(croppedImage, 'cropped_image.jpg').then(function (file) {
 				const dt = new DataTransfer();
 				dt.items.add(file);
 				document.getElementById('member_photo').files = dt.files;
@@ -3226,7 +3105,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			$('#photoPreview').show();
 			destroyCroppie();
 
-		}).catch(function(error) {
+		}).catch(function (error) {
 			console.error('크롭 처리 오류:', error);
 			showToast('이미지 크롭에 실패했습니다.', 'error');
 		});
@@ -3288,7 +3167,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * Base64 DataURL을 File 객체로 변환
 	 */
 	function dataURLtoFile(dataURL, filename) {
-		return new Promise(function(resolve) {
+		return new Promise(function (resolve) {
 			const arr = dataURL.split(',');
 			const mime = arr[0].match(/:(.*?);/)[1];
 			const bstr = atob(arr[1]);
@@ -3299,7 +3178,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				u8arr[n] = bstr.charCodeAt(n);
 			}
 
-			const file = new File([u8arr], filename, { type: mime });
+			const file = new File([u8arr], filename, {type: mime});
 			resolve(file);
 		});
 	}
@@ -3339,14 +3218,14 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			processData: false,
 			contentType: false,
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				handleSaveMemberResponse(response);
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('회원 저장 실패:', error);
 				showToast('회원 정보 저장에 실패했습니다.', 'error');
 			},
-			complete: function() {
+			complete: function () {
 				saveBtn.prop('disabled', false).html(originalText);
 			}
 		});
@@ -3388,7 +3267,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 상세정보 탭 초기화 (수정된 버전)
 	 */
 	function initDetailTab() {
-		$('#detail-tab').on('click', function() {
+		$('#detail-tab').on('click', function () {
 			const orgId = $('#org_id').val();
 			const memberIdx = $('#member_idx').val();
 
@@ -3426,9 +3305,9 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		$.ajax({
 			url: '/member/get_detail_fields',
 			type: 'POST',
-			data: { org_id: orgId },
+			data: {org_id: orgId},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				loading.hide();
 
 				if (response.success && response.data.length > 0) {
@@ -3442,7 +3321,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					frontContainer.hide();
 				}
 			},
-			error: function() {
+			error: function () {
 				loading.hide();
 				showToast('상세필드를 불러오는데 실패했습니다.', 'error');
 				frontContainer.hide();
@@ -3462,14 +3341,14 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				member_idx: memberIdx
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					generateDetailForm(fields, response.data);
 				} else {
 					generateDetailForm(fields, {});
 				}
 			},
-			error: function() {
+			error: function () {
 				generateDetailForm(fields, {});
 			}
 		});
@@ -3489,7 +3368,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			return;
 		}
 
-		fields.forEach(function(field) {
+		fields.forEach(function (field) {
 			if (field.is_active !== 'Y') {
 				return; // 비활성 필드는 건너뛰기
 			}
@@ -3583,7 +3462,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		let options = '<option value="">선택하세요</option>';
 
 		if (field.field_settings && field.field_settings.options) {
-			field.field_settings.options.forEach(function(option) {
+			field.field_settings.options.forEach(function (option) {
 				const selected = value === option ? 'selected' : '';
 				options += `<option value="${escapeHtml(option)}" ${selected}>${escapeHtml(option)}</option>`;
 			});
@@ -3607,7 +3486,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const detailData = {};
 
 		// front와 back 영역 모두에서 입력값 수집
-		$('#detail-front input, #detail-front select, #detail-front textarea, #detailFieldsContainer input, #detailFieldsContainer select, #detailFieldsContainer textarea').each(function() {
+		$('#detail-front input, #detail-front select, #detail-front textarea, #detailFieldsContainer input, #detailFieldsContainer select, #detailFieldsContainer textarea').each(function () {
 			const name = $(this).attr('name');
 			if (name && name.startsWith('detail_field[')) {
 				const fieldIdx = name.match(/detail_field\[(\d+)\]/)[1];
@@ -3662,7 +3541,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		$('#member_photo').val('');
 		destroyCroppie();
 	}
-
 
 
 	/**
@@ -3753,7 +3631,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		showConfirmModal(
 			'엑셀편집 저장',
 			`총 ${editedData.length}건의 데이터를 저장하시겠습니까?`,
-			function() {
+			function () {
 				// 저장 실행
 				executeBulkEditSave(editedData);
 			}
@@ -3777,7 +3655,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				members: JSON.stringify(editedData)
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				const toastType = response.success ? 'success' : 'error';
 				showToast(response.message, toastType);
 
@@ -3788,21 +3666,20 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					refreshGroupTree();
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('일괄 편집 저장 실패:', error);
 				showToast('데이터 저장 중 오류가 발생했습니다.', 'error');
 			},
-			complete: function() {
+			complete: function () {
 				saveBtn.prop('disabled', false).html(originalText);
 			}
 		});
 	}
 
 
-
 	// ===== 회원 저장 버튼 클릭 이벤트 수정 =====
 
-	$(document).on('click', '#btnSaveMember', function() {
+	$(document).on('click', '#btnSaveMember', function () {
 		const form = $('#memberForm')[0];
 		const formData = new FormData(form);
 
@@ -3816,7 +3693,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			processData: false,
 			contentType: false,
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				const toastType = response.success ? 'success' : 'error';
 				showToast(response.message, toastType);
 				if (response.success) {
@@ -3824,7 +3701,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					$('#memberOffcanvas').offcanvas('hide');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('회원 정보 저장 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -3883,11 +3760,9 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
 // 선택QR인쇄 버튼 클릭 이벤트 (수정된 버전)
-	$(document).on('click', '#btnSelectedQrPrint', function() {
+	$(document).on('click', '#btnSelectedQrPrint', function () {
 		const selectedMembers = getSelectedMembers();
-
 
 
 		if (selectedMembers.length === 0) {
@@ -3899,7 +3774,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			showConfirmModal(
 				'선택된 회원이 70명을 초과합니다',
 				'선택된 회원(' + selectedMembers.length + '명)이 한 장의 라벨지 용량(70개)을 초과합니다. 여러 장에 나누어 인쇄됩니다. 계속하시겠습니까?',
-				function() {
+				function () {
 					openSelectedQrPrintModal(selectedMembers);
 				}
 			);
@@ -3917,7 +3792,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const processedMemberIds = new Set();
 
 		// 고유한 체크된 체크박스만 처리
-		$('.member-checkbox:checked').each(function() {
+		$('.member-checkbox:checked').each(function () {
 			const memberIdx = $(this).data('member-idx');
 
 			// 중복 제거
@@ -3964,15 +3839,12 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
-
 	/**
 	 * 인쇄하기 버튼 클릭 이벤트 (수정된 버전)
 	 */
-	$(document).on('click', '#executePrintSelectedQr', function() {
+	$(document).on('click', '#executePrintSelectedQr', function () {
 		const selectedMembers = $('#selectedQrPrintModal').data('selectedMembers');
 		const startPosition = $('#startPositionSelect').val();
-
 
 
 		if (!selectedMembers || selectedMembers.length === 0) {
@@ -3989,15 +3861,12 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			'&start_position=' + startPosition;
 
 
-
 		// 새 창에서 인쇄 페이지 열기
 		window.open(url, '_blank', 'width=1200,height=800,scrollbars=yes');
 
 		// 모달 닫기
 		$('#selectedQrPrintModal').modal('hide');
 	});
-
-
 
 
 	/**
@@ -4014,9 +3883,9 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		$.ajax({
 			url: window.memberPageData.baseUrl + 'member/get_org_positions_duties',
 			method: 'POST',
-			data: { org_id: orgId },
+			data: {org_id: orgId},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					populatePositionOptions(response.data.positions);
 					populateDutyOptions(response.data.duties);
@@ -4028,7 +3897,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					callback();
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('직위/직책 데이터 로드 오류:', error);
 
 				if (typeof callback === 'function') {
@@ -4046,7 +3915,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		positionSelect.html('<option value="">직위/직분 선택</option>');
 
 		if (positions && Array.isArray(positions)) {
-			positions.forEach(function(position) {
+			positions.forEach(function (position) {
 				positionSelect.append(`<option value="${escapeHtml(position)}">${escapeHtml(position)}</option>`);
 			});
 		}
@@ -4060,12 +3929,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		dutySelect.html('<option value="">직책 선택</option>');
 
 		if (duties && Array.isArray(duties)) {
-			duties.forEach(function(duty) {
+			duties.forEach(function (duty) {
 				dutySelect.append(`<option value="${escapeHtml(duty)}">${escapeHtml(duty)}</option>`);
 			});
 		}
 	}
-
 
 
 	/**
@@ -4165,7 +4033,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				tokenSeparators: [' ', ','],
 				placeholder: '태그를 입력하세요 (예: 병장 상병)',
 				dropdownParent: $('#transferOrgModal'),
-				createTag: function(params) {
+				createTag: function (params) {
 					const term = $.trim(params.term);
 					if (term === '') {
 						return null;
@@ -4206,7 +4074,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				const tags = transferData.transfer_org_tag.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
 
 				if (tags.length > 0) {
-					tags.forEach(function(tag) {
+					tags.forEach(function (tag) {
 						const displayTag = tag.replace(/^#/, '');
 						if (!$('#org_tags').find(`option[value='${displayTag}']`).length) {
 							const newOption = new Option(displayTag, displayTag, true, true);
@@ -4231,7 +4099,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	function renderDetailFieldValue(value, fieldType) {
 		if (!value) return '';
 
-		switch(fieldType) {
+		switch (fieldType) {
 			case 'checkbox':
 				return value === 'Y' ? '<i class="bi bi-check-circle-fill text-success"></i>' : '';
 			case 'date':
@@ -4270,7 +4138,9 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			'"': '&quot;',
 			"'": '&#039;'
 		};
-		return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+		return text.toString().replace(/[&<>"']/g, function (m) {
+			return map[m];
+		});
 	}
 
 
@@ -4290,7 +4160,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		emptyMessage.hide();
 		listContainer.empty();
 
-		churches.forEach(function(church) {
+		churches.forEach(function (church) {
 			// 선택 상태 확인
 			const isSelected = church.is_selected === 'selected';
 			const selectedBadge = isSelected ? '<span class="badge bg-success ms-2">선택됨</span>' : '';
@@ -4321,9 +4191,9 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
                     </h5>
                     <div class=""><i class="bi bi-geo-alt"></i> ${church.transfer_org_address || '지역 미등록'}</div>
                     <div class="text-muted d-flex justify-content-start align-items-center">
-                        ${church.transfer_org_manager ? '<span class="me-3"><i class="bi bi-person-badge"></i> ' + church.transfer_org_manager + '</span>': ''}
-                        ${church.transfer_org_phone ? '<span class="me-3"><i class="bi bi-telephone"></i> ' + church.transfer_org_phone + '</span>': ''}
-                        ${church.transfer_org_email ? '<span class="me-3"><i class="bi bi-envelope"></i> ' + church.transfer_org_email + '</span>': ''}
+                        ${church.transfer_org_manager ? '<span class="me-3"><i class="bi bi-person-badge"></i> ' + church.transfer_org_manager + '</span>' : ''}
+                        ${church.transfer_org_phone ? '<span class="me-3"><i class="bi bi-telephone"></i> ' + church.transfer_org_phone + '</span>' : ''}
+                        ${church.transfer_org_email ? '<span class="me-3"><i class="bi bi-envelope"></i> ' + church.transfer_org_email + '</span>' : ''}
                     </div>
                     ${church.transfer_org_desc ? '<div class="mt-2 text-muted small">' + church.transfer_org_desc + '</div>' : ''}
                     ${tagsHtml}
@@ -4402,7 +4272,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
 	/**
 	 * 파송교회 삭제 확인 모달 표시
 	 */
@@ -4429,7 +4298,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				member_idx: memberIdx // FIX 6: member_idx 추가
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					$('#deleteTransferOrgModal').modal('hide');
 					loadTransferOrgList(currentMemberMissionIdx);
@@ -4438,7 +4307,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '파송교회 삭제에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('파송교회 삭제에 실패했습니다.', 'error');
 			}
 		});
@@ -4453,6 +4322,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		// 만약 호출된다면 저장된 데이터를 반환합니다.
 		return element.data('transferData') || {};
 	}
+
 	/**
 	 * 회원에게 이메일 전송
 	 */
@@ -4478,43 +4348,40 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
-
-
 	/**
 	 * 자동매칭 모달 이벤트 바인딩
 	 */
 	function bindAutoMatchModalEvents() {
 		// 전체 선택 체크박스
-		$(document).off('change', '#selectAllMatchChurch').on('change', '#selectAllMatchChurch', function() {
+		$(document).off('change', '#selectAllMatchChurch').on('change', '#selectAllMatchChurch', function () {
 			const isChecked = $(this).is(':checked');
 			$('.match-church-checkbox').prop('checked', isChecked);
 			updateMatchSelectionInfo();
 		});
 
 		// 개별 체크박스
-		$(document).off('change', '.match-church-checkbox').on('change', '.match-church-checkbox', function() {
+		$(document).off('change', '.match-church-checkbox').on('change', '.match-church-checkbox', function () {
 			updateMatchSelectAllCheckbox();
 			updateMatchSelectionInfo();
 		});
 
 		// 검색 버튼
-		$(document).off('click', '#searchMatchChurchBtn').on('click', '#searchMatchChurchBtn', function() {
+		$(document).off('click', '#searchMatchChurchBtn').on('click', '#searchMatchChurchBtn', function () {
 			searchMatchChurch();
 		});
 
 		// 동일지역 자동매칭 버튼
-		$(document).off('click', '#autoMatchByRegionBtn').on('click', '#autoMatchByRegionBtn', function() {
+		$(document).off('click', '#autoMatchByRegionBtn').on('click', '#autoMatchByRegionBtn', function () {
 			autoMatchByRegion();
 		});
 
 		// 추가 확인 버튼
-		$(document).off('click', '#confirmMatchChurchBtn').on('click', '#confirmMatchChurchBtn', function() {
+		$(document).off('click', '#confirmMatchChurchBtn').on('click', '#confirmMatchChurchBtn', function () {
 			confirmAddMatchedChurches();
 		});
 
 		// Enter 키로 검색
-		$(document).off('keypress', '#matchSearchKeyword').on('keypress', '#matchSearchKeyword', function(e) {
+		$(document).off('keypress', '#matchSearchKeyword').on('keypress', '#matchSearchKeyword', function (e) {
 			if (e.which === 13) {
 				e.preventDefault();
 				searchMatchChurch();
@@ -4546,7 +4413,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			method: 'POST',
 			data: searchData,
 			dataType: 'json',
-			beforeSend: function() {
+			beforeSend: function () {
 				$('#matchChurchListBody').html(`
                 <tr>
                     <td colspan="5" class="text-center py-4">
@@ -4557,7 +4424,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
                 </tr>
             `);
 			},
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					renderMatchChurchList(response.data);
 					showToast(`${response.data.length}개의 교회를 찾았습니다.`, 'success');
@@ -4572,7 +4439,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
                 `);
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('검색 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -4596,7 +4463,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success && response.data && response.data.length > 0) {
 					renderMatchChurchList(response.data);
 					showToast(`${response.data.length}개의 교회를 찾았습니다.`, 'success');
@@ -4611,10 +4478,10 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
                 `);
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('자동매칭 중 오류가 발생했습니다.', 'error');
 			},
-			complete: function() {
+			complete: function () {
 				btn.prop('disabled', false).html(originalHtml);
 			}
 		});
@@ -4639,7 +4506,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			return;
 		}
 
-		churches.forEach(function(church) {
+		churches.forEach(function (church) {
 			const tags = church.org_tag ? church.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
 			const tagsHtml = tags.map(tag => `<span class="badge bg-secondary me-1">${escapeHtml(tag)}</span>`).join('');
 
@@ -4703,7 +4570,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	function confirmAddMatchedChurches() {
 		const selectedChurches = [];
 
-		$('.match-church-checkbox:checked').each(function() {
+		$('.match-church-checkbox:checked').each(function () {
 			const churchData = $(this).data('church');
 			selectedChurches.push(churchData);
 		});
@@ -4716,7 +4583,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		// 확인 후 저장
 		saveMatchedChurches(selectedChurches);
 	}
-
 
 
 	/**
@@ -4737,7 +4603,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				churches: JSON.stringify(churches)
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					showToast(response.message, 'success');
 
@@ -4753,15 +4619,14 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '교회 추가에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('교회 추가 중 오류가 발생했습니다.', 'error');
 			},
-			complete: function() {
+			complete: function () {
 				btn.prop('disabled', false).html(originalHtml);
 			}
 		});
 	}
-
 
 
 	/**
@@ -4785,7 +4650,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			allowClear: true,
 			multiple: true,
 			dropdownParent: $('#transferOrgModal'),
-			createTag: function(params) {
+			createTag: function (params) {
 				const term = $.trim(params.term);
 
 				if (term === '') {
@@ -4799,7 +4664,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					newTag: true
 				};
 			},
-			templateResult: function(data) {
+			templateResult: function (data) {
 				if (data.loading) {
 					return '검색 중...';
 				}
@@ -4814,15 +4679,15 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 				return $result;
 			},
-			templateSelection: function(data) {
+			templateSelection: function (data) {
 				// 선택된 태그 표시
 				return data.text;
 			},
 			language: {
-				noResults: function() {
+				noResults: function () {
 					return '태그를 입력하고 Enter를 누르세요';
 				},
-				searching: function() {
+				searching: function () {
 					return '검색 중...';
 				}
 			}
@@ -4876,7 +4741,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			method: 'POST',
 			data: formData,
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					showToast(response.message, 'success');
 					$('#transferOrgModal').modal('hide');
@@ -4885,13 +4750,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message, 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('파송교회 저장에 실패했습니다.', 'error');
 			}
 		});
 	}
-
-
 
 
 	/**
@@ -4928,7 +4791,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
 // 우클릭 메뉴에 '결연교회 추천' 항목 추가
 // 기존 context menu 설정 부분에 추가
 	function addOfferMenuItem() {
@@ -4936,7 +4798,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		return {
 			name: '결연교회 추천',
 			icon: 'bi-chat-dots',
-			callback: function(rowIndx, rowData) {
+			callback: function (rowIndx, rowData) {
 				sendOfferLinkToMember(rowData.member_idx);
 			}
 		};
@@ -4960,7 +4822,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					currentOfferMemberIdx = memberIdx;
 					currentOfferUrl = response.offer_url;
@@ -4973,7 +4835,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '링크 생성에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('링크 생성 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -4982,7 +4844,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	/**
 	 * 패스코드 갱신 버튼 이벤트
 	 */
-	$(document).on('click', '#copyPassResetBtn', function() {
+	$(document).on('click', '#copyPassResetBtn', function () {
 		if (!currentOfferMemberIdx) {
 			showToast('회원 정보를 찾을 수 없습니다.', 'error');
 			return;
@@ -5001,7 +4863,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					currentOfferUrl = response.offer_url;
 					$('#offerUrlInput').val(response.offer_url);
@@ -5010,10 +4872,10 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '패스코드 갱신에 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('패스코드 갱신 중 오류가 발생했습니다.', 'error');
 			},
-			complete: function() {
+			complete: function () {
 				// 버튼 복원
 				$btn.prop('disabled', false).html(originalHtml);
 			}
@@ -5024,7 +4886,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	/**
 	 * URL 복사 버튼 이벤트
 	 */
-	$(document).on('click', '#copyOfferUrlBtn', function() {
+	$(document).on('click', '#copyOfferUrlBtn', function () {
 		const urlInput = $('#offerUrlInput');
 		urlInput.select();
 
@@ -5033,9 +4895,9 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			showToast('URL이 클립보드에 복사되었습니다.', 'success');
 		} catch (err) {
 			// Fallback for older browsers
-			navigator.clipboard.writeText(urlInput.val()).then(function() {
+			navigator.clipboard.writeText(urlInput.val()).then(function () {
 				showToast('URL이 클립보드에 복사되었습니다.', 'success');
-			}).catch(function() {
+			}).catch(function () {
 				showToast('URL 복사에 실패했습니다.', 'error');
 			});
 		}
@@ -5044,7 +4906,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	/**
 	 * 문자 발송 버튼 클릭
 	 */
-	$(document).on('click', '#sendOfferSmsBtn', function() {
+	$(document).on('click', '#sendOfferSmsBtn', function () {
 		if (!currentOfferUrl) {
 			showToast('전송할 URL이 없습니다.', 'error');
 			return;
@@ -5061,8 +4923,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	});
 
 
-
-
 	/**
 	 * 파송 교회 목록 로드 시 선택된 교회 표시
 	 */
@@ -5075,13 +4935,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: orgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					const transferList = $('#transferOrgList');
 					transferList.empty();
 
 					if (response.data && response.data.length > 0) {
-						response.data.forEach(function(org) {
+						response.data.forEach(function (org) {
 							const isSelected = org.is_selected === 'selected' || org.status === 'selected';
 							const badge = isSelected ? '<span class="badge bg-success ms-2">선택됨</span>' : '';
 
@@ -5127,7 +4987,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast(response.message || '파송교회 목록을 불러오는데 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('파송교회 목록을 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -5137,7 +4997,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	/**
 	 * 결연교회 추천 문자발송 버튼 이벤트
 	 */
-	$(document).on('click', '#sendOfferSmsBtn', function() {
+	$(document).on('click', '#sendOfferSmsBtn', function () {
 		if (!currentOfferMemberIdx || !currentOfferUrl) {
 			showToast('회원 정보 또는 URL을 찾을 수 없습니다.', 'error');
 			return;
@@ -5152,7 +5012,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				org_id: selectedOrgId
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success && response.member) {
 					const member = response.member;
 
@@ -5180,7 +5040,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					showToast('회원 정보를 불러오는데 실패했습니다.', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('회원 정보 조회 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -5261,6 +5121,203 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const index = Math.abs(hash) % badgeClasses.length;
 		return badgeClasses[index];
 	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 타임라인 색상 매핑 함수
+	 */
+	function getTimelineBadgeClass(timelineType) {
+		const colorMap = {
+			'입대': 'bg-primary',
+			'진급(일병)': 'bg-success',
+			'진급(상병)': 'bg-info',
+			'진급(병장)': 'bg-warning text-dark',
+			'전역': 'bg-danger',
+			'휴가': 'bg-secondary',
+			'외박': 'bg-light text-dark',
+			'훈련': 'bg-dark'
+		};
+
+		if (colorMap[timelineType]) {
+			return colorMap[timelineType];
+		}
+
+		const hash = timelineType.split('').reduce((acc, char) => {
+			return acc + char.charCodeAt(0);
+		}, 0);
+		const colors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning text-dark', 'bg-danger', 'bg-secondary', 'bg-dark'];
+		return colors[Math.abs(hash) % colors.length];
+	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 타임라인 목록 표시
+	 */
+	function displayMemberTimeline(timelineList) {
+		const timelineListDiv = $('#timelineList');
+		timelineListDiv.empty();
+
+		if (!timelineList || timelineList.length === 0) {
+			timelineListDiv.html('<div class="text-center text-muted py-3">등록된 타임라인이 없습니다.</div>');
+			return;
+		}
+
+		const table = $(`
+		<table class="table table-hover table-sm">
+			<thead>
+				<tr>
+					<th width="120">날짜</th>
+					<th width="120">항목</th>
+					<th>내용</th>
+					<th width="100" class="text-center">관리</th>
+				</tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	`);
+
+		const tbody = table.find('tbody');
+
+		timelineList.forEach(function(timeline) {
+			const badgeClass = getTimelineBadgeClass(timeline.timeline_type);
+			const formattedDate = timeline.timeline_date || '';
+			const content = timeline.timeline_content || '';
+
+			const row = $(`
+			<tr>
+				<td>${formattedDate}</td>
+				<td><span class="badge ${badgeClass}">${timeline.timeline_type}</span></td>
+				<td>${content}</td>
+				<td class="text-center">
+					<button type="button" class="btn btn-sm btn-outline-primary edit-timeline-btn me-1" 
+					        data-idx="${timeline.idx}">
+						<i class="bi bi-pencil"></i> 수정
+					</button>
+					<button type="button" class="btn btn-sm btn-outline-danger delete-timeline-btn" 
+					        data-idx="${timeline.idx}">
+						<i class="bi bi-trash"></i> 삭제
+					</button>
+				</td>
+			</tr>
+		`);
+
+			tbody.append(row);
+		});
+
+		timelineListDiv.append(table);
+	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 회원 타임라인 목록 로드
+	 */
+	function loadMemberTimeline(memberIdx, orgId) {
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/get_timeline_list',
+			type: 'POST',
+			data: {
+				member_idx: memberIdx,
+				org_id: orgId,
+				page: 1,
+				limit: 100
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					displayMemberTimeline(response.data);
+				} else {
+					$('#timelineList').html('<div class="text-center text-danger py-3">' + response.message + '</div>');
+				}
+			},
+			error: function() {
+				$('#timelineList').html('<div class="text-center text-danger py-3">타임라인을 불러오는데 실패했습니다.</div>');
+			}
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 타임라인 모달 열기
+	 */
+	function openTimelineModal(mode, timelineIdx) {
+		const modal = new bootstrap.Modal(document.getElementById('timelineModal'));
+		const memberIdx = $('#member_idx').val();
+		const orgId = $('#org_id').val();
+
+		// 폼 초기화
+		$('#timelineForm')[0].reset();
+		$('#timeline_member_idx').val(memberIdx);
+
+		// 타임라인 타입 로드
+		loadTimelineTypes(orgId);
+
+		if (mode === 'add') {
+			$('#timelineModalLabel').text('타임라인 추가');
+			$('#timeline_idx').val('');
+			modal.show();
+		} else if (mode === 'edit' && timelineIdx) {
+			$('#timelineModalLabel').text('타임라인 수정');
+			$('#timeline_idx').val(timelineIdx);
+
+			$.ajax({
+				url: window.memberPageData.baseUrl + 'member/get_timeline',
+				type: 'POST',
+				data: {
+					idx: timelineIdx,
+					org_id: orgId
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.success && response.data) {
+						const timeline = response.data;
+						$('#timeline_type').val(timeline.timeline_type);
+						$('#timeline_date').val(timeline.timeline_date);
+						$('#timeline_content').val(timeline.timeline_content || '');
+						modal.show();
+					} else {
+						showToast(response.message || '타임라인을 불러올 수 없습니다.', 'error');
+					}
+				},
+				error: function() {
+					showToast('타임라인 정보를 불러오는데 실패했습니다.', 'error');
+				}
+			});
+		}
+	}
+
+
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 타임라인 삭제
+	 */
+	function deleteTimeline(timelineIdx) {
+		const memberIdx = $('#member_idx').val();
+		const orgId = $('#org_id').val();
+
+		$.ajax({
+			url: window.memberPageData.baseUrl + 'member/delete_timeline',
+			type: 'POST',
+			data: {
+				idx: timelineIdx,
+				org_id: orgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message, 'success');
+					bootstrap.Modal.getInstance(document.getElementById('deleteTimelineModal')).hide();
+					loadMemberTimeline(memberIdx, orgId);
+				} else {
+					showToast(response.message, 'error');
+				}
+			},
+			error: function() {
+				showToast('타임라인 삭제에 실패했습니다.', 'error');
+			}
+		});
+	}
+
 
 
 });
