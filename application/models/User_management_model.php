@@ -34,6 +34,45 @@ class User_management_model extends CI_Model
 	 */
 	public function get_user_orgs_master($user_id)
 	{
+		// 사용자 정보 조회
+		if (!isset($this->User_model)) {
+			$this->load->model('User_model');
+		}
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$visible_categories = array();
+
+		// master_managed_category 확인
+		if (!empty($user['master_managed_category'])) {
+			$master_managed_category = json_decode($user['master_managed_category'], true);
+			if (is_array($master_managed_category) && !empty($master_managed_category)) {
+				$visible_categories = $master_managed_category;
+			}
+		}
+
+		// 필터링된 카테고리가 있으면 해당 카테고리의 조직만 반환
+		if (!empty($visible_categories)) {
+			// 하위 카테고리 포함
+			if (!isset($this->Org_category_model)) {
+				$this->load->model('Org_category_model');
+			}
+			$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
+
+			if (empty($category_ids)) {
+				return array();
+			}
+
+			$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, 10 as level');
+			$this->db->from('wb_org');
+			$this->db->where('wb_org.del_yn', 'N');
+			$this->db->where_in('wb_org.category_idx', $category_ids);
+			$this->db->order_by('wb_org.org_type', 'ASC');
+			$this->db->order_by('wb_org.org_name', 'ASC');
+			$query = $this->db->get();
+			return $query->result_array();
+		}
+
+		// 필터링 없으면 전체 조직 반환
 		$this->db->select('wb_org.org_id, wb_org.org_name, wb_org.org_type, wb_org.org_icon, 10 as level');
 		$this->db->from('wb_org');
 		$this->db->where('wb_org.del_yn', 'N');

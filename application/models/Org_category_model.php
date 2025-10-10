@@ -525,10 +525,47 @@ class Org_category_model extends CI_Model
 	/**
 	 * 특정 카테고리들과 그 모든 하위 카테고리 ID 조회 (public)
 	 */
-	public function get_category_with_descendants_public($category_ids)
+	public function get_category_with_descendants_public($category_indices)
 	{
-		return $this->get_category_with_descendants($category_ids);
+		if (empty($category_indices)) {
+			return array();
+		}
+
+		// 모든 카테고리 조회
+		$all_categories = $this->get_all_categories_flat();
+
+		$result = array();
+		foreach ($category_indices as $category_idx) {
+			// 자기 자신 추가
+			$result[] = $category_idx;
+
+			// 하위 카테고리 재귀적으로 추가
+			$descendants = $this->get_descendants_recursive($category_idx, $all_categories);
+			$result = array_merge($result, $descendants);
+		}
+
+		return array_unique($result);
 	}
 
+
+	/**
+	 * 하위 카테고리 재귀 조회
+	 */
+	private function get_descendants_recursive($parent_idx, $all_categories)
+	{
+		$descendants = array();
+
+		foreach ($all_categories as $category) {
+			if ($category['parent_idx'] == $parent_idx) {
+				$descendants[] = $category['category_idx'];
+
+				// 재귀적으로 하위 카테고리 조회
+				$child_descendants = $this->get_descendants_recursive($category['category_idx'], $all_categories);
+				$descendants = array_merge($descendants, $child_descendants);
+			}
+		}
+
+		return $descendants;
+	}
 
 }

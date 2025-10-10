@@ -550,18 +550,39 @@ class Org_model extends CI_Model {
 	 */
 	public function get_user_orgs_master($user_id)
 	{
+		// 사용자 정보 조회
+		$this->load->model('User_model');
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$visible_categories = array();
+
+		// master_managed_category 확인
+		if (!empty($user['master_managed_category'])) {
+			$master_managed_category = json_decode($user['master_managed_category'], true);
+			if (is_array($master_managed_category) && !empty($master_managed_category)) {
+				$visible_categories = $master_managed_category;
+			}
+		}
+
+		// 필터링된 카테고리가 있으면 필터링 적용
+		if (!empty($visible_categories)) {
+			return $this->get_user_orgs_master_filtered($user_id, $visible_categories);
+		}
+
+		// 필터링 없으면 전체 조직 반환
 		$this->db->select('
-            o.org_id,
-            o.org_name,
-            o.org_type,
-            o.org_icon,
-            o.leader_name,
-            o.new_name,
-            10 as level,
-            (SELECT COUNT(*) FROM wb_member m WHERE m.org_id = o.org_id AND m.del_yn = "N") as member_count
-        ');
+		o.org_id,
+		o.org_name,
+		o.org_type,
+		o.org_icon,
+		o.leader_name,
+		o.new_name,
+		10 as level,
+		(SELECT COUNT(*) FROM wb_member m WHERE m.org_id = o.org_id AND m.del_yn = "N") as member_count
+	');
 		$this->db->from('wb_org o');
 		$this->db->where('o.del_yn', 'N');
+		$this->db->order_by('o.org_type', 'ASC');
 		$this->db->order_by('o.org_name', 'ASC');
 		$query = $this->db->get();
 		return $query->result_array();
