@@ -81,6 +81,7 @@ class Member_info extends CI_Controller
 		$settlement_memos = $this->get_settlement_memos($member_idx, $settlement_memo_type);
 
 		$data = [
+			'org_id' => $org_id,
 			'org_info' => $org_info,
 			'member_info' => $member_info,
 			'detail_fields' => $detail_fields,

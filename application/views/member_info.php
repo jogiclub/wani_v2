@@ -41,7 +41,7 @@
 		.section-title {
 			font-weight: 600;
 			color: #495057;
-			border-bottom: 2px solid #dee2e6;
+
 			padding-bottom: 10px;
 			margin-bottom: 20px;
 		}
@@ -96,7 +96,7 @@
 			<!-- 기본 정보 -->
 			<div class="card mb-4">
 				<div class="card-body">
-					<h5 class="section-title">기본정보</h5>
+					<h5 class="section-title border-bottom">기본정보</h5>
 					<div class="row">
 						<div class="col-md-4 mb-3">
 							<div class="info-label">이름</div>
@@ -161,7 +161,7 @@
 			<?php if (!empty($detail_fields)): ?>
 				<div class="card mb-4">
 					<div class="card-body">
-						<h5 class="section-title">추가정보</h5>
+						<h5 class="section-title border-bottom">추가정보</h5>
 						<div class="row">
 							<?php foreach ($detail_fields as $field): ?>
 								<?php
@@ -189,15 +189,16 @@
 			<!-- 정착 메모 -->
 			<div class="card">
 				<div class="card-body">
-					<div class="d-flex justify-content-between align-items-center mb-3">
-						<h5 class="section-title mb-0">정착메모</h5>
+
+						<h5 class="section-title border-bottom mb-2">정착메모</h5>
+
+					<div class="d-flex justify-content-between align-items-center mb-2">
+						<div class="text-muted">
+							전체 <strong><?php echo count($settlement_memos); ?></strong>건
+						</div>
 						<button type="button" class="btn btn-sm btn-primary" id="addMemoBtn">
 							<i class="bi bi-plus-lg"></i> 메모추가
 						</button>
-					</div>
-
-					<div class="text-muted mb-3">
-						전체 <strong><?php echo count($settlement_memos); ?></strong>건
 					</div>
 
 					<div id="memoList">
@@ -209,9 +210,10 @@
 						<?php else: ?>
 							<?php foreach ($settlement_memos as $memo): ?>
 								<div class="memo-item" data-memo-idx="<?php echo $memo['idx']; ?>">
-									<div class="memo-content"><?php echo nl2br(htmlspecialchars($memo['memo_content'])); ?></div>
+
 									<div class="d-flex justify-content-between align-items-center">
-										<div class="memo-date"><?php echo $memo['regi_date']; ?></div>
+										<div class="memo-content"><?php echo nl2br(htmlspecialchars($memo['memo_content'])); ?></div>
+
 										<div>
 											<button type="button" class="btn btn-sm btn-outline-primary edit-memo-btn" data-memo-idx="<?php echo $memo['idx']; ?>">
 												<i class="bi bi-pencil"></i> 수정
@@ -221,6 +223,7 @@
 											</button>
 										</div>
 									</div>
+									<div class="memo-date"><?php echo $memo['regi_date']; ?></div>
 								</div>
 							<?php endforeach; ?>
 						<?php endif; ?>
@@ -287,6 +290,7 @@
 
 <script>
 	$(document).ready(function() {
+		const baseUrl = '<?php echo base_url(); ?>';
 		const orgId = <?php echo $org_id; ?>;
 		const memberIdx = <?php echo $member_info['member_idx']; ?>;
 		const passcode = '<?php echo $passcode; ?>';
@@ -322,7 +326,10 @@
 				return;
 			}
 
-			const url = isEditMode ? '/member_info/update_settlement_memo' : '/member_info/add_settlement_memo';
+			const url = isEditMode
+				? baseUrl + 'member_info/update_settlement_memo'
+				: baseUrl + 'member_info/add_settlement_memo';
+
 			const data = {
 				org_id: orgId,
 				member_idx: memberIdx,
@@ -343,12 +350,14 @@
 					if (response.success) {
 						showToast(response.message, 'success');
 						$('#memoModal').modal('hide');
-						location.reload(); // 페이지 새로고침
+						location.reload();
 					} else {
 						showToast(response.message || '처리 중 오류가 발생했습니다.', 'error');
 					}
 				},
-				error: function() {
+				error: function(xhr, status, error) {
+					console.error('AJAX Error:', status, error);
+					console.error('Response:', xhr.responseText);
 					showToast('처리 중 오류가 발생했습니다.', 'error');
 				}
 			});
@@ -363,7 +372,7 @@
 		// 메모 삭제 확인
 		$('#confirmDeleteMemoBtn').on('click', function() {
 			$.ajax({
-				url: '/member_info/delete_settlement_memo',
+				url: baseUrl + 'member_info/delete_settlement_memo',
 				method: 'POST',
 				data: {
 					org_id: orgId,
@@ -376,12 +385,14 @@
 					if (response.success) {
 						showToast(response.message, 'success');
 						$('#deleteMemoModal').modal('hide');
-						location.reload(); // 페이지 새로고침
+						location.reload();
 					} else {
 						showToast(response.message || '삭제 중 오류가 발생했습니다.', 'error');
 					}
 				},
-				error: function() {
+				error: function(xhr, status, error) {
+					console.error('AJAX Error:', status, error);
+					console.error('Response:', xhr.responseText);
 					showToast('삭제 중 오류가 발생했습니다.', 'error');
 				}
 			});
