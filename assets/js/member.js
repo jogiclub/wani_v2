@@ -5281,6 +5281,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
+
 	/**
 	 * 타임라인 목록 렌더링
 	 */
@@ -5293,57 +5294,82 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			return;
 		}
 
-		timelineList.forEach(function (timeline, index) {
-			const timelineHtml = createTimelineItemHtml(timeline);
-			timelineListContainer.append(timelineHtml);
+		// 타임라인 컨테이너 생성
+		const timelineContainer = $('<div class="vertical-timeline"></div>');
 
-			if (index < timelineList.length - 1) {
-				timelineListContainer.append('<div class="border-bottom my-2"></div>');
-			}
+		// 최신순으로 정렬 (날짜 내림차순)
+		const sortedList = timelineList.sort((a, b) => {
+			return new Date(b.timeline_date) - new Date(a.timeline_date);
 		});
+
+		sortedList.forEach(function (timeline, index) {
+			const position = index % 2 === 0 ? 'left' : 'right';
+			const timelineHtml = createTimelineItemHtml(timeline, position);
+			timelineContainer.append(timelineHtml);
+		});
+
+		timelineListContainer.append(timelineContainer);
 	}
 
 	/**
 	 * 타임라인 아이템 HTML 생성
 	 */
-	function createTimelineItemHtml(timeline) {
+	function createTimelineItemHtml(timeline, position) {
 		const formattedDate = formatTimelineDate(timeline.timeline_date);
+		const formattedDateTime = formatTimelineDateTime(timeline.regi_date);
 
-		// 타임라인 항목 배지 생성 (각기 다른 색상)
-		let timelineTypeBadge = '';
-		if (timeline.timeline_type && timeline.timeline_type.trim() !== '') {
-			const badgeClass = getTimelineBadgeClass(timeline.timeline_type);
-			timelineTypeBadge = `<span class="badge ${badgeClass} timeline-type me-1">${escapeHtml(timeline.timeline_type)}</span>`;
-		}
+		// 타임라인 항목 배지 생성
+		const badgeClass = getTimelineBadgeClass(timeline.timeline_type);
+		const timelineType = timeline.timeline_type ? escapeHtml(timeline.timeline_type) : '';
 
 		const content = timeline.timeline_content ? escapeHtml(timeline.timeline_content) : '';
-		const timelineDate = timeline.timeline_date ? `<span class="text-primary">${timeline.timeline_date}</span> | ` : '';
 
 		return `
-		<div class="timeline-item" data-idx="${timeline.idx}">				
-			<div class="row">
-				<div class="col-9">
-					<div class="mb-2">
-						${timelineTypeBadge}
-					</div>
-					<div class="timeline-content mb-1">${content}</div>
-					<div class="text-muted" style="font-size: 12px;">
-						${timelineDate}${formattedDate}
-					</div>					
+		<div class="timeline-item-wrapper ${position}" data-idx="${timeline.idx}">
+			<div class="timeline-content-box">
+				<div class="timeline-badge-wrapper mb-2">
+					<span class="badge ${badgeClass}">${timelineType}</span>
 				</div>
-				
-				<div class="timeline-actions col-3 d-flex align-items-center justify-content-end">
-					<div class="btn-group-vertical btn-group-sm" role="group">
-						<button type="button" class="btn btn-sm btn-outline-secondary edit-timeline-btn" data-idx="${timeline.idx}">수정</button>
-						<button type="button" class="btn btn-sm btn-outline-danger delete-timeline-btn" data-idx="${timeline.idx}">삭제</button>
+				<div class="timeline-date-main mb-1">
+					<i class="bi bi-calendar-event me-1"></i>${formattedDate} 
+				</div>
+				<div class="mb-1">
+				${content}</div>
+				<div class="timeline-date-sub text-muted mb-2" style="font-size: 12px;">
+					${formattedDateTime}
+				</div>
+				<div class="timeline-actions">
+				<div class="btn-group">
+					<button type="button" class="btn btn-xs btn-outline-secondary edit-timeline-btn" data-idx="${timeline.idx}">
+						 수정
+					</button>
+					<button type="button" class="btn btn-xs btn-outline-danger delete-timeline-btn" data-idx="${timeline.idx}">
+						 삭제
+					</button>
 					</div>
 				</div>
-			</div>				
+			</div>
+			<div class="timeline-point"></div>
 		</div>
 	`;
 	}
 
+	/**
+	 * 타임라인용 날짜시간 포맷팅
+	 */
+	function formatTimelineDateTime(dateTimeString) {
+		if (!dateTimeString) return '';
 
+		const date = new Date(dateTimeString);
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		const seconds = String(date.getSeconds()).padStart(2, '0');
+
+		return `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
+	}
 
 });
 
