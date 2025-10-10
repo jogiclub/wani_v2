@@ -456,61 +456,39 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		// 타임라인 탭 클릭 시 타임라인 목록 로드
 		$('#timeline-tab').off('shown.bs.tab').on('shown.bs.tab', function () {
 			const memberIdx = $('#member_idx').val();
-			if (memberIdx) {
+			if (memberIdx && selectedOrgId) {
 				currentMemberTimelineIdx = memberIdx;
-				loadTimelineTypes();
-
+				loadTimelineTypes(selectedOrgId);
+				loadMemberTimeline(memberIdx, selectedOrgId);  // 이 줄 추가!
 			}
 		});
 
-		// 타임라인 일괄추가 버튼 클릭
+		// 타임라인 추가 버튼 클릭 - 모달 열기로 변경
 		$(document).off('click', '#addTimelineBtn').on('click', '#addTimelineBtn', function () {
-			saveTimeline();
+			openTimelineModal('add', null);
 		});
 
-		// 타임라인 목록 내 버튼 이벤트 (동적 요소용 이벤트 위임)
-		$(document).off('click', '.btn-timeline-edit').on('click', '.btn-timeline-edit', function () {
+		// 타임라인 수정 버튼 클릭
+		$(document).off('click', '.edit-timeline-btn').on('click', '.edit-timeline-btn', function () {
 			const idx = $(this).data('idx');
-			const timelineData = getTimelineDataFromElement($(this).closest('.timeline-item'));
-			startEditTimeline(idx, timelineData);
+			openTimelineModal('edit', idx);
 		});
 
-		$(document).off('click', '.btn-timeline-delete').on('click', '.btn-timeline-delete', function () {
+		// 타임라인 삭제 버튼 클릭
+		$(document).off('click', '.delete-timeline-btn').on('click', '.delete-timeline-btn', function () {
 			const idx = $(this).data('idx');
 			showDeleteTimelineModal(idx);
 		});
 
-		$(document).off('click', '.btn-timeline-save').on('click', '.btn-timeline-save', function () {
+		// 삭제 확인 버튼
+		$(document).off('click', '#confirmDeleteTimelineBtn').on('click', '#confirmDeleteTimelineBtn', function () {
 			const idx = $(this).data('idx');
-			const timelineData = getTimelineDataFromEditForm($(this).closest('.timeline-item'));
-			updateTimeline(idx, timelineData);
+			deleteTimeline(idx);
 		});
 
-		$(document).off('click', '.btn-timeline-cancel').on('click', '.btn-timeline-cancel', function () {
-			cancelEditTimeline();
-		});
-
-		// Enter 키로 타임라인 일괄추가 기능
-		$(document).off('keydown', '#newTimelineContent').on('keydown', '#newTimelineContent', function (e) {
-			if (e.ctrlKey && e.keyCode === 13) {
-				saveTimeline();
-			}
-		});
-
-		// 타임라인 수정 중 ESC 키로 취소
-		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function (e) {
-			if (e.keyCode === 27) {
-				cancelEditTimeline();
-			}
-		});
-
-		// 타임라인 수정 중 Ctrl + Enter로 저장
-		$(document).off('keydown', '.timeline-content-edit').on('keydown', '.timeline-content-edit', function (e) {
-			if (e.ctrlKey && e.keyCode === 13) {
-				const idx = $(this).closest('.timeline-item').data('idx');
-				const timelineData = getTimelineDataFromEditForm($(this).closest('.timeline-item'));
-				updateTimeline(idx, timelineData);
-			}
+		// 타임라인 저장 버튼 (모달 내부)
+		$(document).off('click', '#saveTimelineBtn').on('click', '#saveTimelineBtn', function () {
+			saveTimeline();
 		});
 	}
 
@@ -554,18 +532,16 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-
-
 	/**
 	 * 타임라인 저장
 	 */
 	function saveTimeline() {
 		const idx = $('#timeline_idx').val();
-		const memberIdx = $('#timeline_member_idx').val();
+		const memberIdx = $('#timeline_member_idx').val() || currentMemberTimelineIdx;  // 수정
 		const timelineType = $('#timeline_type').val();
 		const timelineDate = $('#timeline_date').val();
 		const timelineContent = $('#timeline_content').val();
-		const orgId = $('#org_id').val();
+		const orgId = $('#org_id').val() || selectedOrgId;  // 수정
 
 		// 값 검증
 		if (!timelineType || timelineType.trim() === '') {
@@ -575,6 +551,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		if (!timelineDate || timelineDate.trim() === '') {
 			showToast('날짜를 입력해주세요.', 'error');
+			return;
+		}
+
+		if (!memberIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
 			return;
 		}
 
@@ -712,37 +693,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 타임라인 삭제 확인 모달 표시
 	 */
 	function showDeleteTimelineModal(idx) {
-		const modalHtml = `
-			<div class="modal fade" id="deleteTimelineModal" tabindex="-1" aria-labelledby="deleteTimelineModalLabel" aria-hidden="true">
-				<div class="modal-dialog">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title" id="deleteTimelineModalLabel">타임라인 삭제</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-						</div>
-						<div class="modal-body">
-							<p>이 타임라인을 삭제하시겠습니까?</p>
-						</div>
-						<div class="modal-footer">
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-							<button type="button" class="btn btn-danger" id="confirmDeleteTimelineBtn" data-idx="${idx}">삭제</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		`;
-
-		$('#deleteTimelineModal').remove();
-		$('body').append(modalHtml);
-
-		$('#confirmDeleteTimelineBtn').on('click', function () {
-			const timelineIdx = $(this).data('idx');
-			deleteTimeline(timelineIdx);
-		});
-
-		$('#deleteTimelineModal').modal('show');
+		$('#confirmDeleteTimelineBtn').data('idx', idx);
+		const modal = bootstrap.Modal.getInstance(document.getElementById('deleteTimelineModal'))
+			|| new bootstrap.Modal(document.getElementById('deleteTimelineModal'));
+		modal.show();
 	}
-
 
 
 	/**
@@ -5127,26 +5082,31 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 역할: 타임라인 색상 매핑 함수
 	 */
 	function getTimelineBadgeClass(timelineType) {
-		const colorMap = {
-			'입대': 'bg-primary',
-			'진급(일병)': 'bg-success',
-			'진급(상병)': 'bg-info',
-			'진급(병장)': 'bg-warning text-dark',
-			'전역': 'bg-danger',
-			'휴가': 'bg-secondary',
-			'외박': 'bg-light text-dark',
-			'훈련': 'bg-dark'
-		};
+		const badgeClasses = [
+			'bg-primary',      // 파란색
+			'bg-success',      // 초록색
+			'bg-info',         // 하늘색
+			'bg-warning',      // 노란색
+			'bg-danger',       // 빨간색
+			'bg-secondary',    // 회색
+			'bg-dark'          // 검정색
+		];
 
-		if (colorMap[timelineType]) {
-			return colorMap[timelineType];
+		// timelineTypes 배열이 로드되어 있는 경우
+		if (timelineTypes && timelineTypes.length > 0) {
+			const typeIndex = timelineTypes.indexOf(timelineType);
+			if (typeIndex >= 0) {
+				return badgeClasses[typeIndex % badgeClasses.length];
+			}
 		}
 
-		const hash = timelineType.split('').reduce((acc, char) => {
-			return acc + char.charCodeAt(0);
-		}, 0);
-		const colors = ['bg-primary', 'bg-success', 'bg-info', 'bg-warning text-dark', 'bg-danger', 'bg-secondary', 'bg-dark'];
-		return colors[Math.abs(hash) % colors.length];
+		// timelineTypes 배열이 없는 경우, 문자열 해시로 색상 결정
+		let hash = 0;
+		for (let i = 0; i < timelineType.length; i++) {
+			hash = timelineType.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		const index = Math.abs(hash) % badgeClasses.length;
+		return badgeClasses[index];
 	}
 
 	/**
@@ -5189,14 +5149,16 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				<td><span class="badge ${badgeClass}">${timeline.timeline_type}</span></td>
 				<td>${content}</td>
 				<td class="text-center">
-					<button type="button" class="btn btn-sm btn-outline-primary edit-timeline-btn me-1" 
+				<div class="btn-group">
+					<button type="button" class="btn btn-sm btn-outline-primary edit-timeline-btn" 
 					        data-idx="${timeline.idx}">
-						<i class="bi bi-pencil"></i> 수정
+						수정
 					</button>
 					<button type="button" class="btn btn-sm btn-outline-danger delete-timeline-btn" 
 					        data-idx="${timeline.idx}">
-						<i class="bi bi-trash"></i> 삭제
+						삭제
 					</button>
+					</div>
 				</td>
 			</tr>
 		`);
@@ -5224,7 +5186,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					displayMemberTimeline(response.data);
+					renderTimelineList(response.data);
 				} else {
 					$('#timelineList').html('<div class="text-center text-danger py-3">' + response.message + '</div>');
 				}
@@ -5316,6 +5278,69 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				showToast('타임라인 삭제에 실패했습니다.', 'error');
 			}
 		});
+	}
+
+
+	/**
+	 * 타임라인 목록 렌더링
+	 */
+	function renderTimelineList(timelineList) {
+		const timelineListContainer = $('#timelineList');
+		timelineListContainer.empty();
+
+		if (!timelineList || timelineList.length === 0) {
+			timelineListContainer.html('<div class="text-center text-muted py-3" id="emptyTimelineMessage">등록된 타임라인이 없습니다.</div>');
+			return;
+		}
+
+		timelineList.forEach(function (timeline, index) {
+			const timelineHtml = createTimelineItemHtml(timeline);
+			timelineListContainer.append(timelineHtml);
+
+			if (index < timelineList.length - 1) {
+				timelineListContainer.append('<div class="border-bottom my-2"></div>');
+			}
+		});
+	}
+
+	/**
+	 * 타임라인 아이템 HTML 생성
+	 */
+	function createTimelineItemHtml(timeline) {
+		const formattedDate = formatTimelineDate(timeline.timeline_date);
+
+		// 타임라인 항목 배지 생성 (각기 다른 색상)
+		let timelineTypeBadge = '';
+		if (timeline.timeline_type && timeline.timeline_type.trim() !== '') {
+			const badgeClass = getTimelineBadgeClass(timeline.timeline_type);
+			timelineTypeBadge = `<span class="badge ${badgeClass} timeline-type me-1">${escapeHtml(timeline.timeline_type)}</span>`;
+		}
+
+		const content = timeline.timeline_content ? escapeHtml(timeline.timeline_content) : '';
+		const timelineDate = timeline.timeline_date ? `<span class="text-primary">${timeline.timeline_date}</span> | ` : '';
+
+		return `
+		<div class="timeline-item" data-idx="${timeline.idx}">				
+			<div class="row">
+				<div class="col-9">
+					<div class="mb-2">
+						${timelineTypeBadge}
+					</div>
+					<div class="timeline-content mb-1">${content}</div>
+					<div class="text-muted" style="font-size: 12px;">
+						${timelineDate}${formattedDate}
+					</div>					
+				</div>
+				
+				<div class="timeline-actions col-3 d-flex align-items-center justify-content-end">
+					<div class="btn-group-vertical btn-group-sm" role="group">
+						<button type="button" class="btn btn-sm btn-outline-secondary edit-timeline-btn" data-idx="${timeline.idx}">수정</button>
+						<button type="button" class="btn btn-sm btn-outline-danger delete-timeline-btn" data-idx="${timeline.idx}">삭제</button>
+					</div>
+				</div>
+			</div>				
+		</div>
+	`;
 	}
 
 
