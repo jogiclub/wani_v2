@@ -533,4 +533,50 @@ class Transfer_org_model extends CI_Model
 
 		return $results;
 	}
+
+	/**
+	 * 선택된 파송교회 정보 조회
+	 */
+	public function get_selected_transfer_org($member_idx, $org_id)
+	{
+		// 회원의 transfer_org_json 조회
+		$this->db->select('transfer_org_json');
+		$this->db->from('wb_member');
+		$this->db->where('member_idx', $member_idx);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+		$row = $query->row_array();
+
+		if (empty($row) || empty($row['transfer_org_json'])) {
+			return null;
+		}
+
+		$json_data = json_decode($row['transfer_org_json'], true);
+		if (!is_array($json_data)) {
+			return null;
+		}
+
+		// selected 상태인 org_id 찾기
+		$selected_org_id = null;
+		foreach ($json_data as $key => $value) {
+			if ($value === 'selected') {
+				$selected_org_id = $key;
+				break;
+			}
+		}
+
+		if (!$selected_org_id) {
+			return null;
+		}
+
+		// 선택된 파송교회 정보 조회
+		$this->db->select('transfer_org_id, transfer_org_name, transfer_org_address, transfer_org_phone, transfer_org_rep, transfer_org_manager, transfer_org_email, transfer_org_desc');
+		$this->db->from('wb_transfer_org');
+		$this->db->where('transfer_org_id', $selected_org_id);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+
+		return $query->row_array();
+	}
+
 }

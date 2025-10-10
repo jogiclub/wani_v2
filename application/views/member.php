@@ -732,6 +732,36 @@
 	</div>
 </div>
 
+<!-- 파송교회에 회원정보 전달 모달 -->
+<div class="modal fade" id="sendMemberInfoModal" tabindex="-1" aria-labelledby="sendMemberInfoModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="sendMemberInfoModalLabel">
+					<i class="bi bi-envelope"></i> 파송교회에 회원정보 전달
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="emailMessage" class="form-label">전송 내용</label> <small class="text-danger">* 메일 내용 수정 가능</small>
+					<textarea class="form-control" id="emailMessage" rows="20"></textarea>
+				</div>
+				<div class="row">
+					<div class="col-9">
+						<input type="text" class="form-control" id="churchEmail" placeholder="이메일 주소를 입력하세요">
+					</div>
+					<div class="col-3">
+						<button type="button" class="btn btn-primary w-100" id="sendEmailBtn">
+							<i class="bi bi-send"></i> 메일전송
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
 <?php $this->load->view('footer'); ?>
 
 

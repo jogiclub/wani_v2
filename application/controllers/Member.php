@@ -2299,5 +2299,209 @@ class Member extends My_Controller
 		));
 	}
 
+	/**
+	 * 선택된 파송교회 정보 조회
+	 */
+	public function get_selected_transfer_org()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+
+			if (empty($member_idx) || empty($org_id)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 정보가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			// Transfer_org_model 로드
+			$this->load->model('Transfer_org_model');
+			$church = $this->Transfer_org_model->get_selected_transfer_org($member_idx, $org_id);
+
+			if ($church) {
+				echo json_encode([
+					'success' => true,
+					'church' => $church
+				]);
+			} else {
+				echo json_encode([
+					'success' => false,
+					'message' => '선택된 파송교회가 없습니다.'
+				]);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '선택된 파송교회 조회 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '파송교회 조회 중 오류가 발생했습니다.'
+			]);
+		}
+	}
+
+
+
+	/**
+	 * 파송교회에 회원정보 이메일 전송
+	 */
+	public function send_member_info_email()
+	{
+		$this->output->set_content_type('application/json');
+
+		try {
+			$member_idx = $this->input->post('member_idx');
+			$org_id = $this->input->post('org_id');
+			$to_email = $this->input->post('to_email');
+			$message = $this->input->post('message');
+
+			if (empty($member_idx) || empty($org_id) || empty($to_email) || empty($message)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '필수 정보가 누락되었습니다.'
+				]);
+				return;
+			}
+
+			// 이메일 형식 검증
+			if (!filter_var($to_email, FILTER_VALIDATE_EMAIL)) {
+				echo json_encode([
+					'success' => false,
+					'message' => '올바른 이메일 주소가 아닙니다.'
+				]);
+				return;
+			}
+
+			// 회원 정보 조회
+			$this->load->model('Member_model');
+			$member = $this->Member_model->get_member_by_idx($member_idx);
+
+			if (!$member || $member['org_id'] != $org_id) {
+				echo json_encode([
+					'success' => false,
+					'message' => '회원 정보를 찾을 수 없습니다.'
+				]);
+				return;
+			}
+
+			// 조직 정보 조회
+			$this->load->model('Org_model');
+			$org_info = $this->Org_model->get_org_detail_by_id($org_id);
+
+			if (!$org_info) {
+				echo json_encode([
+					'success' => false,
+					'message' => '조직 정보를 찾을 수 없습니다.'
+				]);
+				return;
+			}
+
+			// 이메일 전송 라이브러리 로드
+			$this->load->library('email');
+
+			// SMTP 설정 (User_management 컨트롤러와 동일한 설정 사용)
+			$config = [
+				'protocol' => 'smtp',
+				'smtp_host' => 'smtp.gmail.com',
+				'smtp_user' => 'hello@webhows.com',
+				'smtp_pass' => 'hzeh kaik dyuh utty',
+				'smtp_port' => 587,
+				'smtp_crypto' => 'tls',
+				'charset' => 'utf-8',
+				'wordwrap' => TRUE,
+				'mailtype' => 'text',
+				'newline' => "\r\n",
+				'crlf' => "\r\n"
+			];
+
+			$this->email->initialize($config);
+
+			// 이메일 설정
+			$this->email->from('hello@webhows.com', '군선교연합회');
+			$this->email->to($to_email);
+			$this->email->subject('[군선교연합회] 성도 정보 전달 - ' . $member['member_name']);
+			$this->email->message($message);
+
+			// 이메일 전송 시도
+			if ($this->email->send()) {
+				log_message('info', "이메일 전송 성공 - To: {$to_email}, Member: {$member['member_name']}");
+				echo json_encode([
+					'success' => true,
+					'message' => '이메일이 전송되었습니다.'
+				]);
+			} else {
+				// 상세한 에러 로그 기록
+				$error_msg = $this->email->print_debugger();
+				log_message('error', '이메일 전송 실패: ' . $error_msg);
+
+				echo json_encode([
+					'success' => false,
+					'message' => '이메일 전송에 실패했습니다.',
+					'debug' => $error_msg // 개발 환경에서만 사용
+				]);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '이메일 전송 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '이메일 전송 중 오류가 발생했습니다: ' . $e->getMessage()
+			]);
+		}
+	}
+
+	/**
+	 * 회원 정보 조회 (패스코드 포함)
+	 */
+	public function get_member_info_with_passcode()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		// 회원 정보 조회
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 패스코드가 없으면 생성
+		if (empty($member['member_passcode'])) {
+			$passcode = $this->Member_model->generate_member_passcode();
+
+			$this->db->where('member_idx', $member_idx);
+			$this->db->update('wb_member', array(
+				'member_passcode' => $passcode,
+				'modi_date' => date('Y-m-d H:i:s')
+			));
+
+			$member['member_passcode'] = $passcode;
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'member' => array(
+				'member_idx' => $member['member_idx'],
+				'member_name' => $member['member_name'],
+				'member_phone' => $member['member_phone'],
+				'member_passcode' => $member['member_passcode']
+			)
+		));
+	}
 
 }

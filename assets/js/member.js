@@ -111,6 +111,158 @@ $(document).ready(function () {
 			sendMemberInfoToChurch();
 		});
 
+		/**
+		 * 파송교회에 회원정보 전달
+		 */
+		/**
+		 * 파송교회에 회원정보 전달
+		 */
+		function sendMemberInfoToChurch() {
+			// 1. 회원 정보 조회
+			$.ajax({
+				url: '/member/get_member_info_with_passcode',
+				method: 'POST',
+				data: {
+					member_idx: currentMemberMissionIdx,
+					org_id: selectedOrgId
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (!response.success || !response.member) {
+						showToast('회원 정보를 찾을 수 없습니다.', 'error');
+						return;
+					}
+
+					const member = response.member;
+
+					// 2. 선택된 파송교회 정보 조회
+					$.ajax({
+						url: '/member/get_selected_transfer_org',
+						method: 'POST',
+						data: {
+							member_idx: currentMemberMissionIdx,
+							org_id: selectedOrgId
+						},
+						dataType: 'json',
+						success: function(churchResponse) {
+							if (!churchResponse.success) {
+								showToast('파송교회가 결정되지 않았습니다.', 'warning');
+								return;
+							}
+
+							const church = churchResponse.church;
+
+							// 3. 이메일 주소 확인 및 설정
+							if (!church.transfer_org_email) {
+								showToast('메일주소가 없습니다.', 'warning');
+								return;
+							}
+
+							// 4. 회원 정보 URL 생성
+							const memberInfoUrl = `${window.location.origin}/member_info/${selectedOrgId}/${currentMemberMissionIdx}`;
+
+							// 5. 이메일 내용 생성 (패스코드 포함)
+							const emailContent = generateEmailContent(member, church, memberInfoUrl);
+
+							// 6. 모달에 내용 설정
+							$('#emailMessage').val(emailContent);
+							$('#churchEmail').val(church.transfer_org_email);
+
+							// 7. 모달 표시
+							$('#sendMemberInfoModal').modal('show');
+						},
+						error: function() {
+							showToast('파송교회 정보 조회 중 오류가 발생했습니다.', 'error');
+						}
+					});
+				},
+				error: function() {
+					showToast('회원 정보 조회 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		}
+
+
+		/**
+		 * 이메일 내용 생성 (패스코드 포함)
+		 */
+		function generateEmailContent(member, church, memberInfoUrl) {
+			const churchName = church.transfer_org_name || '교회';
+			const memberName = member.member_name || '회원';
+			const contactPerson = church.transfer_org_manager || '담당자';
+			const passcode = member.member_passcode || '';
+
+			return `안녕하세요! ${contactPerson}님께, 군선교연합회를 통해 소중한 성도 한 분을 연결해 드립니다.
+
+1. 성도 소개 및 간곡한 협조 요청
+${memberName}님은 현재 신앙의 길에 간절함과 절실함을 품고 헌신할 교회를 찾고 계셨으며, ${churchName}에 큰 기대를 가지고 직접 선택하셨습니다.
+
+저희는 ${memberName}님의 신앙생활이 목사님의 교회에서 흔들림 없이 굳건히 정착되기를 간절히 소망합니다. 부디 따뜻한 관심과 사랑으로 이 소중한 영혼을 품어주시고, 공동체에 잘 녹아들 수 있도록 각별히 지도하고 협력해 주시기를 간곡히 부탁드립니다.
+
+2. 성도 정보 확인 및 정착 관리 기능 안내
+아래의 URL을 클릭하시면 ${memberName}님의 기본적인 연락처 정보를 바로 확인하실 수 있습니다.
+또한, 이 페이지를 통해 성도님과의 정착 과정을 기록하고 관리하실 수 있습니다.
+
+정착 관리 기능: 해당 페이지에서 ${memberName}님이 교회에 잘 정착하고 계신지, 어떤 도움이 필요한지에 대한 메모(기록)를 남기실 수 있습니다.
+
+활용의 중요성: 이 메모는 성도님의 영적 성장을 지속적으로 돕기 위한 중요한 자료가 되오니, 꼭 활용해 주시기를 부탁드립니다.
+
+[성도 정보 및 정착 관리 URL]
+${memberInfoUrl}
+
+[접속 패스코드]
+${passcode}
+
+${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이 내리고 아름다운 신앙생활을 이어갈 수 있도록, 다시 한번 ${contactPerson}님의 협력에 깊이 감사드립니다.
+
+주님의 은혜가 교회와 공동체 위에 늘 충만하시기를 기도합니다.`;
+		}
+
+		/**
+		 * 이메일 전송 버튼 이벤트
+		 */
+		$(document).off('click', '#sendEmailBtn').on('click', '#sendEmailBtn', function() {
+			const email = $('#churchEmail').val().trim();
+			const message = $('#emailMessage').val();
+
+			if (!email) {
+				showToast('이메일 주소를 입력해주세요.', 'warning');
+				return;
+			}
+
+			// 이메일 형식 검증
+			const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			if (!emailRegex.test(email)) {
+				showToast('올바른 이메일 주소를 입력해주세요.', 'warning');
+				return;
+			}
+
+			// 이메일 전송 요청
+			$.ajax({
+				url: '/member/send_member_info_email',
+				method: 'POST',
+				data: {
+					member_idx: currentMemberMissionIdx,
+					org_id: selectedOrgId,
+					to_email: email,
+					message: message
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.success) {
+						showToast('이메일이 전송되었습니다.', 'success');
+						$('#sendMemberInfoModal').modal('hide');
+					} else {
+						showToast(response.message || '이메일 전송에 실패했습니다.', 'error');
+					}
+				},
+				error: function() {
+					showToast('이메일 전송 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		});
+
+
 		// 3. 결연교회 자동매칭 버튼 - 모달 열기로 복원
 		$(document).off('click', '#autoMatchChurchBtn').on('click', '#autoMatchChurchBtn', function() {
 			if (!currentMemberMissionIdx) {
