@@ -404,5 +404,125 @@ class Org_category_model extends CI_Model
 	}
 
 
+	/**
+	 * 마스터가 볼 수 있는 카테고리 트리 조회 (체크된 항목만 표시)
+	 */
+	public function get_category_tree_for_master($visible_categories = array())
+	{
+		// visible_categories가 비어있으면 전체 트리 반환
+		if (empty($visible_categories)) {
+			return $this->get_category_tree();
+		}
+
+		// visible_categories에 포함된 카테고리와 그 하위만 표시
+		$all_categories = $this->get_all_categories();
+
+		// visible_categories에 포함된 카테고리들과 그 하위 카테고리들의 ID 수집
+		$visible_category_ids = $this->get_category_with_descendants($visible_categories);
+
+		// 필터링된 카테고리
+		$filtered_categories = array_filter($all_categories, function($cat) use ($visible_category_ids) {
+			return in_array($cat['category_idx'], $visible_category_ids);
+		});
+
+		if (empty($filtered_categories)) {
+			$tree_data = array();
+		} else {
+			// 각 카테고리별 조직 수 계산
+			$category_org_counts = $this->get_category_org_counts();
+			$category_total_counts = $this->calculate_category_total_counts($filtered_categories, $category_org_counts);
+
+			$tree_data = $this->build_category_tree($filtered_categories, $category_org_counts, $category_total_counts, null);
+		}
+
+		// 미분류 조직을 최상위 레벨에 항상 추가
+		$uncategorized_count = $this->get_uncategorized_org_count();
+		$uncategorized_node = array(
+			'key' => 'uncategorized',
+			'title' => '미분류 (' . $uncategorized_count . '개)',
+			'folder' => false,
+			'data' => array(
+				'type' => 'uncategorized',
+				'category_idx' => 'uncategorized',
+				'category_name' => '미분류',
+				'org_count' => $uncategorized_count
+			)
+		);
+
+		$tree_data[] = $uncategorized_node;
+
+		return $tree_data;
+	}
+
+
+	/**
+	 * 특정 카테고리들과 그 모든 하위 카테고리 ID 조회
+	 */
+	private function get_category_with_descendants($category_ids)
+	{
+		if (empty($category_ids)) {
+			return array();
+		}
+
+		$result_ids = $category_ids;
+
+		foreach ($category_ids as $category_idx) {
+			$descendants = $this->get_all_child_category_ids($category_idx);
+			$result_ids = array_merge($result_ids, $descendants);
+		}
+
+		return array_unique($result_ids);
+	}
+
+
+	/**
+	 * 특정 카테고리들에 속한 조직 수 계산 (하위 카테고리 포함)
+	 */
+	public function get_filtered_org_count($visible_categories)
+	{
+		if (empty($visible_categories)) {
+			return 0;
+		}
+
+		// visible_categories와 그 하위 카테고리들의 ID 수집
+		$category_ids = $this->get_category_with_descendants($visible_categories);
+
+		if (empty($category_ids)) {
+			return 0;
+		}
+
+		// 해당 카테고리들에 속한 조직 수 계산
+		$this->db->from('wb_org');
+		$this->db->where('del_yn', 'N');
+		$this->db->where_in('category_idx', $category_ids);
+
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 특정 카테고리의 모든 하위 카테고리 ID 조회 (재귀)
+	 */
+	private function get_all_descendant_ids($category_idx)
+	{
+		$this->db->select('category_idx');
+		$this->db->from('wb_org_category');
+		$this->db->where('parent_idx', $category_idx);
+		$query = $this->db->get();
+		$children = $query->result_array();
+
+		$descendant_ids = array();
+
+		foreach ($children as $child) {
+			$descendant_ids[] = $child['category_idx'];
+			// 재귀적으로 하위 카테고리의 하위도 조회
+			$sub_descendants = $this->get_all_descendant_ids($child['category_idx']);
+			$descendant_ids = array_merge($descendant_ids, $sub_descendants);
+		}
+
+		return $descendant_ids;
+	}
+
+
+
 
 }

@@ -91,7 +91,7 @@
 			<div class="mb-4">
 				<h6 class="border-bottom pb-2 mb-3">마스터 카테고리 권한</h6>
 				<div class="alert alert-info">
-					<small>체크된 최상위 카테고리는 조직관리 화면의 트리에서 숨겨집니다.</small>
+					<small>체크된 카테고리만 조직관리 화면의 트리에서 보여집니다. 체크하지 않은 카테고리는 해당 조직과 모든 하위 노드가 숨겨집니다.</small>
 				</div>
 				<div id="category_permissions">
 					<!-- 카테고리 체크박스가 동적으로 로드됩니다 -->

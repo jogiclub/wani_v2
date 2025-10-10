@@ -67,18 +67,62 @@ $(document).ready(function() {
 			return;
 		}
 
+		// 전체 선택 체크박스 추가
+		const selectAllHtml = `
+		<div class="form-check mb-3 border-bottom pb-2">
+			<input class="form-check-input" type="checkbox" id="category_select_all">
+			<label class="form-check-label fw-bold" for="category_select_all">
+				전체 선택
+			</label>
+		</div>
+	`;
+		$container.append(selectAllHtml);
+
+		// 개별 카테고리 체크박스
 		topCategories.forEach(function(category) {
 			const checkboxHtml = `
-				<div class="form-check mb-2">
-					<input class="form-check-input" type="checkbox" value="${category.category_idx}" id="category_${category.category_idx}">
-					<label class="form-check-label" for="category_${category.category_idx}">
-						${category.category_name}
-					</label>
-				</div>
-			`;
+			<div class="form-check mb-2">
+				<input class="form-check-input category-checkbox" type="checkbox" value="${category.category_idx}" id="category_${category.category_idx}">
+				<label class="form-check-label" for="category_${category.category_idx}">
+					${category.category_name}
+				</label>
+			</div>
+		`;
 			$container.append(checkboxHtml);
 		});
+
+		// 전체 선택 체크박스 이벤트
+		$('#category_select_all').on('change', function() {
+			const isChecked = $(this).is(':checked');
+			$('.category-checkbox').prop('checked', isChecked);
+		});
+
+		// 개별 체크박스 변경 시 전체 선택 상태 업데이트
+		$('.category-checkbox').on('change', function() {
+			updateSelectAllState();
+		});
 	}
+
+	/**
+	 * 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateSelectAllState() {
+		const totalCheckboxes = $('.category-checkbox').length;
+		const checkedCount = $('.category-checkbox:checked').length;
+		const selectAllCheckbox = $('#category_select_all');
+
+		if (checkedCount === 0) {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else if (checkedCount === totalCheckboxes) {
+			selectAllCheckbox.prop('checked', true);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', true);
+		}
+	}
+
 
 	/**
 	 * PQGrid 초기화
@@ -234,12 +278,15 @@ $(document).ready(function() {
 		}
 
 		// 카테고리 권한 체크박스 설정
-		$('#category_permissions input[type="checkbox"]').prop('checked', false);
-		if (Array.isArray(rowData.managed_areas)) {
+		$('.category-checkbox').prop('checked', false);
+		if (Array.isArray(rowData.managed_areas) && rowData.managed_areas.length > 0) {
 			rowData.managed_areas.forEach(function(categoryIdx) {
 				$(`#category_${categoryIdx}`).prop('checked', true);
 			});
 		}
+
+		// 전체 선택 상태 업데이트
+		updateSelectAllState();
 
 		masterOffcanvas.show();
 	}
@@ -269,9 +316,9 @@ $(document).ready(function() {
 			managedMenus.push($(this).val());
 		});
 
-		// 카테고리 권한 수집
+		// 카테고리 권한 수집 (체크된 항목만)
 		const managedAreas = [];
-		$('#category_permissions input[type="checkbox"]:checked').each(function() {
+		$('.category-checkbox:checked').each(function() {
 			managedAreas.push($(this).val());
 		});
 

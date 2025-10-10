@@ -32,38 +32,7 @@ class Mng_org extends CI_Controller
 		$this->load->view('mng/mng_orglist', $data);
 	}
 
-	/**
-	 * 조직 카테고리 트리 데이터 조회 (AJAX) - 마스터 관리 카테고리 제외
-	 */
-	public function get_category_tree()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
 
-		$user_id = $this->session->userdata('user_id');
-		$user = $this->User_model->get_user_by_id($user_id);
-
-		$excluded_categories = array();
-
-		// 사용자의 managed_areas 확인
-		if (!empty($user['managed_areas'])) {
-			$managed_areas = json_decode($user['managed_areas'], true);
-			if (is_array($managed_areas)) {
-				$excluded_categories = $managed_areas;
-			}
-		}
-
-		// 제외할 카테고리가 있으면 필터링된 트리, 없으면 전체 트리
-		if (!empty($excluded_categories)) {
-			$tree_data = $this->Org_category_model->get_category_tree_excluding($excluded_categories);
-		} else {
-			$tree_data = $this->Org_category_model->get_category_tree();
-		}
-
-		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode($tree_data);
-	}
 
 
 	/**
@@ -694,7 +663,7 @@ class Mng_org extends CI_Controller
 	}
 
 	/**
-	 * 전체 조직 수 조회 (AJAX)
+	 * 전체 조직 수 조회 (AJAX) - 마스터 권한 필터링 적용
 	 */
 	public function get_total_org_count()
 	{
@@ -702,13 +671,28 @@ class Mng_org extends CI_Controller
 			show_404();
 		}
 
-		$total_count = $this->Org_category_model->get_total_categorized_org_count();
+		$user_id = $this->session->userdata('user_id');
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$visible_categories = array();
+
+		// 사용자의 managed_areas 확인
+		if (!empty($user['managed_areas'])) {
+			$managed_areas = json_decode($user['managed_areas'], true);
+			if (is_array($managed_areas) && !empty($managed_areas)) {
+				$visible_categories = $managed_areas;
+			}
+		}
+
+		// 필터링된 카테고리의 조직 수만 계산
+		if (!empty($visible_categories)) {
+			$total_count = $this->Org_category_model->get_filtered_org_count($visible_categories);
+		} else {
+			$total_count = $this->Org_category_model->get_total_categorized_org_count();
+		}
 
 		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode(array(
-			'success' => true,
-			'total_count' => $total_count
-		));
+		echo json_encode(array('total_count' => $total_count));
 	}
 
 
@@ -860,5 +844,40 @@ class Mng_org extends CI_Controller
 			));
 		}
 	}
+
+
+	/**
+	 * 조직 카테고리 트리 데이터 조회 (AJAX) - 마스터 권한 적용
+	 */
+	public function get_category_tree()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$visible_categories = array();
+
+		// 사용자의 managed_areas 확인 (체크된 카테고리만 보임)
+		if (!empty($user['managed_areas'])) {
+			$managed_areas = json_decode($user['managed_areas'], true);
+			if (is_array($managed_areas) && !empty($managed_areas)) {
+				$visible_categories = $managed_areas;
+			}
+		}
+
+		// visible_categories가 비어있으면 전체 트리, 있으면 체크된 항목만
+		if (!empty($visible_categories)) {
+			$tree_data = $this->Org_category_model->get_category_tree_for_master($visible_categories);
+		} else {
+			$tree_data = $this->Org_category_model->get_category_tree();
+		}
+
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode($tree_data);
+	}
+
 
 }
