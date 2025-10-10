@@ -329,15 +329,12 @@
 				<div class="tab-pane fade" id="memo-tab-pane" role="tabpanel" aria-labelledby="memo-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="col-12">
-							<!-- 새 메모 입력 영역 -->
-							<div class="memo-input-section pb-3 mb-3">
-								<div class="row">
-									<div class="col-9">
-										<textarea class="form-control" id="newMemoContent" rows="2" placeholder="새로운 메모를 입력하세요."></textarea>
-									</div>
-									<div class="col-3 d-flex align-items-center justify-content-end">
-										<button type="button" class="btn btn-sm btn-outline-primary" id="addMemoBtn"><i class="bi bi-plus-lg"></i> 메모추가</button>
-									</div>
+							<!-- 메모 추가 버튼 영역 -->
+							<div class="memo-input-section pb-3 mb-3 border-bottom">
+								<div class="d-flex justify-content-end">
+									<button type="button" class="btn btn-sm btn-primary" id="addMemoBtn">
+										<i class="bi bi-plus-lg"></i> 메모 추가
+									</button>
 								</div>
 							</div>
 
@@ -761,6 +758,57 @@
 		</div>
 	</div>
 </div>
+
+<!-- 메모 추가/수정 모달 -->
+<div class="modal fade" id="memoModal" tabindex="-1" aria-labelledby="memoModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="memoModalLabel">메모 추가</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="memoType" class="form-label">항목</label>
+					<input type="text" class="form-control" id="memoType" placeholder="항목을 입력하세요" required>
+				</div>
+				<div class="mb-3">
+					<label for="memoContent" class="form-label">내용</label>
+					<textarea class="form-control" id="memoContent" rows="5" placeholder="내용을 입력하세요" required></textarea>
+				</div>
+				<div class="mb-3">
+					<label for="memoDate" class="form-label">날짜 (선택사항)</label>
+					<input type="date" class="form-control" id="memoDate">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="saveMemoBtn">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 메모 삭제 확인 모달 -->
+<div class="modal fade" id="deleteMemoModal" tabindex="-1" aria-labelledby="deleteMemoModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="deleteMemoModalLabel">메모 삭제</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>이 메모를 삭제하시겠습니까?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteMemoBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
 
 <?php $this->load->view('footer'); ?>
 

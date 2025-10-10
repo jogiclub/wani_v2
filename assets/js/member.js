@@ -2647,53 +2647,124 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		// 메모 추가 버튼 클릭
 		$(document).off('click', '#addMemoBtn').on('click', '#addMemoBtn', function() {
-			saveMemo();
+			openMemoModal('add');
 		});
 
-		// 메모 목록 내 버튼 이벤트 (동적 요소용 이벤트 위임)
+		// 메모 저장 버튼 클릭
+		$(document).off('click', '#saveMemoBtn').on('click', '#saveMemoBtn', function() {
+			saveMemoFromModal();
+		});
+
+		// 메모 목록 내 버튼 이벤트
 		$(document).off('click', '.btn-memo-edit').on('click', '.btn-memo-edit', function() {
 			const idx = $(this).data('idx');
-			const content = $(this).closest('.memo-item').find('.memo-content').text().trim();
-			startEditMemo(idx, content);
+			const memoItem = $(this).closest('.memo-item');
+			const memoType = memoItem.find('.memo-type').text().trim();
+			const content = memoItem.find('.memo-content').text().trim();
+			const date = memoItem.data('date') || '';
+
+			openMemoModal('edit', idx, memoType, content, date);
 		});
 
 		$(document).off('click', '.btn-memo-delete').on('click', '.btn-memo-delete', function() {
 			const idx = $(this).data('idx');
 			showDeleteMemoModal(idx);
 		});
+	}
 
-		$(document).off('click', '.btn-memo-save').on('click', '.btn-memo-save', function() {
-			const idx = $(this).data('idx');
-			const content = $(this).closest('.memo-item').find('.memo-content-edit').val();
-			updateMemo(idx, content);
-		});
+	function saveMemoFromModal() {
+		const mode = $('#memoModal').data('mode');
+		const idx = $('#memoModal').data('idx');
+		const memoType = $('#memoType').val().trim();
+		const content = $('#memoContent').val().trim();
+		const date = $('#memoDate').val();
 
-		$(document).off('click', '.btn-memo-cancel').on('click', '.btn-memo-cancel', function() {
-			cancelEditMemo();
-		});
+		if (!content) {
+			showToast('메모 내용을 입력해주세요.', 'warning');
+			return;
+		}
 
-		// Enter 키로 메모 추가 기능
-		$(document).off('keydown', '#newMemoContent').on('keydown', '#newMemoContent', function(e) {
-			if (e.ctrlKey && e.keyCode === 13) {
-				saveMemo();
+		if (!currentMemberIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		const url = mode === 'add' ? '/member/save_memo' : '/member/update_memo';
+		const data = {
+			member_idx: currentMemberIdx,
+			memo_type: memoType,
+			memo_content: content,
+			att_date: date,
+			org_id: selectedOrgId
+		};
+
+		if (mode === 'edit') {
+			data.idx = idx;
+		}
+
+		$.ajax({
+			url: url,
+			method: 'POST',
+			data: data,
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					bootstrap.Modal.getInstance(document.getElementById('memoModal')).hide();
+					loadMemoList(currentMemberIdx);
+					showToast(response.message, 'success');
+				} else {
+					showToast(response.message || '처리에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('처리 중 오류가 발생했습니다.', 'error');
 			}
 		});
+	}
 
-		// 메모 수정 중 ESC 키로 취소
-		$(document).off('keydown', '.memo-content-edit').on('keydown', '.memo-content-edit', function(e) {
-			if (e.keyCode === 27) {
-				cancelEditMemo();
-			}
-		});
+	function createMemoItemHtml(memo) {
+		const formattedDate = formatMemoDateTime(memo.regi_date);
+		const memoType = memo.memo_type ? `<span class="badge bg-secondary memo-type">${escapeHtml(memo.memo_type)}</span> ` : '';
+		const attDate = memo.att_date ? `<span class="text-primary">${memo.att_date}</span> | ` : '';
 
-		// 메모 수정 중 Ctrl + Enter로 저장
-		$(document).off('keydown', '.memo-content-edit').on('keydown', '.memo-content-edit', function(e) {
-			if (e.ctrlKey && e.keyCode === 13) {
-				const idx = $(this).closest('.memo-item').data('idx');
-				const content = $(this).val();
-				updateMemo(idx, content);
-			}
-		});
+		return `
+		<div class="memo-item" data-idx="${memo.idx}" data-date="${memo.att_date || ''}">				
+			<div class="row">
+				<div class="col-9">
+					<div class="mb-1">
+						${memoType}
+					</div>
+					<div class="memo-content">${escapeHtml(memo.memo_content)}</div>
+					<span class="text-muted fs-6" style="font-size: 12px!important; color: #ff6400!important;">
+						${attDate}${formattedDate}
+					</span>
+				</div>
+				
+				<div class="memo-actions col-3 d-flex align-items-center justify-content-end">
+					<div class="btn-group">
+						<button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-end btn-memo-edit" data-idx="${memo.idx}">수정</button>
+						<button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-end btn-memo-delete" data-idx="${memo.idx}">삭제</button>
+					</div>
+				</div>
+			</div>				
+		</div>
+	`;
+	}
+
+	function openMemoModal(mode, idx = null, memoType = '', content = '', date = '') {
+		const modal = new bootstrap.Modal(document.getElementById('memoModal'));
+		const modalTitle = mode === 'add' ? '메모 추가' : '메모 수정';
+
+		$('#memoModalLabel').text(modalTitle);
+		$('#memoType').val(memoType);
+		$('#memoContent').val(content);
+		$('#memoDate').val(date);
+
+		// 모달에 모드와 idx 저장
+		$('#memoModal').data('mode', mode);
+		$('#memoModal').data('idx', idx);
+
+		modal.show();
 	}
 
 	/**
@@ -2882,35 +2953,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 메모 삭제 확인 모달 표시
 	 */
 	function showDeleteMemoModal(idx) {
-		const modalHtml = `
-			<div class="modal fade" id="deleteMemoModal" tabindex="-1" aria-labelledby="deleteMemoModalLabel" aria-hidden="true">
-				<div class="modal-dialog">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h5 class="modal-title" id="deleteMemoModalLabel">메모 삭제</h5>
-							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-						</div>
-						<div class="modal-body">
-							<p>이 메모를 삭제하시겠습니까?</p>
-						</div>
-						<div class="modal-footer">
-							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-							<button type="button" class="btn btn-danger" id="confirmDeleteMemoBtn" data-idx="${idx}">삭제</button>
-						</div>
-					</div>
-				</div>
-			</div>
-		`;
+		deletingMemoIdx = idx;
+		const modal = new bootstrap.Modal(document.getElementById('deleteMemoModal'));
+		modal.show();
 
-		$('#deleteMemoModal').remove();
-		$('body').append(modalHtml);
-
-		$('#confirmDeleteMemoBtn').on('click', function() {
-			const memoIdx = $(this).data('idx');
-			deleteMemo(memoIdx);
+		$('#confirmDeleteMemoBtn').off('click').on('click', function() {
+			deleteMemo(idx);
 		});
-
-		$('#deleteMemoModal').modal('show');
 	}
 
 	/**
@@ -2927,9 +2976,9 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					$('#deleteMemoModal').modal('hide');
+					bootstrap.Modal.getInstance(document.getElementById('deleteMemoModal')).hide();
 					loadMemoList(currentMemberIdx);
-					showToast('메모가 삭제되었습니다.', 'success');
+					showToast(response.message, 'success');
 				} else {
 					showToast(response.message || '메모 삭제에 실패했습니다.', 'error');
 				}

@@ -1140,21 +1140,19 @@ class Member extends My_Controller
 		$member_idx = $this->input->post('member_idx');
 		$memo_type = $this->input->post('memo_type');
 		$memo_content = $this->input->post('memo_content');
+		$att_date = $this->input->post('att_date');
 		$org_id = $this->input->post('org_id');
 
-		// 필수 데이터 확인
 		if (!$member_idx || !$memo_content) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
 
-		// 권한 확인
 		if (!$this->check_org_access($org_id)) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
 			return;
 		}
 
-		// 회원이 해당 조직에 속하는지 확인
 		$member = $this->Member_model->get_member_by_idx($member_idx);
 		if (!$member || $member['org_id'] != $org_id) {
 			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원입니다.'));
@@ -1162,11 +1160,13 @@ class Member extends My_Controller
 		}
 
 		$data = array(
-			'memo_type' => $memo_type ?: 1,
+			'memo_type' => $memo_type ?: '',
 			'memo_content' => $memo_content,
+			'att_date' => $att_date ?: null,
 			'regi_date' => date('Y-m-d H:i:s'),
 			'user_id' => $this->session->userdata('user_email'),
-			'member_idx' => $member_idx
+			'member_idx' => $member_idx,
+			'del_yn' => 'N'
 		);
 
 		$this->load->model('Memo_model');
@@ -1271,23 +1271,25 @@ class Member extends My_Controller
 		}
 
 		$idx = $this->input->post('idx');
+		$memo_type = $this->input->post('memo_type');
 		$memo_content = $this->input->post('memo_content');
+		$att_date = $this->input->post('att_date');
 		$org_id = $this->input->post('org_id');
 
-		// 필수 데이터 확인
-		if (!$idx || !$memo_content || !$org_id) {
+		if (!$idx || !$memo_content) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
 
-		// 권한 확인
 		if (!$this->check_org_access($org_id)) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
 			return;
 		}
 
 		$update_data = array(
+			'memo_type' => $memo_type ?: '',
 			'memo_content' => $memo_content,
+			'att_date' => $att_date ?: null,
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
