@@ -12,6 +12,8 @@ $(document).ready(function () {
 	// 메모 관련 전역 변수 추가
 	let currentMemberIdx = null;       // 현재 선택된 회원 ID
 	let editingMemoIdx = null;         // 현재 수정 중인 메모 ID
+	let deletingMemoIdx = null;        // 현재 삭제 중인 메모 ID
+	let memoTypes = [];                // 조직의 메모 항목 목록
 
 	// 타임라인 관련 전역 변수 추가
 	let currentMemberTimelineIdx = null;       // 현재 선택된 회원 ID (타임라인용)
@@ -20,6 +22,8 @@ $(document).ready(function () {
 
 	let currentMemberMissionIdx = null;       // 현재 선택된 회원 ID (파송용)
 	let editingTransferOrgIdx = null;       // 현재 수정 중인 파송교회 ID
+
+
 
 
 	/**
@@ -2633,7 +2637,8 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 
 	/**
-	 * 메모 탭 이벤트 바인딩
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 탭 이벤트 바인딩 (메모 항목 로드 추가)
 	 */
 	function bindMemoTabEvents() {
 		// 메모 탭 클릭 시 메모 목록 로드
@@ -2641,7 +2646,8 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			const memberIdx = $('#member_idx').val();
 			if (memberIdx) {
 				currentMemberIdx = memberIdx;
-				loadMemoList(memberIdx);
+				loadMemoTypes();  // 메모 항목 로드
+				loadMemoList(memberIdx);  // 메모 목록 로드
 			}
 		});
 
@@ -2655,7 +2661,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			saveMemoFromModal();
 		});
 
-		// 메모 목록 내 버튼 이벤트
+		// 메모 수정 버튼 클릭
 		$(document).off('click', '.btn-memo-edit').on('click', '.btn-memo-edit', function() {
 			const idx = $(this).data('idx');
 			const memoItem = $(this).closest('.memo-item');
@@ -2666,6 +2672,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			openMemoModal('edit', idx, memoType, content, date);
 		});
 
+		// 메모 삭제 버튼 클릭
 		$(document).off('click', '.btn-memo-delete').on('click', '.btn-memo-delete', function() {
 			const idx = $(this).data('idx');
 			showDeleteMemoModal(idx);
@@ -2722,9 +2729,20 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 아이템 HTML 생성 (항목별 배지 색상 적용)
+	 */
 	function createMemoItemHtml(memo) {
 		const formattedDate = formatMemoDateTime(memo.regi_date);
-		const memoType = memo.memo_type ? `<span class="badge bg-secondary memo-type">${escapeHtml(memo.memo_type)}</span> ` : '';
+
+		// 메모 항목 배지 생성 (각기 다른 색상)
+		let memoTypeBadge = '';
+		if (memo.memo_type) {
+			const badgeClass = getMemoTypeBadgeClass(memo.memo_type);
+			memoTypeBadge = `<span class="badge ${badgeClass} memo-type">${escapeHtml(memo.memo_type)}</span> `;
+		}
+
 		const attDate = memo.att_date ? `<span class="text-primary">${memo.att_date}</span> | ` : '';
 
 		return `
@@ -2732,7 +2750,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			<div class="row">
 				<div class="col-9">
 					<div class="mb-1">
-						${memoType}
+						${memoTypeBadge}
 					</div>
 					<div class="memo-content">${escapeHtml(memo.memo_content)}</div>
 					<span class="text-muted fs-6" style="font-size: 12px!important; color: #ff6400!important;">
@@ -2751,6 +2769,58 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	`;
 	}
 
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 조직의 메모 항목 목록 로드
+	 */
+	function loadMemoTypes() {
+		if (!selectedOrgId) return;
+
+		$.ajax({
+			url: '/member/get_memo_types',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success && response.data) {
+					memoTypes = response.data;
+					updateMemoTypeSelect();
+				} else {
+					memoTypes = [];
+					updateMemoTypeSelect();
+				}
+			},
+			error: function() {
+				console.error('메모 항목 목록을 불러오는데 실패했습니다.');
+				memoTypes = [];
+				updateMemoTypeSelect();
+			}
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 항목 셀렉트박스 업데이트
+	 */
+	function updateMemoTypeSelect() {
+		let selectHtml = '<option value="">항목 선택</option>';
+
+		if (memoTypes && memoTypes.length > 0) {
+			selectHtml += memoTypes.map(function(type) {
+				return `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`;
+			}).join('');
+		}
+
+		$('#memoType').html(selectHtml);
+	}
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 모달 열기 (항목 선택 적용)
+	 */
 	function openMemoModal(mode, idx = null, memoType = '', content = '', date = '') {
 		const modal = new bootstrap.Modal(document.getElementById('memoModal'));
 		const modalTitle = mode === 'add' ? '메모 추가' : '메모 수정';
@@ -2768,7 +2838,8 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 	/**
-	 * 메모 목록 로드
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 목록 로드
 	 */
 	function loadMemoList(memberIdx) {
 		if (!memberIdx) return;
@@ -2797,7 +2868,8 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 	/**
-	 * 메모 목록 렌더링
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 목록 렌더링
 	 */
 	function renderMemoList(memoList) {
 		const memoListContainer = $('#memoList');
@@ -2807,7 +2879,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			memoListContainer.html('<div class="text-center text-muted py-3" id="emptyMemoMessage">등록된 메모가 없습니다.</div>');
 			return;
 		}
-
 
 		memoList.forEach(function(memo, index) {
 			const memoHtml = createMemoItemHtml(memo);
@@ -2820,28 +2891,43 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 	/**
-	 * 메모 아이템 HTML 생성
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 아이템 HTML 생성 (배지 색상 적용)
 	 */
 	function createMemoItemHtml(memo) {
 		const formattedDate = formatMemoDateTime(memo.regi_date);
 
+		// 메모 항목 배지 생성 (각기 다른 색상)
+		let memoTypeBadge = '';
+		if (memo.memo_type && memo.memo_type.trim() !== '') {
+			const badgeClass = getMemoTypeBadgeClass(memo.memo_type);
+			memoTypeBadge = `<span class="badge ${badgeClass} memo-type me-1">${escapeHtml(memo.memo_type)}</span>`;
+		}
+
+		const attDate = memo.att_date ? `<span class="text-primary">${memo.att_date}</span> | ` : '';
+
 		return `
-			<div class="memo-item" data-idx="${memo.idx}">				
-				<div class="row">
-					<div class="col-9">
-						<div class="memo-content">${escapeHtml(memo.memo_content)}</div>
-						<span class="text-muted fs-6" style="font-size: 12px!important; color: #ff6400!important;">${formattedDate}</span>
+		<div class="memo-item" data-idx="${memo.idx}" data-date="${memo.att_date || ''}">				
+			<div class="row">
+				<div class="col-9">
+					<div class="mb-2">
+						${memoTypeBadge}
 					</div>
-					
-					<div class="memo-actions col-3 d-flex align-items-center justify-content-end">
-						<div class="btn-group">
-							<button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-end btn-memo-edit" data-idx="${memo.idx}">수정</button>
-							<button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-end btn-memo-delete" data-idx="${memo.idx}">삭제</button>
-						</div>
+					<div class="memo-content mb-1">${escapeHtml(memo.memo_content)}</div>
+					<div class="text-muted" style="font-size: 12px;">
+						${attDate}${formattedDate}
 					</div>
-				</div>				
-			</div>
-		`;
+				</div>
+				
+				<div class="memo-actions col-3 d-flex align-items-center justify-content-end">
+					<div class="btn-group-vertical btn-group-sm" role="group">
+						<button type="button" class="btn btn-sm btn-outline-secondary btn-memo-edit" data-idx="${memo.idx}">수정</button>
+						<button type="button" class="btn btn-sm btn-outline-danger btn-memo-delete" data-idx="${memo.idx}">삭제</button>
+					</div>
+				</div>
+			</div>				
+		</div>
+	`;
 	}
 
 	/**
@@ -2958,7 +3044,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		modal.show();
 
 		$('#confirmDeleteMemoBtn').off('click').on('click', function() {
-			deleteMemo(idx);
+			deleteMemo(deletingMemoIdx);
 		});
 	}
 
@@ -2966,6 +3052,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 메모 삭제 실행
 	 */
 	function deleteMemo(idx) {
+		if (!idx) {
+			showToast('삭제할 메모를 선택해주세요.', 'error');
+			return;
+		}
+
 		$.ajax({
 			url: '/member/delete_memo',
 			method: 'POST',
@@ -2976,9 +3067,14 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					bootstrap.Modal.getInstance(document.getElementById('deleteMemoModal')).hide();
+					const modalElement = document.getElementById('deleteMemoModal');
+					const modalInstance = bootstrap.Modal.getInstance(modalElement);
+					if (modalInstance) {
+						modalInstance.hide();
+					}
 					loadMemoList(currentMemberIdx);
-					showToast(response.message, 'success');
+					showToast(response.message || '메모가 삭제되었습니다.', 'success');
+					deletingMemoIdx = null;
 				} else {
 					showToast(response.message || '메모 삭제에 실패했습니다.', 'error');
 				}
@@ -5133,6 +5229,38 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		$('#sendOfferModal').modal('hide');
 	}
 
+
+	/**
+	 * 파일 위치: assets/js/member.js
+	 * 역할: 메모 항목별 배지 색상 반환
+	 */
+	function getMemoTypeBadgeClass(memoType) {
+		const badgeClasses = [
+			'bg-primary',      // 파란색
+			'bg-success',      // 초록색
+			'bg-info',         // 하늘색
+			'bg-warning',      // 노란색
+			'bg-danger',       // 빨간색
+			'bg-secondary',    // 회색
+			'bg-dark'          // 검정색
+		];
+
+		// memoTypes 배열이 로드되어 있는 경우
+		if (memoTypes && memoTypes.length > 0) {
+			const typeIndex = memoTypes.indexOf(memoType);
+			if (typeIndex >= 0) {
+				return badgeClasses[typeIndex % badgeClasses.length];
+			}
+		}
+
+		// memoTypes 배열이 없는 경우, 문자열 해시로 색상 결정
+		let hash = 0;
+		for (let i = 0; i < memoType.length; i++) {
+			hash = memoType.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		const index = Math.abs(hash) % badgeClasses.length;
+		return badgeClasses[index];
+	}
 
 
 });

@@ -770,7 +770,9 @@
 			<div class="modal-body">
 				<div class="mb-3">
 					<label for="memoType" class="form-label">항목</label>
-					<input type="text" class="form-control" id="memoType" placeholder="항목을 입력하세요" required>
+					<select class="form-select" id="memoType" required>
+						<option value="">항목 선택</option>
+					</select>
 				</div>
 				<div class="mb-3">
 					<label for="memoContent" class="form-label">내용</label>

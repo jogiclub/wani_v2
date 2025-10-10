@@ -7,16 +7,29 @@ class Memo_model extends CI_Model {
 
 
 
-	public function get_memo_list($member_idx, $limit, $offset) {
-		$this->db->select('m.*, u.user_name');
+	/**
+	 * 파일 위치: application/models/Memo_model.php
+	 * 역할: 회원의 메모 목록 조회 (페이징, 삭제된 메모 제외)
+	 */
+	public function get_memo_list($member_idx, $limit = 10, $offset = 0)
+	{
+		$this->db->select('
+		m.idx,
+		m.memo_type,
+		m.memo_content,
+		m.att_date,
+		m.regi_date,
+		m.modi_date,
+		u.user_name
+	');
 		$this->db->from('wb_memo m');
 		$this->db->join('wb_user u', 'm.user_id = u.user_id', 'left');
 		$this->db->where('m.member_idx', $member_idx);
+		$this->db->where('m.del_yn', 'N');  // 삭제되지 않은 메모만 조회
 		$this->db->order_by('m.regi_date', 'DESC');
 		$this->db->limit($limit, $offset);
 
 		$query = $this->db->get();
-
 		return $query->result_array();
 	}
 

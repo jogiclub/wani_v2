@@ -2506,4 +2506,40 @@ class Member extends My_Controller
 		));
 	}
 
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 조직의 메모 항목 목록 조회
+	 */
+	public function get_memo_types()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 필요합니다.'));
+			return;
+		}
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Org_model');
+		$org_info = $this->Org_model->get_org_detail_by_id($org_id);
+
+		$memo_types = array();
+		if ($org_info && !empty($org_info['memo_name'])) {
+			$decoded = json_decode($org_info['memo_name'], true);
+			if (is_array($decoded)) {
+				$memo_types = $decoded;
+			}
+		}
+
+		echo json_encode(array('success' => true, 'data' => $memo_types));
+	}
+
 }
