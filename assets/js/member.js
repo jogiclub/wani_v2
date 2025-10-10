@@ -21,7 +21,6 @@ $(document).ready(function () {
 	let timelineTypes = [];                    // 조직의 타임라인 호칭 목록
 
 	let currentMemberMissionIdx = null;       // 현재 선택된 회원 ID (파송용)
-	let editingTransferOrgIdx = null;       // 현재 수정 중인 파송교회 ID
 
 
 	/**
@@ -519,17 +518,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
-	/**
-	 * 타임라인 타입 선택박스 채우기
-	 */
-	function populateTimelineTypeSelect() {
-		const select = $('#newTimelineType');
-		select.html('<option value="">항목 선택</option>');
-
-		timelineTypes.forEach(function (type) {
-			select.append(`<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`);
-		});
-	}
 
 
 	/**
@@ -592,102 +580,8 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
-	/**
-	 * 타임라인 수정 시작
-	 */
-	function startEditTimeline(idx, timelineData) {
-		editingTimelineIdx = idx;
-		const timelineItem = $(`.timeline-item[data-idx="${idx}"]`);
 
-		const editHtml = createTimelineEditHtml(timelineData);
-		timelineItem.find('.timeline-content').parent().replaceWith(editHtml);
-		timelineItem.find('.btn-group').hide();
-	}
 
-	/**
-	 * 타임라인 수정 폼 HTML 생성
-	 */
-	function createTimelineEditHtml(timelineData) {
-		let typeOptions = '<option value="">타임라인 항목 선택</option>';
-		timelineTypes.forEach(function (type) {
-			const selected = type === timelineData.timeline_type ? 'selected' : '';
-			typeOptions += `<option value="${escapeHtml(type)}" ${selected}>${escapeHtml(type)}</option>`;
-		});
-
-		return `
-			<div class="col-8">
-				<div class="timeline-edit-form">
-					<div class="row mb-2">
-						<div class="col-4">
-							<select class="form-select form-select-sm timeline-type-edit">
-								${typeOptions}
-							</select>
-						</div>
-						<div class="col-4">
-							<input type="date" class="form-control form-control-sm timeline-date-edit" value="${timelineData.timeline_date}">
-						</div>
-						<div class="col-4">
-							<input type="text" class="form-control form-control-sm timeline-content-edit" value="${escapeHtml(timelineData.timeline_content || '')}" placeholder="내용 입력">
-						</div>
-					</div>
-					<div class="text-end">
-						<button type="button" class="btn btn-sm btn-success btn-timeline-save" data-idx="${editingTimelineIdx}">저장</button>
-						<button type="button" class="btn btn-sm btn-secondary btn-timeline-cancel">취소</button>
-					</div>
-				</div>
-			</div>
-		`;
-	}
-
-	/**
-	 * 타임라인 수정 취소
-	 */
-	function cancelEditTimeline() {
-		if (editingTimelineIdx) {
-
-			editingTimelineIdx = null;
-		}
-	}
-
-	/**
-	 * 타임라인 업데이트
-	 */
-	function updateTimeline(idx, timelineData) {
-		if (!timelineData.timeline_type.trim()) {
-			showToast('타임라인 항목을 선택해주세요.', 'warning');
-			return;
-		}
-
-		if (!timelineData.timeline_date) {
-			showToast('날짜를 선택해주세요.', 'warning');
-			return;
-		}
-
-		$.ajax({
-			url: '/member/update_timeline',
-			method: 'POST',
-			data: {
-				idx: idx,
-				timeline_type: timelineData.timeline_type.trim(),
-				timeline_date: timelineData.timeline_date,
-				timeline_content: timelineData.timeline_content.trim(),
-				org_id: selectedOrgId
-			},
-			dataType: 'json',
-			success: function (response) {
-				if (response.success) {
-
-					editingTimelineIdx = null;
-					showToast('타임라인이 수정되었습니다.', 'success');
-				} else {
-					showToast(response.message || '타임라인 수정에 실패했습니다.', 'error');
-				}
-			},
-			error: function () {
-				showToast('타임라인 수정에 실패했습니다.', 'error');
-			}
-		});
-	}
 
 	/**
 	 * 타임라인 삭제 확인 모달 표시
@@ -714,39 +608,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		return `${year}.${month}.${day}`;
 	}
 
-	/**
-	 * 타임라인 요소에서 데이터 추출
-	 */
-	function getTimelineDataFromElement(element) {
-		const content = element.find('.timeline-content');
-		const timelineType = content.find('.timeline-type').text().replace(/[\[\]]/g, '');
-		const timelineDate = content.find('.timeline-date').text().replace(/\./g, '-');
-		const timelineText = content.find('.timeline-text').text();
-
-		// 날짜 형식 변환 (YYYY.MM.DD -> YYYY-MM-DD)
-		const dateParts = timelineDate.split('.');
-		let formattedDate = timelineDate;
-		if (dateParts.length === 3) {
-			formattedDate = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
-		}
-
-		return {
-			timeline_type: timelineType,
-			timeline_date: formattedDate,
-			timeline_content: timelineText
-		};
-	}
-
-	/**
-	 * 수정 폼에서 타임라인 데이터 추출
-	 */
-	function getTimelineDataFromEditForm(element) {
-		return {
-			timeline_type: element.find('.timeline-type-edit').val(),
-			timeline_date: element.find('.timeline-date-edit').val(),
-			timeline_content: element.find('.timeline-content-edit').val()
-		};
-	}
 
 
 	function exportMemberToExcel() {
@@ -843,25 +704,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		];
 	}
 
-	/**
-	 * 엑셀용 날짜 포맷팅
-	 */
-	function formatDateForExcel(dateTimeString) {
-		if (!dateTimeString) return '';
-
-		try {
-			const date = new Date(dateTimeString);
-			const year = date.getFullYear();
-			const month = String(date.getMonth() + 1).padStart(2, '0');
-			const day = String(date.getDate()).padStart(2, '0');
-			const hours = String(date.getHours()).padStart(2, '0');
-			const minutes = String(date.getMinutes()).padStart(2, '0');
-
-			return `${year}-${month}-${day} ${hours}:${minutes}`;
-		} catch (error) {
-			return dateTimeString;
-		}
-	}
 
 	/**
 	 * 회원 검색 이벤트 바인딩
@@ -1294,58 +1136,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		}
 	}
 
-	/**
-	 * 그리드 옵션 생성 (개선된 버전)
-	 */
-	function createGridOptions() {
-		showGridSpinner();
-
-		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-			|| window.innerWidth <= 768;
-
-		return {
-			width: "100%",
-			height: "100%",
-			headerHeight: 500,
-			dataModel: {
-				data: []
-			},
-			colModel: createColumnModel(),
-			selectionModel: {
-				type: 'cell',
-				mode: 'single'
-			},
-			scrollModel: {
-				autoFit: false,
-				horizontal: true,
-				vertical: true
-			},
-			freezeCols: isMobile ? 0 : 4,
-			numberCell: {show: false},
-			title: false,
-			strNoRows: '회원 정보가 없습니다',
-			resizable: true,
-			sortable: false,
-			hoverMode: 'row',
-			wrap: false,
-			columnBorders: true,
-			cellClick: function (event, ui) {
-				handleGridCellClick(event, ui);
-			},
-			// 모바일 터치 지원을 위한 추가 이벤트
-			cellDblClick: function (event, ui) {
-				// 더블클릭도 동일하게 처리
-				handleGridCellClick(event, ui);
-			},
-			// 그리드 렌더링 완료 후 모바일 터치 이벤트 바인딩
-			complete: function () {
-				setTimeout(function () {
-					removeDuplicateCheckboxes();
-					bindMobileTouchEvents(); // 모바일 터치 이벤트 추가
-				}, 100);
-			}
-		};
-	}
 
 	/**
 	 * 모바일 터치 이벤트 바인딩 - ParamQuery Grid 우회 (수정된 버전)
@@ -2565,47 +2355,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 	/**
 	 * 파일 위치: assets/js/member.js
-	 * 역할: 메모 아이템 HTML 생성 (항목별 배지 색상 적용)
-	 */
-	function createMemoItemHtml(memo) {
-		const formattedDate = formatMemoDateTime(memo.regi_date);
-
-		// 메모 항목 배지 생성 (각기 다른 색상)
-		let memoTypeBadge = '';
-		if (memo.memo_type) {
-			const badgeClass = getMemoTypeBadgeClass(memo.memo_type);
-			memoTypeBadge = `<span class="badge ${badgeClass} memo-type">${escapeHtml(memo.memo_type)}</span> `;
-		}
-
-		const attDate = memo.att_date ? `<span class="text-primary">${memo.att_date}</span> | ` : '';
-
-		return `
-		<div class="memo-item" data-idx="${memo.idx}" data-date="${memo.att_date || ''}">				
-			<div class="row">
-				<div class="col-9">
-					<div class="mb-1">
-						${memoTypeBadge}
-					</div>
-					<div class="memo-content">${escapeHtml(memo.memo_content)}</div>
-					<span class="text-muted fs-6" style="font-size: 12px!important; color: #ff6400!important;">
-						${attDate}${formattedDate}
-					</span>
-				</div>
-				
-				<div class="memo-actions col-3 d-flex align-items-center justify-content-end">
-					<div class="btn-group">
-						<button type="button" class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-end btn-memo-edit" data-idx="${memo.idx}">수정</button>
-						<button type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-end btn-memo-delete" data-idx="${memo.idx}">삭제</button>
-					</div>
-				</div>
-			</div>				
-		</div>
-	`;
-	}
-
-
-	/**
-	 * 파일 위치: assets/js/member.js
 	 * 역할: 조직의 메모 항목 목록 로드
 	 */
 	function loadMemoTypes() {
@@ -2764,110 +2513,10 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	`;
 	}
 
-	/**
-	 * 메모 저장
-	 */
-	function saveMemo() {
-		const content = $('#newMemoContent').val().trim();
 
-		if (!content) {
-			showToast('메모 내용을 입력해주세요.', 'warning');
-			return;
-		}
 
-		if (!currentMemberIdx) {
-			showToast('회원 정보를 찾을 수 없습니다.', 'error');
-			return;
-		}
 
-		$.ajax({
-			url: '/member/save_memo',
-			method: 'POST',
-			data: {
-				member_idx: currentMemberIdx,
-				memo_content: content,
-				memo_type: 1,
-				org_id: selectedOrgId
-			},
-			dataType: 'json',
-			success: function (response) {
-				if (response.success) {
-					$('#newMemoContent').val('');
-					loadMemoList(currentMemberIdx);
-					showToast('메모가 저장되었습니다.', 'success');
-				} else {
-					showToast(response.message || '메모 저장에 실패했습니다.', 'error');
-				}
-			},
-			error: function () {
-				showToast('메모 저장에 실패했습니다.', 'error');
-			}
-		});
-	}
 
-	/**
-	 * 메모 수정 시작
-	 */
-	function startEditMemo(idx, currentContent) {
-		editingMemoIdx = idx;
-		const memoItem = $(`.memo-item[data-idx="${idx}"]`);
-
-		const editHtml = `
-			<div class="memo-content-edit-wrapper">
-				<textarea class="form-control memo-content-edit" rows="3">${escapeHtml(currentContent)}</textarea>
-				<div class="mt-2 text-end">
-					<button type="button" class="btn btn-sm btn-success btn-memo-save" data-idx="${idx}">저장</button>
-					<button type="button" class="btn btn-sm btn-secondary btn-memo-cancel">취소</button>
-				</div>
-			</div>
-		`;
-
-		memoItem.find('.memo-content').replaceWith(editHtml);
-		memoItem.find('.memo-actions').hide();
-	}
-
-	/**
-	 * 메모 수정 취소
-	 */
-	function cancelEditMemo() {
-		if (editingMemoIdx) {
-			loadMemoList(currentMemberIdx);
-			editingMemoIdx = null;
-		}
-	}
-
-	/**
-	 * 메모 업데이트
-	 */
-	function updateMemo(idx, content) {
-		if (!content.trim()) {
-			showToast('메모 내용을 입력해주세요.', 'warning');
-			return;
-		}
-
-		$.ajax({
-			url: '/member/update_memo',
-			method: 'POST',
-			data: {
-				idx: idx,
-				memo_content: content.trim(),
-				org_id: selectedOrgId
-			},
-			dataType: 'json',
-			success: function (response) {
-				if (response.success) {
-					loadMemoList(currentMemberIdx);
-					editingMemoIdx = null;
-					showToast('메모가 수정되었습니다.', 'success');
-				} else {
-					showToast(response.message || '메모 수정에 실패했습니다.', 'error');
-				}
-			},
-			error: function () {
-				showToast('메모 수정에 실패했습니다.', 'error');
-			}
-		});
-	}
 
 	/**
 	 * 메모 삭제 확인 모달 표시
@@ -3486,16 +3135,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		return true;
 	}
 
-	/**
-	 * 이미지 로드 에러 처리
-	 */
-	function handleImageLoadError() {
-		showToast('이미지를 불러올 수 없습니다.', 'error');
-		$('#photoPreview').hide();
-		$('#photoUpload').show();
-		$('#member_photo').val('');
-		destroyCroppie();
-	}
 
 
 	/**
@@ -4169,62 +3808,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
-	/**
-	 * 파송교회 아이템 HTML 생성
-	 */
-	function createTransferOrgItemHtml(church) {
-		// church.org_tags -> church.org_tag
-		const tags = church.org_tag ? church.org_tag.split(' ').filter(tag => tag.trim().startsWith('#')) : [];
-		const tagsHtml = tags.map(tag => `<span class="transfer-org-tag">${escapeHtml(tag)}</span>`).join('');
-
-		return `
-		<div class="transfer-org-item border p-3 rounded mb-2" data-idx="${church.idx}">
-			<div class="transfer-org-header d-flex justify-content-between align-items-center pb-2">
-				<h5 class="transfer-org-title mb-0">
-					${escapeHtml(church.org_address || '')} <b>${escapeHtml(church.transfer_org_name || '')}</b> 
-					${church.org_rep ? '(' + escapeHtml(church.org_rep) + ' 담임목사)' : ''} 
-				</h5>
-				<div class="transfer-org-actions">
-					<button type="button" class="btn btn-xs btn-outline-secondary btn-mission-edit" data-idx="${church.idx}">수정</button>
-					<button type="button" class="btn btn-xs btn-outline-danger btn-mission-delete" data-idx="${church.idx}">삭제</button>
-				</div>
-			</div>
-			
-			<div class="transfer-org-info d-flex justify-content-start align-items-center mb-1">
-				${church.org_manager ? ` 
-					<div class="transfer-org-info-item me-3">
-						<i class="bi bi-person"></i>
-						<span>${escapeHtml(church.org_manager)}</span>
-					</div>
-				` : ''}
-				${church.org_phone ? ` 
-					<div class="transfer-org-info-item me-3">
-						<i class="bi bi-telephone"></i>
-						<span>${escapeHtml(church.org_phone)}</span>
-					</div>
-				` : ''}
-				${church.contact_email ? `
-					<div class="transfer-org-info-item me-3">
-						<i class="bi bi-envelope"></i>
-						<span>${escapeHtml(church.contact_email)}</span>
-					</div>
-				` : ''}
-			</div>
-			
-			${church.org_desc ? ` 
-				<div class="transfer-org-description">
-					${escapeHtml(church.org_desc)}
-				</div>
-			` : ''}
-			
-			${tagsHtml ? `
-				<div class="transfer-org-tags text-secondary">
-					${tagsHtml}
-				</div>
-			` : ''}
-		</div>
-	`;
-	}
 
 
 	/**
@@ -4268,39 +3851,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
-	/**
-	 * 요소에서 파송교회 데이터 추출
-	 */
 
-	function getTransferOrgDataFromElement(element) {
-		// FIX: bindMissionTabEvents에서 직접 데이터를 가져오므로, 이 함수는 사용되지 않습니다.
-		// 만약 호출된다면 저장된 데이터를 반환합니다.
-		return element.data('transferData') || {};
-	}
-
-	/**
-	 * 회원에게 이메일 전송
-	 */
-	function sendEmailToMember() {
-		if (!currentMemberMissionIdx) {
-			showToast('회원 정보를 찾을 수 없습니다.', 'error');
-			return;
-		}
-
-		showToast('회원에게 이메일 전송 기능은 준비 중입니다.', 'info');
-	}
-
-	/**
-	 * 결연교회 이메일 전송
-	 */
-	function sendEmailToChurch() {
-		if (!currentMemberMissionIdx) {
-			showToast('회원 정보를 찾을 수 없습니다.', 'error');
-			return;
-		}
-
-		showToast('결연교회 이메일 전송 기능은 준비 중입니다.', 'info');
-	}
 
 
 	/**
@@ -4584,74 +4135,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-	/**
-	 * 교회 태그 Select2 초기화 (Tagging 및 해시태그 형식 처리)
-	 */
-	function initChurchTagsSelect2() {
-		// 기존 Select2가 있다면 제거
-		if ($('#org_tags').data('select2')) {
-			$('#org_tags').select2('destroy');
-		}
-
-		// input 타입을 select로 변경
-		const currentValue = $('#org_tags').val();
-		$('#org_tags').replaceWith('<select class="form-select" id="org_tags" name="org_tags" multiple></select>');
-
-		$('#org_tags').select2({
-			width: '100%',
-			tags: true,
-			tokenSeparators: [' ', ','],
-			placeholder: '태그를 입력하세요 (예: #이웃 #사랑)',
-			allowClear: true,
-			multiple: true,
-			dropdownParent: $('#transferOrgModal'),
-			createTag: function (params) {
-				const term = $.trim(params.term);
-
-				if (term === '') {
-					return null;
-				}
-
-				// 입력한 그대로 태그로 사용 (해시태그 자동 추가 제거)
-				return {
-					id: term,
-					text: term,
-					newTag: true
-				};
-			},
-			templateResult: function (data) {
-				if (data.loading) {
-					return '검색 중...';
-				}
-
-				// 해시태그 형식으로 표시
-				const $result = $('<span></span>');
-				$result.text(data.text);
-
-				if (data.newTag) {
-					$result.addClass('text-primary');
-				}
-
-				return $result;
-			},
-			templateSelection: function (data) {
-				// 선택된 태그 표시
-				return data.text;
-			},
-			language: {
-				noResults: function () {
-					return '태그를 입력하고 Enter를 누르세요';
-				},
-				searching: function () {
-					return '검색 중...';
-				}
-			}
-		});
-
-		// 정렬 가능하게 설정
-		$('#org_tags').select2Sortable();
-	}
-
 
 	/**
 	 * 파송교회 저장
@@ -4746,18 +4229,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-// 우클릭 메뉴에 '결연교회 추천' 항목 추가
-// 기존 context menu 설정 부분에 추가
-	function addOfferMenuItem() {
-		// 기존 contextMenu 설정에 아래 항목 추가
-		return {
-			name: '결연교회 추천',
-			icon: 'bi-chat-dots',
-			callback: function (rowIndx, rowData) {
-				sendOfferLinkToMember(rowData.member_idx);
-			}
-		};
-	}
+
 
 
 	/**
@@ -4878,75 +4350,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	});
 
 
-	/**
-	 * 파송 교회 목록 로드 시 선택된 교회 표시
-	 */
-	function loadTransferOrgsWithSelection(memberIdx, orgId) {
-		$.ajax({
-			url: '/member/get_member_transfer_orgs',
-			method: 'POST',
-			data: {
-				member_idx: memberIdx,
-				org_id: orgId
-			},
-			dataType: 'json',
-			success: function (response) {
-				if (response.success) {
-					const transferList = $('#transferOrgList');
-					transferList.empty();
-
-					if (response.data && response.data.length > 0) {
-						response.data.forEach(function (org) {
-							const isSelected = org.is_selected === 'selected' || org.status === 'selected';
-							const badge = isSelected ? '<span class="badge bg-success ms-2">선택됨</span>' : '';
-
-							const orgHtml = `
-                            <div class="list-group-item ${isSelected ? 'border-success' : ''}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">
-                                            ${org.transfer_org_name || '-'}
-                                            ${badge}
-                                        </h6>
-                                        <p class="mb-1 small text-muted">
-                                            <i class="bi bi-geo-alt"></i> ${org.transfer_org_address || '-'}
-                                        </p>
-                                        <p class="mb-0 small text-muted">
-                                            <i class="bi bi-person"></i> ${org.transfer_org_rep || '-'}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <button type="button" class="btn btn-sm btn-outline-primary edit-transfer-btn"
-                                                data-transfer-id="${org.idx}">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger delete-transfer-btn"
-                                                data-transfer-id="${org.idx}">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-							transferList.append(orgHtml);
-						});
-					} else {
-						transferList.html(`
-                        <div class="text-center text-muted py-4">
-                            <i class="bi bi-inbox"></i>
-                            <p class="mb-0">등록된 파송교회가 없습니다.</p>
-                        </div>
-                    `);
-					}
-				} else {
-					showToast(response.message || '파송교회 목록을 불러오는데 실패했습니다.', 'error');
-				}
-			},
-			error: function () {
-				showToast('파송교회 목록을 불러오는 중 오류가 발생했습니다.', 'error');
-			}
-		});
-	}
 
 
 	/**
@@ -5107,66 +4510,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		}
 		const index = Math.abs(hash) % badgeClasses.length;
 		return badgeClasses[index];
-	}
-
-	/**
-	 * 파일 위치: assets/js/member.js
-	 * 역할: 타임라인 목록 표시
-	 */
-	function displayMemberTimeline(timelineList) {
-		const timelineListDiv = $('#timelineList');
-		timelineListDiv.empty();
-
-		if (!timelineList || timelineList.length === 0) {
-			timelineListDiv.html('<div class="text-center text-muted py-3">등록된 타임라인이 없습니다.</div>');
-			return;
-		}
-
-		const table = $(`
-		<table class="table table-hover table-sm">
-			<thead>
-				<tr>
-					<th width="120">날짜</th>
-					<th width="120">항목</th>
-					<th>내용</th>
-					<th width="100" class="text-center">관리</th>
-				</tr>
-			</thead>
-			<tbody></tbody>
-		</table>
-	`);
-
-		const tbody = table.find('tbody');
-
-		timelineList.forEach(function(timeline) {
-			const badgeClass = getTimelineBadgeClass(timeline.timeline_type);
-			const formattedDate = timeline.timeline_date || '';
-			const content = timeline.timeline_content || '';
-
-			const row = $(`
-			<tr>
-				<td>${formattedDate}</td>
-				<td><span class="badge ${badgeClass}">${timeline.timeline_type}</span></td>
-				<td>${content}</td>
-				<td class="text-center">
-				<div class="btn-group">
-					<button type="button" class="btn btn-sm btn-outline-primary edit-timeline-btn" 
-					        data-idx="${timeline.idx}">
-						수정
-					</button>
-					<button type="button" class="btn btn-sm btn-outline-danger delete-timeline-btn" 
-					        data-idx="${timeline.idx}">
-						삭제
-					</button>
-					</div>
-				</td>
-			</tr>
-		`);
-
-			tbody.append(row);
-		});
-
-		timelineListDiv.append(table);
 	}
 
 	/**
