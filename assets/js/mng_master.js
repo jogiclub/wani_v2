@@ -7,11 +7,15 @@ $(document).ready(function() {
 	let masterOffcanvas;
 	let topCategories = [];
 
+
 	// Offcanvas 초기화
 	masterOffcanvas = new bootstrap.Offcanvas(document.getElementById('masterOffcanvas'));
 
 	// 최상위 카테고리 목록 로드
 	loadTopCategories();
+
+	// 마스터 메뉴 체크박스 생성 (추가)
+	createMasterMenuCheckboxes();
 
 	// PQGrid 초기화
 	initMasterGrid();
@@ -19,21 +23,152 @@ $(document).ready(function() {
 	// 마스터 목록 로드
 	loadMasterList();
 
+
 	/**
-	 * 날짜 포맷팅 함수
+	 * 마스터 관리 메뉴 체크박스 생성
 	 */
-	function formatDateTime(dateString) {
-		if (!dateString) return '';
+	function createMasterMenuCheckboxes() {
+		const $container = $('#menu_permissions');
+		$container.empty();
 
-		const date = new Date(dateString);
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		const day = String(date.getDate()).padStart(2, '0');
-		const hours = String(date.getHours()).padStart(2, '0');
-		const minutes = String(date.getMinutes()).padStart(2, '0');
+		// 관리자 메뉴 정의 (향후 추가 가능)
+		const masterMenus = [
+			{ key: 'mng_org', name: '조직관리', icon: 'bi bi-building' },
+			{ key: 'mng_master', name: '마스터관리', icon: 'bi bi-people' }
+		];
 
-		return `${year}-${month}-${day} ${hours}:${minutes}`;
+		// 전체 선택 체크박스 추가
+		const selectAllHtml = `
+			<div class="form-check mb-3 border-bottom pb-2">
+				<input class="form-check-input" type="checkbox" id="menu_select_all">
+				<label class="form-check-label fw-bold" for="menu_select_all">
+					전체 선택
+				</label>
+			</div>
+		`;
+		$container.append(selectAllHtml);
+
+		// 개별 메뉴 체크박스
+		masterMenus.forEach(function(menu) {
+			const checkboxHtml = `
+				<div class="form-check mb-2">
+					<input class="form-check-input menu-checkbox" type="checkbox" value="${menu.key}" id="menu_${menu.key}">
+					<label class="form-check-label" for="menu_${menu.key}">
+						<i class="${menu.icon} me-2"></i>${menu.name}
+					</label>
+				</div>
+			`;
+			$container.append(checkboxHtml);
+		});
+
+		// 전체 선택 체크박스 이벤트
+		$('#menu_select_all').on('change', function() {
+			$('.menu-checkbox').prop('checked', $(this).is(':checked'));
+		});
+
+		// 개별 체크박스 이벤트 (전체 선택 상태 업데이트)
+		$('.menu-checkbox').on('change', function() {
+			updateMenuSelectAllState();
+		});
 	}
+
+	/**
+	 * 메뉴 전체 선택 상태 업데이트
+	 */
+	function updateMenuSelectAllState() {
+		const totalMenus = $('.menu-checkbox').length;
+		const checkedMenus = $('.menu-checkbox:checked').length;
+		const selectAllCheckbox = $('#menu_select_all');
+
+		if (checkedMenus === 0) {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else if (checkedMenus === totalMenus) {
+			selectAllCheckbox.prop('checked', true);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', true);
+		}
+	}
+
+
+	/**
+	 * 시스템 메뉴 목록 로드
+	 */
+	function loadSystemMenus() {
+		$.ajax({
+			url: '/mng/mng_master/get_system_menus',
+			type: 'GET',
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					systemMenus = response.data;
+					updateMenuCheckboxes();
+				}
+			},
+			error: function() {
+				showToast('시스템 메뉴 목록을 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+	/**
+	 * 메뉴 체크박스 업데이트
+	 */
+	function updateMenuCheckboxes() {
+		const $container = $('#menu_permissions');
+		$container.empty();
+
+		if (systemMenus.length === 0) {
+			$container.append('<p class="text-muted">시스템 메뉴가 없습니다.</p>');
+			return;
+		}
+
+		// 전체 선택 체크박스 추가
+		const selectAllHtml = `
+		<div class="form-check mb-3 border-bottom pb-2">
+			<input class="form-check-input" type="checkbox" id="menu_select_all">
+			<label class="form-check-label fw-bold" for="menu_select_all">
+				전체 선택
+			</label>
+		</div>
+	`;
+		$container.append(selectAllHtml);
+
+		// 개별 메뉴 체크박스
+		systemMenus.forEach(function(menu) {
+			const checkboxHtml = `
+			<div class="form-check mb-2">
+				<input class="form-check-input menu-checkbox" type="checkbox" value="${menu.key}" id="menu_${menu.key}">
+				<label class="form-check-label" for="menu_${menu.key}">
+					<i class="${menu.icon} me-2"></i>${menu.name}
+				</label>
+			</div>
+		`;
+			$container.append(checkboxHtml);
+		});
+
+		// 전체 선택 체크박스 이벤트
+		$('#menu_select_all').on('change', function() {
+			$('.menu-checkbox').prop('checked', $(this).is(':checked'));
+		});
+
+		// 개별 체크박스 이벤트 (전체 선택 상태 업데이트)
+		$('.menu-checkbox').on('change', function() {
+			updateMenuSelectAllState();
+		});
+	}
+
+	/**
+	 * 메뉴 전체 선택 상태 업데이트
+	 */
+	function updateMenuSelectAllState() {
+		const totalMenus = $('.menu-checkbox').length;
+		const checkedMenus = $('.menu-checkbox:checked').length;
+		$('#menu_select_all').prop('checked', totalMenus > 0 && totalMenus === checkedMenus);
+	}
+
+
 
 	/**
 	 * 최상위 카테고리 목록 로드
@@ -69,25 +204,25 @@ $(document).ready(function() {
 
 		// 전체 선택 체크박스 추가
 		const selectAllHtml = `
-		<div class="form-check mb-3 border-bottom pb-2">
-			<input class="form-check-input" type="checkbox" id="category_select_all">
-			<label class="form-check-label fw-bold" for="category_select_all">
-				전체 선택
-			</label>
-		</div>
-	`;
+			<div class="form-check mb-3 border-bottom pb-2">
+				<input class="form-check-input" type="checkbox" id="category_select_all">
+				<label class="form-check-label fw-bold" for="category_select_all">
+					전체 선택
+				</label>
+			</div>
+		`;
 		$container.append(selectAllHtml);
 
 		// 개별 카테고리 체크박스
 		topCategories.forEach(function(category) {
 			const checkboxHtml = `
-			<div class="form-check mb-2">
-				<input class="form-check-input category-checkbox" type="checkbox" value="${category.category_idx}" id="category_${category.category_idx}">
-				<label class="form-check-label" for="category_${category.category_idx}">
-					${category.category_name}
-				</label>
-			</div>
-		`;
+				<div class="form-check mb-2">
+					<input class="form-check-input category-checkbox" type="checkbox" value="${category.category_idx}" id="category_${category.category_idx}">
+					<label class="form-check-label" for="category_${category.category_idx}">
+						${category.category_name}
+					</label>
+				</div>
+			`;
 			$container.append(checkboxHtml);
 		});
 
@@ -99,9 +234,30 @@ $(document).ready(function() {
 
 		// 개별 체크박스 변경 시 전체 선택 상태 업데이트
 		$('.category-checkbox').on('change', function() {
-			updateSelectAllState();
+			updateCategorySelectAllState();
 		});
 	}
+
+	/**
+	 * 카테고리 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateCategorySelectAllState() {
+		const totalCheckboxes = $('.category-checkbox').length;
+		const checkedCount = $('.category-checkbox:checked').length;
+		const selectAllCheckbox = $('#category_select_all');
+
+		if (checkedCount === 0) {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else if (checkedCount === totalCheckboxes) {
+			selectAllCheckbox.prop('checked', true);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', true);
+		}
+	}
+
 
 	/**
 	 * 전체 선택 체크박스 상태 업데이트
@@ -157,31 +313,40 @@ $(document).ready(function() {
 			{
 				title: '연락처',
 				dataIndx: 'user_hp',
-				width: 130
+				width: 150
 			},
 			{
-				title: '메뉴 권한',
-				dataIndx: 'managed_menus',
+				title: '관리메뉴',
+				dataIndx: 'master_managed_menus',
 				width: 200,
 				render: function(ui) {
-					if (!ui.cellData || !Array.isArray(ui.cellData) || ui.cellData.length === 0) {
-						return '<span class="text-muted">미설정</span>';
+					if (!ui.cellData || ui.cellData.length === 0) {
+						return '<span class="text-muted">없음</span>';
 					}
-					return ui.cellData.join(', ');
+
+					const menuNames = {
+						'mng_org': '조직관리',
+						'mng_master': '마스터관리'
+					};
+
+					const displayNames = ui.cellData.map(function(menuKey) {
+						return menuNames[menuKey] || menuKey;
+					});
+
+					return displayNames.join(', ');
 				}
 			},
 			{
-				title: '카테고리 권한',
-				dataIndx: 'managed_areas',
+				title: '관리카테고리',
+				dataIndx: 'master_managed_category',
 				width: 200,
 				render: function(ui) {
-					if (!ui.cellData || !Array.isArray(ui.cellData) || ui.cellData.length === 0) {
-						return '<span class="text-muted">미설정</span>';
+					if (!ui.cellData || ui.cellData.length === 0) {
+						return '<span class="text-muted">없음</span>';
 					}
 
-					// 카테고리 ID를 이름으로 변환
 					const categoryNames = ui.cellData.map(function(idx) {
-						const category = topCategories.find(c => c.category_idx == idx);
+						const category = topCategories.find(cat => cat.category_idx == idx);
 						return category ? category.category_name : idx;
 					});
 
@@ -260,6 +425,7 @@ $(document).ready(function() {
 		});
 	}
 
+
 	/**
 	 * 마스터 정보 수정 Offcanvas 열기
 	 */
@@ -269,24 +435,27 @@ $(document).ready(function() {
 		$('#edit_user_mail').val(rowData.user_mail);
 		$('#edit_user_hp').val(rowData.user_hp);
 
-		// 메뉴 권한 체크박스 설정
-		$('#menu_permissions input[type="checkbox"]').prop('checked', false);
-		if (Array.isArray(rowData.managed_menus)) {
-			rowData.managed_menus.forEach(function(menu) {
-				$(`#menu_${menu}`).prop('checked', true);
+		// 마스터 메뉴 권한 체크박스 설정
+		$('.menu-checkbox').prop('checked', false);
+		if (Array.isArray(rowData.master_managed_menus)) {
+			rowData.master_managed_menus.forEach(function(menuKey) {
+				$(`#menu_${menuKey}`).prop('checked', true);
 			});
 		}
 
-		// 카테고리 권한 체크박스 설정
+		// 메뉴 전체 선택 상태 업데이트
+		updateMenuSelectAllState();
+
+		// 마스터 카테고리 권한 체크박스 설정
 		$('.category-checkbox').prop('checked', false);
-		if (Array.isArray(rowData.managed_areas) && rowData.managed_areas.length > 0) {
-			rowData.managed_areas.forEach(function(categoryIdx) {
+		if (Array.isArray(rowData.master_managed_category) && rowData.master_managed_category.length > 0) {
+			rowData.master_managed_category.forEach(function(categoryIdx) {
 				$(`#category_${categoryIdx}`).prop('checked', true);
 			});
 		}
 
-		// 전체 선택 상태 업데이트
-		updateSelectAllState();
+		// 카테고리 전체 선택 상태 업데이트
+		updateCategorySelectAllState();
 
 		masterOffcanvas.show();
 	}
@@ -310,16 +479,16 @@ $(document).ready(function() {
 			return;
 		}
 
-		// 메뉴 권한 수집
-		const managedMenus = [];
-		$('#menu_permissions input[type="checkbox"]:checked').each(function() {
-			managedMenus.push($(this).val());
+		// 마스터 메뉴 권한 수집
+		const masterManagedMenus = [];
+		$('.menu-checkbox:checked').each(function() {
+			masterManagedMenus.push($(this).val());
 		});
 
-		// 카테고리 권한 수집 (체크된 항목만)
-		const managedAreas = [];
+		// 마스터 카테고리 권한 수집
+		const masterManagedCategory = [];
 		$('.category-checkbox:checked').each(function() {
-			managedAreas.push($(this).val());
+			masterManagedCategory.push($(this).val());
 		});
 
 		const data = {
@@ -327,8 +496,8 @@ $(document).ready(function() {
 			user_name: userName,
 			user_mail: userMail,
 			user_hp: userHp,
-			managed_menus: JSON.stringify(managedMenus),
-			managed_areas: JSON.stringify(managedAreas)
+			master_managed_menus: JSON.stringify(masterManagedMenus),
+			master_managed_category: JSON.stringify(masterManagedCategory)
 		};
 
 		$.ajax({
@@ -366,39 +535,5 @@ $(document).ready(function() {
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
 	}
 
-	/**
-	 * Toast 메시지 표시
-	 */
-	function showToast(message, type = 'info') {
-		const bgColor = {
-			'success': 'bg-success',
-			'error': 'bg-danger',
-			'warning': 'bg-warning',
-			'info': 'bg-info'
-		}[type] || 'bg-info';
 
-		const toastHtml = `
-			<div class="toast align-items-center text-white ${bgColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-				<div class="d-flex">
-					<div class="toast-body">${message}</div>
-					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-				</div>
-			</div>
-		`;
-
-		let toastContainer = $('#toastContainer');
-		if (toastContainer.length === 0) {
-			$('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
-			toastContainer = $('#toastContainer');
-		}
-
-		toastContainer.append(toastHtml);
-		const toastElement = toastContainer.find('.toast').last()[0];
-		const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
-		toast.show();
-
-		$(toastElement).on('hidden.bs.toast', function() {
-			$(this).remove();
-		});
-	}
 });

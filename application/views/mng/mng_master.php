@@ -71,19 +71,11 @@
 			<!-- 마스터 메뉴 권한 -->
 			<div class="mb-4">
 				<h6 class="border-bottom pb-2 mb-3">마스터 메뉴 권한</h6>
+				<div class="alert alert-info">
+					<small>체크된 메뉴만 마스터가 접근할 수 있습니다.</small>
+				</div>
 				<div id="menu_permissions">
-					<div class="form-check mb-2">
-						<input class="form-check-input" type="checkbox" value="org_management" id="menu_org_management">
-						<label class="form-check-label" for="menu_org_management">조직 관리</label>
-					</div>
-					<div class="form-check mb-2">
-						<input class="form-check-input" type="checkbox" value="user_management" id="menu_user_management">
-						<label class="form-check-label" for="menu_user_management">사용자 관리</label>
-					</div>
-					<div class="form-check mb-2">
-						<input class="form-check-input" type="checkbox" value="system_settings" id="menu_system_settings">
-						<label class="form-check-label" for="menu_system_settings">시스템 설정</label>
-					</div>
+					<!-- 메뉴 체크박스가 동적으로 로드됩니다 -->
 				</div>
 			</div>
 

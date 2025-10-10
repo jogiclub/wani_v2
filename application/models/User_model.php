@@ -16,8 +16,25 @@ class User_model extends CI_Model {
 	}
 
 	public function get_user_by_id($user_id) {
+		$this->db->select('
+		idx, 
+		user_id, 
+		user_name, 
+		user_mail, 
+		user_hp, 
+		user_profile_image, 
+		master_yn,
+		managed_menus,
+		managed_areas,
+		master_managed_menus,
+		master_managed_category,
+		regi_date, 
+		modi_date
+	');
+		$this->db->from('wb_user');
 		$this->db->where('user_id', $user_id);
-		$query = $this->db->get('wb_user');
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
 		return $query->row_array();
 	}
 
@@ -140,8 +157,8 @@ class User_model extends CI_Model {
         user_mail,
         user_hp,
         user_profile_image,
-        managed_menus,
-        managed_areas,
+        master_managed_menus,
+        master_managed_category,
         regi_date,
         modi_date
     ');
@@ -153,18 +170,18 @@ class User_model extends CI_Model {
 		$query = $this->db->get();
 		$users = $query->result_array();
 
-		// managed_menus와 managed_areas를 배열로 변환
+		// master_managed_menus와 master_managed_category를 배열로 변환
 		foreach ($users as &$user) {
-			if (!empty($user['managed_menus'])) {
-				$user['managed_menus'] = json_decode($user['managed_menus'], true);
+			if (!empty($user['master_managed_menus'])) {
+				$user['master_managed_menus'] = json_decode($user['master_managed_menus'], true);
 			} else {
-				$user['managed_menus'] = array();
+				$user['master_managed_menus'] = array();
 			}
 
-			if (!empty($user['managed_areas'])) {
-				$user['managed_areas'] = json_decode($user['managed_areas'], true);
+			if (!empty($user['master_managed_category'])) {
+				$user['master_managed_category'] = json_decode($user['master_managed_category'], true);
 			} else {
-				$user['managed_areas'] = array();
+				$user['master_managed_category'] = array();
 			}
 		}
 
@@ -185,21 +202,21 @@ class User_model extends CI_Model {
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		// managed_menus 처리
-		if (isset($data['managed_menus'])) {
-			if (is_array($data['managed_menus']) && !empty($data['managed_menus'])) {
-				$update_data['managed_menus'] = json_encode($data['managed_menus']);
+		// master_managed_menus 처리
+		if (isset($data['master_managed_menus'])) {
+			if (is_array($data['master_managed_menus']) && !empty($data['master_managed_menus'])) {
+				$update_data['master_managed_menus'] = json_encode($data['master_managed_menus']);
 			} else {
-				$update_data['managed_menus'] = null;
+				$update_data['master_managed_menus'] = null;
 			}
 		}
 
-		// managed_areas 처리
-		if (isset($data['managed_areas'])) {
-			if (is_array($data['managed_areas']) && !empty($data['managed_areas'])) {
-				$update_data['managed_areas'] = json_encode($data['managed_areas']);
+		// master_managed_category 처리
+		if (isset($data['master_managed_category'])) {
+			if (is_array($data['master_managed_category']) && !empty($data['master_managed_category'])) {
+				$update_data['master_managed_category'] = json_encode($data['master_managed_category']);
 			} else {
-				$update_data['managed_areas'] = null;
+				$update_data['master_managed_category'] = null;
 			}
 		}
 

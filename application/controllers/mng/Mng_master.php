@@ -21,6 +21,9 @@ class Mng_master extends CI_Controller
 		if ($this->session->userdata('master_yn') !== 'Y') {
 			show_error('접근 권한이 없습니다.', 403);
 		}
+
+		// 메뉴 접근 권한 확인
+		$this->check_menu_access('mng_master');
 	}
 
 	/**
@@ -30,6 +33,33 @@ class Mng_master extends CI_Controller
 	{
 		$data['user'] = $this->User_model->get_user_by_id($this->session->userdata('user_id'));
 		$this->load->view('mng/mng_master', $data);
+	}
+
+	/**
+	 * 메뉴 접근 권한 확인
+	 */
+	private function check_menu_access($menu_key)
+	{
+		$user_id = $this->session->userdata('user_id');
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$user_managed_menus = array();
+		if (!empty($user['managed_menus'])) {
+			$user_managed_menus = json_decode($user['managed_menus'], true);
+			if (!is_array($user_managed_menus)) {
+				$user_managed_menus = array();
+			}
+		}
+
+		// managed_menus가 비어있으면 모든 메뉴 접근 가능
+		if (empty($user_managed_menus)) {
+			return;
+		}
+
+		// 접근 권한이 없는 경우
+		if (!in_array($menu_key, $user_managed_menus)) {
+			show_error('해당 메뉴에 접근할 권한이 없습니다.', 403);
+		}
 	}
 
 	/**
@@ -85,17 +115,17 @@ class Mng_master extends CI_Controller
 				return;
 			}
 
-			// managed_menus와 managed_areas JSON 파싱
-			if (!empty($user['managed_menus'])) {
-				$user['managed_menus'] = json_decode($user['managed_menus'], true);
+			// master_managed_menus와 master_managed_category JSON 파싱
+			if (!empty($user['master_managed_menus'])) {
+				$user['master_managed_menus'] = json_decode($user['master_managed_menus'], true);
 			} else {
-				$user['managed_menus'] = array();
+				$user['master_managed_menus'] = array();
 			}
 
-			if (!empty($user['managed_areas'])) {
-				$user['managed_areas'] = json_decode($user['managed_areas'], true);
+			if (!empty($user['master_managed_category'])) {
+				$user['master_managed_category'] = json_decode($user['master_managed_category'], true);
 			} else {
-				$user['managed_areas'] = array();
+				$user['master_managed_category'] = array();
 			}
 
 			header('Content-Type: application/json; charset=utf-8');
@@ -133,22 +163,22 @@ class Mng_master extends CI_Controller
 			'user_hp' => trim($this->input->post('user_hp'))
 		);
 
-		// managed_menus 처리
-		$managed_menus = $this->input->post('managed_menus');
-		if ($managed_menus !== null) {
-			if (is_string($managed_menus)) {
-				$managed_menus = json_decode($managed_menus, true);
+		// master_managed_menus 처리
+		$master_managed_menus = $this->input->post('master_managed_menus');
+		if ($master_managed_menus !== null) {
+			if (is_string($master_managed_menus)) {
+				$master_managed_menus = json_decode($master_managed_menus, true);
 			}
-			$data['managed_menus'] = is_array($managed_menus) ? $managed_menus : array();
+			$data['master_managed_menus'] = is_array($master_managed_menus) ? $master_managed_menus : array();
 		}
 
-		// managed_areas 처리
-		$managed_areas = $this->input->post('managed_areas');
-		if ($managed_areas !== null) {
-			if (is_string($managed_areas)) {
-				$managed_areas = json_decode($managed_areas, true);
+		// master_managed_category 처리
+		$master_managed_category = $this->input->post('master_managed_category');
+		if ($master_managed_category !== null) {
+			if (is_string($master_managed_category)) {
+				$master_managed_category = json_decode($master_managed_category, true);
 			}
-			$data['managed_areas'] = is_array($managed_areas) ? $managed_areas : array();
+			$data['master_managed_category'] = is_array($master_managed_category) ? $master_managed_category : array();
 		}
 
 		try {
@@ -229,6 +259,52 @@ class Mng_master extends CI_Controller
 			echo json_encode(array(
 				'success' => false,
 				'message' => '카테고리 목록 조회 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+
+	/**
+	 * 파일 위치: application/controllers/mng/Mng_master.php
+	 * 역할: 시스템 메뉴 목록 조회 API
+	 */
+	public function get_system_menus()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		try {
+			// 메뉴 상수 파일 로드
+			$this->config->load('menu_constants');
+			$system_menus = $this->config->item('system_menus');
+
+			if (!$system_menus) {
+				throw new Exception('시스템 메뉴를 불러올 수 없습니다.');
+			}
+
+			// 메뉴 데이터를 배열로 변환
+			$menus = array();
+			foreach ($system_menus as $menu_key => $menu_info) {
+				$menus[] = array(
+					'key' => $menu_key,
+					'name' => $menu_info['name'],
+					'icon' => $menu_info['icon'],
+					'level' => $menu_info['level']
+				);
+			}
+
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => true,
+				'data' => $menus
+			));
+		} catch (Exception $e) {
+			log_message('error', '시스템 메뉴 조회 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '시스템 메뉴 조회 중 오류가 발생했습니다.'
 			));
 		}
 	}

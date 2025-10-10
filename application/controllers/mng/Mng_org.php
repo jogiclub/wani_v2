@@ -21,6 +21,37 @@ class Mng_org extends CI_Controller
 		if ($this->session->userdata('master_yn') !== 'Y') {
 			show_error('접근 권한이 없습니다.', 403);
 		}
+
+		// 메뉴 접근 권한 확인
+		$this->check_menu_access('mng_org');
+	}
+
+
+	/**
+	 * 메뉴 접근 권한 확인
+	 */
+	private function check_menu_access($menu_key)
+	{
+		$user_id = $this->session->userdata('user_id');
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$master_managed_menus = array();
+		if (!empty($user['master_managed_menus'])) {
+			$master_managed_menus = json_decode($user['master_managed_menus'], true);
+			if (!is_array($master_managed_menus)) {
+				$master_managed_menus = array();
+			}
+		}
+
+		// master_managed_menus가 비어있으면 모든 메뉴 접근 가능
+		if (empty($master_managed_menus)) {
+			return;
+		}
+
+		// 접근 권한이 없는 경우
+		if (!in_array($menu_key, $master_managed_menus)) {
+			show_error('해당 메뉴에 접근할 권한이 없습니다.', 403);
+		}
 	}
 
 	/**
@@ -676,11 +707,11 @@ class Mng_org extends CI_Controller
 
 		$visible_categories = array();
 
-		// 사용자의 managed_areas 확인
-		if (!empty($user['managed_areas'])) {
-			$managed_areas = json_decode($user['managed_areas'], true);
-			if (is_array($managed_areas) && !empty($managed_areas)) {
-				$visible_categories = $managed_areas;
+		// 사용자의 master_managed_category 확인 (마스터용 필드 사용)
+		if (!empty($user['master_managed_category'])) {
+			$master_managed_category = json_decode($user['master_managed_category'], true);
+			if (is_array($master_managed_category) && !empty($master_managed_category)) {
+				$visible_categories = $master_managed_category;
 			}
 		}
 
@@ -688,6 +719,7 @@ class Mng_org extends CI_Controller
 		if (!empty($visible_categories)) {
 			$total_count = $this->Org_category_model->get_filtered_org_count($visible_categories);
 		} else {
+			// 빈 배열인 경우 모든 조직 수 표시 (기본값)
 			$total_count = $this->Org_category_model->get_total_categorized_org_count();
 		}
 
@@ -860,11 +892,11 @@ class Mng_org extends CI_Controller
 
 		$visible_categories = array();
 
-		// 사용자의 managed_areas 확인 (체크된 카테고리만 보임)
-		if (!empty($user['managed_areas'])) {
-			$managed_areas = json_decode($user['managed_areas'], true);
-			if (is_array($managed_areas) && !empty($managed_areas)) {
-				$visible_categories = $managed_areas;
+		// 사용자의 master_managed_category 확인 (체크된 카테고리만 보임)
+		if (!empty($user['master_managed_category'])) {
+			$master_managed_category = json_decode($user['master_managed_category'], true);
+			if (is_array($master_managed_category) && !empty($master_managed_category)) {
+				$visible_categories = $master_managed_category;
 			}
 		}
 
@@ -872,6 +904,7 @@ class Mng_org extends CI_Controller
 		if (!empty($visible_categories)) {
 			$tree_data = $this->Org_category_model->get_category_tree_for_master($visible_categories);
 		} else {
+			// 빈 배열인 경우 모든 카테고리 표시 (기본값)
 			$tree_data = $this->Org_category_model->get_category_tree();
 		}
 
