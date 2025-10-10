@@ -1,6 +1,7 @@
 <?php
 $this->load->view('mng/header');
 ?>
+
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 
@@ -14,11 +15,11 @@ $this->load->view('mng/header');
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="/mng">관리자홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">ORG</a></li>
-			<li class="breadcrumb-item active">조직관리</li>
+			<li class="breadcrumb-item active">마스터관리</li>
 		</ol>
 	</nav>
 	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
-		<h3 class="page-title col-12 my-1">조직관리</h3>
+		<h3 class="page-title col-12 my-1">마스터관리</h3>
 	</div>
 
 	<!-- Split.js를 위한 단일 컨테이너로 변경 -->

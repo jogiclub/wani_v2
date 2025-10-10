@@ -16,7 +16,7 @@
 	<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 
 	<link rel="stylesheet" href="/assets/css/common.css?<?php echo WB_VERSION; ?>">
-
+	<link rel="stylesheet" href="/assets/css/mng_common.css?<?php echo WB_VERSION; ?>">
 
 </head>
 
@@ -75,18 +75,16 @@
 						</a>
 					</li>
 				</ul>
-			<!--
-				<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase">
-					<span>MEAK</span>
-				</h6>
-				<ul class="nav flex-column">
-					<li class="nav-item">
-						<a class="nav-link" href="#" onclick="showToast('준비 중입니다.', 'info')">
-							<i class="bi bi-people"></i> 결연교회관리
-						</a>
-					</li>
-
-				</ul>-->
+			<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase">
+				<span>MASTER</span>
+			</h6>
+			<ul class="nav flex-column">
+				<li class="nav-item">
+					<a class="nav-link <?php echo (uri_string() == 'mng/mng_master' || strpos(uri_string(), 'mng/mng_master') === 0) ? 'active' : ''; ?>" href="/mng/mng_master">
+						<i class="bi bi-building"></i> 마스터관리
+					</a>
+				</li>
+			</ul>
 		</div>
 	</div>
 </div>

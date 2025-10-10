@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class Mng_org extends CI_Controller
+class Mng_master extends CI_Controller
 {
 	public function __construct()
 	{

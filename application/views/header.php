@@ -140,7 +140,7 @@
 		<!--관리자-->
 		<?php if ($this->session->userdata('master_yn') === 'Y'): ?>
 			<div id="navbarMng" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-danger" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
-				<a href="https://wani.im/mng/" type="button" id="buttonMng"><i class="bi bi-gear-wide-connected fs-5 text-danger"></i></a>
+				<a href="https://wani.im/mng/" target="_blank" type="button" id="buttonMng"><i class="bi bi-gear-wide-connected fs-5 text-danger"></i></a>
 			</div>
 		<?php endif; ?>
 
