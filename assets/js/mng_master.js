@@ -1,0 +1,335 @@
+'use strict';
+$(document).ready(function() {
+	let masterGrid;
+	let masterOffcanvas;
+	let allCategories = [];
+
+	// Offcanvas 초기화
+	masterOffcanvas = new bootstrap.Offcanvas(document.getElementById('masterOffcanvas'));
+
+	// 카테고리 목록 로드
+	loadCategories();
+
+	// PQGrid 초기화
+	initMasterGrid();
+
+	// 마스터 목록 로드
+	loadMasterList();
+
+	/**
+	 * 날짜 포맷팅 함수 (moment.js 대체)
+	 */
+	function formatDateTime(dateString) {
+		if (!dateString) return '';
+
+		const date = new Date(dateString);
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+
+		return `${year}-${month}-${day} ${hours}:${minutes}`;
+	}
+
+	/**
+	 * 카테고리 목록 로드
+	 */
+	function loadCategories() {
+		$.ajax({
+			url: '/mng/mng_master/get_all_categories',
+			type: 'GET',
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					allCategories = response.data;
+					updateCategorySelect();
+				}
+			},
+			error: function() {
+				showToast('카테고리 목록을 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 카테고리 셀렉트박스 업데이트
+	 */
+	function updateCategorySelect() {
+		const $select = $('#edit_managed_areas');
+		$select.empty();
+
+		allCategories.forEach(function(category) {
+			// HTML 엔티티를 실제 공백으로 변환
+			const displayName = $('<div>').html(category.category_name).text();
+			$select.append(`<option value="${category.category_idx}">${displayName}</option>`);
+		});
+	}
+
+	/**
+	 * PQGrid 초기화
+	 */
+	function initMasterGrid() {
+		const colModel = [
+			{
+				title: '프로필',
+				dataIndx: 'user_profile_image',
+				width: 80,
+				align: 'center',
+				render: function(ui) {
+					const imgSrc = ui.cellData || '/assets/images/photo_no.png?3';
+					return `<img src="${imgSrc}" class="rounded-circle" width="40" height="40" style="object-fit: cover;">`;
+				}
+			},
+			{
+				title: '사용자 ID',
+				dataIndx: 'user_id',
+				width: 150
+			},
+			{
+				title: '이름',
+				dataIndx: 'user_name',
+				width: 120
+			},
+			{
+				title: '이메일',
+				dataIndx: 'user_mail',
+				width: 200
+			},
+			{
+				title: '연락처',
+				dataIndx: 'user_hp',
+				width: 130
+			},
+			{
+				title: '메뉴 권한',
+				dataIndx: 'managed_menus',
+				width: 200,
+				render: function(ui) {
+					if (!ui.cellData || !Array.isArray(ui.cellData) || ui.cellData.length === 0) {
+						return '<span class="text-muted">미설정</span>';
+					}
+					return ui.cellData.join(', ');
+				}
+			},
+			{
+				title: '카테고리 권한',
+				dataIndx: 'managed_areas',
+				width: 200,
+				render: function(ui) {
+					if (!ui.cellData || !Array.isArray(ui.cellData) || ui.cellData.length === 0) {
+						return '<span class="text-muted">미설정</span>';
+					}
+
+					// 카테고리 ID를 이름으로 변환
+					const categoryNames = ui.cellData.map(function(idx) {
+						const category = allCategories.find(c => c.category_idx == idx);
+						if (category) {
+							// HTML 엔티티를 실제 공백으로 변환하고 표시
+							return $('<div>').html(category.category_name).text();
+						}
+						return idx;
+					});
+
+					return categoryNames.join(', ');
+				}
+			},
+			{
+				title: '등록일',
+				dataIndx: 'regi_date',
+				width: 150,
+				render: function(ui) {
+					return formatDateTime(ui.cellData);
+				}
+			},
+			{
+				title: '수정일',
+				dataIndx: 'modi_date',
+				width: 150,
+				render: function(ui) {
+					return formatDateTime(ui.cellData);
+				}
+			}
+		];
+
+		const options = {
+			width: '100%',
+			height: '100%',
+			colModel: colModel,
+			dataModel: {
+				data: []
+			},
+			wrap: false,
+			hwrap: false,
+			numberCell: { show: true, width: 50 },
+			title: false,
+			scrollModel: { autoFit: true },
+			hoverMode: 'row',
+			selectionModel: { type: 'row', mode: 'single' },
+			rowClick: function(evt, ui) {
+				openMasterOffcanvas(ui.rowData);
+			}
+		};
+
+		masterGrid = pq.grid('#masterGrid', options);
+	}
+
+	/**
+	 * 마스터 목록 로드
+	 */
+	function loadMasterList() {
+		showGridSpinner();
+
+		$.ajax({
+			url: '/mng/mng_master/get_master_list',
+			type: 'GET',
+			dataType: 'json',
+			success: function(response) {
+				hideGridSpinner();
+
+				if (response.success) {
+					masterGrid.option('dataModel.data', response.data);
+					masterGrid.refreshDataAndView();
+				} else {
+					showToast(response.message || '마스터 목록을 불러오는데 실패했습니다.', 'error');
+				}
+			},
+			error: function(xhr, status, error) {
+				hideGridSpinner();
+				console.error('마스터 목록 로드 오류:', error);
+				showToast('마스터 목록을 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 마스터 정보 수정 Offcanvas 열기
+	 */
+	function openMasterOffcanvas(rowData) {
+		$('#edit_user_id').val(rowData.user_id);
+		$('#edit_user_name').val(rowData.user_name);
+		$('#edit_user_mail').val(rowData.user_mail);
+		$('#edit_user_hp').val(rowData.user_hp);
+
+		// 메뉴 권한 체크박스 설정
+		$('#menu_permissions input[type="checkbox"]').prop('checked', false);
+		if (Array.isArray(rowData.managed_menus)) {
+			rowData.managed_menus.forEach(function(menu) {
+				$(`#menu_${menu}`).prop('checked', true);
+			});
+		}
+
+		// 카테고리 권한 선택
+		$('#edit_managed_areas').val(rowData.managed_areas || []);
+
+		masterOffcanvas.show();
+	}
+
+	/**
+	 * 마스터 정보 저장
+	 */
+	$('#saveMasterBtn').on('click', function() {
+		const userId = $('#edit_user_id').val();
+		const userName = $('#edit_user_name').val().trim();
+		const userMail = $('#edit_user_mail').val().trim();
+		const userHp = $('#edit_user_hp').val().trim();
+
+		if (!userName) {
+			showToast('이름을 입력해주세요.', 'warning');
+			return;
+		}
+
+		if (!userMail) {
+			showToast('이메일을 입력해주세요.', 'warning');
+			return;
+		}
+
+		// 메뉴 권한 수집
+		const managedMenus = [];
+		$('#menu_permissions input[type="checkbox"]:checked').each(function() {
+			managedMenus.push($(this).val());
+		});
+
+		// 카테고리 권한 수집
+		const managedAreas = $('#edit_managed_areas').val() || [];
+
+		const data = {
+			user_id: userId,
+			user_name: userName,
+			user_mail: userMail,
+			user_hp: userHp,
+			managed_menus: JSON.stringify(managedMenus),
+			managed_areas: JSON.stringify(managedAreas)
+		};
+
+		$.ajax({
+			url: '/mng/mng_master/update_master',
+			type: 'POST',
+			data: data,
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message, 'success');
+					masterOffcanvas.hide();
+					loadMasterList();
+				} else {
+					showToast(response.message || '마스터 정보 업데이트에 실패했습니다.', 'error');
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('마스터 업데이트 오류:', error);
+				showToast('마스터 정보 업데이트에 실패했습니다.', 'error');
+			}
+		});
+	});
+
+	/**
+	 * 그리드 스피너 표시
+	 */
+	function showGridSpinner() {
+		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
+	}
+
+	/**
+	 * 그리드 스피너 숨김
+	 */
+	function hideGridSpinner() {
+		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
+	}
+
+	/**
+	 * Toast 메시지 표시
+	 */
+	function showToast(message, type = 'info') {
+		const bgColor = {
+			'success': 'bg-success',
+			'error': 'bg-danger',
+			'warning': 'bg-warning',
+			'info': 'bg-info'
+		}[type] || 'bg-info';
+
+		const toastHtml = `
+			<div class="toast align-items-center text-white ${bgColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+				<div class="d-flex">
+					<div class="toast-body">${message}</div>
+					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+			</div>
+		`;
+
+		let toastContainer = $('#toastContainer');
+		if (toastContainer.length === 0) {
+			$('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+			toastContainer = $('#toastContainer');
+		}
+
+		toastContainer.append(toastHtml);
+		const toastElement = toastContainer.find('.toast').last()[0];
+		const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+		toast.show();
+
+		$(toastElement).on('hidden.bs.toast', function() {
+			$(this).remove();
+		});
+	}
+});

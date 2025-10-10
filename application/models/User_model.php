@@ -128,4 +128,88 @@ class User_model extends CI_Model {
 	}
 
 
+	/**
+	 * 마스터 사용자 목록 조회
+	 */
+	public function get_master_users()
+	{
+		$this->db->select('
+        idx,
+        user_id,
+        user_name,
+        user_mail,
+        user_hp,
+        user_profile_image,
+        managed_menus,
+        managed_areas,
+        regi_date,
+        modi_date
+    ');
+		$this->db->from('wb_user');
+		$this->db->where('master_yn', 'Y');
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('regi_date', 'DESC');
+
+		$query = $this->db->get();
+		$users = $query->result_array();
+
+		// managed_menus와 managed_areas를 배열로 변환
+		foreach ($users as &$user) {
+			if (!empty($user['managed_menus'])) {
+				$user['managed_menus'] = json_decode($user['managed_menus'], true);
+			} else {
+				$user['managed_menus'] = array();
+			}
+
+			if (!empty($user['managed_areas'])) {
+				$user['managed_areas'] = json_decode($user['managed_areas'], true);
+			} else {
+				$user['managed_areas'] = array();
+			}
+		}
+
+		return $users;
+	}
+
+	/**
+	 * 마스터 사용자 정보 업데이트
+	 */
+	public function update_master_user($user_id, $data)
+	{
+		$this->db->trans_start();
+
+		$update_data = array(
+			'user_name' => $data['user_name'],
+			'user_mail' => $data['user_mail'],
+			'user_hp' => $data['user_hp'],
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		// managed_menus 처리
+		if (isset($data['managed_menus'])) {
+			if (is_array($data['managed_menus']) && !empty($data['managed_menus'])) {
+				$update_data['managed_menus'] = json_encode($data['managed_menus']);
+			} else {
+				$update_data['managed_menus'] = null;
+			}
+		}
+
+		// managed_areas 처리
+		if (isset($data['managed_areas'])) {
+			if (is_array($data['managed_areas']) && !empty($data['managed_areas'])) {
+				$update_data['managed_areas'] = json_encode($data['managed_areas']);
+			} else {
+				$update_data['managed_areas'] = null;
+			}
+		}
+
+		$this->db->where('user_id', $user_id);
+		$this->db->where('master_yn', 'Y');
+		$this->db->update('wb_user', $update_data);
+
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
+	}
+
 }
