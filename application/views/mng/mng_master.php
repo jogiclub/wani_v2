@@ -90,11 +90,11 @@
 			<!-- 마스터 카테고리 권한 -->
 			<div class="mb-4">
 				<h6 class="border-bottom pb-2 mb-3">마스터 카테고리 권한</h6>
-				<div class="mb-3">
-					<select class="form-select" id="edit_managed_areas" name="managed_areas" multiple size="10">
-						<!-- 카테고리 목록이 동적으로 로드됩니다 -->
-					</select>
-					<small class="text-muted">Ctrl 또는 Cmd 키를 누른 채로 여러 개를 선택할 수 있습니다.</small>
+				<div class="alert alert-info">
+					<small>체크된 최상위 카테고리는 조직관리 화면의 트리에서 숨겨집니다.</small>
+				</div>
+				<div id="category_permissions">
+					<!-- 카테고리 체크박스가 동적으로 로드됩니다 -->
 				</div>
 			</div>
 		</form>

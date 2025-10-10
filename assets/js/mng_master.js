@@ -1,14 +1,17 @@
+// 파일 위치: assets/js/mng_master.js
+// 역할: 마스터 관리 JavaScript (체크박스 방식)
+
 'use strict';
 $(document).ready(function() {
 	let masterGrid;
 	let masterOffcanvas;
-	let allCategories = [];
+	let topCategories = [];
 
 	// Offcanvas 초기화
 	masterOffcanvas = new bootstrap.Offcanvas(document.getElementById('masterOffcanvas'));
 
-	// 카테고리 목록 로드
-	loadCategories();
+	// 최상위 카테고리 목록 로드
+	loadTopCategories();
 
 	// PQGrid 초기화
 	initMasterGrid();
@@ -17,7 +20,7 @@ $(document).ready(function() {
 	loadMasterList();
 
 	/**
-	 * 날짜 포맷팅 함수 (moment.js 대체)
+	 * 날짜 포맷팅 함수
 	 */
 	function formatDateTime(dateString) {
 		if (!dateString) return '';
@@ -33,17 +36,17 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 카테고리 목록 로드
+	 * 최상위 카테고리 목록 로드
 	 */
-	function loadCategories() {
+	function loadTopCategories() {
 		$.ajax({
-			url: '/mng/mng_master/get_all_categories',
+			url: '/mng/mng_master/get_top_categories',
 			type: 'GET',
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					allCategories = response.data;
-					updateCategorySelect();
+					topCategories = response.data;
+					updateCategoryCheckboxes();
 				}
 			},
 			error: function() {
@@ -53,16 +56,27 @@ $(document).ready(function() {
 	}
 
 	/**
-	 * 카테고리 셀렉트박스 업데이트
+	 * 카테고리 체크박스 업데이트
 	 */
-	function updateCategorySelect() {
-		const $select = $('#edit_managed_areas');
-		$select.empty();
+	function updateCategoryCheckboxes() {
+		const $container = $('#category_permissions');
+		$container.empty();
 
-		allCategories.forEach(function(category) {
-			// HTML 엔티티를 실제 공백으로 변환
-			const displayName = $('<div>').html(category.category_name).text();
-			$select.append(`<option value="${category.category_idx}">${displayName}</option>`);
+		if (topCategories.length === 0) {
+			$container.append('<p class="text-muted">최상위 카테고리가 없습니다.</p>');
+			return;
+		}
+
+		topCategories.forEach(function(category) {
+			const checkboxHtml = `
+				<div class="form-check mb-2">
+					<input class="form-check-input" type="checkbox" value="${category.category_idx}" id="category_${category.category_idx}">
+					<label class="form-check-label" for="category_${category.category_idx}">
+						${category.category_name}
+					</label>
+				</div>
+			`;
+			$container.append(checkboxHtml);
 		});
 	}
 
@@ -123,12 +137,8 @@ $(document).ready(function() {
 
 					// 카테고리 ID를 이름으로 변환
 					const categoryNames = ui.cellData.map(function(idx) {
-						const category = allCategories.find(c => c.category_idx == idx);
-						if (category) {
-							// HTML 엔티티를 실제 공백으로 변환하고 표시
-							return $('<div>').html(category.category_name).text();
-						}
-						return idx;
+						const category = topCategories.find(c => c.category_idx == idx);
+						return category ? category.category_name : idx;
 					});
 
 					return categoryNames.join(', ');
@@ -163,7 +173,11 @@ $(document).ready(function() {
 			hwrap: false,
 			numberCell: { show: true, width: 50 },
 			title: false,
-			scrollModel: { autoFit: true },
+			scrollModel: {
+				autoFit: false,
+				horizontal: true,
+				vertical: true
+			},
 			hoverMode: 'row',
 			selectionModel: { type: 'row', mode: 'single' },
 			rowClick: function(evt, ui) {
@@ -219,8 +233,13 @@ $(document).ready(function() {
 			});
 		}
 
-		// 카테고리 권한 선택
-		$('#edit_managed_areas').val(rowData.managed_areas || []);
+		// 카테고리 권한 체크박스 설정
+		$('#category_permissions input[type="checkbox"]').prop('checked', false);
+		if (Array.isArray(rowData.managed_areas)) {
+			rowData.managed_areas.forEach(function(categoryIdx) {
+				$(`#category_${categoryIdx}`).prop('checked', true);
+			});
+		}
 
 		masterOffcanvas.show();
 	}
@@ -251,7 +270,10 @@ $(document).ready(function() {
 		});
 
 		// 카테고리 권한 수집
-		const managedAreas = $('#edit_managed_areas').val() || [];
+		const managedAreas = [];
+		$('#category_permissions input[type="checkbox"]:checked').each(function() {
+			managedAreas.push($(this).val());
+		});
 
 		const data = {
 			user_id: userId,

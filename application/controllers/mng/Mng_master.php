@@ -204,4 +204,34 @@ class Mng_master extends CI_Controller
 		}
 	}
 
+
+
+	/**
+	 * 최상위 카테고리 목록 조회 (AJAX)
+	 */
+	public function get_top_categories()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		try {
+			$categories = $this->Org_category_model->get_top_level_categories();
+
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => true,
+				'data' => $categories
+			));
+		} catch (Exception $e) {
+			log_message('error', '최상위 카테고리 조회 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '카테고리 목록 조회 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+
 }

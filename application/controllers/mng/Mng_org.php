@@ -33,7 +33,7 @@ class Mng_org extends CI_Controller
 	}
 
 	/**
-	 * 조직 카테고리 트리 데이터 조회 (AJAX)
+	 * 조직 카테고리 트리 데이터 조회 (AJAX) - 마스터 관리 카테고리 제외
 	 */
 	public function get_category_tree()
 	{
@@ -41,7 +41,25 @@ class Mng_org extends CI_Controller
 			show_404();
 		}
 
-		$tree_data = $this->Org_category_model->get_category_tree();
+		$user_id = $this->session->userdata('user_id');
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$excluded_categories = array();
+
+		// 사용자의 managed_areas 확인
+		if (!empty($user['managed_areas'])) {
+			$managed_areas = json_decode($user['managed_areas'], true);
+			if (is_array($managed_areas)) {
+				$excluded_categories = $managed_areas;
+			}
+		}
+
+		// 제외할 카테고리가 있으면 필터링된 트리, 없으면 전체 트리
+		if (!empty($excluded_categories)) {
+			$tree_data = $this->Org_category_model->get_category_tree_excluding($excluded_categories);
+		} else {
+			$tree_data = $this->Org_category_model->get_category_tree();
+		}
 
 		header('Content-Type: application/json; charset=utf-8');
 		echo json_encode($tree_data);
