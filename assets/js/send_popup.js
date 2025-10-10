@@ -2664,3 +2664,31 @@ function saveReservationBatch(reservationList) {
 		}
 	);
 }
+
+// localStorage에서 결연교회 추천 SMS 데이터 확인
+const pendingOfferSmsData = localStorage.getItem('pendingOfferSmsData');
+
+if (pendingOfferSmsData) {
+	try {
+		const smsData = JSON.parse(pendingOfferSmsData);
+
+		// 1분 이내의 데이터만 사용
+		if (new Date().getTime() - smsData.timestamp < 60000) {
+			// 메시지 내용 설정
+			if (smsData.message) {
+				$('#messageContent').val(smsData.message);
+
+				// 글자 수 카운트 업데이트 (send_popup.js에 해당 함수가 있다면)
+				if (typeof updateCharCount === 'function') {
+					updateCharCount();
+				}
+			}
+		}
+
+		// 사용 후 삭제
+		localStorage.removeItem('pendingOfferSmsData');
+	} catch (e) {
+		console.error('Offer SMS 데이터 파싱 오류:', e);
+		localStorage.removeItem('pendingOfferSmsData');
+	}
+}

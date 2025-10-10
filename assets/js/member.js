@@ -4683,22 +4683,63 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * Offer URL 복사
+	 * 패스코드 갱신 버튼 이벤트
+	 */
+	$(document).on('click', '#copyPassResetBtn', function() {
+		if (!currentOfferMemberIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		// 버튼 비활성화 및 로딩 표시
+		const $btn = $(this);
+		const originalHtml = $btn.html();
+		$btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+
+		$.ajax({
+			url: '/member/refresh_member_passcode',
+			method: 'POST',
+			data: {
+				member_idx: currentOfferMemberIdx,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					currentOfferUrl = response.offer_url;
+					$('#offerUrlInput').val(response.offer_url);
+					showToast(response.message, 'success');
+				} else {
+					showToast(response.message || '패스코드 갱신에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('패스코드 갱신 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				// 버튼 복원
+				$btn.prop('disabled', false).html(originalHtml);
+			}
+		});
+	});
+
+
+	/**
+	 * URL 복사 버튼 이벤트
 	 */
 	$(document).on('click', '#copyOfferUrlBtn', function() {
-		const urlInput = document.getElementById('offerUrlInput');
+		const urlInput = $('#offerUrlInput');
 		urlInput.select();
-		urlInput.setSelectionRange(0, 99999); // 모바일 대응
 
 		try {
 			document.execCommand('copy');
-			showToast('URL이 복사되었습니다.', 'success');
+			showToast('URL이 클립보드에 복사되었습니다.', 'success');
 		} catch (err) {
-			// Clipboard API 사용
-			navigator.clipboard.writeText(urlInput.value).then(function() {
-				showToast('URL이 복사되었습니다.', 'success');
-			}, function() {
-				showToast('복사에 실패했습니다.', 'error');
+			// Fallback for older browsers
+			navigator.clipboard.writeText(urlInput.val()).then(function() {
+				showToast('URL이 클립보드에 복사되었습니다.', 'success');
+			}).catch(function() {
+				showToast('URL 복사에 실패했습니다.', 'error');
 			});
 		}
 	});
@@ -4794,6 +4835,104 @@ $(document).ready(function () {
 			}
 		});
 	}
+
+
+	/**
+	 * 결연교회 추천 문자발송 버튼 이벤트
+	 */
+	$(document).on('click', '#sendOfferSmsBtn', function() {
+		if (!currentOfferMemberIdx || !currentOfferUrl) {
+			showToast('회원 정보 또는 URL을 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		// 현재 회원 정보 조회
+		$.ajax({
+			url: '/member/get_member_info',
+			method: 'POST',
+			data: {
+				member_idx: currentOfferMemberIdx,
+				org_id: selectedOrgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success && response.member) {
+					const member = response.member;
+
+					// 전화번호 확인
+					if (!member.member_phone || member.member_phone.trim() === '') {
+						showToast('회원의 전화번호가 없어 문자를 발송할 수 없습니다.', 'warning');
+						return;
+					}
+
+					// 메시지 내용
+					const message = `결연교회 추천\n${currentOfferUrl}`;
+
+					// localStorage에 데이터 저장
+					const smsData = {
+						memberIds: [member.member_idx],
+						message: message,
+						timestamp: new Date().getTime()
+					};
+
+					localStorage.setItem('pendingOfferSmsData', JSON.stringify(smsData));
+
+					// 팝업으로 member_ids 전송
+					openOfferSendPopup([member.member_idx]);
+				} else {
+					showToast('회원 정보를 불러오는데 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('회원 정보 조회 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	});
+
+
+	/**
+	 * 결연교회 추천 문자발송 팝업 열기
+	 */
+	function openOfferSendPopup(memberIds) {
+		const popupWidth = 1400;
+		const popupHeight = 900;
+		const left = (screen.width - popupWidth) / 2;
+		const top = (screen.height - popupHeight) / 2;
+
+		// 임시 폼 생성
+		const form = document.createElement('form');
+		form.method = 'POST';
+		form.action = '/send/popup';
+		form.target = 'sendPopup';
+		form.style.display = 'none';
+
+		// member_ids를 JSON 문자열로 전송
+		const input = document.createElement('input');
+		input.type = 'hidden';
+		input.name = 'member_ids';
+		input.value = JSON.stringify(memberIds);
+
+		form.appendChild(input);
+		document.body.appendChild(form);
+
+		// 팝업 창 열기
+		const popup = window.open('', 'sendPopup', `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+
+		if (!popup) {
+			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
+			localStorage.removeItem('pendingOfferSmsData');
+			document.body.removeChild(form);
+			return;
+		}
+
+		form.submit();
+		document.body.removeChild(form);
+
+		// 모달 닫기
+		$('#sendOfferModal').modal('hide');
+	}
+
+
 
 });
 

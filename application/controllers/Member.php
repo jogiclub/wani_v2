@@ -2104,8 +2104,7 @@ class Member extends My_Controller
 		}
 	}
 
-	// 파일 위치: application/controllers/Member.php
-// 역할: 회원에게 결연교회 추천 문자 전송 기능
+
 
 
 	/**
@@ -2135,17 +2134,21 @@ class Member extends My_Controller
 			return;
 		}
 
-		// 패스코드 갱신 (기존 패스코드가 있어도 새로 생성)
-		$passcode = $this->Member_model->generate_member_passcode();
+		// 패스코드가 없으면 생성
+		if (empty($member['member_passcode'])) {
+			$passcode = $this->Member_model->generate_member_passcode();
 
-		$this->db->where('member_idx', $member_idx);
-		$this->db->update('wb_member', array(
-			'member_passcode' => $passcode,
-			'modi_date' => date('Y-m-d H:i:s')
-		));
+			$this->db->where('member_idx', $member_idx);
+			$this->db->update('wb_member', array(
+				'member_passcode' => $passcode,
+				'modi_date' => date('Y-m-d H:i:s')
+			));
+
+			$member['member_passcode'] = $passcode;
+		}
 
 		// Offer 링크 생성
-		$offer_url = base_url('offer/' . $org_id . '/' . $member_idx . '/' . $passcode);
+		$offer_url = base_url('offer/' . $org_id . '/' . $member_idx . '/' . $member['member_passcode']);
 
 		echo json_encode(array(
 			'success' => true,
@@ -2155,6 +2158,53 @@ class Member extends My_Controller
 		));
 	}
 
+
+
+	/**
+	 * 회원 패스코드 갱신
+	 */
+	public function refresh_member_passcode()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		// 회원 정보 조회
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 새 패스코드 생성
+		$new_passcode = $this->Member_model->generate_member_passcode();
+
+		$this->db->where('member_idx', $member_idx);
+		$this->db->update('wb_member', array(
+			'member_passcode' => $new_passcode,
+			'modi_date' => date('Y-m-d H:i:s')
+		));
+
+		// 새 Offer 링크 생성
+		$offer_url = base_url('offer/' . $org_id . '/' . $member_idx . '/' . $new_passcode);
+
+		echo json_encode(array(
+			'success' => true,
+			'offer_url' => $offer_url,
+			'message' => '패스코드가 갱신되었습니다.'
+		));
+	}
 
 
 	/**
@@ -2211,5 +2261,43 @@ class Member extends My_Controller
 			'data' => $transfer_orgs
 		));
 	}
+
+	/**
+	 * 회원 정보 조회 (간단 버전)
+	 */
+	public function get_member_info()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		// 회원 정보 조회
+		$member = $this->Member_model->get_member_by_idx($member_idx);
+
+		if (!$member || $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'member' => array(
+				'member_idx' => $member['member_idx'],
+				'member_name' => $member['member_name'],
+				'member_phone' => $member['member_phone']
+			)
+		));
+	}
+
 
 }

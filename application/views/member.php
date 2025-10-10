@@ -693,7 +693,7 @@
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="sendOfferModalLabel">
-					<i class="bi bi-chat-dots"></i> 회원에게 문자 전송
+					<i class="bi bi-chat-dots"></i> 회원에게 교회추천
 				</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
@@ -708,6 +708,9 @@
 					<p class="mb-2"><strong>결연교회 추천</strong></p>
 					<div class="input-group mb-2">
 						<input type="text" class="form-control" id="offerUrlInput" readonly>
+						<button class="btn btn-outline-secondary" type="button" id="copyPassResetBtn">
+							<i class="bi bi-arrow-clockwise"></i> 갱신
+						</button>
 						<button class="btn btn-outline-secondary" type="button" id="copyOfferUrlBtn">
 							<i class="bi bi-clipboard"></i> 복사
 						</button>
