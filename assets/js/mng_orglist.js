@@ -924,7 +924,8 @@
 	 */
 	function handleDashboardButtonClick() {
 		const orgId = $('#orgDashboardBtn').attr('data-org-id');
-		const orgName = $('#orgDashboardBtn').attr('title').replace(' 대시보드 바로가기', '');
+		const orgName = $('#edit_org_name').val() || $('#orgDashboardBtn').attr('title').replace(' 대시보드 바로가기', '');
+		const orgIcon = $('#edit_org_icon').val() || ''; // 조직 아이콘 정보가 있다면
 
 		if (!orgId) {
 			console.error('조직 ID를 찾을 수 없음');
@@ -932,38 +933,54 @@
 			return;
 		}
 
-		// 조직 변경 후 대시보드로 이동하는 폼 생성
-		const form = $('<form>', {
-			'method': 'POST',
-			'action': '/dashboard',
-			'target': '_blank'
-		});
+		console.log('바로가기 클릭:', { orgId, orgName, orgIcon });
 
-		// CSRF 토큰이 있으면 추가
-		const csrfToken = $('meta[name="csrf-token"]').attr('content');
-		if (csrfToken) {
-			form.append($('<input>', {
-				'type': 'hidden',
-				'name': 'csrf_token',
-				'value': csrfToken
-			}));
+		// 버튼 비활성화 및 로딩 표시
+		const $btn = $('#orgDashboardBtn');
+		const originalHtml = $btn.html();
+		$btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>이동 중...');
+
+		// 1. 로컬스토리지에 조직 정보 저장 (다음 로그인 시 사용)
+		try {
+			localStorage.setItem('lastSelectedOrgId', orgId);
+			localStorage.setItem('lastSelectedOrgName', orgName);
+			if (orgIcon) {
+				localStorage.setItem('lastSelectedOrgIcon', orgIcon);
+			}
+			console.log('로컬스토리지에 조직 정보 저장 완료');
+		} catch (e) {
+			console.warn('로컬스토리지 저장 실패:', e);
 		}
 
-		// 조직 ID 추가
-		form.append($('<input>', {
-			'type': 'hidden',
-			'name': 'org_id',
-			'value': orgId
-		}));
+		// 2. 서버에 조직 전환 요청 (새 탭에서 사용할 세션 변경)
+		$.ajax({
+			url: '/login/set_default_org',
+			type: 'POST',
+			data: { org_id: orgId },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					console.log('서버 조직 전환 성공:', response);
 
-		// 폼을 body에 추가하고 제출
-		$('body').append(form);
-		form.submit();
-		form.remove();
+					// 3. 새 탭에서 대시보드 열기
+					window.open('/dashboard', '_blank');
 
-		console.log('조직 변경 후 대시보드 이동:', orgId, orgName);
+					// 버튼 원상복구
+					$btn.prop('disabled', false).html(originalHtml);
+
+					showToast(`${orgName}(으)로 전환되었습니다`, 'success');
+				} else {
+					showToast(response.message || '조직 전환에 실패했습니다', 'error');
+					$btn.prop('disabled', false).html(originalHtml);
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('조직 전환 실패:', status, error);
+				showToast('조직 전환 중 오류가 발생했습니다', 'error');
+				$btn.prop('disabled', false).html(originalHtml);
+			}
+		});
 	}
-
 	/**
 	 * 태그 설정 처리
 	 */
