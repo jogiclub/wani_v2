@@ -87,7 +87,6 @@ class Member_info extends CI_Controller
 			'detail_fields' => $detail_fields,
 			'member_detail' => $member_detail,
 			'settlement_memos' => $settlement_memos,
-			'settlement_memo_type' => $settlement_memo_type,
 			'passcode' => $passcode
 		];
 
@@ -115,9 +114,7 @@ class Member_info extends CI_Controller
 		}
 
 		// '정착메모'가 있는지 확인
-		$settlement_key = array_search('정착메모', $memo_types);
-
-		if ($settlement_key === false) {
+		if (!in_array('정착메모', $memo_types)) {
 			// 정착메모 타입 추가
 			$memo_types[] = '정착메모';
 
@@ -127,12 +124,9 @@ class Member_info extends CI_Controller
 				'memo_name' => json_encode($memo_types, JSON_UNESCAPED_UNICODE),
 				'modi_date' => date('Y-m-d H:i:s')
 			]);
-
-			// 새로 추가된 인덱스 반환
-			$settlement_key = count($memo_types) - 1;
 		}
 
-		return $settlement_key;
+		return '정착메모';
 	}
 
 
@@ -144,7 +138,7 @@ class Member_info extends CI_Controller
 		$this->db->select('idx, memo_content, regi_date');
 		$this->db->from('wb_memo');
 		$this->db->where('member_idx', $member_idx);
-		$this->db->where('memo_type', $memo_type);
+		$this->db->where('memo_type', '정착메모');
 		$this->db->where('del_yn', 'N');
 		$this->db->order_by('regi_date', 'DESC');
 
@@ -189,12 +183,12 @@ class Member_info extends CI_Controller
 
 		try {
 			// 정착메모 타입 확인 및 추가
-			$settlement_memo_type = $this->ensure_settlement_memo_type($org_id);
+			$this->ensure_settlement_memo_type($org_id);
 
-			// 메모 저장
+			// 메모 저장 - memo_type을 텍스트로 저장
 			$data = [
 				'member_idx' => $member_idx,
-				'memo_type' => $settlement_memo_type,
+				'memo_type' => '정착메모',
 				'memo_content' => $memo_content,
 				'att_date' => date('Y-m-d'),
 				'user_id' => 'church_staff',
@@ -208,7 +202,7 @@ class Member_info extends CI_Controller
 			$this->db->trans_complete();
 
 			if ($this->db->trans_status() === TRUE && $insert_id) {
-				log_message('info', "정착메모 추가 성공 - member_idx: {$member_idx}, memo_type: {$settlement_memo_type}, insert_id: {$insert_id}");
+				log_message('info', "정착메모 추가 성공 - member_idx: {$member_idx}, memo_type: 정착메모, insert_id: {$insert_id}");
 				echo json_encode(['success' => true, 'message' => '메모가 추가되었습니다.']);
 			} else {
 				log_message('error', '정착메모 추가 실패 - Data: ' . print_r($data, true));
