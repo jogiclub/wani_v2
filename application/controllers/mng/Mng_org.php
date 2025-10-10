@@ -335,8 +335,27 @@ class Mng_org extends CI_Controller
 		}
 
 		try {
-			// 계층구조가 표현된 카테고리 목록 조회
-			$categories = $this->Org_category_model->get_categories_for_select();
+			// 사용자 정보 조회
+			$user_id = $this->session->userdata('user_id');
+			$user = $this->User_model->get_user_by_id($user_id);
+
+			$visible_categories = array();
+
+			// master_managed_category 확인
+			if (!empty($user['master_managed_category'])) {
+				$master_managed_category = json_decode($user['master_managed_category'], true);
+				if (is_array($master_managed_category) && !empty($master_managed_category)) {
+					$visible_categories = $master_managed_category;
+				}
+			}
+
+			// 필터링된 카테고리가 있으면 해당 카테고리만 조회
+			if (!empty($visible_categories)) {
+				$categories = $this->Org_category_model->get_categories_for_select_filtered($visible_categories);
+			} else {
+				// 필터링 없으면 전체 카테고리 조회
+				$categories = $this->Org_category_model->get_categories_for_select();
+			}
 
 			header('Content-Type: application/json; charset=utf-8');
 			echo json_encode(array(

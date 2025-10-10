@@ -568,4 +568,33 @@ class Org_category_model extends CI_Model
 		return $descendants;
 	}
 
+	public function get_categories_for_select_filtered($visible_categories)
+	{
+		if (empty($visible_categories)) {
+			return $this->get_categories_for_select();
+		}
+
+		// visible_categories와 그 하위 카테고리들의 ID 수집
+		$category_ids = $this->get_category_with_descendants_public($visible_categories);
+
+		if (empty($category_ids)) {
+			return array();
+		}
+
+		// 전체 카테고리 조회
+		$categories = $this->get_all_categories();
+
+		// 필터링: category_ids에 포함된 카테고리만
+		$filtered_categories = array_filter($categories, function($cat) use ($category_ids) {
+			return in_array($cat['category_idx'], $category_ids);
+		});
+
+		if (empty($filtered_categories)) {
+			return array();
+		}
+
+		// 계층구조 옵션 생성
+		return $this->build_category_select_options($filtered_categories, null, 0);
+	}
+
 }
