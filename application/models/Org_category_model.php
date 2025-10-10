@@ -522,7 +522,13 @@ class Org_category_model extends CI_Model
 		return $descendant_ids;
 	}
 
-
+	/**
+	 * 특정 카테고리들과 그 모든 하위 카테고리 ID 조회 (public)
+	 */
+	public function get_category_with_descendants_public($category_ids)
+	{
+		return $this->get_category_with_descendants($category_ids);
+	}
 
 
 }

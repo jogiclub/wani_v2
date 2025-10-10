@@ -896,4 +896,40 @@ class Org_model extends CI_Model {
 		return $memo_types;
 	}
 
+	/**
+	 * 마스터 사용자의 조직 목록 조회 (카테고리 필터링 적용)
+	 */
+	public function get_user_orgs_master_filtered($user_id, $visible_categories)
+	{
+		if (empty($visible_categories)) {
+			return $this->get_user_orgs_master($user_id);
+		}
+
+		// visible_categories와 그 하위 카테고리들의 ID 수집
+		$this->load->model('Org_category_model');
+		$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
+
+		if (empty($category_ids)) {
+			return array();
+		}
+
+		$this->db->select('
+		o.org_id,
+		o.org_name,
+		o.org_type,
+		o.org_icon,
+		o.leader_name,
+		o.new_name,
+		10 as level,
+		(SELECT COUNT(*) FROM wb_member m WHERE m.org_id = o.org_id AND m.del_yn = "N") as member_count
+	');
+		$this->db->from('wb_org o');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where_in('o.category_idx', $category_ids);
+		$this->db->order_by('o.org_type', 'ASC');
+		$this->db->order_by('o.org_name', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
 }
