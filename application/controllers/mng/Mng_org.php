@@ -77,9 +77,29 @@ class Mng_org extends CI_Controller
 
 		$category_idx = $this->input->get('category_idx');
 
-		// 전체 선택인 경우 (category_idx가 없음) - 미분류 제외하고 모든 조직 조회
+		// 사용자 정보 조회
+		$user_id = $this->session->userdata('user_id');
+		$user = $this->User_model->get_user_by_id($user_id);
+
+		$visible_categories = array();
+
+		// master_managed_category 확인
+		if (!empty($user['master_managed_category'])) {
+			$master_managed_category = json_decode($user['master_managed_category'], true);
+			if (is_array($master_managed_category) && !empty($master_managed_category)) {
+				$visible_categories = $master_managed_category;
+			}
+		}
+
+		// 전체 선택인 경우
 		if ($category_idx === null || $category_idx === '') {
-			$orgs = $this->Org_model->get_all_orgs_except_uncategorized();
+			// 필터링된 카테고리가 있으면 해당 카테고리들의 조직만 조회
+			if (!empty($visible_categories)) {
+				$orgs = $this->Org_model->get_orgs_by_filtered_categories($visible_categories);
+			} else {
+				// 필터링 없으면 미분류 제외한 전체 조직 조회
+				$orgs = $this->Org_model->get_all_orgs_except_uncategorized();
+			}
 		}
 		// 미분류 선택인 경우
 		else if ($category_idx === 'uncategorized') {

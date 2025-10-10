@@ -48,29 +48,7 @@ class Org_model extends CI_Model {
 		return $this->db->insert('wb_org_user', $data);
 	}
 
-	/**
-	 * 조직 사용자 상태 업데이트 (초대 승인 등)
-	 */
-	public function update_org_user_status($user_id, $org_id, $data)
-	{
-		$this->db->where('user_id', $user_id);
-		$this->db->where('org_id', $org_id);
-		return $this->db->update('wb_org_user', $data);
-	}
 
-
-
-	public function get_min_org_id($user_id) {
-		$this->db->select_min('wb_org_user.org_id');
-		$this->db->from('wb_org_user');
-		$this->db->join('wb_org', 'wb_org_user.org_id = wb_org.org_id');
-		$this->db->where('wb_org_user.user_id', $user_id);
-		$this->db->where('wb_org.del_yn', 'N');
-		$query = $this->db->get();
-		$result = $query->row_array();
-
-		return $result['org_id'] ?? null;
-	}
 
 
 
@@ -154,29 +132,7 @@ class Org_model extends CI_Model {
 	}
 
 
-	/**
-	 * 카테고리별 조직 목록 조회
-	 */
-	public function get_orgs_by_category($category_idx = null)
-	{
-		$this->db->select('o.org_id, o.org_code, o.org_name, o.org_type, o.org_desc, o.leader_name, o.new_name, o.org_icon, o.regi_date, o.invite_code, COUNT(ou.user_id) as member_count');
-		$this->db->from('wb_org o');
-		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
 
-		if ($category_idx === null || $category_idx === 'uncategorized') {
-			// 미분류 조직 조회
-			$this->db->where('(o.category_idx IS NULL OR o.category_idx = 0)', null, false);
-		} else {
-			$this->db->where('o.category_idx', $category_idx);
-		}
-
-		$this->db->where('o.del_yn', 'N');
-		$this->db->group_by('o.org_id');
-		$this->db->order_by('o.regi_date', 'DESC');
-
-		$query = $this->db->get();
-		return $query->result_array();
-	}
 
 
 	/**
@@ -600,18 +556,6 @@ class Org_model extends CI_Model {
 		return $query->row_array();
 	}
 
-	/**
-	 * 조직 ID로 조직 정보 조회
-	 */
-	public function get_org_by_id($org_id)
-	{
-		$this->db->select('org_id, org_name, org_type, org_icon, leader_name, new_name');
-		$this->db->from('wb_org');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('del_yn', 'N');
-		$query = $this->db->get();
-		return $query->row_array();
-	}
 
 	/**
 	 * 사용자의 조직 멤버십 확인
@@ -949,6 +893,58 @@ class Org_model extends CI_Model {
 		$this->db->where_in('o.category_idx', $category_ids);
 		$this->db->order_by('o.org_type', 'ASC');
 		$this->db->order_by('o.org_name', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 파일 위치: application/models/Org_model.php
+	 * 역할: 필터링된 카테고리들의 조직 목록 조회 (하위 카테고리 포함)
+	 */
+	public function get_orgs_by_filtered_categories($visible_categories)
+	{
+		if (empty($visible_categories)) {
+			return $this->get_all_orgs_except_uncategorized();
+		}
+
+		// visible_categories와 그 하위 카테고리들의 ID 수집
+		$this->load->model('Org_category_model');
+		$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
+
+		if (empty($category_ids)) {
+			return array();
+		}
+
+		$this->db->select('
+		o.org_id,
+		o.org_code,
+		o.org_name,
+		o.org_type,
+		o.org_desc,
+		o.org_rep,
+		o.org_manager,
+		o.org_phone,
+		o.org_address_postno,
+		o.org_address,
+		o.org_address_detail,
+		o.org_tag,
+		o.org_icon,
+		o.category_idx,
+		o.regi_date,
+		o.modi_date,
+		oc.category_name,
+		COUNT(m.member_idx) as member_count
+	');
+
+		$this->db->from('wb_org o');
+		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
+		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where_in('o.category_idx', $category_ids);
+
+		$this->db->group_by('o.org_id');
+		$this->db->order_by('o.regi_date', 'DESC');
+
 		$query = $this->db->get();
 		return $query->result_array();
 	}
