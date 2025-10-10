@@ -164,11 +164,15 @@ class Offer extends CI_Controller
 			}
 		}
 
+		// 기존 선택된 교회 제거 (selected 상태인 것들 제거)
+		foreach ($transfer_data as $key => $value) {
+			if ($value === 'selected') {
+				unset($transfer_data[$key]);
+			}
+		}
 
-
-		// 선택된 교회 정보 추가
-		// 형식: [교회ID: "selected", 나머지는 기존 데이터]
-		$transfer_data[$selected_church_id] = "selected";
+		// 새로 선택한 교회 추가
+		$transfer_data[$selected_church_id] = 'selected';
 
 		// JSON으로 변환하여 저장
 		$update_data = array(

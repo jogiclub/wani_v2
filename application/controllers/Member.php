@@ -2135,21 +2135,17 @@ class Member extends My_Controller
 			return;
 		}
 
-		// 패스코드가 없으면 생성
-		if (empty($member['member_passcode'])) {
-			$passcode = $this->Member_model->generate_member_passcode();
+		// 패스코드 갱신 (기존 패스코드가 있어도 새로 생성)
+		$passcode = $this->Member_model->generate_member_passcode();
 
-			$this->db->where('member_idx', $member_idx);
-			$this->db->update('wb_member', array(
-				'member_passcode' => $passcode,
-				'modi_date' => date('Y-m-d H:i:s')
-			));
-
-			$member['member_passcode'] = $passcode;
-		}
+		$this->db->where('member_idx', $member_idx);
+		$this->db->update('wb_member', array(
+			'member_passcode' => $passcode,
+			'modi_date' => date('Y-m-d H:i:s')
+		));
 
 		// Offer 링크 생성
-		$offer_url = base_url('offer/' . $org_id . '/' . $member_idx . '/' . $member['member_passcode']);
+		$offer_url = base_url('offer/' . $org_id . '/' . $member_idx . '/' . $passcode);
 
 		echo json_encode(array(
 			'success' => true,
