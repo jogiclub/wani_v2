@@ -186,9 +186,9 @@ class User_management extends My_Controller
         ));
     }
 
-    /**
-     * 사용자 정보 수정 (관리 메뉴 및 그룹 포함)
-     */
+	/**
+	 * 사용자 정보 수정 (기본 정보 + 권한 정보)
+	 */
 	public function update_user() {
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -205,10 +205,17 @@ class User_management extends My_Controller
 			return;
 		}
 
+		// 기본 정보
 		$user_name = $this->input->post('user_name');
 		$user_mail = $this->input->post('user_mail');
 		$user_hp = $this->input->post('user_hp');
 
+		// 권한 정보
+		$level = $this->input->post('level');
+		$managed_menus = $this->input->post('managed_menus');
+		$managed_areas = $this->input->post('managed_areas');
+
+		// 필수 입력값 검증
 		if (empty($target_user_id) || empty($user_name) || empty($user_mail) || empty($user_hp)) {
 			echo json_encode(array('success' => false, 'message' => '필수 입력 항목이 누락되었습니다.'));
 			return;
@@ -220,8 +227,35 @@ class User_management extends My_Controller
 			return;
 		}
 
-		// 사용자 정보 업데이트
-		$result = $this->User_management_model->update_user_basic_info($target_user_id, $user_name, $user_mail, $user_hp);
+		// 레벨 검증
+		if (!is_numeric($level) || $level < 0 || $level > 10) {
+			echo json_encode(array('success' => false, 'message' => '올바르지 않은 권한 레벨입니다.'));
+			return;
+		}
+
+		// 관리 메뉴/그룹 JSON 변환
+		$managed_menus_json = null;
+		$managed_areas_json = null;
+
+		if (!empty($managed_menus) && is_array($managed_menus)) {
+			$managed_menus_json = json_encode($managed_menus);
+		}
+
+		if (!empty($managed_areas) && is_array($managed_areas)) {
+			$managed_areas_json = json_encode($managed_areas);
+		}
+
+		// 사용자 정보 업데이트 (기본 정보 + 권한 정보)
+		$result = $this->User_management_model->update_user_full_info(
+			$target_user_id,
+			$org_id,
+			$user_name,
+			$user_mail,
+			$user_hp,
+			$level,
+			$managed_menus_json,
+			$managed_areas_json
+		);
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '사용자 정보가 수정되었습니다.'));

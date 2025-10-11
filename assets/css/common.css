@@ -124,7 +124,7 @@ header h2{font-weight: 700; font-size: 40px; letter-spacing: -1px; display: flex
 header h2 b{position: relative;font-size: 38px;}
 header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
 @media screen and (max-width: 1200px){
-	header .logo img{height: 20px}
+	/*header .logo img{height: 20px}*/
 }
 
 
@@ -133,7 +133,7 @@ header h2 b img{position: absolute;left: -50px;top: -13px; width: 40px}
 .att-dropdown-wrap button{border: 0;background: none; font-size: 16px}
 
 /*일반*/
-main{width: calc(100% - 200px)!important;     margin-left: 200px;}
+main{width: calc(100% - 200px)!important; margin-left: 200px;}
 @media screen and (max-width: 1200px){
 	.sidebar{height: 0!important;}
 	main{width: 100%!important; margin-left: 0;	}

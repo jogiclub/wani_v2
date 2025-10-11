@@ -268,7 +268,9 @@ $is_master = $this->session->userdata('master_yn');
 					$show_member_section = $is_master === 'Y' || $current_user_level >= 10 ||
 						can_access_menu('MEMBER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level) ||
 						can_access_menu('ATTENDANCE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master, $current_user_level);
+						can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master, $current_user_level) ||
+						can_access_menu('TIMELINE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level) ||
+						can_access_menu('MEMO_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level);
 					?>
 					<?php if ($show_member_section): ?>
 						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
@@ -299,27 +301,20 @@ $is_master = $this->session->userdata('master_yn');
 									</a>
 								</li>
 							<?php endif; ?>
-
-
-
-							<li class="nav-item">
-								<a class="nav-link d-flex align-items-center gap-1 menu-24" href="<?php echo base_url('timeline'); ?>">
-									<i class="bi bi-clock-history"></i> 타임라인관리
-								</a>
-							</li>
-
-							<li class="nav-item">
-								<a class="nav-link d-flex align-items-center gap-1 menu-25" href="<?php echo base_url('memos'); ?>">
-									<i class="bi bi-journal-bookmark"></i> 메모관리
-								</a>
-							</li>
-							
-<!--							<li class="nav-item">
-								<a class="nav-link d-flex align-items-center gap-1 menu-26" href="<?php echo base_url('transport'); ?>">
-									<i class="bi bi-pin-map"></i> 파송노트
-								</a>
-							</li>-->
-							
+							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('TIMELINE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1 menu-24" href="<?php echo base_url('timeline'); ?>">
+										<i class="bi bi-clock-history"></i> 타임라인관리
+									</a>
+								</li>
+							<?php endif; ?>
+							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('MEMO_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
+								<li class="nav-item">
+									<a class="nav-link d-flex align-items-center gap-1 menu-25" href="<?php echo base_url('memos'); ?>">
+										<i class="bi bi-journal-bookmark"></i> 메모관리
+									</a>
+								</li>
+							<?php endif; ?>
 						</ul>
 					<?php endif; ?>
 

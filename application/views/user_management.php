@@ -238,6 +238,7 @@ $this->load->view('header'); ?>
 				<input type="hidden" id="edit_user_id" name="target_user_id">
 				<input type="hidden" id="edit_org_id" name="org_id">
 				<div class="modal-body">
+					<h6 class="mb-3">기본 정보</h6>
 					<div class="mb-3">
 						<label for="edit_user_name" class="form-label">이름 <span class="text-danger">*</span></label>
 						<input type="text" class="form-control" id="edit_user_name" name="user_name" required>
@@ -250,6 +251,37 @@ $this->load->view('header'); ?>
 						<label for="edit_user_hp" class="form-label">연락처 <span class="text-danger">*</span></label>
 						<input type="text" class="form-control" id="edit_user_hp" name="user_hp"
 							   placeholder="010-0000-0000" required>
+					</div>
+
+					<hr class="my-4">
+
+					<h6 class="mb-3">권한 설정</h6>
+					<div class="row">
+						<div class="col-md-4 mb-3">
+							<label for="edit_user_level" class="form-label">권한 레벨</label>
+							<select class="form-select" id="edit_user_level" name="level">
+								<option value="0">초대중 (0)</option>
+								<option value="1">회원 (1)</option>
+								<option value="2">리더 (2)</option>
+								<option value="5">부관리자 (5)</option>
+								<option value="9">관리자 (9)</option>
+								<option value="10">최고관리자 (10)</option>
+							</select>
+						</div>
+
+						<div class="col-md-4 mb-3">
+							<label for="edit_managed_menus" class="form-label">관리 메뉴</label>
+							<select class="form-select" id="edit_managed_menus" name="managed_menus[]" multiple>
+								<!-- JavaScript로 동적 로드 -->
+							</select>
+						</div>
+
+						<div class="col-md-4 mb-3">
+							<label for="edit_managed_areas" class="form-label">관리 그룹</label>
+							<select class="form-select" id="edit_managed_areas" name="managed_areas[]" multiple>
+								<!-- JavaScript로 동적 로드 -->
+							</select>
+						</div>
 					</div>
 				</div>
 				<div class="modal-footer">

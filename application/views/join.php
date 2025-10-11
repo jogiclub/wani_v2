@@ -1,6 +1,6 @@
 <?php $this->load->view('noheader'); ?>
 
-<div class="col-3 mx-auto">
+<div class="col-12 col-sm-5 col-md-4 col-lg-3 mx-auto">
 	<h2 class="text-center">회원가입</h2>
 	<form id="joinForm" action="<?php echo base_url('login/process'); ?>" method="post">
 		<input type="hidden" class="form-control" id="user_id" name="user_id" value="<?php echo isset($user_id) ? $user_id : ''; ?>">
@@ -24,14 +24,14 @@
 		<div class="mb-1 form-check">
 			<input type="checkbox" class="form-check-input" id="agree_terms" name="agree_terms" required>
 			<label class="form-check-label" for="agree_terms">
-				<a href="/login/terms" target="_blank">서비스 이용약관</a>에 동의합니다.
+				<a href="/login/terms" target="_blank" class="text-primary">서비스 이용약관</a>에 동의합니다.
 			</label>
 		</div>
 
 		<div class="mb-3 form-check">
 			<input type="checkbox" class="form-check-input" id="agree_privacy" name="agree_privacy" required>
 			<label class="form-check-label" for="agree_privacy">
-				<a href="/login/privacy" target="_blank">개인정보처리방침</a>에 동의합니다.
+				<a href="/login/privacy" target="_blank" class="text-primary">개인정보처리방침</a>에 동의합니다.
 			</label>
 		</div>
 

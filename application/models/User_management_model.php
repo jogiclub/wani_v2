@@ -82,6 +82,44 @@ class User_management_model extends CI_Model
 		return $query->result_array();
 	}
 
+	public function update_user_full_info($target_user_id, $org_id, $user_name, $user_mail, $user_hp, $level, $managed_menus = null, $managed_areas = null)
+	{
+		$this->db->trans_start();
+
+		// wb_user 테이블 업데이트 (기본 정보)
+		$user_data = array(
+			'user_name' => $user_name,
+			'user_mail' => $user_mail,
+			'user_hp' => $user_hp,
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		// 관리 메뉴/그룹 추가
+		if ($managed_menus !== null) {
+			$user_data['managed_menus'] = $managed_menus;
+		}
+
+		if ($managed_areas !== null) {
+			$user_data['managed_areas'] = $managed_areas;
+		}
+
+		$this->db->where('user_id', $target_user_id);
+		$this->db->update('wb_user', $user_data);
+
+		// wb_org_user 테이블 업데이트 (권한 레벨)
+		$org_user_data = array(
+			'level' => $level
+		);
+
+		$this->db->where('user_id', $target_user_id);
+		$this->db->where('org_id', $org_id);
+		$this->db->update('wb_org_user', $org_user_data);
+
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
+	}
+
 	/**
 	 * 조직 상세 정보 가져오기
 	 */
