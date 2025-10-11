@@ -257,7 +257,7 @@ $is_master = $this->session->userdata('master_yn');
 							<li class="nav-item">
 								<a class="nav-link d-flex align-items-center gap-1 menu-11" aria-current="page"
 								   href="<?php echo base_url('dashboard'); ?>">
-									<i class="bi bi-file-earmark-ruled"></i> 대시보드 <span class="badge badge-sm text-bg-warning">준비중</span>
+									<i class="bi bi-file-earmark-ruled"></i> 대시보드
 								</a>
 							</li>
 						</ul>

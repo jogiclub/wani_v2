@@ -294,4 +294,82 @@ class Timeline_model extends CI_Model {
 
 		return isset($result['count']) && $result['count'] > 0;
 	}
+
+
+	/**
+	 * 최근 8주간 타임라인 타입별 통계 조회
+	 * @param int $org_id 조직 ID
+	 * @return array 주별, 타임라인 타입별 통계 데이터
+	 */
+	public function get_weekly_timeline_stats_by_type($org_id)
+	{
+		$weekly_data = array();
+
+		// 현재 날짜에서 요일 계산
+		$today = new DateTime();
+		$day_of_week = (int)$today->format('w');
+
+		// 이번 주 일요일 계산
+		if ($day_of_week == 0) {
+			$current_sunday = clone $today;
+		} else {
+			$current_sunday = clone $today;
+			$current_sunday->sub(new DateInterval('P' . $day_of_week . 'D'));
+		}
+
+		// 타임라인 타입 목록 조회
+		$this->load->model('Org_model');
+		$timeline_types = $this->Org_model->get_timeline_types($org_id);
+
+		// 타입이 없으면 빈 배열 반환
+		if (empty($timeline_types)) {
+			log_message('debug', 'No timeline types found for org_id: ' . $org_id);
+			return array(
+				'weekly_data' => array(),
+				'timeline_types' => array()
+			);
+		}
+
+		// 최근 8주 데이터 조회
+		for ($i = 7; $i >= 0; $i--) {
+			$week_sunday = clone $current_sunday;
+			$week_sunday->sub(new DateInterval('P' . ($i * 7) . 'D'));
+
+			$week_saturday = clone $week_sunday;
+			$week_saturday->add(new DateInterval('P6D'));
+
+			$start_date = $week_sunday->format('Y-m-d') . ' 00:00:00';
+			$end_date = $week_saturday->format('Y-m-d') . ' 23:59:59';
+			$week_label = $week_sunday->format('n/j');
+
+			$week_stats = array(
+				'week_label' => $week_label,
+				'types' => array()
+			);
+
+			// 각 타임라인 타입별 통계 조회
+			foreach ($timeline_types as $timeline_type) {
+				$this->db->select('COUNT(*) as count');
+				$this->db->from('wb_member_timeline t');
+				$this->db->join('wb_member m', 't.member_idx = m.member_idx', 'inner');
+				$this->db->where('m.org_id', $org_id);
+				$this->db->where('m.del_yn', 'N');
+				$this->db->where('t.timeline_type', $timeline_type);
+				$this->db->where('t.regi_date >=', $start_date);
+				$this->db->where('t.regi_date <=', $end_date);
+
+				$query = $this->db->get();
+				$result = $query->row_array();
+
+				$week_stats['types'][$timeline_type] = (int)$result['count'];
+			}
+
+			$weekly_data[] = $week_stats;
+		}
+
+		return array(
+			'weekly_data' => $weekly_data,
+			'timeline_types' => $timeline_types
+		);
+	}
 }

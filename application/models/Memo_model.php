@@ -504,4 +504,82 @@ class Memo_model extends CI_Model {
 		return $query->row_array();
 	}
 
+	/**
+	 * 최근 8주간 메모 타입별 통계 조회
+	 * @param int $org_id 조직 ID
+	 * @return array 주별, 메모 타입별 통계 데이터
+	 */
+	public function get_weekly_memo_stats_by_type($org_id)
+	{
+		$weekly_data = array();
+
+		// 현재 날짜에서 요일 계산
+		$today = new DateTime();
+		$day_of_week = (int)$today->format('w');
+
+		// 이번 주 일요일 계산
+		if ($day_of_week == 0) {
+			$current_sunday = clone $today;
+		} else {
+			$current_sunday = clone $today;
+			$current_sunday->sub(new DateInterval('P' . $day_of_week . 'D'));
+		}
+
+		// 메모 타입 목록 조회
+		$this->load->model('Org_model');
+		$memo_types = $this->Org_model->get_memo_types($org_id);
+
+		// 타입이 없으면 빈 배열 반환
+		if (empty($memo_types)) {
+			log_message('debug', 'No memo types found for org_id: ' . $org_id);
+			return array(
+				'weekly_data' => array(),
+				'memo_types' => array()
+			);
+		}
+
+		// 최근 8주 데이터 조회
+		for ($i = 7; $i >= 0; $i--) {
+			$week_sunday = clone $current_sunday;
+			$week_sunday->sub(new DateInterval('P' . ($i * 7) . 'D'));
+
+			$week_saturday = clone $week_sunday;
+			$week_saturday->add(new DateInterval('P6D'));
+
+			$start_date = $week_sunday->format('Y-m-d') . ' 00:00:00';
+			$end_date = $week_saturday->format('Y-m-d') . ' 23:59:59';
+			$week_label = $week_sunday->format('n/j');
+
+			$week_stats = array(
+				'week_label' => $week_label,
+				'types' => array()
+			);
+
+			// 각 메모 타입별 통계 조회
+			foreach ($memo_types as $memo_type) {
+				$this->db->select('COUNT(*) as count');
+				$this->db->from('wb_memo m');
+				$this->db->join('wb_member mem', 'm.member_idx = mem.member_idx', 'inner');
+				$this->db->where('mem.org_id', $org_id);
+				$this->db->where('mem.del_yn', 'N');
+				$this->db->where('m.del_yn', 'N');
+				$this->db->where('m.memo_type', $memo_type);
+				$this->db->where('m.regi_date >=', $start_date);
+				$this->db->where('m.regi_date <=', $end_date);
+
+				$query = $this->db->get();
+				$result = $query->row_array();
+
+				$week_stats['types'][$memo_type] = (int)$result['count'];
+			}
+
+			$weekly_data[] = $week_stats;
+		}
+
+		return array(
+			'weekly_data' => $weekly_data,
+			'memo_types' => $memo_types
+		);
+	}
+
 }

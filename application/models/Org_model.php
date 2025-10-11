@@ -844,21 +844,26 @@ class Org_model extends CI_Model {
 	 */
 	public function get_memo_types($org_id)
 	{
-		$org_detail = $this->get_org_detail_by_id($org_id);
-		$memo_types = array();
+		$this->db->select('memo_name');
+		$this->db->from('wb_org');
+		$this->db->where('org_id', $org_id);
 
-		if ($org_detail && !empty($org_detail['memo_type_name'])) {
-			try {
-				$decoded_types = json_decode($org_detail['memo_type_name'], true);
-				if (is_array($decoded_types)) {
-					$memo_types = $decoded_types;
-				}
-			} catch (Exception $e) {
-				log_message('error', '메모 타입 JSON 파싱 오류: ' . $e->getMessage());
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		if ($result && !empty($result['memo_name'])) {
+			$memo_data = json_decode($result['memo_name'], true);
+
+			if (is_array($memo_data)) {
+				return $memo_data;
 			}
+
+			// JSON이 아닌 경우 쉼표로 구분된 문자열로 처리
+			$memo_names = explode(',', $result['memo_name']);
+			return array_map('trim', $memo_names);
 		}
 
-		return $memo_types;
+		return array();
 	}
 
 	/**

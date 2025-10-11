@@ -884,5 +884,57 @@ class Member_model extends CI_Model
 		return $this->db->affected_rows() > 0;
 	}
 
+	/**
+	 * 최근 8주간 주별 신규 회원 수 조회
+	 * @param int $org_id 조직 ID
+	 * @return array 주별 신규 회원 수 데이터
+	 */
+	public function get_weekly_new_members($org_id)
+	{
+		$weekly_data = array();
+
+		// 현재 날짜에서 요일 계산 (0=일요일, 6=토요일)
+		$today = new DateTime();
+		$day_of_week = (int)$today->format('w');
+
+		// 이번 주 일요일 계산
+		if ($day_of_week == 0) {
+			$current_sunday = clone $today;
+		} else {
+			$current_sunday = clone $today;
+			$current_sunday->sub(new DateInterval('P' . $day_of_week . 'D'));
+		}
+
+		// 최근 8주 데이터 조회
+		for ($i = 7; $i >= 0; $i--) {
+			$week_sunday = clone $current_sunday;
+			$week_sunday->sub(new DateInterval('P' . ($i * 7) . 'D'));
+
+			$week_saturday = clone $week_sunday;
+			$week_saturday->add(new DateInterval('P6D'));
+
+			$start_date = $week_sunday->format('Y-m-d') . ' 00:00:00';
+			$end_date = $week_saturday->format('Y-m-d') . ' 23:59:59';
+
+			// 해당 주의 신규 회원 수 조회
+			$this->db->select('COUNT(*) as count');
+			$this->db->from('wb_member');
+			$this->db->where('org_id', $org_id);
+			$this->db->where('del_yn', 'N');
+			$this->db->where('regi_date >=', $start_date);
+			$this->db->where('regi_date <=', $end_date);
+
+			$query = $this->db->get();
+			$result = $query->row_array();
+
+			$weekly_data[] = array(
+				'week_label' => $week_sunday->format('n/j'),  // 예: 8/17
+				'count' => (int)$result['count']
+			);
+		}
+
+		return $weekly_data;
+	}
+
 
 }

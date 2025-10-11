@@ -33,26 +33,35 @@
 					<h5 class="card-title mb-0 d-flex ">
 						<i class="bi bi-calendar-check me-2"></i> 출석현황
 					</h5>
+					<a href="#" id="attendanceSettingBtn">
+						<small><i class="bi bi-gear"></i> 설정</small>
+					</a>
 				</div>
 				<div class="card-body">
 					<canvas id="attendanceChart"></canvas>
 				</div>
 			</div>
 			<div class="card mb-3">
-				<div class="card-header d-flex align-items-center justify-content-between align-items-center">
-					<h5 class="card-title mb-0 d-flex ">
+				<div class="card-header d-flex align-items-center justify-content-between">
+					<h5 class="card-title mb-0 d-flex">
 						<i class="bi bi-watch me-2"></i> 타임라인현황
 					</h5>
+					<a href="#" id="timelineSettingBtn">
+						<small><i class="bi bi-gear"></i> 설정</small>
+					</a>
 				</div>
 				<div class="card-body">
 					<canvas id="timelineChart"></canvas>
 				</div>
 			</div>
 			<div class="card mb-3">
-				<div class="card-header d-flex align-items-center justify-content-between align-items-center">
-					<h5 class="card-title mb-0 d-flex ">
+				<div class="card-header d-flex align-items-center justify-content-between">
+					<h5 class="card-title mb-0 d-flex">
 						<i class="bi bi-journals me-2"></i> 메모현황
 					</h5>
+					<a href="#" id="memoSettingBtn">
+						<small><i class="bi bi-gear"></i> 설정</small>
+					</a>
 				</div>
 				<div class="card-body">
 					<canvas id="memoChart"></canvas>
@@ -161,171 +170,204 @@
 </div>
 
 
+<!-- 출석현황 설정 모달 -->
+<div class="modal fade" id="attendanceSettingModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">출석현황 표시</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div id="attendanceTypeCheckboxes">
+					<?php if (!empty($attendance_stats['att_types'])): ?>
+						<?php foreach ($attendance_stats['att_types'] as $att_type): ?>
+							<div class="form-check mb-2">
+								<input class="form-check-input attendance-type-check"
+									   type="checkbox"
+									   value="<?php echo $att_type['att_type_idx']; ?>"
+									   id="attType_<?php echo $att_type['att_type_idx']; ?>"
+									   data-name="<?php echo htmlspecialchars($att_type['att_type_nickname']); ?>"
+									   data-color="<?php echo $att_type['att_type_color']; ?>"
+									   checked>
+								<label class="form-check-label" for="attType_<?php echo $att_type['att_type_idx']; ?>">
+                                    <span class="badge" style="background-color: #<?php echo $att_type['att_type_color']; ?>;">
+                                        <?php echo htmlspecialchars($att_type['att_type_nickname']); ?>
+                                    </span>
+								</label>
+							</div>
+						<?php endforeach; ?>
+					<?php else: ?>
+						<p class="text-muted">출석 타입이 없습니다.</p>
+					<?php endif; ?>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="saveAttendanceSettingBtn">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
 
+
+
+<!-- 타임라인현황 설정 모달 (출석현황 모달 다음에 추가) -->
+<div class="modal fade" id="timelineSettingModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">타임라인현황 표시</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div id="timelineTypeCheckboxes">
+					<?php if (!empty($timeline_stats['timeline_types'])): ?>
+						<?php foreach ($timeline_stats['timeline_types'] as $timeline_type): ?>
+							<div class="form-check mb-2">
+								<input class="form-check-input timeline-type-check"
+									   type="checkbox"
+									   value="<?php echo htmlspecialchars($timeline_type); ?>"
+									   id="timelineType_<?php echo md5($timeline_type); ?>"
+									   checked>
+								<label class="form-check-label" for="timelineType_<?php echo md5($timeline_type); ?>">
+									<?php echo htmlspecialchars($timeline_type); ?>
+								</label>
+							</div>
+						<?php endforeach; ?>
+					<?php else: ?>
+						<p class="text-muted">타임라인 타입이 없습니다.</p>
+					<?php endif; ?>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="saveTimelineSettingBtn">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 메모현황 설정 모달 -->
+<div class="modal fade" id="memoSettingModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">메모현황 표시</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div id="memoTypeCheckboxes">
+					<?php if (!empty($memo_stats['memo_types'])): ?>
+						<?php foreach ($memo_stats['memo_types'] as $memo_type): ?>
+							<div class="form-check mb-2">
+								<input class="form-check-input memo-type-check"
+									   type="checkbox"
+									   value="<?php echo htmlspecialchars($memo_type); ?>"
+									   id="memoType_<?php echo md5($memo_type); ?>"
+									   checked>
+								<label class="form-check-label" for="memoType_<?php echo md5($memo_type); ?>">
+									<?php echo htmlspecialchars($memo_type); ?>
+								</label>
+							</div>
+						<?php endforeach; ?>
+					<?php else: ?>
+						<p class="text-muted">메모 타입이 없습니다.</p>
+					<?php endif; ?>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="saveMemoSettingBtn">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <?php $this->load->view('footer'); ?>
 
 <script>
-	/*출석관리 메뉴 active*/
+	/* 출석관리 메뉴 active */
 	$('.menu-11').addClass('active');
 </script>
-<script src="/assets/js/dashboard.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/assets/js/dashboard.js?<?php echo WB_VERSION; ?>"></script>
 <script>
-	const member_chart = document.getElementById('memberChart');
-	new Chart(member_chart, {
-		type: 'bar',
-		data: {
-			labels: ['8/17','8/24', '8/31', '9/7', '9/14', '9/21', '9/28', '10/5'],
-			datasets: [{
-				label: '신규회원',
-				data: [1,9, 3, 2, 1, 4, 5, 3],
-				borderWidth: 1
-			}]
-		},
-		options: {
-			responsive: true,
-			plugins: {
-				legend: {
-					position: 'right',
-				},
-				title: {
-					display: false,
-					text: 'Chart.js Bar Chart'
-				}
-			}
-		},
+	// 회원현황 차트 데이터
+	<?php if (!empty($weekly_new_members)): ?>
+	const memberLabels = <?php echo json_encode(array_column($weekly_new_members, 'week_label')); ?>;
+	const memberData = <?php echo json_encode(array_column($weekly_new_members, 'count')); ?>;
+	<?php else: ?>
+	const memberLabels = [];
+	const memberData = [];
+	<?php endif; ?>
+
+	// 출석현황 데이터
+	<?php if (!empty($attendance_stats)): ?>
+	const attendanceRawDataFromPHP = <?php echo json_encode($attendance_stats['weekly_data']); ?>;
+	const attendanceTypesFromPHP = <?php echo json_encode($attendance_stats['att_types']); ?>;
+	<?php else: ?>
+	const attendanceRawDataFromPHP = [];
+	const attendanceTypesFromPHP = [];
+	<?php endif; ?>
+
+	// 타임라인현황 데이터
+	<?php if (!empty($timeline_stats)): ?>
+	const timelineRawDataFromPHP = <?php echo json_encode($timeline_stats['weekly_data']); ?>;
+	const timelineTypesFromPHP = <?php echo json_encode($timeline_stats['timeline_types']); ?>;
+	console.log('Timeline data loaded:', {
+		dataCount: timelineRawDataFromPHP.length,
+		typesCount: timelineTypesFromPHP.length,
+		types: timelineTypesFromPHP
 	});
+	<?php else: ?>
+	const timelineRawDataFromPHP = [];
+	const timelineTypesFromPHP = [];
+	console.log('Timeline data: empty');
+	<?php endif; ?>
 
-	const attendance_chart = document.getElementById('attendanceChart');
-	new Chart(attendance_chart, {
-		type: 'bar',
-		data: {
-			labels: ['8/17','8/24', '8/31', '9/7', '9/14', '9/21', '9/28', '10/5'],
-			datasets: [
-				{
-				label: '주일',
-				data: [1,2, 3, 2, 1, 3, 5, 3],
-				borderWidth: 1
-				},
-				{
-					label: '온라인',
-					data: [4,9, 1, 2, 1, 7, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '장년',
-					data: [1,2, 5, 2, 1, 4, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '무단',
-					data: [3,9, 3, 2, 17, 4, 5, 3],
-					borderWidth: 1
-				}
-			]
-		},
-		options: {
-			responsive: true,
-			plugins: {
-				legend: {
-					position: 'right',
-				},
-				title: {
-					display: false,
-					text: 'Chart.js Bar Chart'
-				}
-			}
-		},
+	// 메모현황 데이터
+	<?php if (!empty($memo_stats)): ?>
+	const memoRawDataFromPHP = <?php echo json_encode($memo_stats['weekly_data']); ?>;
+	const memoTypesFromPHP = <?php echo json_encode($memo_stats['memo_types']); ?>;
+	console.log('Memo data loaded:', {
+		dataCount: memoRawDataFromPHP.length,
+		typesCount: memoTypesFromPHP.length,
+		types: memoTypesFromPHP
 	});
+	<?php else: ?>
+	const memoRawDataFromPHP = [];
+	const memoTypesFromPHP = [];
+	console.log('Memo data: empty');
+	<?php endif; ?>
 
+	// 페이지 로드 후 차트 초기화
+	document.addEventListener('DOMContentLoaded', function() {
+		// 회원현황 차트 초기화
+		if (memberLabels.length > 0) {
+			initMemberChart(memberLabels, memberData);
+		}
 
+		// 출석현황 데이터 설정 및 차트 렌더링
+		if (attendanceRawDataFromPHP.length > 0) {
+			setAttendanceData(attendanceRawDataFromPHP, attendanceTypesFromPHP);
+			renderAttendanceChart();
+		}
 
+		// 타임라인현황 데이터 설정 및 차트 렌더링
+		if (timelineRawDataFromPHP.length > 0 && timelineTypesFromPHP.length > 0) {
+			setTimelineData(timelineRawDataFromPHP, timelineTypesFromPHP);
+			renderTimelineChart();
+		} else {
+			console.warn('타임라인 데이터가 없거나 타입이 설정되지 않았습니다.');
+		}
 
-	const memo_chart = document.getElementById('memoChart');
-	new Chart(memo_chart, {
-		type: 'bar',
-		data: {
-			labels: ['8/17','8/24', '8/31', '9/7', '9/14', '9/21', '9/28', '10/5'],
-			datasets: [
-				{
-					label: '주일',
-					data: [1,2, 3, 2, 1, 3, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '온라인',
-					data: [4,9, 1, 2, 1, 7, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '장년',
-					data: [1,2, 5, 2, 1, 4, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '무단',
-					data: [3,9, 3, 2, 17, 4, 5, 3],
-					borderWidth: 1
-				}
-			]
-		},
-		options: {
-			responsive: true,
-			plugins: {
-				legend: {
-					position: 'right',
-				},
-				title: {
-					display: false,
-					text: 'Chart.js Bar Chart'
-				}
-			}
-		},
+		// 메모현황 데이터 설정 및 차트 렌더링
+		if (memoRawDataFromPHP.length > 0 && memoTypesFromPHP.length > 0) {
+			setMemoData(memoRawDataFromPHP, memoTypesFromPHP);
+			renderMemoChart();
+		} else {
+			console.warn('메모 데이터가 없거나 타입이 설정되지 않았습니다.');
+		}
 	});
-
-
-
-	const timeline_chart = document.getElementById('timelineChart');
-	new Chart(timeline_chart, {
-		type: 'bar',
-		data: {
-			labels: ['8/17','8/24', '8/31', '9/7', '9/14', '9/21', '9/28', '10/5'],
-			datasets: [
-				{
-					label: '주일',
-					data: [1,2, 3, 2, 1, 3, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '온라인',
-					data: [4,9, 1, 2, 1, 7, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '장년',
-					data: [1,2, 5, 2, 1, 4, 5, 3],
-					borderWidth: 1
-				},
-				{
-					label: '무단',
-					data: [3,9, 3, 2, 17, 4, 5, 3],
-					borderWidth: 1
-				}
-			]
-		},
-		options: {
-			responsive: true,
-			plugins: {
-				legend: {
-					position: 'right',
-				},
-				title: {
-					display: false,
-					text: 'Chart.js Bar Chart'
-				}
-			}
-		},
-	});
-
 </script>

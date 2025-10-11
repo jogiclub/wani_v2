@@ -187,4 +187,8 @@ class Member_area_model extends CI_Model {
 		return $this->get_member_areas_by_idx($org_id, $accessible_area_indices);
 	}
 
+
+
+
+
 }
