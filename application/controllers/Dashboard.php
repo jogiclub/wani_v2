@@ -11,6 +11,9 @@ class Dashboard extends My_Controller
 		$this->load->helper('url');
 	}
 
+	// 파일 위치: application/controllers/Dashboard.php
+// 역할: 대시보드 메인과 통계 API 분리
+
 	public function index(){
 		$user_id = $this->session->userdata('user_id');
 		if (!$user_id) {
@@ -40,45 +43,155 @@ class Dashboard extends My_Controller
 		$this->load->model('Detail_field_model');
 		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields_by_org($currentOrgId);
 
-		// 현재 조직 정보를 JavaScript로 전달하기 위해 orgs 배열에 추가
+		// 현재 조직 정보를 JavaScript로 전달
 		$data['orgs'] = array($data['current_org']);
 
-		// 회원현황 통계 데이터 조회
-		$this->load->model('Member_model');
-		$data['weekly_new_members'] = $this->Member_model->get_weekly_new_members($currentOrgId);
+		// 통계 데이터는 AJAX로 가져오므로 제거
+		$this->load->view('dashboard', $data);
+	}
 
-		// 출석현황 통계 데이터 조회
-		$this->load->model('Attendance_model');
-		$attendance_stats = $this->Attendance_model->get_weekly_attendance_stats_by_type($currentOrgId);
-		$data['attendance_stats'] = $attendance_stats;
+	/**
+	 * 회원현황 통계 조회 (AJAX)
+	 */
+	public function get_member_stats()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
 
-		// 타임라인현황 통계 데이터 조회
-		$this->load->model('Timeline_model');
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 필요합니다.'
+			));
+			return;
+		}
+
 		try {
-			$timeline_stats = $this->Timeline_model->get_weekly_timeline_stats_by_type($currentOrgId);
-			$data['timeline_stats'] = $timeline_stats;
+			$this->load->model('Member_model');
+			$weekly_new_members = $this->Member_model->get_weekly_new_members($org_id);
 
-			// 디버깅용 로그
-			log_message('debug', 'Timeline stats loaded: ' . json_encode($timeline_stats));
+			echo json_encode(array(
+				'success' => true,
+				'data' => $weekly_new_members
+			));
+		} catch (Exception $e) {
+			log_message('error', 'Member stats error: ' . $e->getMessage());
+			echo json_encode(array(
+				'success' => false,
+				'message' => '회원현황 통계 조회 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+	/**
+	 * 출석현황 통계 조회 (AJAX)
+	 */
+	public function get_attendance_stats()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 필요합니다.'
+			));
+			return;
+		}
+
+		try {
+			$this->load->model('Attendance_model');
+			$attendance_stats = $this->Attendance_model->get_weekly_attendance_stats_by_type($org_id);
+
+			echo json_encode(array(
+				'success' => true,
+				'data' => $attendance_stats
+			));
+		} catch (Exception $e) {
+			log_message('error', 'Attendance stats error: ' . $e->getMessage());
+			echo json_encode(array(
+				'success' => false,
+				'message' => '출석현황 통계 조회 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+	/**
+	 * 타임라인현황 통계 조회 (AJAX)
+	 */
+	public function get_timeline_stats()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 필요합니다.'
+			));
+			return;
+		}
+
+		try {
+			$this->load->model('Timeline_model');
+			$timeline_stats = $this->Timeline_model->get_weekly_timeline_stats_by_type($org_id);
+
+			echo json_encode(array(
+				'success' => true,
+				'data' => $timeline_stats
+			));
 		} catch (Exception $e) {
 			log_message('error', 'Timeline stats error: ' . $e->getMessage());
-			$data['timeline_stats'] = array('weekly_data' => array(), 'timeline_types' => array());
+			echo json_encode(array(
+				'success' => false,
+				'message' => '타임라인현황 통계 조회 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+	/**
+	 * 메모현황 통계 조회 (AJAX)
+	 */
+	public function get_memo_stats()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
 		}
 
-		// 메모현황 통계 데이터 조회
-		$this->load->model('Memo_model');
-		try {
-			$memo_stats = $this->Memo_model->get_weekly_memo_stats_by_type($currentOrgId);
-			$data['memo_stats'] = $memo_stats;
+		$org_id = $this->input->post('org_id');
 
-			// 디버깅용 로그
-			log_message('debug', 'Memo stats loaded: ' . json_encode($memo_stats));
+		if (!$org_id) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 필요합니다.'
+			));
+			return;
+		}
+
+		try {
+			$this->load->model('Memo_model');
+			$memo_stats = $this->Memo_model->get_weekly_memo_stats_by_type($org_id);
+
+			echo json_encode(array(
+				'success' => true,
+				'data' => $memo_stats
+			));
 		} catch (Exception $e) {
 			log_message('error', 'Memo stats error: ' . $e->getMessage());
-			$data['memo_stats'] = array('weekly_data' => array(), 'memo_types' => array());
+			echo json_encode(array(
+				'success' => false,
+				'message' => '메모현황 통계 조회 중 오류가 발생했습니다.'
+			));
 		}
-
-		$this->load->view('dashboard', $data);
 	}
 
 }
