@@ -36,44 +36,6 @@ function escapeHtml(text) {
 	return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-/**
- * Toast 메시지 표시
- */
-function showToast(message, type = 'success') {
-	if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
-		const bgColor = type === 'success' ? 'bg-success' : (type === 'error' ? 'bg-danger' : 'bg-info');
-		const toastHtml = `
-            <div class="toast align-items-center text-white ${bgColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">${escapeHtml(message)}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-
-		let toastContainer = document.getElementById('toastContainer');
-		if (!toastContainer) {
-			toastContainer = document.createElement('div');
-			toastContainer.id = 'toastContainer';
-			toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-			toastContainer.style.zIndex = '9999';
-			document.body.appendChild(toastContainer);
-		}
-
-		const toastElement = document.createElement('div');
-		toastElement.innerHTML = toastHtml;
-		toastContainer.appendChild(toastElement.firstElementChild);
-
-		const toast = new bootstrap.Toast(toastContainer.lastElementChild);
-		toast.show();
-
-		setTimeout(() => {
-			toastContainer.lastElementChild.remove();
-		}, 3000);
-	} else {
-		alert(message);
-	}
-}
 
 /**
  * 로딩 스피너 표시

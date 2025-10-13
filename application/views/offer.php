@@ -285,28 +285,7 @@
 			});
 		});
 
-		// Toast 메시지 표시
-		function showToast(message, type) {
-			const toast = $('#liveToast');
-			const toastBody = $('#toastMessage');
 
-			toast.removeClass('text-bg-success text-bg-danger text-bg-warning text-bg-info');
-
-			if (type === 'success') {
-				toast.addClass('text-bg-success');
-			} else if (type === 'error') {
-				toast.addClass('text-bg-danger');
-			} else if (type === 'warning') {
-				toast.addClass('text-bg-warning');
-			} else {
-				toast.addClass('text-bg-info');
-			}
-
-			toastBody.text(message);
-
-			const bsToast = new bootstrap.Toast(toast[0]);
-			bsToast.show();
-		}
 	});
 </script>
 
