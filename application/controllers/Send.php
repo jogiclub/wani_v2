@@ -78,9 +78,11 @@ class Send extends MY_Controller
 	}
 
 
+
 	/**
-	 * 역할: 문자 발송 처리 (send_message 함수 수정)
+	 * 역할: 문자 발송 처리 (API 메시지 ID 추가)
 	 */
+
 	public function send_message()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -140,7 +142,7 @@ class Send extends MY_Controller
 			// 메시지 내용에서 치환 필드를 실제 정보로 변환
 			$replaced_message = $this->replace_message_fields($message_content, $member_info);
 
-			// 문자 발송 로그 저장
+			// 발송 로그 먼저 저장 (api_message_id 자동 생성됨)
 			$send_data = array(
 				'org_id' => $org_id,
 				'sender_id' => $user_id,
@@ -155,22 +157,43 @@ class Send extends MY_Controller
 				'send_date' => date('Y-m-d H:i:s')
 			);
 
-			// 실제 문자 발송 처리
-			$send_result = $this->process_message_send($send_type, $sender_number, $receiver_number, $replaced_message);
+			$send_idx = $this->Send_model->save_send_log($send_data);
+
+			if (!$send_idx) {
+				$fail_count++;
+				$fail_messages[] = $receiver_name . ': 로그 저장 실패';
+				continue;
+			}
+
+			// 저장된 로그에서 api_message_id 조회
+			$log = $this->Send_model->get_send_log_by_idx($send_idx);
+			$api_message_id = $log['api_message_id'];
+
+			// 실제 문자 발송 처리 (api_message_id 포함)
+			$send_result = $this->process_message_send(
+				$send_type,
+				$sender_number,
+				$receiver_number,
+				$replaced_message,
+				$api_message_id  // 추가!
+			);
 
 			if ($send_result['success']) {
-				$send_data['send_status'] = 'success';
-				$send_data['result_message'] = $send_result['message'];
+				// 발송 성공 - 상태만 업데이트
+				$this->Send_model->update_send_log($send_idx, array(
+					'send_status' => 'pending'  // API 결과는 polling으로 확인
+				));
 				$success_count++;
 			} else {
-				$send_data['send_status'] = 'failed';
-				$send_data['result_message'] = $send_result['message'];
+				// 발송 실패 - 상태 및 오류 메시지 업데이트
+				$this->Send_model->update_send_log($send_idx, array(
+					'send_status' => 'failed',
+					'result_message' => $send_result['message'],
+					'result_date' => date('Y-m-d H:i:s')
+				));
 				$fail_count++;
 				$fail_messages[] = $receiver_name . ': ' . $send_result['message'];
 			}
-
-			// 발송 로그 저장
-			$this->Send_model->save_send_log($send_data);
 		}
 
 		$total_count = $success_count + $fail_count;
@@ -374,6 +397,8 @@ class Send extends MY_Controller
 			// 저장된 로그에서 api_message_id 조회
 			$log = $this->Send_model->get_send_log_by_idx($send_idx);
 			$api_message_id = $log['api_message_id'];
+
+
 
 			// 실제 API 발송
 			$send_result = $this->process_message_send(
