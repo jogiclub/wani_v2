@@ -157,6 +157,14 @@
 						</div>
 					</div>
 
+
+					<!-- MMS 첨부파일 (MMS 선택 시에만 표시) -->
+					<div class="col-sm-12 d-none" id="mmsFileSection">
+						<label for="mmsFile" class="col-form-label">첨부파일</label>
+						<input type="file" class="form-control" id="mmsFile" name="mms_file" accept="image/jpeg,image/jpg"/>
+						<div class="form-text">JPG/JPEG 이미지만 첨부 가능합니다. (최대 5MB, 권장 크기: 1200px 이하)</div>
+					</div>
+
 					<div class="mb-3">
 						<div class="row">
 							<div class="col-sm-12">
@@ -187,15 +195,7 @@
 						</div>
 					</div>
 
-					<!-- MMS 첨부파일 (MMS 선택 시에만 표시) -->
 
-					<div class="col-sm-12 d-none" id="mmsFileSection">
-						<label for="mmsFile" class="col-form-label">첨부파일</label>
-
-						<input type="file" class="form-control" id="mmsFile" name="mms_file" accept="image/*"/>
-						<div class="form-text">이미지 파일만 첨부 가능합니다. (최대 300KB)</div>
-
-					</div>
 				</div>
 
 				<div class="card-footer d-flex justify-content-between align-items-center">

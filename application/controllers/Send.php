@@ -80,171 +80,62 @@ class Send extends MY_Controller
 
 
 	/**
-	 * 역할: 문자 발송 처리 (API 메시지 ID 추가)
+	 * 역할: 즉시 발송 처리 (잔액 차감 포함) - send_message 함수 내 수정
 	 */
-	public function send_message()
+	private function send_message($send_type, $to, $message, $req_phone, $api_message_id, $image_key = null)
 	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
-
-		$user_id = $this->session->userdata('user_id');
-		if (!$user_id) {
-			echo json_encode(array('success' => false, 'message' => '로그인이 필요합니다.'));
-			return;
-		}
-
-		$send_type = $this->input->post('send_type');
-		$sender_number = $this->input->post('sender_number');
-		$sender_name = $this->input->post('sender_name');
-		$message_content = $this->input->post('message_content');
-		$receiver_numbers = $this->input->post('receiver_numbers');
-		$org_id = $this->input->post('org_id');
-
-		// 필수 값 검증
-		if (empty($send_type) || empty($sender_number) || empty($message_content) || empty($receiver_numbers)) {
-			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
-			return;
-		}
-
-		// 조직 권한 확인
-		if (!$this->check_org_access($org_id)) {
-			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
-			return;
-		}
-
-		$receiver_count = count($receiver_numbers);
-
-		// 발송 전 잔액 차감
-		$deduction_result = $this->Send_model->deduct_balance($org_id, $send_type, $receiver_count);
-
-		if (!$deduction_result['success']) {
-			echo json_encode(array(
-				'success' => false,
-				'message' => $deduction_result['message']
-			));
-			return;
-		}
-
-		$success_count = 0;
-		$fail_count = 0;
-		$fail_messages = array();
-
-		foreach ($receiver_numbers as $receiver_data) {
-			$receiver_number = $receiver_data['phone'];
-			$receiver_name = $receiver_data['name'];
-			$member_idx = $receiver_data['member_idx'];
-
-			// 회원 정보 조회 (치환을 위한 추가 정보 포함)
-			$member_info = $this->Send_model->get_member_info_for_replacement($member_idx, $org_id);
-
-			// 메시지 내용에서 치환 필드를 실제 정보로 변환
-			$replaced_message = $this->replace_message_fields($message_content, $member_info);
-
-			// 발송 로그 먼저 저장 (api_message_id 자동 생성됨)
-			$send_data = array(
-				'org_id' => $org_id,
-				'sender_id' => $user_id,
-				'member_idx' => $member_idx,
-				'send_type' => $send_type,
-				'sender_number' => $sender_number,
-				'sender_name' => $sender_name,
-				'receiver_number' => $receiver_number,
-				'receiver_name' => $receiver_name,
-				'message_content' => $replaced_message,
-				'send_status' => 'pending',
-				'send_date' => date('Y-m-d H:i:s')
-			);
-
-			$send_idx = $this->Send_model->save_send_log($send_data);
-
-			if (!$send_idx) {
-				$fail_count++;
-				$fail_messages[] = $receiver_name . ': 로그 저장 실패';
-				continue;
-			}
-
-			// 저장된 로그에서 api_message_id 조회
-			$log = $this->Send_model->get_send_log_by_idx($send_idx);
-			$api_message_id = $log['api_message_id'];
-
-			// 실제 문자 발송 처리 (api_message_id 포함)
-			$send_result = $this->process_message_send(
-				$send_type,
-				$sender_number,
-				$receiver_number,
-				$replaced_message,
-				$api_message_id
-			);
-
-			if ($send_result['success']) {
-				// 발송 성공 - 상태를 success로 업데이트
-				$this->Send_model->update_send_log($send_idx, array(
-					'send_status' => 'success',
-					'result_date' => date('Y-m-d H:i:s')
-				));
-				$success_count++;
-			} else {
-				// 발송 실패 - 상태 및 오류 메시지 업데이트
-				$this->Send_model->update_send_log($send_idx, array(
-					'send_status' => 'failed',
-					'result_message' => $send_result['message'],
-					'result_date' => date('Y-m-d H:i:s')
-				));
-				$fail_count++;
-				$fail_messages[] = $receiver_name . ': ' . $send_result['message'];
-			}
-		}
-
-		$total_count = $success_count + $fail_count;
-		$response_message = "총 {$total_count}건 중 {$success_count}건 성공, {$fail_count}건 실패";
-
-		if ($fail_count > 0) {
-			$response_message .= "\n실패 내역:\n" . implode("\n", $fail_messages);
-		}
-
-		// 최신 잔액 조회
-		$new_balance = $this->Send_model->get_org_total_balance($org_id);
-		$sms_available = $this->Send_model->get_available_balance_by_type($org_id, 'sms');
-		$lms_available = $this->Send_model->get_available_balance_by_type($org_id, 'lms');
-		$mms_available = $this->Send_model->get_available_balance_by_type($org_id, 'mms');
-		$kakao_available = $this->Send_model->get_available_balance_by_type($org_id, 'kakao');
-
-		echo json_encode(array(
-			'success' => true,
-			'message' => $response_message,
-			'success_count' => $success_count,
-			'fail_count' => $fail_count,
-			'balance' => $new_balance,
-			'available_counts' => array(
-				'sms' => $sms_available,
-				'lms' => $lms_available,
-				'mms' => $mms_available,
-				'kakao' => $kakao_available
-			)
-		));
-	}
-
-	/**
-	 * 실제 문자 발송 처리 (API 연동)
-	 */
-	private function process_message_send($send_type, $sender_number, $receiver_number, $message_content, $api_message_id)
-	{
-		// 슈어엠 API 라이브러리 로드
 		$this->load->library('Surem_api');
 
 		try {
-			// 하이픈 제거 (슈어엠 API는 숫자만 받음)
+			$result = null;
+
+			if ($send_type === 'sms') {
+				$result = $this->surem_api->send_sms($to, $message, $req_phone, $api_message_id);
+			} elseif ($send_type === 'lms' || $send_type === 'mms') {
+				// MMS는 이미지 키가 있을 때만, 없으면 LMS로 발송
+				$result = $this->surem_api->send_mms($to, $message, $req_phone, $image_key, '', $api_message_id);
+			}
+
+			if ($result && $result['success']) {
+				return array(
+					'success' => true,
+					'message' => '발송 성공',
+					'api_message_id' => $api_message_id
+				);
+			} else {
+				return array(
+					'success' => false,
+					'message' => $result['message'] ?? '발송 실패',
+					'api_message_id' => null
+				);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', 'Message send error: ' . $e->getMessage());
+			return array(
+				'success' => false,
+				'message' => '발송 실패: ' . $e->getMessage(),
+				'api_message_id' => null
+			);
+		}
+	}
+
+	/**
+	 * 역할: 실제 문자 발송 처리 (API 연동) - image_key 파라미터 추가
+	 */
+	private function process_message_send($send_type, $sender_number, $receiver_number, $message_content, $api_message_id, $image_key = null)
+	{
+		$this->load->library('Surem_api');
+
+		try {
+			// 하이픈 제거
 			$clean_receiver = str_replace('-', '', $receiver_number);
 			$clean_sender = str_replace('-', '', $sender_number);
-
-			// api_message_id는 이미 9자리로 생성됨
 
 			$result = array();
 
 			switch ($send_type) {
 				case 'sms':
-					// SMS 발송 (최대 90바이트)
 					$text = mb_substr($message_content, 0, 90);
 					$result = $this->surem_api->send_sms(
 						$clean_receiver,
@@ -255,7 +146,6 @@ class Send extends MY_Controller
 					break;
 
 				case 'lms':
-					// LMS 발송 (최대 2000바이트)
 					$subject = mb_substr($message_content, 0, 30);
 					$text = mb_substr($message_content, 0, 2000);
 					$result = $this->surem_api->send_lms(
@@ -268,22 +158,21 @@ class Send extends MY_Controller
 					break;
 
 				case 'mms':
-					// MMS 발송
 					$subject = mb_substr($message_content, 0, 30);
 					$text = mb_substr($message_content, 0, 2000);
 
-					$image_key = null;
-
+					// 이미지 키가 있으면 MMS, 없으면 LMS로 발송
 					if ($image_key) {
 						$result = $this->surem_api->send_mms(
 							$clean_receiver,
-							$subject,
 							$text,
 							$clean_sender,
 							$image_key,
+							$subject,
 							$api_message_id
 						);
 					} else {
+						// 이미지가 없으면 LMS로 발송
 						$result = $this->surem_api->send_lms(
 							$clean_receiver,
 							$subject,
@@ -314,8 +203,6 @@ class Send extends MY_Controller
 		}
 	}
 
-
-
 	/**
 	 * 역할: 즉시 발송 처리 (잔액 차감 포함)
 	 */
@@ -333,6 +220,7 @@ class Send extends MY_Controller
 		$message_content = $this->input->post('message_content');
 		$receiver_list = $this->input->post('receiver_list');
 		$total_cost = $this->input->post('total_cost');
+		$image_key = $this->input->post('image_key'); // MMS 이미지 키 추가
 
 		// 잔액 확인
 		$balance_check = $this->Send_model->check_balance_sufficient($org_id, $total_cost);
@@ -371,7 +259,10 @@ class Send extends MY_Controller
 			// 메시지 치환
 			$personalized_message = $this->replace_message_fields($message_content, $receiver);
 
-			// 발송 로그 저장 (api_message_id 자동 생성됨)
+			// API 메시지 ID 생성 (9자리)
+			$api_message_id = $this->generate_api_message_id();
+
+			// 발송 로그 저장
 			$send_data = array(
 				'org_id' => $org_id,
 				'sender_id' => $user_id,
@@ -382,54 +273,44 @@ class Send extends MY_Controller
 				'receiver_number' => $receiver['member_phone'],
 				'receiver_name' => $receiver['member_name'],
 				'message_content' => $personalized_message,
+				'image_key' => $image_key, // 이미지 키 저장
 				'send_status' => 'pending',
+				'api_message_id' => $api_message_id,
 				'send_date' => date('Y-m-d H:i:s')
 			);
 
-			$send_idx = $this->Send_model->save_send_log($send_data);
+			$send_idx = $this->Send_model->save_send_log($send_data); // send_idx 반환
 
-			if (!$send_idx) {
-				$fail_count++;
-				continue;
-			}
-
-			// 저장된 로그에서 api_message_id 조회
-			$log = $this->Send_model->get_send_log_by_idx($send_idx);
-			$api_message_id = $log['api_message_id'];
-
-			// 실제 API 발송
+			// API 발송 처리 (이미지 키 전달)
 			$send_result = $this->process_message_send(
 				$send_type,
 				$sender_number,
 				$receiver['member_phone'],
 				$personalized_message,
-				$api_message_id
+				$api_message_id,
+				$image_key
 			);
 
+			// 발송 결과 업데이트 (send_idx 사용)
 			if ($send_result['success']) {
-				// 발송 성공 - 상태를 success로 업데이트
-				$this->Send_model->update_send_log($send_idx, array(
-					'send_status' => 'success',
-					'result_date' => date('Y-m-d H:i:s')
-				));
+				$this->Send_model->update_send_log_status($send_idx, 'success', 'API 발송 성공');
 				$success_count++;
+				$send_log_list[] = array(
+					'status' => 'success',
+					'member_name' => $receiver['member_name'],
+					'member_phone' => $receiver['member_phone'],
+					'message' => 'API 발송 성공'
+				);
 			} else {
-				// 발송 실패 시 상태 업데이트
-				$this->Send_model->update_send_log($send_idx, array(
-					'send_status' => 'failed',
-					'result_message' => $send_result['message'],
-					'result_date' => date('Y-m-d H:i:s')
-				));
+				$this->Send_model->update_send_log_status($send_idx, 'failed', $send_result['message']);
 				$fail_count++;
+				$send_log_list[] = array(
+					'status' => 'failed',
+					'member_name' => $receiver['member_name'],
+					'member_phone' => $receiver['member_phone'],
+					'message' => $send_result['message']
+				);
 			}
-
-			$send_log_list[] = array(
-				'send_idx' => $send_idx,
-				'member_name' => $receiver['member_name'],
-				'member_phone' => $receiver['member_phone'],
-				'status' => $send_result['success'] ? 'success' : 'failed',
-				'message' => $send_result['message']
-			);
 		}
 
 		// 최신 잔액 조회
@@ -453,6 +334,14 @@ class Send extends MY_Controller
 				'kakao' => $kakao_available
 			)
 		));
+	}
+
+	/**
+	 * 역할: API 메시지 ID 생성 (9자리 숫자)
+	 */
+	private function generate_api_message_id()
+	{
+		return rand(100000000, 999999999);
 	}
 
 
@@ -1558,6 +1447,293 @@ class Send extends MY_Controller
 	}
 
 
+	/**
+	 * 역할: CodeIgniter Image_lib로 이미지 리사이징
+	 */
+	private function resize_image_with_ci($source_path, $max_width)
+	{
+		$this->load->library('image_lib');
 
+		$image_info = @getimagesize($source_path);
+		if (!$image_info) {
+			return false;
+		}
+
+		$width = $image_info[0];
+		$height = $image_info[1];
+		$ratio = $max_width / $width;
+		$new_height = round($height * $ratio);
+
+		$resize_config = array(
+			'image_library' => 'gd2',
+			'source_image' => $source_path,
+			'maintain_ratio' => TRUE,
+			'width' => $max_width,
+			'height' => $new_height,
+			'quality' => '90%'
+		);
+
+		$this->image_lib->clear();
+		$this->image_lib->initialize($resize_config);
+
+		if (!$this->image_lib->resize()) {
+			log_message('error', 'Image resize error: ' . $this->image_lib->display_errors('', ''));
+			return false;
+		}
+
+		$this->image_lib->clear();
+		return $source_path;
+	}
+
+	/**
+	 * 역할: CodeIgniter Image_lib로 이미지 압축
+	 */
+	private function compress_image_with_ci($source_path, $quality)
+	{
+		$this->load->library('image_lib');
+
+		// 임시 파일 생성
+		$temp_path = $source_path . '_compressed.jpg';
+
+		$config = array(
+			'image_library' => 'gd2',
+			'source_image' => $source_path,
+			'new_image' => $temp_path,
+			'maintain_ratio' => TRUE,
+			'quality' => $quality . '%'
+		);
+
+		$this->image_lib->clear();
+		$this->image_lib->initialize($config);
+
+		if (!$this->image_lib->resize()) {
+			log_message('error', 'Image compress error: ' . $this->image_lib->display_errors('', ''));
+			return false;
+		}
+
+		$this->image_lib->clear();
+
+		// 원본 삭제하고 압축본을 원본 이름으로 변경
+		@unlink($source_path);
+		@rename($temp_path, $source_path);
+
+		return $source_path;
+	}
+
+
+	/**
+	 * 역할: MMS 이미지 업로드 및 처리 (GD 없이 동작)
+	 */
+	public function upload_mms_image()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+
+		if (!$user_id || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '로그인이 필요합니다.'));
+			return;
+		}
+
+		// 업로드 경로
+		$upload_path = './uploads/mms/temp/';
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			if (!@mkdir($upload_path, 0755, true)) {
+				log_message('error', 'Failed to create directory: ' . $upload_path);
+				echo json_encode(array('success' => false, 'message' => '업로드 폴더 생성에 실패했습니다. 관리자에게 문의하세요.'));
+				return;
+			}
+		}
+
+		// 쓰기 권한 확인
+		if (!is_writable($upload_path)) {
+			log_message('error', 'Upload directory is not writable: ' . $upload_path);
+			echo json_encode(array('success' => false, 'message' => '업로드 폴더에 쓰기 권한이 없습니다. 관리자에게 문의하세요.'));
+			return;
+		}
+
+		// 파일 업로드 설정 (JPG만 허용)
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'jpg|jpeg';
+		$config['max_size'] = 5120; // 5MB
+		$config['encrypt_name'] = TRUE;
+
+		$this->load->library('upload', $config);
+
+		if (!$this->upload->do_upload('mms_file')) {
+			$error = $this->upload->display_errors('', '');
+			log_message('error', 'MMS file upload error: ' . $error);
+			echo json_encode(array(
+				'success' => false,
+				'message' => 'JPG 이미지만 업로드 가능합니다. PNG/GIF는 JPG로 변환 후 업로드해주세요.'
+			));
+			return;
+		}
+
+		$upload_data = $this->upload->data();
+		$uploaded_file_path = $upload_data['full_path'];
+
+		// 이미지 정보 확인
+		$image_info = @getimagesize($uploaded_file_path);
+
+		if (!$image_info) {
+			@unlink($uploaded_file_path);
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 이미지 파일입니다.'));
+			return;
+		}
+
+		$width = $image_info[0];
+		$height = $image_info[1];
+
+		// 이미지 리사이징 처리 (CodeIgniter Image_lib 사용)
+		$processed_file = $uploaded_file_path;
+
+		if ($width > 1200) {
+			$processed_file = $this->resize_image_with_ci($uploaded_file_path, 1200);
+
+			if (!$processed_file) {
+				@unlink($uploaded_file_path);
+				echo json_encode(array('success' => false, 'message' => '이미지 리사이징 실패'));
+				return;
+			}
+		}
+
+		// 파일 크기 확인 (500KB 제한)
+		$file_size = filesize($processed_file);
+
+		if ($file_size > 512000) {
+			// 용량 초과 시 압축
+			$compressed_file = $this->compress_image_with_ci($processed_file, 80);
+
+			if ($compressed_file) {
+				$processed_file = $compressed_file;
+				$file_size = filesize($processed_file);
+			}
+
+			// 여전히 용량 초과
+			if ($file_size > 512000) {
+				@unlink($processed_file);
+				if ($processed_file !== $uploaded_file_path) {
+					@unlink($uploaded_file_path);
+				}
+				echo json_encode(array('success' => false, 'message' => '이미지 용량이 너무 큽니다. 더 작은 이미지를 사용해주세요. (500KB 이하 필요)'));
+				return;
+			}
+		}
+
+		// 슈어엠 API 이미지 업로드
+		$this->load->library('Surem_api');
+		$api_result = $this->surem_api->upload_mms_image($processed_file);
+
+		// 임시 파일 삭제
+		@unlink($uploaded_file_path);
+		if ($processed_file !== $uploaded_file_path) {
+			@unlink($processed_file);
+		}
+
+		if (!$api_result['success']) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => 'API 이미지 업로드 실패: ' . $api_result['message']
+			));
+			return;
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'message' => '이미지 업로드 성공',
+			'image_key' => $api_result['image_key'],
+			'expiry_date' => $api_result['expiry_date']
+		));
+	}
+
+	/**
+	 * 역할: 이미지를 JPG로 변환
+	 */
+	private function convert_to_jpg($source_path, $ext)
+	{
+		$ext = strtolower($ext);
+
+		// 이미 JPG인 경우
+		if ($ext === '.jpg' || $ext === '.jpeg') {
+			return $source_path;
+		}
+
+		$jpg_path = str_replace($ext, '.jpg', $source_path);
+
+		try {
+			$image = null;
+
+			switch ($ext) {
+				case '.png':
+					$image = @imagecreatefrompng($source_path);
+					break;
+				case '.gif':
+					$image = @imagecreatefromgif($source_path);
+					break;
+				default:
+					return false;
+			}
+
+			if (!$image) {
+				log_message('error', 'Failed to create image from source: ' . $source_path);
+				return false;
+			}
+
+			// 배경을 흰색으로 설정 (투명도 처리)
+			$width = imagesx($image);
+			$height = imagesy($image);
+			$bg = imagecreatetruecolor($width, $height);
+			$white = imagecolorallocate($bg, 255, 255, 255);
+			imagefill($bg, 0, 0, $white);
+			imagecopy($bg, $image, 0, 0, 0, 0, $width, $height);
+
+			// JPG로 저장
+			$result = imagejpeg($bg, $jpg_path, 90);
+
+			imagedestroy($image);
+			imagedestroy($bg);
+
+			if (!$result) {
+				log_message('error', 'Failed to save JPG: ' . $jpg_path);
+				return false;
+			}
+
+			return $jpg_path;
+
+		} catch (Exception $e) {
+			log_message('error', 'Exception in convert_to_jpg: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 역할: JPG 이미지 압축
+	 */
+	private function compress_jpg($file_path, $quality)
+	{
+		try {
+			$image = @imagecreatefromjpeg($file_path);
+
+			if (!$image) {
+				log_message('error', 'Failed to create image from JPG: ' . $file_path);
+				return false;
+			}
+
+			$result = imagejpeg($image, $file_path, $quality);
+			imagedestroy($image);
+
+			return $result;
+
+		} catch (Exception $e) {
+			log_message('error', 'Exception in compress_jpg: ' . $e->getMessage());
+			return false;
+		}
+	}
 
 }

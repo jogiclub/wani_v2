@@ -8,6 +8,9 @@ let selectedPackage = null;
 let bulkEditGridInstance = null;
 let authTimer = null;
 let authTimeLeft = 120;
+// 전역 변수에 추가
+let uploadedImageKey = null;
+
 
 // 메시지 타입별 제한 설정
 const MESSAGE_LIMITS = {
@@ -70,6 +73,69 @@ $(document).ready(function() {
 		'data-bs-placement': 'top',
 		'title': '현재 준비중입니다'
 	});
+
+	/**
+	 * 역할: MMS 이미지 업로드
+	 */
+	function uploadMmsImage(file) {
+		// 파일 형식 검증 (JPG만 허용)
+		const allowedTypes = ['image/jpeg', 'image/jpg'];
+		if (!allowedTypes.includes(file.type)) {
+			showToast('JPG/JPEG 형식의 이미지만 업로드 가능합니다.', 'error');
+			$('#mmsFile').val('');
+			return;
+		}
+
+		// 파일 크기 검증 (5MB)
+		if (file.size > 5242880) {
+			showToast('이미지 크기는 5MB 이하여야 합니다.', 'error');
+			$('#mmsFile').val('');
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append('mms_file', file);
+		formData.append('org_id', SEND_ORG_ID);
+
+		$.ajax({
+			url: '/send/upload_mms_image',
+			type: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			dataType: 'json',
+			beforeSend: function() {
+				$('#mmsFile').prop('disabled', true);
+				showToast('이미지 업로드 중...', 'info');
+			},
+			success: function(response) {
+				if (response.success) {
+					uploadedImageKey = response.image_key;
+					showToast('이미지 업로드 완료', 'success');
+				} else {
+					uploadedImageKey = null;
+					$('#mmsFile').val('');
+					showToast(response.message, 'error');
+				}
+			},
+			error: function() {
+				uploadedImageKey = null;
+				$('#mmsFile').val('');
+				showToast('이미지 업로드 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				$('#mmsFile').prop('disabled', false);
+			}
+		});
+	}
+
+	$('#mmsFile').on('change', function() {
+		const file = this.files[0];
+		if (file) {
+			uploadMmsImage(file);
+		}
+	});
+
 
 	// Bootstrap 툴팁 초기화
 	const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -309,6 +375,7 @@ function handleSendTypeChange(sendType) {
 	handleMessageInput();
 }
 
+
 /**
  * 역할: 메시지 입력 시 글자 수 카운트 및 자동 타입 전환
  */
@@ -328,7 +395,17 @@ function handleMessageInput() {
 		showToast('70자를 초과하여 자동으로 LMS로 전환되었습니다.', 'info');
 		updateSendCost();
 	}
+
+	// LMS에서 70자 이하로 줄어들 시 자동으로 SMS로 전환
+	if (currentType === 'lms' && charCount <= MESSAGE_LIMITS.sms.maxChar) {
+		$('#sms').prop('checked', true);
+		$('#maxChar').text(MESSAGE_LIMITS.sms.maxChar);
+		$('#messageTypeInfo').text(MESSAGE_LIMITS.sms.label);
+		showToast('70자 이하로 자동으로 SMS로 전환되었습니다.', 'info');
+		updateSendCost();
+	}
 }
+
 
 // ===== 잔액 관련 함수 =====
 function loadBalance() {
@@ -1443,11 +1520,31 @@ function processSendMessage() {
 }
 
 
+
 /**
- * 역할: 즉시 발송 처리 - 메시지 내용 및 수신자별 결과 저장
+ * 역할: 즉시 발송 처리 (MMS 이미지 포함)
  */
 function sendImmediately(sendType, senderNumber, senderName, messageContent, receiverList, totalCost) {
-	// 서버에 비용 차감 및 발송 요청
+	// MMS인데 이미지가 없으면 경고
+	if (sendType === 'mms' && !uploadedImageKey) {
+		showConfirmModal(
+			'MMS 발송',
+			'MMS로 선택되었지만 첨부된 이미지가 없습니다. 이미지 없이 LMS로 발송하시겠습니까?',
+			function() {
+				proceedSendImmediately(sendType, senderNumber, senderName, messageContent, receiverList, totalCost, null);
+			}
+		);
+		return;
+	}
+
+	proceedSendImmediately(sendType, senderNumber, senderName, messageContent, receiverList, totalCost, uploadedImageKey);
+}
+
+
+/**
+ * 역할: 실제 발송 처리
+ */
+function proceedSendImmediately(sendType, senderNumber, senderName, messageContent, receiverList, totalCost, imageKey) {
 	$.ajax({
 		url: '/send/send_message_immediately',
 		type: 'POST',
@@ -1458,7 +1555,8 @@ function sendImmediately(sendType, senderNumber, senderName, messageContent, rec
 			sender_name: senderName,
 			message_content: messageContent,
 			receiver_list: receiverList,
-			total_cost: totalCost
+			total_cost: totalCost,
+			image_key: imageKey
 		},
 		dataType: 'json',
 		success: function(response) {
@@ -1467,40 +1565,37 @@ function sendImmediately(sendType, senderNumber, senderName, messageContent, rec
 				return;
 			}
 
-			// 비용 차감 및 발송 성공
+			// 기존 발송 완료 처리 코드...
 			const sendLogList = response.send_log_list || [];
 			let successCount = response.success_count || 0;
 			let failCount = response.fail_count || 0;
 
-			// 실시간 toast 표시
 			sendLogList.forEach(function(log, index) {
 				setTimeout(function() {
 					if (log.status === 'success') {
 						showToast(`[${log.member_name}(${log.member_phone})] 발송 요청 성공`, 'success');
 					} else {
 						showToast(`${log.member_name}(${log.member_phone}) 발송 실패: ${log.message}`, 'error');
-						// return false;
 					}
 
-					// 마지막 수신자 처리 후
 					if (index === sendLogList.length - 1) {
 						setTimeout(function() {
-							// 잔액 업데이트
 							if (response.new_balance !== undefined) {
 								updateBalanceDisplay(response.new_balance);
 							}
 
-							// 사용 가능 건수 업데이트
 							if (response.available_counts) {
 								availableCounts = response.available_counts;
 								updateSendTypeLabels();
 								updateSendCost();
 							}
 
-							// 완료 메시지
 							showToast(`전체 발송 완료: 성공 ${successCount}건, 실패 ${failCount}건`, 'info');
 
-							// 발송 히스토리 탭으로 자동 전환
+							// 업로드된 이미지 키 초기화
+							uploadedImageKey = null;
+							$('#mmsFile').val('');
+
 							setTimeout(function() {
 								$('#history-tab').tab('show');
 								loadSendHistory();
@@ -1515,7 +1610,6 @@ function sendImmediately(sendType, senderNumber, senderName, messageContent, rec
 		}
 	});
 }
-
 
 
 /**

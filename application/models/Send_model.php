@@ -69,19 +69,6 @@ class Send_model extends CI_Model
 		return $query->result_array();
 	}
 
-	/**
-	 * 역할: 발송 로그 저장 (API 메시지 ID 자동 생성)
-	 */
-	public function save_send_log($data)
-	{
-		// API 메시지 ID가 없으면 자동 생성
-		if (!isset($data['api_message_id']) || empty($data['api_message_id'])) {
-			$data['api_message_id'] = $this->generate_api_message_id();
-		}
-
-		$this->db->insert('wb_send_log', $data);
-		return $this->db->insert_id();
-	}
 
 
 	/**
@@ -904,51 +891,12 @@ class Send_model extends CI_Model
 	}
 
 
-	/**
-	 * 역할: 발송 결과 일괄 업데이트
-	 */
-	public function update_send_results($results)
-	{
-		if (empty($results)) {
-			return true;
-		}
 
-		$this->db->trans_begin();
-
-		try {
-			foreach ($results as $result) {
-				$message_id = $result['member']; // API에서 전달한 messageId (send_idx)
-				$status = ($result['result'] == '2') ? 'success' : 'failed';
-				$error_code = $result['errorcode'];
-				$recv_time = $result['recvtime'];
-
-				// 에러 코드를 메시지로 변환
-				$result_message = $this->get_error_message($error_code);
-
-				$update_data = array(
-					'send_status' => $status,
-					'result_message' => $result_message,
-					'result_date' => $this->format_recv_time($recv_time)
-				);
-
-				$this->db->where('send_idx', $message_id);
-				$this->db->update('wb_send_log', $update_data);
-			}
-
-			$this->db->trans_commit();
-			return true;
-
-		} catch (Exception $e) {
-			$this->db->trans_rollback();
-			log_message('error', 'Send results update failed: ' . $e->getMessage());
-			return false;
-		}
-	}
 
 	/**
 	 * 역할: 에러 코드를 메시지로 변환
 	 */
-	private function get_error_message($error_code)
+	private function get_error_message($error_code) // <-- 여기를 $error_code로 수정했습니다.
 	{
 		$error_messages = array(
 			'0000' => '발송 성공',
@@ -1044,30 +992,22 @@ class Send_model extends CI_Model
 			return array();
 		}
 
-		// 같은 시간(분까지), 같은 발신번호, 같은 조직의 모든 로그 조회
+		// 같은 시간(초까지), 같은 발신번호, 같은 조직의 모든 로그 조회
+		// send_date를 5분 범위로 확장하여 조회 (동시 발송된 메시지 그룹핑)
+		$base_send_time = strtotime($base_log['send_date']);
+		$start_time = date('Y-m-d H:i:s', $base_send_time - 300); // 5분 전
+		$end_time = date('Y-m-d H:i:s', $base_send_time + 300);   // 5분 후
+
 		$this->db->select('receiver_name, receiver_number, send_status, result_message, result_date');
 		$this->db->from('wb_send_log');
 		$this->db->where('org_id', $base_log['org_id']);
-		$this->db->where('DATE(send_date)', date('Y-m-d', strtotime($base_log['send_date'])));
-		$this->db->where('HOUR(send_date)', date('H', strtotime($base_log['send_date'])));
-		$this->db->where('MINUTE(send_date)', date('i', strtotime($base_log['send_date'])));
 		$this->db->where('sender_number', $base_log['sender_number']);
+		$this->db->where('send_date >=', $start_time);
+		$this->db->where('send_date <=', $end_time);
 		$this->db->order_by('send_idx', 'ASC');
 
 		$query = $this->db->get();
-		$results = array();
-
-		foreach ($query->result_array() as $row) {
-			$results[] = array(
-				'receiver_name' => $row['receiver_name'],
-				'receiver_number' => $row['receiver_number'],
-				'send_status' => $row['send_status'],
-				'result_message' => $row['result_message'],
-				'result_date' => $row['result_date']
-			);
-		}
-
-		return $results;
+		return $query->result_array();
 	}
 
 
@@ -1174,5 +1114,98 @@ class Send_model extends CI_Model
 		$query = $this->db->get();
 		return $query->row_array();
 	}
+
+
+	/**
+	 * 역할: 발송 로그 상태 업데이트
+	 */
+	public function update_send_log_status($send_idx, $status, $result_message = '')
+	{
+		if (!$send_idx) {
+			return false;
+		}
+
+		$update_data = array(
+			'send_status' => $status,
+			'result_message' => $result_message,
+			'result_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('send_idx', $send_idx);
+		return $this->db->update('wb_send_log', $update_data);
+	}
+
+
+	/**
+	 * 역할: API 메시지 ID로 발송 로그 상태 업데이트 (결과 조회 시 사용)
+	 */
+	public function update_send_log_by_api_message_id($api_message_id, $status, $result_message = '')
+	{
+		if (!$api_message_id) {
+			return false;
+		}
+
+		$update_data = array(
+			'send_status' => $status,
+			'result_message' => $result_message,
+			'result_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('api_message_id', $api_message_id);
+		return $this->db->update('wb_send_log', $update_data);
+	}
+
+	/**
+	 * 역할: 발송 로그 저장
+	 */
+	public function save_send_log($data)
+	{
+		$this->db->insert('wb_send_log', $data);
+		return $this->db->insert_id();
+	}
+
+	/**
+	 * 역할: 발송 결과 일괄 업데이트 (Cron에서 사용)
+	 */
+	public function update_send_results($results)
+	{
+		if (empty($results)) {
+			return true;
+		}
+
+		$this->db->trans_start();
+
+		foreach ($results as $result) {
+			$message_id = isset($result['messageId']) ? $result['messageId'] : null;
+			$status_code = isset($result['statusCode']) ? $result['statusCode'] : null;
+			$status_message = isset($result['statusMessage']) ? $result['statusMessage'] : '';
+
+			if (!$message_id) {
+				continue;
+			}
+
+			// 상태 코드에 따라 성공/실패 판단
+			$send_status = 'pending';
+			if ($status_code === '0000' || $status_code === '0') {
+				$send_status = 'success';
+			} elseif ($status_code) {
+				$send_status = 'failed';
+			}
+
+			$update_data = array(
+				'send_status' => $send_status,
+				'result_message' => $status_message,
+				'result_date' => date('Y-m-d H:i:s')
+			);
+
+			$this->db->where('api_message_id', $message_id);
+			$this->db->update('wb_send_log', $update_data);
+		}
+
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
+	}
+
 
 }
