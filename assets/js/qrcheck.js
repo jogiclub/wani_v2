@@ -1512,10 +1512,9 @@ function attComplete(memberIdx) {
 	var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
 	if (memberCard.length > 0) {
 		var memberName = memberCard.find('.member-name').text().trim();
-		var message = memberName + '님 출석완료';
 		var welcomeMessage = memberName + '님 환영합니다!';
 
-		showToast(welcomeMessage, 'success', message);
+		showToast(welcomeMessage, 'success');
 	}
 }
 
