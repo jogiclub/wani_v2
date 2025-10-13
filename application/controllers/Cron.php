@@ -84,20 +84,78 @@ class Cron extends CI_Controller
 	}
 
 
+
+
+	/**
+	 * 역할: 예약 발송 처리 (1분마다 실행)
+	 * 실행: php index.php cron process_scheduled_messages
+	 */
+	public function process_scheduled_messages()
+	{
+		echo "=== 예약 발송 처리 시작 ===\n";
+		echo date('Y-m-d H:i:s') . "\n";
+
+		try {
+			// 발송 시간이 된 예약 목록 조회
+			$pending_messages = $this->Send_model->get_pending_scheduled_messages();
+
+			if (empty($pending_messages)) {
+				echo "처리할 예약 발송이 없습니다.\n";
+				echo "=== 예약 발송 처리 완료 ===\n\n";
+				return;
+			}
+
+			echo "처리할 예약 발송: " . count($pending_messages) . "건\n";
+
+			foreach ($pending_messages as $reservation) {
+				echo "\n--- 예약번호 {$reservation['reservation_idx']} 처리 시작 ---\n";
+
+				// 예약 상태를 'processing'으로 변경 (중복 처리 방지)
+				$this->Send_model->update_reservation_status($reservation['reservation_idx'], 'processing');
+
+				// 예약 메시지 발송
+				$this->process_scheduled_message($reservation);
+
+				echo "--- 예약번호 {$reservation['reservation_idx']} 처리 완료 ---\n";
+			}
+
+			echo "\n=== 예약 발송 처리 완료 ===\n";
+			echo "총 처리 건수: " . count($pending_messages) . "건\n\n";
+
+		} catch (Exception $e) {
+			echo "오류 발생: " . $e->getMessage() . "\n";
+			log_message('error', '예약 발송 처리 오류: ' . $e->getMessage());
+			exit(1);
+		}
+	}
+
+	/**
+	 * 역할: 개별 예약 메시지 발송 처리
+	 */
 	private function process_scheduled_message($reservation)
 	{
 		$receiver_list = json_decode($reservation['receiver_list'], true);
 
 		if (empty($receiver_list)) {
-			echo "예약번호 {$reservation['reservation_idx']}: 수신자 없음\n";
+			echo "수신자 없음\n";
+			$this->Send_model->update_reservation_status($reservation['reservation_idx'], 'failed');
 			return;
 		}
 
-		echo "예약번호 {$reservation['reservation_idx']}: " . count($receiver_list) . "명 발송 시작\n";
+		echo "수신자 수: " . count($receiver_list) . "명\n";
 
-		// 개별 메시지 비용 계산
+		// 잔액 확인
 		$package_prices = $this->Send_model->get_available_package_prices($reservation['org_id']);
 		$cost_per_message = isset($package_prices[$reservation['send_type']]) ? $package_prices[$reservation['send_type']] : 0;
+		$total_cost = $cost_per_message * count($receiver_list);
+
+		$org_balance = $this->Send_model->get_org_total_balance($reservation['org_id']);
+
+		if ($org_balance < $total_cost) {
+			echo "잔액 부족 (필요: {$total_cost}원, 보유: {$org_balance}원)\n";
+			$this->Send_model->update_reservation_status($reservation['reservation_idx'], 'failed');
+			return;
+		}
 
 		$success_count = 0;
 		$fail_count = 0;
@@ -106,7 +164,10 @@ class Cron extends CI_Controller
 			// 메시지 치환
 			$message = $this->replace_fields($reservation['message_content'], $receiver);
 
-			// 발송 로그 저장 (cost 추가)
+			// API 메시지 ID 생성
+			$api_message_id = $this->generate_api_message_id();
+
+			// 발송 로그 저장
 			$send_data = array(
 				'org_id' => $reservation['org_id'],
 				'sender_id' => 0,
@@ -119,55 +180,105 @@ class Cron extends CI_Controller
 				'message_content' => $message,
 				'send_status' => 'pending',
 				'send_date' => date('Y-m-d H:i:s'),
-				'cost' => $cost_per_message  // 개별 메시지 비용 추가
+				'cost' => $cost_per_message,
+				'api_message_id' => $api_message_id
 			);
 
 			$send_idx = $this->Send_model->save_send_log($send_data);
 
 			if (!$send_idx) {
 				$fail_count++;
+				echo "발송 로그 저장 실패: {$receiver['member_name']}\n";
 				continue;
 			}
 
-			// 저장된 로그에서 api_message_id 조회
-			$log = $this->Send_model->get_send_log_by_idx($send_idx);
-			$api_message_id = $log['api_message_id'];
+			// 잔액 차감
+			$deduct_result = $this->Send_model->deduct_balance(
+				$reservation['org_id'],
+				$reservation['send_type'],
+				1
+			);
+
+			if (!$deduct_result) {
+				$this->Send_model->update_send_log_status($send_idx, 'failed', '잔액 차감 실패');
+				$fail_count++;
+				echo "잔액 차감 실패: {$receiver['member_name']}\n";
+				continue;
+			}
 
 			// 실제 발송
 			$clean_receiver = str_replace('-', '', $receiver['member_phone']);
 			$clean_sender = str_replace('-', '', $reservation['sender_number']);
 
-			$result = null;
-
-			if ($reservation['send_type'] == 'sms') {
-				$text = mb_substr($message, 0, 90);
-				$result = $this->surem_api->send_sms($clean_receiver, $text, $clean_sender, $api_message_id);
-			} else {
-				$subject = mb_substr($message, 0, 30);
-				$text = mb_substr($message, 0, 2000);
-				$result = $this->surem_api->send_lms($clean_receiver, $subject, $text, $clean_sender, $api_message_id);
-			}
+			$result = $this->send_message(
+				$reservation['send_type'],
+				$clean_receiver,
+				$message,
+				$clean_sender,
+				$api_message_id
+			);
 
 			if ($result['success']) {
 				$success_count++;
+				echo "발송 성공: {$receiver['member_name']} ({$receiver['member_phone']})\n";
 			} else {
-				$this->Send_model->update_send_log($send_idx, array(
-					'send_status' => 'failed',
-					'result_message' => $result['message']
-				));
+				$this->Send_model->update_send_log_status($send_idx, 'failed', $result['message']);
 				$fail_count++;
+				echo "발송 실패: {$receiver['member_name']} - {$result['message']}\n";
 			}
 		}
 
 		// 예약 상태 업데이트
-		$status = ($fail_count == 0) ? 'sent' : (($success_count == 0) ? 'failed' : 'sent');
+		$status = 'sent';
+		if ($fail_count > 0 && $success_count == 0) {
+			$status = 'failed';
+		}
+
 		$this->Send_model->update_reservation_status($reservation['reservation_idx'], $status);
 
-		echo "예약번호 {$reservation['reservation_idx']}: 성공 {$success_count}건, 실패 {$fail_count}건\n";
+		echo "발송 완료 - 성공: {$success_count}건, 실패: {$fail_count}건\n";
 	}
 
 	/**
-	 * 역할: 메시지 치환
+	 * 역할: 메시지 발송
+	 */
+	private function send_message($send_type, $to, $message, $req_phone, $api_message_id)
+	{
+		try {
+			$result = null;
+
+			if ($send_type === 'sms') {
+				$text = mb_substr($message, 0, 90);
+				$result = $this->surem_api->send_sms($to, $text, $req_phone, $api_message_id);
+			} elseif ($send_type === 'lms' || $send_type === 'mms') {
+				$subject = mb_substr($message, 0, 30);
+				$text = mb_substr($message, 0, 2000);
+				$result = $this->surem_api->send_lms($to, $subject, $text, $req_phone, $api_message_id);
+			}
+
+			if ($result && $result['success']) {
+				return array(
+					'success' => true,
+					'message' => '발송 성공'
+				);
+			} else {
+				return array(
+					'success' => false,
+					'message' => $result['message'] ?? '발송 실패'
+				);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '메시지 발송 오류: ' . $e->getMessage());
+			return array(
+				'success' => false,
+				'message' => '발송 중 오류 발생'
+			);
+		}
+	}
+
+	/**
+	 * 역할: 메시지 필드 치환
 	 */
 	private function replace_fields($message, $receiver)
 	{
@@ -180,6 +291,19 @@ class Cron extends CI_Controller
 			'{임시2}' => isset($receiver['tmp02']) ? $receiver['tmp02'] : ''
 		);
 
-		return str_replace(array_keys($replacements), array_values($replacements), $message);
+		foreach ($replacements as $key => $value) {
+			$message = str_replace($key, $value, $message);
+		}
+
+		return $message;
 	}
+
+	/**
+	 * 역할: API 메시지 ID 생성 (9자리 숫자)
+	 */
+	private function generate_api_message_id()
+	{
+		return rand(100000000, 999999999);
+	}
+
 }

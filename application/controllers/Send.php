@@ -1742,4 +1742,70 @@ class Send extends MY_Controller
 		}
 	}
 
+	/**
+	 * 역할: SMS/LMS/MMS 발송 결과 조회 및 업데이트 (버튼 클릭 시)
+	 */
+	public function poll_sms_results()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$this->load->library('Surem_api');
+
+		$result = array(
+			'success' => true,
+			'sms_count' => 0,
+			'mms_count' => 0,
+			'message' => ''
+		);
+
+		try {
+			// SMS 결과 조회
+			$sms_result = $this->surem_api->get_send_results('S');
+			if ($sms_result['success'] && !empty($sms_result['data'])) {
+				$sms_count = count($sms_result['data']);
+				$result['sms_count'] = $sms_count;
+
+				// DB 업데이트
+				$this->Send_model->update_send_results($sms_result['data']);
+
+				// 결과 완료 처리
+				if ($sms_result['checksum']) {
+					$this->surem_api->complete_results($sms_result['checksum']);
+				}
+			}
+
+			// MMS 결과 조회 (LMS 포함)
+			$mms_result = $this->surem_api->get_send_results('M');
+			if ($mms_result['success'] && !empty($mms_result['data'])) {
+				$mms_count = count($mms_result['data']);
+				$result['mms_count'] = $mms_count;
+
+				// DB 업데이트
+				$this->Send_model->update_send_results($mms_result['data']);
+
+				// 결과 완료 처리
+				if ($mms_result['checksum']) {
+					$this->surem_api->complete_results($mms_result['checksum']);
+				}
+			}
+
+			$total_count = $result['sms_count'] + $result['mms_count'];
+
+			if ($total_count > 0) {
+				$result['message'] = "{$total_count}건의 발송 결과가 업데이트되었습니다.";
+			} else {
+				$result['message'] = "업데이트할 발송 결과가 없습니다.";
+			}
+
+		} catch (Exception $e) {
+			$result['success'] = false;
+			$result['message'] = '결과 조회 중 오류가 발생했습니다.';
+			log_message('error', 'SMS 결과 조회 오류: ' . $e->getMessage());
+		}
+
+		echo json_encode($result);
+	}
+
 }

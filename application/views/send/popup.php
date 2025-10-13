@@ -526,7 +526,8 @@
 					<tr>
 						<th>이름</th>
 						<th>연락처</th>
-						<th>상태</th>
+						<th>발송상태</th>
+						<th>전송상태</th>
 					</tr>
 					</thead>
 					<tbody id="historyDetailReceiverList">

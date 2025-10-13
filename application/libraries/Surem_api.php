@@ -195,7 +195,8 @@ class Surem_api
 
 		$result = json_decode($response, true);
 
-		if ($http_code !== 200 || (isset($result['code']) && $result['code'] !== '200')) {
+		// A0000이 성공 코드입니다 (200이 아님!)
+		if ($http_code !== 200 || (isset($result['code']) && $result['code'] !== 'A0000')) {
 			$message = isset($result['message']) ? $result['message'] : 'SMS 발송 실패';
 			log_message('error', 'Surem SMS send failed: ' . $response);
 			return array('success' => false, 'message' => $message);
@@ -258,7 +259,8 @@ class Surem_api
 
 		$result = json_decode($response, true);
 
-		if ($http_code !== 200 || (isset($result['code']) && $result['code'] !== '200')) {
+		// A0000이 성공 코드입니다 (200이 아님!)
+		if ($http_code !== 200 || (isset($result['code']) && $result['code'] !== 'A0000')) {
 			$message = isset($result['message']) ? $result['message'] : 'LMS 발송 실패';
 			log_message('error', 'Surem LMS send failed: ' . $response);
 			return array('success' => false, 'message' => $message);
@@ -366,7 +368,8 @@ class Surem_api
 			return array('success' => false, 'message' => '인증 토큰 발급 실패');
 		}
 
-		$url = self::API_BASE_URL . '/api/v1/result/' . $msg_type;
+		// 올바른 API URL 사용
+		$url = self::API_BASE_URL . '/api/v2/report/responseAll?type=' . $msg_type;
 
 		$ch = curl_init();
 
@@ -391,8 +394,10 @@ class Surem_api
 
 		$result = json_decode($response, true);
 
-		if ($http_code !== 200 || (isset($result['code']) && $result['code'] !== '200')) {
+		// A0000이 성공 코드입니다
+		if ($http_code !== 200 || (isset($result['code']) && $result['code'] !== 'A0000')) {
 			$message = isset($result['message']) ? $result['message'] : '결과 조회 실패';
+			log_message('error', 'Surem result API failed: HTTP ' . $http_code . ', Response: ' . $response);
 			return array('success' => false, 'message' => $message);
 		}
 
@@ -406,6 +411,9 @@ class Surem_api
 	/**
 	 * 역할: 결과 완료 처리
 	 */
+	/**
+	 * 역할: 결과 완료 처리
+	 */
 	public function complete_results($checksum)
 	{
 		$token = $this->get_access_token();
@@ -414,7 +422,8 @@ class Surem_api
 			return false;
 		}
 
-		$url = self::API_BASE_URL . '/api/v1/result/complete';
+		// 올바른 API URL 사용
+		$url = self::API_BASE_URL . '/api/v2/report/complete';
 
 		$data = array('checksum' => $checksum);
 
@@ -434,8 +443,22 @@ class Surem_api
 
 		$response = curl_exec($ch);
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$error = curl_error($ch);
 		curl_close($ch);
 
-		return ($http_code === 200);
+		if ($error) {
+			log_message('error', 'Surem complete API cURL error: ' . $error);
+			return false;
+		}
+
+		$result = json_decode($response, true);
+
+		// A0000이 성공 코드
+		if ($http_code !== 200 || (isset($result['code']) && $result['code'] !== 'A0000')) {
+			log_message('error', 'Surem complete API failed: ' . $response);
+			return false;
+		}
+
+		return true;
 	}
 }

@@ -1715,12 +1715,126 @@ function renderSendHistory(historyList) {
 		tbody.append(row);
 	});
 
-	// 결과확인 버튼 이벤트
-	$('.btn-view-result').on('click', function(e) {
-		e.preventDefault();
+	// 발송 히스토리 결과 확인 버튼 클릭 이벤트
+	$(document).on('click', '.btn-view-result', function() {
 		const historyIdx = $(this).data('history-idx');
-		showHistoryDetail(historyIdx);
+		const $btn = $(this);
+
+		// 버튼 비활성화 및 로딩 표시
+		$btn.prop('disabled', true);
+		const originalHtml = $btn.html();
+		$btn.html('<span class="spinner-border spinner-border-sm me-1"></span>조회중...');
+
+		// 1단계: 먼저 SMS 발송 결과 업데이트
+		$.ajax({
+			url: '/send/poll_sms_results',
+			type: 'POST',
+			dataType: 'json',
+			success: function(pollResponse) {
+				if (pollResponse.success) {
+					// 업데이트 완료 토스트 메시지 (선택적)
+					if (pollResponse.sms_count > 0 || pollResponse.mms_count > 0) {
+						showToast(pollResponse.message, 'success');
+					}
+				}
+
+				// 2단계: 히스토리 상세 조회
+				loadHistoryDetail(historyIdx, $btn, originalHtml);
+			},
+			error: function() {
+				// 결과 업데이트 실패해도 상세 조회는 진행
+				loadHistoryDetail(historyIdx, $btn, originalHtml);
+			}
+		});
 	});
+
+
+// 히스토리 상세 정보 로드 함수
+	function loadHistoryDetail(historyIdx, $btn, originalHtml) {
+		$.ajax({
+			url: '/send/get_history_detail',
+			type: 'POST',
+			data: {
+				history_idx: historyIdx,
+				org_id: SEND_ORG_ID
+			},
+			dataType: 'json',
+			success: function(response) {
+				// 버튼 원상복구
+				$btn.prop('disabled', false);
+				$btn.html(originalHtml);
+
+				if (response.success) {
+					const data = response.data;
+
+					// 상세 정보 표시
+					$('#historyDetailSendDate').text(data.send_date);
+					$('#historyDetailSenderNumber').text(data.sender_number);
+					$('#historyDetailSenderName').text(data.sender_name);
+					$('#historyDetailSendType').text(getSendTypeText(data.send_type));
+					$('#historyDetailReceiverCount').text(data.receiver_count + '명');
+					$('#historyDetailMessage').text(data.message_content);
+
+					// 수신자 목록 표시
+					let receiverHtml = '';
+					data.receiver_list.forEach(function(receiver) {
+						const statusBadge = getStatusBadge(receiver.send_status);
+						const resultText = receiver.result_message || '-';
+
+						receiverHtml += `
+						<tr>
+							<td>${receiver.receiver_name}</td>
+							<td>${receiver.receiver_number}</td>
+							<td>${statusBadge}</td>
+							<td>${resultText}</td>
+						</tr>
+					`;
+					});
+					$('#historyDetailReceiverList').html(receiverHtml);
+
+					// Offcanvas 열기
+					const historyOffcanvas = new bootstrap.Offcanvas(document.getElementById('historyDetailOffcanvas'));
+					historyOffcanvas.show();
+				} else {
+					showToast(response.message, 'error');
+				}
+			},
+			error: function() {
+				// 버튼 원상복구
+				$btn.prop('disabled', false);
+				$btn.html(originalHtml);
+
+				showToast('히스토리 조회에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+// 발송 상태 배지 생성
+	function getStatusBadge(status) {
+		switch(status) {
+			case 'success':
+				return '<span class="badge bg-success">발송 성공</span>';
+			case 'failed':
+				return '<span class="badge bg-danger">발송 실패</span>';
+			case 'pending':
+				return '<span class="badge bg-warning">대기중</span>';
+			default:
+				return '<span class="badge bg-secondary">알 수 없음</span>';
+		}
+	}
+
+// 발송 타입 텍스트 변환
+	function getSendTypeText(sendType) {
+		switch(sendType) {
+			case 'sms': return 'SMS';
+			case 'lms': return 'LMS';
+			case 'mms': return 'MMS';
+			case 'kakao': return '카카오톡';
+			default: return sendType;
+		}
+	}
+
+
 }
 
 /**

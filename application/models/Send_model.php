@@ -894,22 +894,27 @@ class Send_model extends CI_Model
 
 
 	/**
-	 * 역할: 에러 코드를 메시지로 변환
+	 * 역할: 에러 코드를 사람이 읽을 수 있는 메시지로 변환
 	 */
-	private function get_error_message($error_code) // <-- 여기를 $error_code로 수정했습니다.
+	private function get_error_message($error_code)
 	{
 		$error_messages = array(
-			'0000' => '발송 성공',
-			'1000' => '수신번호 형식 오류',
-			'2000' => '발신번호 미등록',
-			'3000' => '메시지 내용 없음',
-			'4000' => '잔액 부족',
-			'5000' => '스팸 차단',
-			'6000' => '수신 거부',
-			'9999' => '기타 오류'
+			'101' => '전송 성공',
+			'103' => '메시지 형식 오류',
+			'105' => '수신 불가능 상태',
+			'107' => '수신 불가능 상태',
+			'108' => '수신자 휴대폰 전원 꺼짐',
+			'109' => '음영 지역',
+			'208' => '기타 실패',
+			'1010' => '수신 휴대폰 저장 공간 부족',
+			'1020' => '광고 메시지 야간 발송 제한',
+			'1052' => '발신번호 스팸 차단',
+			'1053' => '발신번호 스팸 차단',
+			'1054' => '발신번호 스팸 차단',
+			'1062' => '중복 발송 실패'
 		);
 
-		return isset($error_messages[$error_code]) ? $error_messages[$error_code] : '알 수 없는 오류 (' . $error_code . ')';
+		return isset($error_messages[$error_code]) ? $error_messages[$error_code] : 'SMS 발송 실패 (코드: ' . $error_code . ')';
 	}
 
 	/**
@@ -1101,6 +1106,7 @@ class Send_model extends CI_Model
 		return $query->num_rows() > 0;
 	}
 
+
 	/**
 	 * 역할: send_idx로 발송 로그 조회
 	 */
@@ -1117,20 +1123,19 @@ class Send_model extends CI_Model
 	/**
 	 * 역할: 발송 로그 상태 업데이트
 	 */
-	public function update_send_log_status($send_idx, $status, $result_message = '')
+	public function update_send_log_status($send_idx, $status, $message = null)
 	{
-		if (!$send_idx) {
-			return false;
-		}
-
-		$update_data = array(
+		$data = array(
 			'send_status' => $status,
-			'result_message' => $result_message,
-			'result_date' => date('Y-m-d H:i:s')
+			'updated_date' => date('Y-m-d H:i:s')
 		);
 
+		if ($message !== null) {
+			$data['result_message'] = $message;
+		}
+
 		$this->db->where('send_idx', $send_idx);
-		return $this->db->update('wb_send_log', $update_data);
+		return $this->db->update('wb_send_log', $data);
 	}
 
 
@@ -1174,20 +1179,24 @@ class Send_model extends CI_Model
 		$this->db->trans_start();
 
 		foreach ($results as $result) {
-			$message_id = isset($result['messageId']) ? $result['messageId'] : null;
-			$status_code = isset($result['statusCode']) ? $result['statusCode'] : null;
-			$status_message = isset($result['statusMessage']) ? $result['statusMessage'] : '';
+			$message_id = isset($result['member']) ? $result['member'] : null;
+			$error_code = isset($result['errorcode']) ? $result['errorcode'] : null;
+			$result_status = isset($result['result']) ? $result['result'] : null;
 
 			if (!$message_id) {
 				continue;
 			}
 
-			// 상태 코드에 따라 성공/실패 판단
+			// 상태 판단: result 필드가 '2'이거나 errorcode가 '101'이면 성공
 			$send_status = 'pending';
-			if ($status_code === '0000' || $status_code === '0') {
+			$status_message = '';
+
+			if ($result_status === '2' || $error_code === '101') {
 				$send_status = 'success';
-			} elseif ($status_code) {
+				$status_message = '전송 성공';
+			} elseif ($result_status === '4') {
 				$send_status = 'failed';
+				$status_message = $this->get_error_message($error_code);
 			}
 
 			$update_data = array(

@@ -94,3 +94,6 @@ $db['default'] = array(
 	'failover' => array(),
 	'save_queries' => TRUE
 );
+
+// 연결 후 타임존 설정을 위한 초기화 쿼리 추가
+$db['default']['init_command'] = "SET time_zone = '+09:00'";
