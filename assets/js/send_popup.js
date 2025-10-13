@@ -1447,7 +1447,7 @@ function processSendMessage() {
  * 역할: 즉시 발송 처리 - 메시지 내용 및 수신자별 결과 저장
  */
 function sendImmediately(sendType, senderNumber, senderName, messageContent, receiverList, totalCost) {
-	// 서버에 비용 차감 요청
+	// 서버에 비용 차감 및 발송 요청
 	$.ajax({
 		url: '/send/send_message_immediately',
 		type: 'POST',
@@ -1467,94 +1467,47 @@ function sendImmediately(sendType, senderNumber, senderName, messageContent, rec
 				return;
 			}
 
-			// 비용 차감 성공 후 실제 발송 시뮬레이션
-			let successCount = 0;
-			let failCount = 0;
-			const receiverResults = []; // 수신자별 결과 저장
+			// 비용 차감 및 발송 성공
+			const sendLogList = response.send_log_list || [];
+			let successCount = response.success_count || 0;
+			let failCount = response.fail_count || 0;
 
-			receiverList.forEach(function(receiver, index) {
+			// 실시간 toast 표시
+			sendLogList.forEach(function(log, index) {
 				setTimeout(function() {
-					// 치환 필드 처리
-					let personalizedMessage = messageContent;
-					personalizedMessage = personalizedMessage.replace(/{이름}/g, receiver.member_name);
-					personalizedMessage = personalizedMessage.replace(/{직분}/g, receiver.position_name || '');
-					personalizedMessage = personalizedMessage.replace(/{연락처}/g, receiver.member_phone);
-					personalizedMessage = personalizedMessage.replace(/{그룹}/g, receiver.area_name || '');
-					personalizedMessage = personalizedMessage.replace(/{임시1}/g, receiver.tmp01 || '');
-					personalizedMessage = personalizedMessage.replace(/{임시2}/g, receiver.tmp02 || '');
-
-					// 실제로는 API 호출이 필요하지만, 여기서는 시뮬레이션
-					// 90% 성공률로 시뮬레이션
-					const isSuccess = Math.random() > 0.1;
-					let resultStatus = 'success';
-					let resultMessage = '발송 성공';
-
-					if (!isSuccess) {
-						// 실패 사유를 다양하게 시뮬레이션
-						const failReasons = [
-							'수신 거부 번호',
-							'잘못된 번호 형식',
-							'통신사 오류',
-							'일일 발송 한도 초과',
-							'스팸 필터링'
-						];
-						resultStatus = 'failed';
-						resultMessage = failReasons[Math.floor(Math.random() * failReasons.length)];
-						failCount++;
+					if (log.status === 'success') {
+						showToast(`[${log.member_name}(${log.member_phone})] 발송 요청 성공`, 'success');
 					} else {
-						successCount++;
+						showToast(`${log.member_name}(${log.member_phone}) 발송 실패: ${log.message}`, 'error');
+						// return false;
 					}
 
-					// 수신자 결과 저장
-					receiverResults.push({
-						member_idx: receiver.member_idx,
-						member_name: receiver.member_name,
-						member_phone: receiver.member_phone,
-						position_name: receiver.position_name || '',
-						area_name: receiver.area_name || '',
-						status: resultStatus,
-						result_message: resultMessage,
-						sent_message: personalizedMessage
-					});
-
-					// 실시간 toast 표시
-					if (isSuccess) {
-						const toastMessage = `[${receiver.member_name}(${receiver.member_phone})] ${personalizedMessage}`;
-						showToast(toastMessage, 'success');
-					} else {
-						showToast(`${receiver.member_name}(${receiver.member_phone}) 발송 실패: ${resultMessage}`, 'error');
-					}
-
-					// 마지막 수신자 처리 후 히스토리 저장 및 탭 전환
-					if (index === receiverList.length - 1) {
+					// 마지막 수신자 처리 후
+					if (index === sendLogList.length - 1) {
 						setTimeout(function() {
-							// 히스토리 저장 (메시지 내용 및 수신자별 결과 포함)
-							saveToHistory(
-								sendType,
-								senderNumber,
-								senderName,
-								messageContent,
-								receiverResults,
-								successCount > 0 ? 'success' : 'failed',
-								function(saveSuccess) {
-									// 잔액 업데이트
-									updateBalanceDisplay(response.new_balance);
+							// 잔액 업데이트
+							if (response.new_balance !== undefined) {
+								updateBalanceDisplay(response.new_balance);
+							}
 
-									// 완료 메시지
-									showToast(`전체 발송 완료: 성공 ${successCount}건, 실패 ${failCount}건`, 'info');
+							// 사용 가능 건수 업데이트
+							if (response.available_counts) {
+								availableCounts = response.available_counts;
+								updateSendTypeLabels();
+								updateSendCost();
+							}
 
-									// 발송 히스토리 탭으로 자동 전환
-									if (saveSuccess) {
-										setTimeout(function() {
-											$('#history-tab').tab('show');
-											loadSendHistory();
-										}, 1000);
-									}
-								}
-							);
+							// 완료 메시지
+							showToast(`전체 발송 완료: 성공 ${successCount}건, 실패 ${failCount}건`, 'info');
+
+							// 발송 히스토리 탭으로 자동 전환
+							setTimeout(function() {
+								$('#history-tab').tab('show');
+								loadSendHistory();
+							}, 1000);
 						}, 500);
 					}
-				}, index * 500); // 각 메시지마다 0.5초 간격
+				}, index * 500);
 			});
 		},
 		error: function() {
@@ -1674,8 +1627,9 @@ function loadSendHistory() {
 	});
 }
 
+
 /**
- * 역할: 전송 히스토리 목록 렌더링
+ * 역할: 발송 히스토리 목록 렌더링 수정
  */
 function renderSendHistory(historyList) {
 	const tbody = $('#historyTableBody');
@@ -2198,11 +2152,20 @@ function showHistoryDetail(historyIdx) {
 				tbody.empty();
 
 				if (data.receiver_list && data.receiver_list.length > 0) {
+					// 성공/실패 카운트
+					let successCount = 0;
+					let failedCount = 0;
+					let pendingCount = 0;
+
 					data.receiver_list.forEach(function(receiver) {
 						let statusBadge = '';
-						if (receiver.status === 'success') {
+						let statusClass = '';
+
+						if (receiver.send_status === 'success') {
 							statusBadge = '<span class="badge bg-success">성공</span>';
-						} else {
+							statusClass = 'table-success';
+							successCount++;
+						} else if (receiver.send_status === 'failed') {
 							// 실패 시 툴팁으로 사유 표시
 							const failReason = receiver.result_message || '알 수 없는 오류';
 							statusBadge = `<span class="badge bg-danger" 
@@ -2210,17 +2173,37 @@ function showHistoryDetail(historyIdx) {
 								data-bs-placement="top" 
 								title="${failReason}" 
 								style="cursor: help;">실패</span>`;
+							statusClass = 'table-danger';
+							failedCount++;
+						} else {
+							// pending - 아직 결과 미수신
+							statusBadge = '<span class="badge bg-warning">대기중</span>';
+							statusClass = 'table-warning';
+							pendingCount++;
 						}
 
 						const row = `
-							<tr>
-								<td>${receiver.member_name}</td>
-								<td>${receiver.member_phone}</td>
+							<tr class="${statusClass}">
+								<td>${receiver.receiver_name}</td>
+								<td>${receiver.receiver_number}</td>
 								<td>${statusBadge}</td>
 							</tr>
 						`;
 						tbody.append(row);
 					});
+
+					// 통계 정보 추가
+					const statsHtml = `
+						<tr class="table-info">
+							<td colspan="3" class="text-center">
+								<strong>발송 결과 통계:</strong> 
+								<span class="badge bg-success">성공 ${successCount}건</span>
+								<span class="badge bg-danger">실패 ${failedCount}건</span>
+								<span class="badge bg-warning">대기중 ${pendingCount}건</span>
+							</td>
+						</tr>
+					`;
+					tbody.prepend(statsHtml);
 
 					// Bootstrap 툴팁 초기화
 					const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

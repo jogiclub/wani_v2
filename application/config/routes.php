@@ -125,3 +125,9 @@ $route['week/(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
 
 // 직접 group_code/year/week 형식으로 접근하는 경우도 처리
 $route['(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
+
+
+if (defined('STDIN')) {
+	$route['cron/poll_sms_results'] = 'cron/poll_sms_results';
+	$route['cron/process_scheduled_messages'] = 'cron/process_scheduled_messages';
+}

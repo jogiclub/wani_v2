@@ -70,45 +70,19 @@ class Send_model extends CI_Model
 	}
 
 	/**
-	 * 문자 발송 로그 저장
+	 * 역할: 발송 로그 저장 (API 메시지 ID 자동 생성)
 	 */
 	public function save_send_log($data)
 	{
-		return $this->db->insert('wb_send_log', $data);
+		// API 메시지 ID가 없으면 자동 생성
+		if (!isset($data['api_message_id']) || empty($data['api_message_id'])) {
+			$data['api_message_id'] = $this->generate_api_message_id();
+		}
+
+		$this->db->insert('wb_send_log', $data);
+		return $this->db->insert_id();
 	}
 
-	/**
-	 * 발송 이력 조회
-	 */
-	public function get_send_history($org_id, $page = 1, $per_page = 20)
-	{
-		$offset = ($page - 1) * $per_page;
-
-		// 전체 개수 조회
-		$this->db->from('wb_send_log');
-		$this->db->where('org_id', $org_id);
-		$total_count = $this->db->count_all_results();
-
-		// 목록 조회
-		$this->db->select('sl.*, m.member_name, u.user_name as sender_name');
-		$this->db->from('wb_send_log sl');
-		$this->db->join('wb_member m', 'sl.member_idx = m.member_idx', 'left');
-		$this->db->join('wb_user u', 'sl.sender_id = u.user_id', 'left');
-		$this->db->where('sl.org_id', $org_id);
-		$this->db->order_by('sl.send_date', 'DESC');
-		$this->db->limit($per_page, $offset);
-
-		$query = $this->db->get();
-		$list = $query->result_array();
-
-		return array(
-			'list' => $list,
-			'total_count' => $total_count,
-			'current_page' => $page,
-			'per_page' => $per_page,
-			'total_pages' => ceil($total_count / $per_page)
-		);
-	}
 
 	/**
 	 * 메시지 템플릿 저장
@@ -125,6 +99,8 @@ class Send_model extends CI_Model
 		$this->db->where('template_idx', $template_idx);
 		return $this->db->update('wb_send_template', $data);
 	}
+
+
 
 	/**
 	 * 메시지 템플릿 삭제
@@ -917,5 +893,278 @@ class Send_model extends CI_Model
 		return false;
 	}
 
+
+	/**
+	 * 역할: 발송 로그 업데이트
+	 */
+	public function update_send_log($send_idx, $data)
+	{
+		$this->db->where('send_idx', $send_idx);
+		return $this->db->update('wb_send_log', $data);
+	}
+
+	/**
+	 * 역할: API 메시지 ID로 발송 로그 조회
+	 */
+	public function get_send_log_by_api_message_id($api_message_id)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_log');
+		$this->db->where('api_message_id', $api_message_id);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+
+	/**
+	 * 역할: 발송 결과 일괄 업데이트
+	 */
+	public function update_send_results($results)
+	{
+		if (empty($results)) {
+			return true;
+		}
+
+		$this->db->trans_begin();
+
+		try {
+			foreach ($results as $result) {
+				$message_id = $result['member']; // API에서 전달한 messageId (send_idx)
+				$status = ($result['result'] == '2') ? 'success' : 'failed';
+				$error_code = $result['errorcode'];
+				$recv_time = $result['recvtime'];
+
+				// 에러 코드를 메시지로 변환
+				$result_message = $this->get_error_message($error_code);
+
+				$update_data = array(
+					'send_status' => $status,
+					'result_message' => $result_message,
+					'result_date' => $this->format_recv_time($recv_time)
+				);
+
+				$this->db->where('send_idx', $message_id);
+				$this->db->update('wb_send_log', $update_data);
+			}
+
+			$this->db->trans_commit();
+			return true;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Send results update failed: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 역할: 에러 코드를 메시지로 변환
+	 */
+	private function get_error_message($error_code)
+	{
+		$error_messages = array(
+			'0000' => '발송 성공',
+			'1000' => '수신번호 형식 오류',
+			'2000' => '발신번호 미등록',
+			'3000' => '메시지 내용 없음',
+			'4000' => '잔액 부족',
+			'5000' => '스팸 차단',
+			'6000' => '수신 거부',
+			'9999' => '기타 오류'
+		);
+
+		return isset($error_messages[$error_code]) ? $error_messages[$error_code] : '알 수 없는 오류 (' . $error_code . ')';
+	}
+
+	/**
+	 * 역할: 슈어엠 시간 형식을 MySQL datetime으로 변환
+	 */
+	private function format_recv_time($recv_time)
+	{
+		// yyyyMMddhhmmss 형식을 yyyy-MM-dd hh:mm:ss로 변환
+		if (strlen($recv_time) == 14) {
+			return substr($recv_time, 0, 4) . '-' .
+				substr($recv_time, 4, 2) . '-' .
+				substr($recv_time, 6, 2) . ' ' .
+				substr($recv_time, 8, 2) . ':' .
+				substr($recv_time, 10, 2) . ':' .
+				substr($recv_time, 12, 2);
+		}
+		return date('Y-m-d H:i:s');
+	}
+
+
+
+	/**
+	 * 역할: 처리 대기 중인 예약 발송 목록 조회
+	 */
+	public function get_pending_scheduled_messages()
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_reservation');
+		$this->db->where('status', 'pending');
+		$this->db->where('scheduled_time <=', date('Y-m-d H:i:s'));
+		$this->db->order_by('scheduled_time', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 역할: 예약 발송 상태 업데이트
+	 */
+	public function update_reservation_status($reservation_idx, $status)
+	{
+		$data = array(
+			'status' => $status,
+			'updated_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where('reservation_idx', $reservation_idx);
+		return $this->db->update('wb_send_reservation', $data);
+	}
+
+
+	/**
+	 * 역할: 발송 히스토리 상세 정보 조회 (그룹핑된 첫 번째 레코드)
+	 */
+	public function get_history_detail($send_idx, $org_id)
+	{
+		$this->db->select('send_date, sender_number, sender_name, send_type, message_content');
+		$this->db->from('wb_send_log');
+		$this->db->where('send_idx', $send_idx);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+
+	/**
+	 * 역할: 발송 히스토리의 수신자별 결과 조회
+	 */
+	public function get_history_receiver_results($send_idx)
+	{
+		// 같은 발송 시간대의 로그들을 조회
+		// send_idx가 첫 번째 발송의 idx라고 가정하고, 해당 시간대의 모든 발송 조회
+
+		$this->db->select('s.*, 
+        CASE 
+            WHEN s.send_status = "success" THEN "성공"
+            WHEN s.send_status = "failed" THEN "실패"
+            ELSE "대기중"
+        END as status_text');
+		$this->db->from('wb_send_log s');
+		$this->db->where('s.send_idx >=', $send_idx);
+		$this->db->where('s.org_id', (int)$this->get_org_id_by_send_idx($send_idx));
+		$this->db->where('s.send_date', $this->get_send_date_by_send_idx($send_idx));
+		$this->db->order_by('s.send_idx', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+	/**
+	 * 역할: send_idx로 org_id 조회
+	 */
+	private function get_org_id_by_send_idx($send_idx)
+	{
+		$this->db->select('org_id');
+		$this->db->from('wb_send_log');
+		$this->db->where('send_idx', $send_idx);
+		$query = $this->db->get();
+		$result = $query->row_array();
+		return $result ? $result['org_id'] : 0;
+	}
+
+	/**
+	 * 역할: send_idx로 send_date 조회
+	 */
+	private function get_send_date_by_send_idx($send_idx)
+	{
+		$this->db->select('send_date');
+		$this->db->from('wb_send_log');
+		$this->db->where('send_idx', $send_idx);
+		$query = $this->db->get();
+		$result = $query->row_array();
+		return $result ? $result['send_date'] : null;
+	}
+
+	/**
+	 * 역할: 발송 히스토리 목록 조회 (월별, 그룹핑)
+	 */
+	public function get_send_history($org_id, $year, $month)
+	{
+		// 해당 월의 첫날과 마지막날
+		$start_date = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01 00:00:00';
+		$end_date = date('Y-m-t 23:59:59', strtotime($start_date));
+
+		$this->db->select('
+        MIN(send_idx) as history_idx,
+        send_date,
+        sender_number,
+        sender_name,
+        send_type,
+        COUNT(*) as receiver_count,
+        MIN(receiver_name) as first_receiver_name,
+        message_content
+    ');
+		$this->db->from('wb_send_log');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('send_date >=', $start_date);
+		$this->db->where('send_date <=', $end_date);
+		$this->db->group_by('DATE(send_date), sender_number, HOUR(send_date), MINUTE(send_date)');
+		$this->db->order_by('send_date', 'DESC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+	/**
+	 * 역할: 슈어엠 API용 9자리 메시지 ID 생성
+	 */
+	public function generate_api_message_id()
+	{
+		// 방법 1: 마이크로초 기반 9자리 생성 (권장)
+		// 현재 시간의 마지막 9자리 + 랜덤 2자리
+		$timestamp = time();
+		$micro = substr(str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT), 0, 2);
+		$api_message_id = substr($timestamp . $micro, -9);
+
+		// 중복 확인 (혹시 모를 충돌 방지)
+		$exists = $this->check_api_message_id_exists($api_message_id);
+
+		if ($exists) {
+			// 충돌 시 재귀 호출
+			return $this->generate_api_message_id();
+		}
+
+		return intval($api_message_id);
+	}
+
+	/**
+	 * 역할: API 메시지 ID 중복 확인
+	 */
+	private function check_api_message_id_exists($api_message_id)
+	{
+		$this->db->select('send_idx');
+		$this->db->from('wb_send_log');
+		$this->db->where('api_message_id', $api_message_id);
+		$this->db->limit(1);
+		$query = $this->db->get();
+		return $query->num_rows() > 0;
+	}
+
+	/**
+	 * 역할: send_idx로 발송 로그 조회
+	 */
+	public function get_send_log_by_idx($send_idx)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_log');
+		$this->db->where('send_idx', $send_idx);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
 
 }

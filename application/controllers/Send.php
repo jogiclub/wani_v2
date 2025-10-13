@@ -205,35 +205,89 @@ class Send extends MY_Controller
 	/**
 	 * 실제 문자 발송 처리 (API 연동)
 	 */
-	private function process_message_send($send_type, $sender_number, $receiver_number, $message_content)
+	private function process_message_send($send_type, $sender_number, $receiver_number, $message_content, $api_message_id)
 	{
-		// 여기에 실제 문자 발송 API 연동 코드를 구현
-		// 현재는 임시로 성공 처리
+		// 슈어엠 API 라이브러리 로드
+		$this->load->library('Surem_api');
 
 		try {
-			// SMS/LMS/MMS/카카오톡 API 연동 로직
+			// 하이픈 제거 (슈어엠 API는 숫자만 받음)
+			$clean_receiver = str_replace('-', '', $receiver_number);
+			$clean_sender = str_replace('-', '', $sender_number);
+
+			// api_message_id는 이미 9자리로 생성됨
+
+			$result = array();
+
 			switch ($send_type) {
 				case 'sms':
-					// SMS 발송 API 호출
+					// SMS 발송 (최대 90바이트)
+					$text = mb_substr($message_content, 0, 90);
+					$result = $this->surem_api->send_sms(
+						$clean_receiver,
+						$text,
+						$clean_sender,
+						$api_message_id
+					);
 					break;
+
 				case 'lms':
-					// LMS 발송 API 호출
+					// LMS 발송 (최대 2000바이트)
+					$subject = mb_substr($message_content, 0, 30);
+					$text = mb_substr($message_content, 0, 2000);
+					$result = $this->surem_api->send_lms(
+						$clean_receiver,
+						$subject,
+						$text,
+						$clean_sender,
+						$api_message_id
+					);
 					break;
+
 				case 'mms':
-					// MMS 발송 API 호출
+					// MMS 발송
+					$subject = mb_substr($message_content, 0, 30);
+					$text = mb_substr($message_content, 0, 2000);
+
+					$image_key = null;
+
+					if ($image_key) {
+						$result = $this->surem_api->send_mms(
+							$clean_receiver,
+							$subject,
+							$text,
+							$clean_sender,
+							$image_key,
+							$api_message_id
+						);
+					} else {
+						$result = $this->surem_api->send_lms(
+							$clean_receiver,
+							$subject,
+							$text,
+							$clean_sender,
+							$api_message_id
+						);
+					}
 					break;
-				case 'kakao':
-					// 카카오톡 발송 API 호출
-					break;
+
 				default:
-					return array('success' => false, 'message' => '지원하지 않는 발송 타입입니다.');
+					return array(
+						'success' => false,
+						'message' => '지원하지 않는 발송 타입입니다.',
+						'api_message_id' => null
+					);
 			}
 
-			// 임시로 성공 처리
-			return array('success' => true, 'message' => '발송 완료');
+			return $result;
 
 		} catch (Exception $e) {
-			return array('success' => false, 'message' => '발송 실패: ' . $e->getMessage());
+			log_message('error', 'Message send error: ' . $e->getMessage());
+			return array(
+				'success' => false,
+				'message' => '발송 실패: ' . $e->getMessage(),
+				'api_message_id' => null
+			);
 		}
 	}
 
@@ -242,12 +296,14 @@ class Send extends MY_Controller
 	/**
 	 * 역할: 즉시 발송 처리 (잔액 차감 포함)
 	 */
+
 	public function send_message_immediately()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
 
+		$user_id = $this->session->userdata('user_id');
 		$org_id = $this->input->post('org_id');
 		$send_type = $this->input->post('send_type');
 		$sender_number = $this->input->post('sender_number');
@@ -267,6 +323,12 @@ class Send extends MY_Controller
 			return;
 		}
 
+		// 조직 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
 		// 비용 차감
 		$deduct_result = $this->Send_model->deduct_sms_balance($org_id, $total_cost);
 
@@ -278,15 +340,101 @@ class Send extends MY_Controller
 			return;
 		}
 
-		// 발송 처리는 프론트엔드에서 toast로 처리되므로 여기서는 성공 응답만 반환
+		// 발송 처리 시작
+		$success_count = 0;
+		$fail_count = 0;
+		$send_log_list = array();
+
+		foreach ($receiver_list as $receiver) {
+			// 메시지 치환
+			$personalized_message = $this->replace_message_fields($message_content, $receiver);
+
+			// 발송 로그 저장 (api_message_id 자동 생성됨)
+			$send_data = array(
+				'org_id' => $org_id,
+				'sender_id' => $user_id,
+				'member_idx' => isset($receiver['member_idx']) ? $receiver['member_idx'] : null,
+				'send_type' => $send_type,
+				'sender_number' => $sender_number,
+				'sender_name' => $sender_name,
+				'receiver_number' => $receiver['member_phone'],
+				'receiver_name' => $receiver['member_name'],
+				'message_content' => $personalized_message,
+				'send_status' => 'pending',
+				'send_date' => date('Y-m-d H:i:s')
+			);
+
+			$send_idx = $this->Send_model->save_send_log($send_data);
+
+			if (!$send_idx) {
+				$fail_count++;
+				continue;
+			}
+
+			// 저장된 로그에서 api_message_id 조회
+			$log = $this->Send_model->get_send_log_by_idx($send_idx);
+			$api_message_id = $log['api_message_id'];
+
+			// 실제 API 발송
+			$send_result = $this->process_message_send(
+				$send_type,
+				$sender_number,
+				$receiver['member_phone'],
+				$personalized_message,
+				$api_message_id
+			);
+
+			if ($send_result['success']) {
+				$success_count++;
+			} else {
+				// 발송 실패 시 상태 업데이트
+				$this->Send_model->update_send_log($send_idx, array(
+					'send_status' => 'failed',
+					'result_message' => $send_result['message'],
+					'result_date' => date('Y-m-d H:i:s')
+				));
+				$fail_count++;
+			}
+
+			$send_log_list[] = array(
+				'send_idx' => $send_idx,
+				'member_name' => $receiver['member_name'],
+				'member_phone' => $receiver['member_phone'],
+				'status' => $send_result['success'] ? 'success' : 'failed',
+				'message' => $send_result['message']
+			);
+		}
+
+		// 최신 잔액 조회
 		$new_balance = $this->Send_model->get_org_total_balance($org_id);
+		$sms_available = $this->Send_model->get_available_balance_by_type($org_id, 'sms');
+		$lms_available = $this->Send_model->get_available_balance_by_type($org_id, 'lms');
+		$mms_available = $this->Send_model->get_available_balance_by_type($org_id, 'mms');
+		$kakao_available = $this->Send_model->get_available_balance_by_type($org_id, 'kakao');
 
 		echo json_encode(array(
 			'success' => true,
-			'message' => '발송이 완료되었습니다.',
+			'message' => "발송 완료: 성공 {$success_count}건, 실패 {$fail_count}건",
+			'success_count' => $success_count,
+			'fail_count' => $fail_count,
+			'send_log_list' => $send_log_list,
 			'new_balance' => $new_balance,
-			'deduction_log' => $deduct_result['deduction_log']
+			'available_counts' => array(
+				'sms' => $sms_available,
+				'lms' => $lms_available,
+				'mms' => $mms_available,
+				'kakao' => $kakao_available
+			)
 		));
+	}
+
+
+	/**
+	 * 역할: send_idx로 발송 로그 조회
+	 */
+	private function get_send_log_by_idx($send_idx)
+	{
+		return $this->Send_model->get_send_log_by_idx($send_idx);
 	}
 
 	/**
@@ -785,15 +933,18 @@ class Send extends MY_Controller
 	}
 
 
-	private function replace_message_fields($message_content, $member_data)
+	/**
+	 * 역할: 메시지 치환 필드 처리
+	 */
+	private function replace_message_fields($message_content, $receiver_data)
 	{
 		$replacements = array(
-			'{이름}' => isset($member_data['member_name']) ? $member_data['member_name'] : '',
-			'{직분}' => isset($member_data['position_name']) ? $member_data['position_name'] : '',
-			'{연락처}' => isset($member_data['member_phone']) ? $member_data['member_phone'] : '',
-			'{그룹}' => isset($member_data['area_name']) ? $member_data['area_name'] : '',
-			'{임시1}' => isset($member_data['tmp01']) ? $member_data['tmp01'] : '',
-			'{임시2}' => isset($member_data['tmp02']) ? $member_data['tmp02'] : ''
+			'{이름}' => isset($receiver_data['member_name']) ? $receiver_data['member_name'] : '',
+			'{직분}' => isset($receiver_data['position_name']) ? $receiver_data['position_name'] : '',
+			'{연락처}' => isset($receiver_data['member_phone']) ? $receiver_data['member_phone'] : '',
+			'{그룹}' => isset($receiver_data['area_name']) ? $receiver_data['area_name'] : '',
+			'{임시1}' => isset($receiver_data['tmp01']) ? $receiver_data['tmp01'] : '',
+			'{임시2}' => isset($receiver_data['tmp02']) ? $receiver_data['tmp02'] : ''
 		);
 
 		return str_replace(array_keys($replacements), array_values($replacements), $message_content);
@@ -1211,9 +1362,6 @@ class Send extends MY_Controller
 
 
 
-	/**
-	 * 역할: 발송 히스토리 상세 정보 조회
-	 */
 	public function get_history_detail()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -1234,16 +1382,29 @@ class Send extends MY_Controller
 			return;
 		}
 
-		$detail = $this->Send_model->get_send_history_detail($history_idx, $org_id);
+		// 히스토리 상세 정보 조회
+		$detail = $this->Send_model->get_history_detail($history_idx, $org_id);
 
-		if ($detail) {
-			echo json_encode(array(
-				'success' => true,
-				'data' => $detail
-			));
-		} else {
-			echo json_encode(array('success' => false, 'message' => '상세 정보를 찾을 수 없습니다.'));
+		if (!$detail) {
+			echo json_encode(array('success' => false, 'message' => '히스토리를 찾을 수 없습니다.'));
+			return;
 		}
+
+		// 수신자별 결과 조회
+		$receiver_results = $this->Send_model->get_history_receiver_results($history_idx);
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => array(
+				'send_date' => $detail['send_date'],
+				'sender_number' => $detail['sender_number'],
+				'sender_name' => $detail['sender_name'],
+				'send_type' => $detail['send_type'],
+				'message_content' => $detail['message_content'],
+				'receiver_count' => count($receiver_results),
+				'receiver_list' => $receiver_results
+			)
+		));
 	}
 
 	/**

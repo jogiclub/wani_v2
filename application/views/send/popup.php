@@ -479,6 +479,7 @@
 
 
 
+
 <!-- 발송 히스토리 상세 Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="historyDetailOffcanvas" aria-labelledby="historyDetailOffcanvasLabel">
 	<div class="offcanvas-header">
@@ -514,13 +515,13 @@
 
 		<div class="mb-3">
 			<label class="form-label fw-bold mb-2">메시지 내용</label>
-			<div class="border rounded p-3  bg-dark text-white" style="white-space: pre-wrap;" id="historyDetailMessage"></div>
+			<div class="border rounded p-3 bg-dark text-white" style="white-space: pre-wrap;" id="historyDetailMessage"></div>
 		</div>
 
 		<div class="mb-3">
-			<label class="form-label fw-bold mb-2">수신자 목록</label>
-			<div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-				<table class="table">
+			<label class="form-label fw-bold mb-2">수신자 목록 및 발송 결과</label>
+			<div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+				<table class="table table-sm">
 					<thead class="table-primary sticky-top">
 					<tr>
 						<th>이름</th>
@@ -533,6 +534,13 @@
 					</tbody>
 				</table>
 			</div>
+		</div>
+
+		<div class="alert alert-info" role="alert">
+			<small>
+				<i class="bi bi-info-circle"></i> 대기중 상태는 통신사 처리 대기 중입니다.
+				결과는 최대 24시간 이내 업데이트됩니다.
+			</small>
 		</div>
 
 		<div class="d-grid gap-2">

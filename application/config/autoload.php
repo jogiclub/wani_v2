@@ -58,9 +58,11 @@ $autoload['packages'] = array();
 |
 |	$autoload['libraries'] = array('user_agent' => 'ua');
 */
-$autoload['libraries'] = array('excel', 'email');
+//$autoload['libraries'] = array('excel', 'email');
+$autoload['libraries'] = array('email');
 
 /*
+| -------------------------------------------------------------------
 | -------------------------------------------------------------------
 |  Auto-load Drivers
 | -------------------------------------------------------------------
