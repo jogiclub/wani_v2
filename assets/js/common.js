@@ -65,41 +65,6 @@ function showToast(message, type = 'info', duration = 3000) {
  * @param {string} confirmText - 확인 버튼 텍스트 (기본값: '확인')
  * @param {string} cancelText - 취소 버튼 텍스트 (기본값: '취소')
  */
-function showConfirm(message, onConfirm, title = '확인', confirmText = '확인', cancelText = '취소') {
-	const modalEl = document.getElementById('confirmModal');
-	if (!modalEl) {
-		console.error('Confirm 모달 요소를 찾을 수 없습니다.');
-		return;
-	}
-
-	// 모달 내용 설정
-	const modalTitle = modalEl.querySelector('.modal-title');
-	const modalBody = modalEl.querySelector('.modal-body');
-	const confirmBtn = modalEl.querySelector('.modal-footer .btn-primary');
-	const cancelBtn = modalEl.querySelector('.modal-footer .btn-secondary');
-
-	if (modalTitle) modalTitle.textContent = title;
-	if (modalBody) modalBody.textContent = message;
-	if (confirmBtn) confirmBtn.textContent = confirmText;
-	if (cancelBtn) cancelBtn.textContent = cancelText;
-
-	// 모달 표시
-	const modal = new bootstrap.Modal(modalEl);
-	modal.show();
-
-	// 확인 버튼 이벤트 (기존 이벤트 제거 후 새로 등록)
-	if (confirmBtn) {
-		const newConfirmBtn = confirmBtn.cloneNode(true);
-		confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-
-		newConfirmBtn.addEventListener('click', function () {
-			modal.hide();
-			if (typeof onConfirm === 'function') {
-				onConfirm();
-			}
-		});
-	}
-}
 
 /**
  * Confirm 모달 표시 함수 (공통 함수)
@@ -107,7 +72,6 @@ function showConfirm(message, onConfirm, title = '확인', confirmText = '확인
 function showConfirmModal(title, message, onConfirm, onCancel) {
 	// 기존 확인 모달이 있으면 제거
 	$('#confirmModal').remove();
-
 	const modalHtml = `
         <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
@@ -453,7 +417,7 @@ function previewImage(input, previewId) {
  * 관리자 계정으로 돌아가기
  */
 function returnToAdmin() {
-	showConfirm('관리자 계정으로 돌아가시겠습니까?', function () {
+	showConfirmModal('돌아가기', '관리자 계정으로 돌아가시겠습니까?', function () {
 		$.ajax({
 			url: '/user_management/return_to_admin',
 			type: 'POST',

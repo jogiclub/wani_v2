@@ -839,45 +839,8 @@ function escapeHtml(text) {
 	return div.innerHTML;
 }
 
-/**
- * 확인 모달 표시 함수
- */
-function showConfirm(message, callback, title = '확인') {
-	$('#confirmModal').remove();
 
-	const modal = $('<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">' +
-		'<div class="modal-dialog">' +
-		'<div class="modal-content">' +
-		'<div class="modal-header">' +
-		'<h5 class="modal-title" id="confirmModalLabel">' + title + '</h5>' +
-		'<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>' +
-		'</div>' +
-		'<div class="modal-body">' + message + '</div>' +
-		'<div class="modal-footer">' +
-		'<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>' +
-		'<button type="button" class="btn btn-primary" id="confirmModalOkBtn">확인</button>' +
-		'</div>' +
-		'</div>' +
-		'</div>' +
-		'</div>');
 
-	$('body').append(modal);
-
-	$('#confirmModalOkBtn').on('click', function() {
-		$('#confirmModal').modal('hide');
-		if (typeof callback === 'function') {
-			callback();
-		}
-	});
-
-	$('#confirmModal').on('hidden.bs.modal', function() {
-		$(this).remove();
-	});
-
-	$('#confirmModal').modal('show');
-}
-
-// ========================= 이벤트 핸들러 =========================
 
 // 전체 선택 체크박스
 $(document).on('change', '#selectAllUsers', function() {
@@ -938,7 +901,8 @@ $(document).on('submit', '#bulkEditForm', function(e) {
 	const userCount = selectedUsers.length;
 	const userNames = selectedUsers.map(user => user.userName).join(', ');
 
-	showConfirm(
+	showConfirmModal(
+		'일괄수정',
 		`선택한 ${userCount}명의 사용자(${userNames})의 권한을 일괄 수정하시겠습니까?`,
 		function() {
 			processBulkEditForm();
@@ -952,7 +916,8 @@ $(document).on('click', '.delete-user-btn', function() {
 	const userName = $(this).data('user-name');
 	const orgId = $(this).data('org-id');
 
-	showConfirm(
+	showConfirmModal(
+		'사용자 삭제',
 		userName + ' 사용자를 조직에서 제외하시겠습니까?<br><br>이 작업은 되돌릴 수 없습니다.',
 		function() {
 			deleteUser(userId, userName, orgId);
@@ -966,7 +931,8 @@ $(document).on('click', '.login-as-user-btn', function() {
 	const userId = $(this).data('user-id');
 	const userName = $(this).data('user-name');
 
-	showConfirm(
+	showConfirmModal(
+		'사용자로그인',
 		userName + ' 사용자로 로그인하시겠습니까?<br><br>현재 세션이 종료되고 해당 사용자로 로그인됩니다.',
 		function() {
 			$.ajax({
