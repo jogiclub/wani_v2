@@ -136,20 +136,26 @@
 					<div class="mb-3">
 						<label for="att_type_name" class="form-label">출석타입명 <span class="text-danger">*</span></label>
 						<input type="text" class="form-control" id="att_type_name" name="att_type_name" required>
+						<div class="form-text">예시) 주일예배, 수요예배, 성경읽기, 수학학습 1시간</div>
 					</div>
 					<div class="mb-3">
 						<label for="att_type_nickname" class="form-label">별칭 <span class="text-danger">*</span></label>
 						<input type="text" class="form-control" id="att_type_nickname" name="att_type_nickname" required>
+						<div class="form-text">예시) 주, 수, 성, 수1</div>
 					</div>
 					<div class="mb-3">
 						<label for="att_type_point" class="form-label">포인트</label>
 						<input type="number" class="form-control" id="att_type_point" name="att_type_point" value="0">
+						<div class="form-text">달란트로 사용이 가능합니다. <br/>
+							10을 입력하시면 체크 시 10점이 부여가 됩니다.<br/>
+							만약 1을 입력하시면 카운트로 활용이 가능합니다.<br/>
+							0을 입력하시면 포인트에서 제외됩니다.</div>
 					</div>
 					<div class="mb-3">
 						<label for="att_type_input" class="form-label">입력타입</label>
 						<select class="form-select" id="att_type_input" name="att_type_input">
 							<option value="check">체크</option>
-							<option value="text">텍스트</option>
+							<option value="text">숫자</option>
 						</select>
 					</div>
 					<div class="mb-3">
