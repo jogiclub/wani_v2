@@ -1723,7 +1723,7 @@ function renderSendHistory(historyList) {
 		// 버튼 비활성화 및 로딩 표시
 		$btn.prop('disabled', true);
 		const originalHtml = $btn.html();
-		$btn.html('<span class="spinner-border spinner-border-sm me-1"></span>조회중...');
+		$btn.html('<span class="spinner-border spinner-border-sm me-1" style="width: 14px; height: 14px"></span>조회중...');
 
 		// 1단계: 먼저 SMS 발송 결과 업데이트
 		$.ajax({
@@ -1749,7 +1749,8 @@ function renderSendHistory(historyList) {
 	});
 
 
-// 히스토리 상세 정보 로드 함수
+
+	// 히스토리 상세 정보 로드 함수
 	function loadHistoryDetail(historyIdx, $btn, originalHtml) {
 		$.ajax({
 			url: '/send/get_history_detail',
@@ -1781,14 +1782,17 @@ function renderSendHistory(historyList) {
 						const statusBadge = getStatusBadge(receiver.send_status);
 						const resultText = receiver.result_message || '-';
 
+						// result_message가 '전송 성공'이면 success, 아니면 secondary
+						const resultBadgeClass = (resultText === '전송 성공') ? 'bg-success' : 'bg-secondary';
+
 						receiverHtml += `
-						<tr>
-							<td>${receiver.receiver_name}</td>
-							<td>${receiver.receiver_number}</td>
-							<td>${statusBadge}</td>
-							<td>${resultText}</td>
-						</tr>
-					`;
+					<tr>
+						<td>${receiver.receiver_name}</td>
+						<td>${receiver.receiver_number}</td>
+						<td>${statusBadge}</td>
+						<td><span class="badge ${resultBadgeClass}">${resultText}</span></td>
+					</tr>
+				`;
 					});
 					$('#historyDetailReceiverList').html(receiverHtml);
 
