@@ -82,7 +82,6 @@ class Send extends MY_Controller
 	/**
 	 * 역할: 문자 발송 처리 (API 메시지 ID 추가)
 	 */
-
 	public function send_message()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -175,13 +174,14 @@ class Send extends MY_Controller
 				$sender_number,
 				$receiver_number,
 				$replaced_message,
-				$api_message_id  // 추가!
+				$api_message_id
 			);
 
 			if ($send_result['success']) {
-				// 발송 성공 - 상태만 업데이트
+				// 발송 성공 - 상태를 success로 업데이트
 				$this->Send_model->update_send_log($send_idx, array(
-					'send_status' => 'pending'  // API 결과는 polling으로 확인
+					'send_status' => 'success',
+					'result_date' => date('Y-m-d H:i:s')
 				));
 				$success_count++;
 			} else {
@@ -319,7 +319,6 @@ class Send extends MY_Controller
 	/**
 	 * 역할: 즉시 발송 처리 (잔액 차감 포함)
 	 */
-
 	public function send_message_immediately()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -398,8 +397,6 @@ class Send extends MY_Controller
 			$log = $this->Send_model->get_send_log_by_idx($send_idx);
 			$api_message_id = $log['api_message_id'];
 
-
-
 			// 실제 API 발송
 			$send_result = $this->process_message_send(
 				$send_type,
@@ -410,6 +407,11 @@ class Send extends MY_Controller
 			);
 
 			if ($send_result['success']) {
+				// 발송 성공 - 상태를 success로 업데이트
+				$this->Send_model->update_send_log($send_idx, array(
+					'send_status' => 'success',
+					'result_date' => date('Y-m-d H:i:s')
+				));
 				$success_count++;
 			} else {
 				// 발송 실패 시 상태 업데이트
@@ -1198,46 +1200,7 @@ class Send extends MY_Controller
 	}
 
 
-	/**
-	 * 역할: 발송 히스토리 저장
-	 */
-	public function save_history()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
 
-		$org_id = $this->input->post('org_id');
-		$send_type = $this->input->post('send_type');
-		$sender_number = $this->input->post('sender_number');
-		$sender_name = $this->input->post('sender_name');
-		$message_content = $this->input->post('message_content'); // 메시지 내용 추가
-		$receiver_count = $this->input->post('receiver_count');
-		$receiver_list = $this->input->post('receiver_list');
-		$status = $this->input->post('status');
-		$send_date = $this->input->post('send_date');
-
-		$data = array(
-			'org_id' => $org_id,
-			'send_type' => $send_type,
-			'sender_number' => $sender_number,
-			'sender_name' => $sender_name,
-			'message_content' => $message_content, // 메시지 내용 저장
-			'receiver_count' => $receiver_count,
-			'receiver_list' => json_encode($receiver_list), // 수신자별 결과 포함
-			'status' => $status,
-			'send_date' => date('Y-m-d H:i:s', strtotime($send_date)),
-			'created_date' => date('Y-m-d H:i:s')
-		);
-
-		$result = $this->Send_model->save_send_history($data);
-
-		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '히스토리가 저장되었습니다.'));
-		} else {
-			echo json_encode(array('success' => false, 'message' => '저장에 실패했습니다.'));
-		}
-	}
 
 	/**
 	 * 역할: 전송 히스토리 목록 조회 (년월 필터링)

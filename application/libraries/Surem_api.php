@@ -72,17 +72,23 @@ class Surem_api
 		return $this->access_token;
 	}
 
-
-
+	/**
+	 * 역할: 성공 코드 체크
+	 */
+	private function is_success_code($code)
+	{
+		// 슈어엠 API 성공 코드: A0000, 0000, 빈 문자열, null
+		$success_codes = array('A0000', '0000', 0, '');
+		return in_array($code, $success_codes, true) || empty($code);
+	}
 
 	/**
-	 * 역할: SMS 발송 (직접 로그 추가)
+	 * 역할: SMS 발송
 	 */
 	public function send_sms($to, $text, $req_phone, $message_id = null)
 	{
 		$token = $this->get_access_token();
 		if (!$token) {
-			$this->debug_log('토큰 발급 실패');
 			return array(
 				'success' => false,
 				'message' => 'API 토큰 발급 실패'
@@ -101,9 +107,6 @@ class Surem_api
 			$data['messageId'] = $message_id;
 		}
 
-		// 요청 로그
-		$this->debug_log('SMS 발송 요청', $data);
-
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_POST, true);
@@ -119,51 +122,40 @@ class Surem_api
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 
-		// 응답 로그
-		$this->debug_log("SMS 응답 (HTTP {$http_code})", $response);
-
 		$result = json_decode($response, true);
 
-		// JSON 파싱 로그
-		$this->debug_log('파싱된 결과', $result);
-
-		// 응답 구조 확인
+		// HTTP 200 응답 확인
 		if ($http_code == 200) {
+			// code 필드 확인
 			if (isset($result['code'])) {
-				$this->debug_log("응답 코드: " . $result['code']);
-
-				if ($result['code'] == '0000' || $result['code'] === 0000) {
+				// 성공 코드 체크
+				if ($this->is_success_code($result['code'])) {
 					return array(
 						'success' => true,
-						'message' => '발송 성공',
+						'message' => 'SMS 발송 성공',
 						'api_message_id' => $message_id
 					);
 				} else {
-					$error_msg = isset($result['message']) ? $result['message'] : '알 수 없는 오류';
+					// 에러 코드가 있는 경우
+					$error_msg = isset($result['message']) ? $result['message'] : '발송 실패 (code: ' . $result['code'] . ')';
+					log_message('error', 'Surem SMS send failed - Code: ' . $result['code'] . ', Message: ' . $error_msg);
 					return array(
 						'success' => false,
 						'message' => $error_msg
 					);
 				}
 			} else {
-				$this->debug_log('응답에 code 필드 없음');
-
-				// HTTP 200이고 에러가 없으면 성공으로 간주
-				if (!isset($result['error'])) {
-					return array(
-						'success' => true,
-						'message' => '발송 성공',
-						'api_message_id' => $message_id
-					);
-				}
-
+				// code 필드가 없으면 성공으로 간주 (HTTP 200이므로)
 				return array(
-					'success' => false,
-					'message' => isset($result['message']) ? $result['message'] : '응답 형식 오류'
+					'success' => true,
+					'message' => 'SMS 발송 성공',
+					'api_message_id' => $message_id
 				);
 			}
 		} else {
+			// HTTP 오류
 			$error_msg = isset($result['message']) ? $result['message'] : 'HTTP ' . $http_code . ' 오류';
+			log_message('error', 'Surem SMS HTTP error: ' . $http_code . ' - ' . $response);
 			return array(
 				'success' => false,
 				'message' => $error_msg
@@ -172,13 +164,12 @@ class Surem_api
 	}
 
 	/**
-	 * 역할: LMS 발송 (직접 로그 추가)
+	 * 역할: LMS 발송
 	 */
 	public function send_lms($to, $subject, $text, $req_phone, $message_id = null)
 	{
 		$token = $this->get_access_token();
 		if (!$token) {
-			$this->debug_log('토큰 발급 실패');
 			return array(
 				'success' => false,
 				'message' => 'API 토큰 발급 실패'
@@ -198,9 +189,6 @@ class Surem_api
 			$data['messageId'] = $message_id;
 		}
 
-		// 요청 로그
-		$this->debug_log('LMS 발송 요청', $data);
-
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_POST, true);
@@ -216,51 +204,40 @@ class Surem_api
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 
-		// 응답 로그
-		$this->debug_log("LMS 응답 (HTTP {$http_code})", $response);
-
 		$result = json_decode($response, true);
 
-		// JSON 파싱 로그
-		$this->debug_log('파싱된 결과', $result);
-
-		// 응답 구조 확인
+		// HTTP 200 응답 확인
 		if ($http_code == 200) {
+			// code 필드 확인
 			if (isset($result['code'])) {
-				$this->debug_log("응답 코드: " . $result['code']);
-
-				if ($result['code'] == '0000' || $result['code'] === 0000) {
+				// 성공 코드 체크
+				if ($this->is_success_code($result['code'])) {
 					return array(
 						'success' => true,
-						'message' => '발송 성공',
+						'message' => 'LMS 발송 성공',
 						'api_message_id' => $message_id
 					);
 				} else {
-					$error_msg = isset($result['message']) ? $result['message'] : '알 수 없는 오류';
+					// 에러 코드가 있는 경우
+					$error_msg = isset($result['message']) ? $result['message'] : '발송 실패 (code: ' . $result['code'] . ')';
+					log_message('error', 'Surem LMS send failed - Code: ' . $result['code'] . ', Message: ' . $error_msg);
 					return array(
 						'success' => false,
 						'message' => $error_msg
 					);
 				}
 			} else {
-				$this->debug_log('응답에 code 필드 없음');
-
-				// HTTP 200이고 에러가 없으면 성공으로 간주
-				if (!isset($result['error'])) {
-					return array(
-						'success' => true,
-						'message' => '발송 성공',
-						'api_message_id' => $message_id
-					);
-				}
-
+				// code 필드가 없으면 성공으로 간주 (HTTP 200이므로)
 				return array(
-					'success' => false,
-					'message' => isset($result['message']) ? $result['message'] : '응답 형식 오류'
+					'success' => true,
+					'message' => 'LMS 발송 성공',
+					'api_message_id' => $message_id
 				);
 			}
 		} else {
+			// HTTP 오류
 			$error_msg = isset($result['message']) ? $result['message'] : 'HTTP ' . $http_code . ' 오류';
+			log_message('error', 'Surem LMS HTTP error: ' . $http_code . ' - ' . $response);
 			return array(
 				'success' => false,
 				'message' => $error_msg
@@ -269,7 +246,7 @@ class Surem_api
 	}
 
 	/**
-	 * 역할: MMS 발송 (응답 로깅 추가)
+	 * 역할: MMS 발송
 	 */
 	public function send_mms($to, $subject, $text, $req_phone, $image_key, $message_id = null)
 	{
@@ -310,23 +287,22 @@ class Surem_api
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 
-		// 디버깅 로그 추가
-		log_message('info', 'Surem MMS Request: ' . json_encode($data));
-		log_message('info', 'Surem MMS Response (HTTP ' . $http_code . '): ' . $response);
-
 		$result = json_decode($response, true);
 
-		// 응답 구조 확인
+		// HTTP 200 응답 확인
 		if ($http_code == 200) {
+			// code 필드 확인
 			if (isset($result['code'])) {
-				if ($result['code'] == '0000' || $result['code'] === 0000) {
+				// 성공 코드 체크
+				if ($this->is_success_code($result['code'])) {
 					return array(
 						'success' => true,
-						'message' => '발송 성공',
+						'message' => 'MMS 발송 성공',
 						'api_message_id' => $message_id
 					);
 				} else {
-					$error_msg = isset($result['message']) ? $result['message'] : '알 수 없는 오류 (code: ' . $result['code'] . ')';
+					// 에러 코드가 있는 경우
+					$error_msg = isset($result['message']) ? $result['message'] : '발송 실패 (code: ' . $result['code'] . ')';
 					log_message('error', 'Surem MMS send failed - Code: ' . $result['code'] . ', Message: ' . $error_msg);
 					return array(
 						'success' => false,
@@ -334,22 +310,15 @@ class Surem_api
 					);
 				}
 			} else {
-				log_message('error', 'Surem MMS response has no code field: ' . $response);
-
-				if (!isset($result['error']) && !isset($result['message'])) {
-					return array(
-						'success' => true,
-						'message' => '발송 성공',
-						'api_message_id' => $message_id
-					);
-				}
-
+				// code 필드가 없으면 성공으로 간주 (HTTP 200이므로)
 				return array(
-					'success' => false,
-					'message' => isset($result['message']) ? $result['message'] : '응답 형식 오류'
+					'success' => true,
+					'message' => 'MMS 발송 성공',
+					'api_message_id' => $message_id
 				);
 			}
 		} else {
+			// HTTP 오류
 			$error_msg = isset($result['message']) ? $result['message'] : 'HTTP ' . $http_code . ' 오류';
 			log_message('error', 'Surem MMS HTTP error: ' . $http_code . ' - ' . $response);
 			return array(
@@ -359,22 +328,85 @@ class Surem_api
 		}
 	}
 
-
-	private function debug_log($message, $data = null)
+	/**
+	 * 역할: 발송 결과 조회 (Polling)
+	 */
+	public function get_send_results($type)
 	{
-		$log_file = APPPATH . 'logs/surem_debug.log';
-		$timestamp = date('Y-m-d H:i:s');
-		$log_message = "[{$timestamp}] {$message}";
-
-		if ($data !== null) {
-			$log_message .= "\n" . print_r($data, true);
+		$token = $this->get_access_token();
+		if (!$token) {
+			return array(
+				'success' => false,
+				'message' => 'API 토큰 발급 실패'
+			);
 		}
 
-		$log_message .= "\n" . str_repeat('-', 80) . "\n";
+		$url = $this->base_url . '/api/v2/report/responseAll?type=' . $type;
 
-		file_put_contents($log_file, $log_message, FILE_APPEND);
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'Authorization: Bearer ' . $token
+		));
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+		$response = curl_exec($ch);
+		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+
+		if ($http_code != 200) {
+			return array(
+				'success' => false,
+				'message' => 'HTTP ' . $http_code . ' 오류'
+			);
+		}
+
+		$result = json_decode($response, true);
+
+		if (isset($result['data'])) {
+			return array(
+				'success' => true,
+				'data' => $result['data'],
+				'checksum' => isset($result['checksum']) ? $result['checksum'] : null
+			);
+		}
+
+		return array(
+			'success' => false,
+			'message' => '결과 조회 실패'
+		);
 	}
 
+	/**
+	 * 역할: 결과 완료 처리
+	 */
+	public function complete_results($checksum)
+	{
+		$token = $this->get_access_token();
+		if (!$token) {
+			return false;
+		}
 
+		$url = $this->base_url . '/api/v2/report/complete';
 
+		$data = array('checksum' => $checksum);
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_POST, true);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			'Content-Type: application/json',
+			'Authorization: Bearer ' . $token
+		));
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+		$response = curl_exec($ch);
+		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+
+		return $http_code == 200;
+	}
 }

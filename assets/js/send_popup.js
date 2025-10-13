@@ -1564,41 +1564,6 @@ function sendScheduled(sendType, senderNumber, senderName, messageContent, recei
 	});
 }
 
-/**
- * 역할: 발송 히스토리에 저장 (메시지 내용 및 수신자별 결과 포함)
- */
-function saveToHistory(sendType, senderNumber, senderName, messageContent, receiverResults, status, callback) {
-	const historyData = {
-		org_id: SEND_ORG_ID,
-		send_type: sendType,
-		sender_number: senderNumber,
-		sender_name: senderName,
-		message_content: messageContent, // 메시지 내용 추가
-		receiver_count: receiverResults.length,
-		receiver_list: receiverResults, // 수신자별 결과 포함
-		status: status,
-		send_date: new Date().toISOString()
-	};
-
-	$.ajax({
-		url: '/send/save_history',
-		type: 'POST',
-		data: historyData,
-		dataType: 'json',
-		success: function(response) {
-			console.log('히스토리 저장 완료');
-			if (callback && typeof callback === 'function') {
-				callback(true);
-			}
-		},
-		error: function() {
-			console.error('히스토리 저장 실패');
-			if (callback && typeof callback === 'function') {
-				callback(false);
-			}
-		}
-	});
-}
 
 /**
  * 역할: 발송 히스토리 목록 로드
@@ -2161,6 +2126,7 @@ function showHistoryDetail(historyIdx) {
 						let statusBadge = '';
 						let statusClass = '';
 
+						// send_status 필드 확인 (DB 컬럼명과 일치)
 						if (receiver.send_status === 'success') {
 							statusBadge = '<span class="badge bg-success">성공</span>';
 							statusClass = 'table-success';
@@ -2171,7 +2137,7 @@ function showHistoryDetail(historyIdx) {
 							statusBadge = `<span class="badge bg-danger" 
 								data-bs-toggle="tooltip" 
 								data-bs-placement="top" 
-								title="${failReason}" 
+								title="${escapeHtml(failReason)}" 
 								style="cursor: help;">실패</span>`;
 							statusClass = 'table-danger';
 							failedCount++;
@@ -2184,28 +2150,26 @@ function showHistoryDetail(historyIdx) {
 
 						const row = `
 							<tr class="${statusClass}">
-								<td>${receiver.receiver_name}</td>
-								<td>${receiver.receiver_number}</td>
+								<td>${escapeHtml(receiver.receiver_name || '알 수 없음')}</td>
+								<td>${escapeHtml(receiver.receiver_number || '알 수 없음')}</td>
 								<td>${statusBadge}</td>
 							</tr>
 						`;
+
 						tbody.append(row);
 					});
 
-					// 통계 정보 추가
-					const statsHtml = `
-						<tr class="table-info">
-							<td colspan="3" class="text-center">
-								<strong>발송 결과 통계:</strong> 
-								<span class="badge bg-success">성공 ${successCount}건</span>
-								<span class="badge bg-danger">실패 ${failedCount}건</span>
-								<span class="badge bg-warning">대기중 ${pendingCount}건</span>
+					// 통계 정보 업데이트
+					const statsHtml = `발송 결과 통계: 성공 ${successCount}건 실패 ${failedCount}건 대기중 ${pendingCount}건`;
+					tbody.prepend(`
+						<tr>
+							<td colspan="3" class="text-center bg-light fw-bold">
+								${statsHtml}
 							</td>
 						</tr>
-					`;
-					tbody.prepend(statsHtml);
+					`);
 
-					// Bootstrap 툴팁 초기화
+					// 툴팁 초기화
 					const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
 					tooltipTriggerList.map(function (tooltipTriggerEl) {
 						return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -2215,10 +2179,11 @@ function showHistoryDetail(historyIdx) {
 				}
 
 				// Offcanvas 표시
-				const offcanvas = new bootstrap.Offcanvas(document.getElementById('historyDetailOffcanvas'));
+				const offcanvasEl = document.getElementById('historyDetailOffcanvas');
+				const offcanvas = new bootstrap.Offcanvas(offcanvasEl);
 				offcanvas.show();
 			} else {
-				showToast(response.message || '상세 정보를 불러오는데 실패했습니다.', 'error');
+				showToast(response.message || '상세 정보를 불러올 수 없습니다.', 'error');
 			}
 		},
 		error: function() {

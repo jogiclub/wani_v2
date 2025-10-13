@@ -717,13 +717,6 @@ class Send_model extends CI_Model
 	}
 
 
-	/**
-	 * 역할: 발송 히스토리 저장
-	 */
-	public function save_send_history($data)
-	{
-		return $this->db->insert('wb_send_history', $data);
-	}
 
 
 
@@ -750,32 +743,6 @@ class Send_model extends CI_Model
 	}
 
 
-	/**
-	 * 역할: 발송 히스토리 상세 정보 조회
-	 */
-	public function get_send_history_detail($history_idx, $org_id)
-	{
-		$this->db->select('*');
-		$this->db->from('wb_send_history');
-		$this->db->where('history_idx', $history_idx);
-		$this->db->where('org_id', $org_id);
-		$query = $this->db->get();
-
-		if ($query->num_rows() > 0) {
-			$row = $query->row_array();
-
-			// receiver_list를 JSON에서 배열로 변환
-			if (!empty($row['receiver_list'])) {
-				$row['receiver_list'] = json_decode($row['receiver_list'], true);
-			} else {
-				$row['receiver_list'] = array();
-			}
-
-			return $row;
-		}
-
-		return false;
-	}
 
 
 	/**
@@ -806,35 +773,56 @@ class Send_model extends CI_Model
 		return false;
 	}
 
+
 	/**
-	 * 역할: 전송 히스토리 목록 조회 (년월 필터링)
+	 * 역할: 전송 히스토리 목록 조회 (wb_send_log에서 직접 조회)
 	 */
 	public function get_send_history_list($org_id, $year, $month, $limit = 100)
 	{
 		// 시작일과 종료일 계산
 		$start_date = sprintf('%04d-%02d-01 00:00:00', $year, $month);
-		$last_day = date('t', strtotime($start_date)); // 해당 월의 마지막 날
+		$last_day = date('t', strtotime($start_date));
 		$end_date = sprintf('%04d-%02d-%02d 23:59:59', $year, $month, $last_day);
 
-		$this->db->select('history_idx, send_date, sender_number, sender_name, send_type, receiver_count, receiver_list, status');
-		$this->db->from('wb_send_history');
+		// wb_send_log에서 send_date, sender_number, sender_name 기준으로 그룹핑
+		$this->db->select('
+		MIN(send_idx) as history_idx,
+		send_date,
+		sender_number,
+		sender_name,
+		send_type,
+		message_content,
+		COUNT(*) as receiver_count,
+		MIN(receiver_name) as first_receiver_name,
+		SUM(CASE WHEN send_status = "success" THEN 1 ELSE 0 END) as success_count,
+		SUM(CASE WHEN send_status = "failed" THEN 1 ELSE 0 END) as fail_count
+	');
+		$this->db->from('wb_send_log');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('send_date >=', $start_date);
 		$this->db->where('send_date <=', $end_date);
+
+		// 같은 시간에 같은 발신번호로 보낸 것들을 그룹핑
+		$this->db->group_by('DATE(send_date), HOUR(send_date), MINUTE(send_date), sender_number');
 		$this->db->order_by('send_date', 'DESC');
 		$this->db->limit($limit);
-		$query = $this->db->get();
 
+		$query = $this->db->get();
 		$result = array();
+
 		if ($query->num_rows() > 0) {
 			foreach ($query->result_array() as $row) {
-				// receiver_list를 파싱하여 첫 번째 수신자 이름 추출
-				$receiver_list = json_decode($row['receiver_list'], true);
-				$first_receiver_name = !empty($receiver_list) ? $receiver_list[0]['member_name'] : '알 수 없음';
+				// 상태 결정
+				if ($row['fail_count'] == 0) {
+					$status = 'success';
+				} else if ($row['success_count'] == 0) {
+					$status = 'failed';
+				} else {
+					$status = 'partial';
+				}
 
-				$row['first_receiver_name'] = $first_receiver_name;
+				$row['status'] = $status;
 				$row['send_date'] = date('Y.m.d H:i:s', strtotime($row['send_date']));
-
 				$result[] = $row;
 			}
 		}
@@ -1027,39 +1015,59 @@ class Send_model extends CI_Model
 	/**
 	 * 역할: 발송 히스토리 상세 정보 조회 (그룹핑된 첫 번째 레코드)
 	 */
-	public function get_history_detail($send_idx, $org_id)
+	public function get_history_detail($history_idx, $org_id)
 	{
+		// history_idx는 MIN(send_idx)이므로 해당 그룹의 첫 번째 로그 조회
 		$this->db->select('send_date, sender_number, sender_name, send_type, message_content');
 		$this->db->from('wb_send_log');
-		$this->db->where('send_idx', $send_idx);
+		$this->db->where('send_idx', $history_idx);
 		$this->db->where('org_id', $org_id);
 		$query = $this->db->get();
+
 		return $query->row_array();
 	}
 
 
 	/**
-	 * 역할: 발송 히스토리의 수신자별 결과 조회
+	 * 역할: 발송 히스토리 수신자별 결과 조회
 	 */
-	public function get_history_receiver_results($send_idx)
+	public function get_history_receiver_results($history_idx)
 	{
-		// 같은 발송 시간대의 로그들을 조회
-		// send_idx가 첫 번째 발송의 idx라고 가정하고, 해당 시간대의 모든 발송 조회
+		// history_idx(MIN send_idx)와 같은 send_date, sender_number를 가진 모든 로그 조회
+		$this->db->select('send_date, sender_number, org_id');
+		$this->db->from('wb_send_log');
+		$this->db->where('send_idx', $history_idx);
+		$query = $this->db->get();
+		$base_log = $query->row_array();
 
-		$this->db->select('s.*, 
-        CASE 
-            WHEN s.send_status = "success" THEN "성공"
-            WHEN s.send_status = "failed" THEN "실패"
-            ELSE "대기중"
-        END as status_text');
-		$this->db->from('wb_send_log s');
-		$this->db->where('s.send_idx >=', $send_idx);
-		$this->db->where('s.org_id', (int)$this->get_org_id_by_send_idx($send_idx));
-		$this->db->where('s.send_date', $this->get_send_date_by_send_idx($send_idx));
-		$this->db->order_by('s.send_idx', 'ASC');
+		if (!$base_log) {
+			return array();
+		}
+
+		// 같은 시간(분까지), 같은 발신번호, 같은 조직의 모든 로그 조회
+		$this->db->select('receiver_name, receiver_number, send_status, result_message, result_date');
+		$this->db->from('wb_send_log');
+		$this->db->where('org_id', $base_log['org_id']);
+		$this->db->where('DATE(send_date)', date('Y-m-d', strtotime($base_log['send_date'])));
+		$this->db->where('HOUR(send_date)', date('H', strtotime($base_log['send_date'])));
+		$this->db->where('MINUTE(send_date)', date('i', strtotime($base_log['send_date'])));
+		$this->db->where('sender_number', $base_log['sender_number']);
+		$this->db->order_by('send_idx', 'ASC');
 
 		$query = $this->db->get();
-		return $query->result_array();
+		$results = array();
+
+		foreach ($query->result_array() as $row) {
+			$results[] = array(
+				'receiver_name' => $row['receiver_name'],
+				'receiver_number' => $row['receiver_number'],
+				'send_status' => $row['send_status'],
+				'result_message' => $row['result_message'],
+				'result_date' => $row['result_date']
+			);
+		}
+
+		return $results;
 	}
 
 
