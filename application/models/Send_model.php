@@ -979,6 +979,9 @@ class Send_model extends CI_Model
 	/**
 	 * 역할: 발송 히스토리 수신자별 결과 조회
 	 */
+	/**
+	 * 역할: 발송 히스토리 수신자별 결과 조회
+	 */
 	public function get_history_receiver_results($history_idx)
 	{
 		// history_idx(MIN send_idx)와 같은 send_date, sender_number를 가진 모든 로그 조회
@@ -992,24 +995,19 @@ class Send_model extends CI_Model
 			return array();
 		}
 
-		// 같은 시간(초까지), 같은 발신번호, 같은 조직의 모든 로그 조회
-		// send_date를 5분 범위로 확장하여 조회 (동시 발송된 메시지 그룹핑)
-		$base_send_time = strtotime($base_log['send_date']);
-		$start_time = date('Y-m-d H:i:s', $base_send_time - 300); // 5분 전
-		$end_time = date('Y-m-d H:i:s', $base_send_time + 300);   // 5분 후
-
+		// 같은 날짜의 같은 시(HOUR)와 분(MINUTE), 같은 발신번호, 같은 조직의 모든 로그 조회
 		$this->db->select('receiver_name, receiver_number, send_status, result_message, result_date');
 		$this->db->from('wb_send_log');
 		$this->db->where('org_id', $base_log['org_id']);
 		$this->db->where('sender_number', $base_log['sender_number']);
-		$this->db->where('send_date >=', $start_time);
-		$this->db->where('send_date <=', $end_time);
+		$this->db->where('DATE(send_date)', date('Y-m-d', strtotime($base_log['send_date'])));
+		$this->db->where('HOUR(send_date)', date('H', strtotime($base_log['send_date'])));
+		$this->db->where('MINUTE(send_date)', date('i', strtotime($base_log['send_date'])));
 		$this->db->order_by('send_idx', 'ASC');
 
 		$query = $this->db->get();
 		return $query->result_array();
 	}
-
 
 	/**
 	 * 역할: send_idx로 org_id 조회

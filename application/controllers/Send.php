@@ -220,7 +220,7 @@ class Send extends MY_Controller
 		$message_content = $this->input->post('message_content');
 		$receiver_list = $this->input->post('receiver_list');
 		$total_cost = $this->input->post('total_cost');
-		$image_key = $this->input->post('image_key'); // MMS 이미지 키 추가
+		$image_key = $this->input->post('image_key');
 
 		// 잔액 확인
 		$balance_check = $this->Send_model->check_balance_sufficient($org_id, $total_cost);
@@ -250,6 +250,10 @@ class Send extends MY_Controller
 			return;
 		}
 
+		// 개별 메시지 비용 계산
+		$package_prices = $this->Send_model->get_available_package_prices($org_id);
+		$cost_per_message = isset($package_prices[$send_type]) ? $package_prices[$send_type] : 0;
+
 		// 발송 처리 시작
 		$success_count = 0;
 		$fail_count = 0;
@@ -262,7 +266,7 @@ class Send extends MY_Controller
 			// API 메시지 ID 생성 (9자리)
 			$api_message_id = $this->generate_api_message_id();
 
-			// 발송 로그 저장
+			// 발송 로그 저장 (cost 추가)
 			$send_data = array(
 				'org_id' => $org_id,
 				'sender_id' => $user_id,
@@ -273,15 +277,16 @@ class Send extends MY_Controller
 				'receiver_number' => $receiver['member_phone'],
 				'receiver_name' => $receiver['member_name'],
 				'message_content' => $personalized_message,
-				'image_key' => $image_key, // 이미지 키 저장
+				'image_key' => $image_key,
 				'send_status' => 'pending',
 				'api_message_id' => $api_message_id,
-				'send_date' => date('Y-m-d H:i:s')
+				'send_date' => date('Y-m-d H:i:s'),
+				'cost' => $cost_per_message  // 개별 메시지 비용 추가
 			);
 
-			$send_idx = $this->Send_model->save_send_log($send_data); // send_idx 반환
+			$send_idx = $this->Send_model->save_send_log($send_data);
 
-			// API 발송 처리 (이미지 키 전달)
+			// API 발송 처리
 			$send_result = $this->process_message_send(
 				$send_type,
 				$sender_number,
@@ -291,17 +296,18 @@ class Send extends MY_Controller
 				$image_key
 			);
 
-			// 발송 결과 업데이트 (send_idx 사용)
+			// 발송 결과 업데이트 - API 요청이 성공하면 일단 pending으로 유지 (나중에 Cron에서 실제 결과 업데이트)
 			if ($send_result['success']) {
-				$this->Send_model->update_send_log_status($send_idx, 'success', 'API 발송 성공');
+				// API 요청 성공 - pending 상태 유지 (실제 발송 결과는 Cron에서 업데이트)
 				$success_count++;
 				$send_log_list[] = array(
 					'status' => 'success',
 					'member_name' => $receiver['member_name'],
 					'member_phone' => $receiver['member_phone'],
-					'message' => 'API 발송 성공'
+					'message' => 'API 발송 요청 성공'
 				);
 			} else {
+				// API 요청 실패
 				$this->Send_model->update_send_log_status($send_idx, 'failed', $send_result['message']);
 				$fail_count++;
 				$send_log_list[] = array(

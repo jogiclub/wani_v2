@@ -95,6 +95,10 @@ class Cron extends CI_Controller
 
 		echo "예약번호 {$reservation['reservation_idx']}: " . count($receiver_list) . "명 발송 시작\n";
 
+		// 개별 메시지 비용 계산
+		$package_prices = $this->Send_model->get_available_package_prices($reservation['org_id']);
+		$cost_per_message = isset($package_prices[$reservation['send_type']]) ? $package_prices[$reservation['send_type']] : 0;
+
 		$success_count = 0;
 		$fail_count = 0;
 
@@ -102,7 +106,7 @@ class Cron extends CI_Controller
 			// 메시지 치환
 			$message = $this->replace_fields($reservation['message_content'], $receiver);
 
-			// 발송 로그 저장 (api_message_id 자동 생성됨)
+			// 발송 로그 저장 (cost 추가)
 			$send_data = array(
 				'org_id' => $reservation['org_id'],
 				'sender_id' => 0,
@@ -114,7 +118,8 @@ class Cron extends CI_Controller
 				'receiver_name' => $receiver['member_name'],
 				'message_content' => $message,
 				'send_status' => 'pending',
-				'send_date' => date('Y-m-d H:i:s')
+				'send_date' => date('Y-m-d H:i:s'),
+				'cost' => $cost_per_message  // 개별 메시지 비용 추가
 			);
 
 			$send_idx = $this->Send_model->save_send_log($send_data);
