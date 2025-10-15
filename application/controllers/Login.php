@@ -29,9 +29,9 @@ class Login extends CI_Controller
 					? $this->Org_model->get_user_orgs($user_id)
 					: $this->Org_model->get_user_orgs_master($user_id);
 
-				// 조직이 있으면 qrcheck로 이동
+				// 조직이 있으면 dashboard로 이동
 				if (!empty($user_orgs)) {
-					redirect('qrcheck');
+					redirect('dashboard');
 					return;
 				}
 
@@ -303,7 +303,7 @@ class Login extends CI_Controller
 			}
 
 			// 중간 리다이렉트 페이지로 이동
-			$this->load->view('login_redirect', ['redirect_url' => '/qrcheck']);
+			$this->load->view('login_redirect', ['redirect_url' => '/dashboard']);
 		} else {
 			redirect('login/join');
 		}
@@ -477,7 +477,7 @@ class Login extends CI_Controller
 	 */
 	public function redirect_after_join()
 	{
-		$this->load->view('login_redirect', ['redirect_url' => '/qrcheck']);
+		$this->load->view('login_redirect', ['redirect_url' => '/dashboard']);
 	}
 
 

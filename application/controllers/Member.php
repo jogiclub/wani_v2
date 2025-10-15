@@ -16,6 +16,9 @@ class Member extends My_Controller
 		$this->load->model('Member_model');
 		$this->load->model('Member_area_model');
 		$this->load->model('User_model');
+
+		// 메뉴 권한 체크
+		$this->check_menu_access('MEMBER_MANAGEMENT');
 	}
 
 	/**
@@ -23,11 +26,7 @@ class Member extends My_Controller
 	 */
 	public function index()
 	{
-		// 로그인 체크
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-			return;
-		}
+
 
 		$user_id = $this->session->userdata('user_id');
 

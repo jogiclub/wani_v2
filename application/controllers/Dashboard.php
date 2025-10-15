@@ -11,23 +11,19 @@ class Dashboard extends My_Controller
 		$this->load->helper('url');
 	}
 
-	// 파일 위치: application/controllers/Dashboard.php
-// 역할: 대시보드 메인과 통계 API 분리
 
-	public function index(){
-		$user_id = $this->session->userdata('user_id');
-		if (!$user_id) {
-			redirect('login');
+
+	public function index()
+	{
+		if (!$this->session->userdata('user_id')) {
+			redirect('login/index');
 			return;
 		}
+
+		$user_id = $this->session->userdata('user_id');
 
 		// 헤더 데이터 준비
 		$header_data = $this->prepare_header_data();
-		if (empty($header_data['user_orgs'])) {
-			redirect('dashboard');
-			return;
-		}
-
 		$data = $header_data;
 
 		// POST로 조직 변경 요청 처리
@@ -35,19 +31,83 @@ class Dashboard extends My_Controller
 
 		$currentOrgId = $data['current_org']['org_id'];
 
-		// 선택된 조직의 상세 정보 가져오기
-		$this->load->model('Org_model');
-		$data['selected_org_detail'] = $this->Org_model->get_org_detail_by_id($currentOrgId);
+		// 사용자가 접근 가능한 메뉴 목록 가져오기
+		$data['accessible_menus'] = $this->get_accessible_menus($user_id, $currentOrgId);
 
-		// 선택된 조직의 상세필드 목록 가져오기
-		$this->load->model('Detail_field_model');
-		$data['detail_fields'] = $this->Detail_field_model->get_detail_fields_by_org($currentOrgId);
-
-		// 현재 조직 정보를 JavaScript로 전달
-		$data['orgs'] = array($data['current_org']);
-
-		// 통계 데이터는 AJAX로 가져오므로 제거
 		$this->load->view('dashboard', $data);
+	}
+
+	/**
+	 * 사용자가 접근 가능한 메뉴 목록 조회
+	 */
+	private function get_accessible_menus($user_id, $org_id)
+	{
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 메뉴 헬퍼 로드
+		$this->load->helper('menu');
+		$system_menus = get_system_menus();
+
+		// User_management_model 로드
+		$this->load->model('User_management_model');
+
+		// 현재 조직에서의 사용자 권한 레벨
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+
+		// 마스터이거나 최고관리자인 경우 모든 메뉴 접근 가능
+		if ($master_yn === 'Y' || $user_level >= 10) {
+			return $this->format_menu_list($system_menus);
+		}
+
+		// 사용자의 관리 메뉴 조회
+		$user_managed_menus = $this->User_management_model->get_user_managed_menus($user_id);
+
+		// 관리 메뉴가 없으면 빈 배열 반환
+		if (empty($user_managed_menus)) {
+			return array();
+		}
+
+		// 접근 가능한 메뉴만 필터링
+		$accessible_menus = array();
+		foreach ($system_menus as $menu_key => $menu_info) {
+			if (in_array($menu_key, $user_managed_menus)) {
+				$accessible_menus[$menu_key] = $menu_info;
+			}
+		}
+
+		return $this->format_menu_list($accessible_menus);
+	}
+
+	/**
+	 * 메뉴 목록을 카테고리별로 포맷팅
+	 */
+	private function format_menu_list($menus)
+	{
+		$this->load->helper('menu');
+		$categories = get_menu_categories();
+
+		$formatted_menus = array();
+
+		foreach ($categories as $category_name => $menu_keys) {
+			$category_menus = array();
+
+			foreach ($menu_keys as $menu_key) {
+				if (isset($menus[$menu_key])) {
+					$category_menus[] = array(
+						'key' => $menu_key,
+						'name' => $menus[$menu_key]['name'],
+						'url' => $menus[$menu_key]['url'],
+						'icon' => $menus[$menu_key]['icon']
+					);
+				}
+			}
+
+			if (!empty($category_menus)) {
+				$formatted_menus[$category_name] = $category_menus;
+			}
+		}
+
+		return $formatted_menus;
 	}
 
 	/**

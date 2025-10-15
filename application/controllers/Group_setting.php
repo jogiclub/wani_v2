@@ -15,6 +15,9 @@ class Group_setting extends My_Controller
 		$this->load->model('User_model');
 		$this->load->library('session');
 		$this->load->helper('url');
+
+		// 메뉴 권한 체크
+		$this->check_menu_access('GROUP_SETTING');
 	}
 
 	/**

@@ -25,11 +25,7 @@ class Weekly_statics extends My_Controller
 	 */
 	public function index()
 	{
-		// 로그인 체크
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-			return;
-		}
+
 
 		$user_id = $this->session->userdata('user_id');
 

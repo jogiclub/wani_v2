@@ -269,4 +269,54 @@ class MY_Controller extends CI_Controller
 		return $org_id;
 	}
 
+	protected function check_menu_access($menu_key)
+	{
+		// dashboard는 권한 체크 제외
+		if ($menu_key === 'OVERVIEW') {
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 마스터 사용자는 모든 메뉴 접근 가능
+		if ($master_yn === 'Y') {
+			return;
+		}
+
+		// 현재 조직에서의 사용자 권한 레벨 확인
+		$org_id = $this->get_active_org_id();
+		if (!$org_id) {
+			show_error('조직 정보를 찾을 수 없습니다.', 403);
+			return;
+		}
+
+		// User_management_model 로드
+		if (!isset($this->User_management_model)) {
+			$this->load->model('User_management_model');
+		}
+
+		$user_level = $this->User_management_model->get_org_user_level($user_id, $org_id);
+
+		// 최고관리자(레벨 10)는 모든 메뉴 접근 가능
+		if ($user_level >= 10) {
+			return;
+		}
+
+		// 사용자의 관리 메뉴 조회
+		$user_managed_menus = $this->User_management_model->get_user_managed_menus($user_id);
+
+		// 관리 메뉴가 비어있으면 접근 불가
+		if (empty($user_managed_menus)) {
+			show_error('해당 메뉴에 접근할 권한이 없습니다.', 403);
+			return;
+		}
+
+		// 관리 메뉴에 포함되지 않은 경우 접근 불가
+		if (!in_array($menu_key, $user_managed_menus)) {
+			show_error('해당 메뉴에 접근할 권한이 없습니다.', 403);
+			return;
+		}
+	}
+
 }

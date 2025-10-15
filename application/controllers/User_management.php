@@ -15,10 +15,9 @@ class User_management extends My_Controller
 		$this->load->helper('url');
 		$this->load->model('User_management_model');
 
-		// 로그인 확인
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-		}
+		// 메뉴 권한 체크
+		$this->check_menu_access('USER_MANAGEMENT');
+
 	}
 
 	/**

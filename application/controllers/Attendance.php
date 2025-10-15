@@ -17,6 +17,9 @@ class Attendance extends My_Controller
 		$this->load->model('Member_area_model');
 		$this->load->model('User_model');
 		$this->load->model('Attendance_model');
+
+		// 메뉴 권한 체크
+		$this->check_menu_access('ATTENDANCE_MANAGEMENT');
 	}
 
 	/**
@@ -24,13 +27,7 @@ class Attendance extends My_Controller
 	 */
 	public function index()
 	{
-		// 로그인 체크
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-			return;
-		}
 
-		$user_id = $this->session->userdata('user_id');
 
 		// 헤더 데이터 준비
 		$header_data = $this->prepare_header_data();

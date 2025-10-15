@@ -16,6 +16,49 @@
 		<h3 class="page-title col-12 mb-0">대시보드</h3>
 	</div>
 
+	<!-- 접근 가능한 메뉴 표시 -->
+	<?php if (!empty($accessible_menus)): ?>
+		<div class="card mb-4">
+			<div class="card-header">
+				<h5 class="card-title mb-0 d-flex align-items-center">
+					<i class="bi bi-grid-3x3-gap me-2"></i> 빠른 메뉴
+				</h5>
+			</div>
+			<div class="card-body">
+				<div class="row">
+				<?php foreach ($accessible_menus as $category_name => $category_menus): ?>
+					<?php if ($category_name !== 'OVERVIEW'): // 대시보드 자체는 제외 ?>
+
+
+
+								<div class="col-12 col-xl-6 mb-2">
+									<h6 class="text-muted text-uppercase mb-2"><?php echo $category_name; ?></h6>
+									<div class="row g-2">
+								<?php foreach ($category_menus as $menu): ?>
+
+									<div class="col-3 col-xl-2">
+										<a href="<?php echo base_url($menu['url']); ?>" class="text-decoration-none">
+											<div class="card h-100 quick-menu-card">
+												<div class="card-body text-center px-1 py-3">
+													<i class="<?php echo $menu['icon']; ?> fs-3 text-primary mb-2"></i>
+													<div class="small fw-medium text-dark mt-2 lh-1"><?php echo $menu['name']; ?></div>
+												</div>
+											</div>
+										</a>
+									</div>
+
+								<?php endforeach; ?>
+									</div>
+								</div>
+
+
+					<?php endif; ?>
+				<?php endforeach; ?>
+				</div>
+			</div>
+		</div>
+	<?php endif; ?>
+
 	<div class="row">
 		<div class="col-lg-8">
 			<div class="card mb-3">

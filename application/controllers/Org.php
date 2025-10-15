@@ -13,13 +13,12 @@ class Org extends My_Controller
 		$this->load->helper('file');
 		$this->load->library('upload');
 		$this->load->library('email');
+
+		$this->check_menu_access('ORG_SETTING');
 	}
 
 	public function index() {
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-			return;
-		}
+
 
 		$user_id = $this->session->userdata('user_id');
 

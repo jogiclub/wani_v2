@@ -14,15 +14,14 @@ class Qrcheck extends My_Controller
 		$this->load->model('User_model');
 		$this->load->model('Org_model');
 		$this->load->model('User_management_model'); // 사용자 권한 관리 모델 추가
+
+		// 메뉴 권한 체크
+		$this->check_menu_access('ATTENDANCE_BOARD');
 	}
 
 	public function index()
 	{
-		// 사용자가 로그인되어 있는지 확인 (MY_Controller에서 자동 체크되지만 명시적으로 확인)
-		if (!$this->session->userdata('user_id')) {
-			redirect('login/index');
-			return;
-		}
+
 
 		$user_id = $this->session->userdata('user_id');
 

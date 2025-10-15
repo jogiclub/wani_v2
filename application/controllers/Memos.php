@@ -12,9 +12,7 @@ class Memos extends My_Controller
 		$this->load->model('Member_model');
 		$this->load->model('Org_model');
 
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-		}
+		$this->check_menu_access('MEMO_MANAGEMENT');
 	}
 
 	/**

@@ -13,10 +13,7 @@ class Message extends MY_Controller
 		parent::__construct();
 		$this->load->model('Message_model');
 
-		// 로그인 확인
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-		}
+
 	}
 
 	/**

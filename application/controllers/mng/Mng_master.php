@@ -12,10 +12,7 @@ class Mng_master extends CI_Controller
 		$this->load->model('Org_category_model');
 		$this->load->model('User_model');
 
-		// 로그인 확인
-		if (!$this->session->userdata('user_id')) {
-			redirect('login');
-		}
+
 
 		// 마스터 권한 확인
 		if ($this->session->userdata('master_yn') !== 'Y') {

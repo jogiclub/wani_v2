@@ -15,6 +15,9 @@ class Detail_field extends My_Controller
 		$this->load->library('session');
 		$this->load->helper('url');
 		$this->load->model('User_model');
+
+		// 메뉴 권한 체크
+		$this->check_menu_access('DETAIL_FIELD_SETTING');
 	}
 
 
