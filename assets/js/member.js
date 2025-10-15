@@ -2176,17 +2176,23 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		return '회원 정보 수정';
 	}
 
-	/**
-	 * Offcanvas 폼 초기화 (수정된 버전)
-	 */
 	function resetOffcanvasForm() {
 		$('#memberForm')[0].reset();
 		$('#photoPreview').hide();
 		$('#photoUpload').show();
 		$('#cropContainer').hide();
 
+		// 파일 input 완전 초기화
+		const photoInput = $('#member_photo')[0];
+		if (photoInput) {
+			photoInput.value = '';
+			// input을 새로 생성하여 완전 초기화
+			const newInput = photoInput.cloneNode(true);
+			$(photoInput).replaceWith(newInput);
+		}
+
 		$('#delete_photo').remove();
-		$('input[name="detail_field"]').remove(); // 상세필드 히든 필드도 제거
+		$('input[name="detail_field"]').remove();
 		$('#detail-front').empty().hide();
 		$('#detailFieldsContainer').empty();
 
@@ -2632,7 +2638,18 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 사진 삭제 버튼 처리
 	 */
 	function handleRemovePhotoClick() {
-		$('#member_photo').val('');
+		// 파일 input 완전 초기화
+		const photoInput = $('#member_photo')[0];
+		if (photoInput) {
+			photoInput.value = '';
+			// input을 새로 생성하여 완전 초기화
+			const newInput = photoInput.cloneNode(true);
+			$(photoInput).replaceWith(newInput);
+
+			// 이벤트 다시 바인딩
+			$('#member_photo').off('change').on('change', handlePhotoFileSelect);
+		}
+
 		$('#photoPreview').hide();
 		$('#photoUpload').show();
 		destroyCroppie();
@@ -2679,9 +2696,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
-	/**
-	 * 크롭된 이미지 저장
-	 */
 	function saveCroppedImage() {
 		if (!croppieInstance) {
 			showToast('크롭 인스턴스가 없습니다.', 'error');
@@ -2698,11 +2712,20 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			$('#previewImage').attr('src', croppedImage);
 
 			dataURLtoFile(croppedImage, 'cropped_image.jpg').then(function (file) {
-				const dt = new DataTransfer();
-				dt.items.add(file);
-				document.getElementById('member_photo').files = dt.files;
+				// 파일이 제대로 생성되었는지 확인
+				if (file && file.size > 0) {
+					const dt = new DataTransfer();
+					dt.items.add(file);
+					document.getElementById('member_photo').files = dt.files;
 
-				$('#delete_photo').remove();
+					$('#delete_photo').remove();
+				} else {
+					console.error('크롭된 이미지 파일 생성 실패');
+					showToast('이미지 파일 생성에 실패했습니다.', 'error');
+				}
+			}).catch(function(error) {
+				console.error('파일 변환 오류:', error);
+				showToast('이미지 파일 변환에 실패했습니다.', 'error');
 			});
 
 			$('#cropContainer').hide();
@@ -2787,9 +2810,6 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
-	/**
-	 * 회원 저장 (수정된 버전)
-	 */
 	function saveMember() {
 		if (!validateMemberForm()) {
 			return;
@@ -2804,8 +2824,50 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		saveDetailData();
 
 		const form = $('#memberForm')[0];
-		const formData = new FormData(form);
+		const formData = new FormData();
+
+		// 파일을 제외한 모든 폼 데이터 수동 추가
+		const formElements = form.elements;
+		for (let i = 0; i < formElements.length; i++) {
+			const element = formElements[i];
+
+			// 파일 input은 건너뛰기 (나중에 조건부로 추가)
+			if (element.name === 'member_photo') {
+				continue;
+			}
+
+			if (element.type === 'checkbox') {
+				if (element.checked) {
+					formData.append(element.name, element.value);
+				}
+			} else if (element.type === 'radio') {
+				if (element.checked) {
+					formData.append(element.name, element.value);
+				}
+			} else if (element.name) {
+				formData.append(element.name, element.value);
+			}
+		}
+
+		// org_id 추가
 		formData.append('org_id', selectedOrgId);
+
+		// 파일 업로드 처리: 실제로 파일이 선택된 경우만 추가
+		const photoInput = $('#member_photo')[0];
+		const hasValidFile = photoInput.files &&
+			photoInput.files.length > 0 &&
+			photoInput.files[0].size > 0 &&
+			photoInput.files[0].name !== '';
+
+		if (hasValidFile) {
+			formData.append('member_photo', photoInput.files[0]);
+		}
+
+		// delete_photo 필드가 있으면 추가
+		const deletePhoto = $('#delete_photo').val();
+		if (deletePhoto) {
+			formData.append('delete_photo', deletePhoto);
+		}
 
 		const saveBtn = $('#btnSaveMember');
 		const originalText = saveBtn.html();
@@ -2827,6 +2889,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			},
 			error: function (xhr, status, error) {
 				console.error('회원 저장 실패:', error);
+				console.error('Response:', xhr.responseText);
 				showToast('회원 정보 저장에 실패했습니다.', 'error');
 			},
 			complete: function () {

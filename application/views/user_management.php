@@ -1,7 +1,4 @@
 <?php
-// application/views/user_management.php
-// 사용자 관리 화면 - Bootstrap5.3 기반 사용자 목록 및 관리 UI
-
 $this->load->view('header'); ?>
 
 <!-- Select2 CSS 추가 -->

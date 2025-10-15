@@ -621,6 +621,9 @@ class Member extends My_Controller
 	/**
 	 * 회원 정보 수정 (상세필드 포함)
 	 */
+	/**
+	 * 회원 정보 수정 (상세필드 포함)
+	 */
 	public function update_member() {
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -654,17 +657,27 @@ class Member extends My_Controller
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		// 사진 처리
+		// 사진 처리 (수정된 부분)
 		if ($this->input->post('delete_photo') === 'Y') {
+			// 사진 삭제
 			$update_data['photo'] = '';
-		} elseif (!empty($_FILES['member_photo']['name'])) {
-			$photo_path = $this->upload_member_photo($org_id, $member_idx);
-			if ($photo_path) {
-				$update_data['photo'] = $photo_path;
+		} elseif (!empty($_FILES['member_photo']['name']) && $_FILES['member_photo']['size'] > 0) {
+			// 사진 업로드
+			$upload_result = $this->handleCroppedImageUpload($member_idx, $org_id);
+
+			if ($upload_result['success']) {
+				$update_data['photo'] = $upload_result['file_name'];
+			} else {
+				// 사진 업로드 실패 시 JSON 응답하고 종료
+				echo json_encode(array(
+					'success' => false,
+					'message' => $upload_result['message']
+				));
+				return; // 중요! 여기서 중단
 			}
 		}
 
-		// 상세필드 데이터 처리 (수정된 버전)
+		// 상세필드 데이터 처리
 		$detail_data = $this->input->post('detail_field');
 		if (!empty($detail_data)) {
 			// JSON 문자열로 전달된 경우 디코딩
@@ -685,9 +698,8 @@ class Member extends My_Controller
 					}
 				}
 			}
-			// 배열로 전달된 경우 (직접 배열로 전송하는 경우)
+			// 배열로 전달된 경우
 			elseif (is_array($detail_data)) {
-				// 빈 값들을 제거
 				$filtered_detail = array();
 				foreach ($detail_data as $field_idx => $value) {
 					if ($value !== '' && $value !== null) {
@@ -702,6 +714,7 @@ class Member extends My_Controller
 			}
 		}
 
+		// DB 업데이트
 		$this->db->where('member_idx', $member_idx);
 		$this->db->where('org_id', $org_id);
 		$result = $this->db->update('wb_member', $update_data);

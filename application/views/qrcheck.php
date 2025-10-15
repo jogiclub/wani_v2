@@ -257,7 +257,7 @@
 		}
 	});
 
-	var initialMode = '<?php echo $mode; ?>';
+
 
 	$(document).ready(function() {
 		$('[data-bs-toggle="popover"]').each(function() {

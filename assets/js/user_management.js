@@ -1,12 +1,8 @@
-/**
- * 파일 위치: assets/js/user_management.js
- * 역할: 사용자 관리 페이지의 JavaScript 기능
- */
+'use strict';
 
-// ========================= 전역 변수 =========================
 let selectedUsers = [];
 
-// ========================= 초기화 =========================
+
 $(document).ready(function() {
 	initializePage();
 });
@@ -927,35 +923,50 @@ $(document).on('click', '.delete-user-btn', function() {
 });
 
 // 사용자로 로그인 버튼 클릭
-$(document).on('click', '.login-as-user-btn', function() {
-	const userId = $(this).data('user-id');
-	const userName = $(this).data('user-name');
 
+/**
+ * 사용자로 로그인 버튼 클릭 이벤트 (마스터 전용)
+ */
+$(document).on('click', '.login-as-user-btn', function() {
+	const targetUserId = $(this).data('user-id');
+	const targetUserName = $(this).data('user-name');
+
+	if (!targetUserId || !targetUserName) {
+		showToast('사용자 정보가 올바르지 않습니다.', 'error');
+		return;
+	}
+
+	// confirm 모달 사용
 	showConfirmModal(
-		'사용자로그인',
-		userName + ' 사용자로 로그인하시겠습니까?<br><br>현재 세션이 종료되고 해당 사용자로 로그인됩니다.',
+		'타 사용자로 로그인',
+		`${targetUserName}님으로 로그인하시겠습니까?<br><br>로그인 후에는 해당 사용자의 권한으로 시스템을 이용하게 됩니다.`,
 		function() {
+			// 확인 버튼 클릭 시
 			$.ajax({
-				url: 'user_management/login_as_user',
-				type: 'POST',
-				data: { target_user_id: userId },
+				url: '/user_management/login_as_user',
+				method: 'POST',
+				data: {
+					target_user_id: targetUserId
+				},
 				dataType: 'json',
 				success: function(response) {
 					if (response.success) {
-						showToast(response.message);
+						showToast(response.message, 'success');
+						// 1초 후 페이지 새로고침하여 새로운 사용자 세션 적용
 						setTimeout(function() {
-							window.location.href = '/';
+							location.reload();
 						}, 1000);
 					} else {
-						showToast(response.message);
+						showToast(response.message || '로그인 전환에 실패했습니다.', 'error');
 					}
 				},
-				error: function() {
-					showToast('사용자 로그인 중 오류가 발생했습니다.');
+				error: function(xhr, status, error) {
+					console.error('Login as user error:', error);
+					console.error('Response:', xhr.responseText);
+					showToast('로그인 전환 중 오류가 발생했습니다.', 'error');
 				}
 			});
-		},
-		'사용자 로그인 확인'
+		}
 	);
 });
 

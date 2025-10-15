@@ -139,29 +139,34 @@
 
 		<!--관리자-->
 		<?php if ($this->session->userdata('master_yn') === 'Y'): ?>
-			<div id="navbarMng" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-danger" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+			<div id="navbarMng" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-danger" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="마스터화면">
 				<a href="https://wani.im/mng/" target="_blank" type="button" id="buttonMng"><i class="bi bi-gear-wide-connected fs-5 text-danger"></i></a>
 			</div>
 		<?php endif; ?>
 
 		<!--문자전송-->
-		<div id="navbarSend" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-secondary" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+		<div id="navbarSend" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-secondary" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="문자발송">
 			<a class="" type="button" id="buttonSend"><i class="bi bi-chat-text-fill fs-5 text-secondary"></i></a>
+		</div>
+
+		<div id="navbarKakao" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-warning" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="카카오채널">
+			<a class="" type="button"><i class="bi bi-chat-fill fs-5 text-warning"></i></a>
 		</div>
 
 		<!--알림메시지-->
 		<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
-			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative bg-warning me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative bg-warning me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="알림메시지">
 				<a class="" type="button" data-bs-toggle="offcanvas" data-bs-target="#msgSidebar" aria-controls="msgSidebar"><i class="bi bi-bell-fill fs-5 text-white"></i></a>
 				<small class="badge bg-danger rounded-pill position-absolute" style="left: 27px; top:-6px; font-size: 12px" id="unread-message-badge">
 					<?php echo $unread_message_count; ?>
 				</small>
 			</div>
 		<?php else: ?>
-			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-secondary me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;">
+			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-secondary me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="알림메시지">
 				<a class="" type="button" data-bs-toggle="offcanvas" data-bs-target="#msgSidebar" aria-controls="msgSidebar"><i class="bi bi-bell-fill fs-5 text-secondary"></i></a>
 			</div>
 		<?php endif; ?>
+
 
 
 		<!-- 기존 헤더 내용 중 사용자 정보 드롭다운 부분에 추가 -->

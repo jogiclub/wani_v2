@@ -485,6 +485,12 @@ $(document).ready(function () {
 		handleNavbarSend();
 	});
 
+	// 헤더의 문자전송 버튼 클릭 이벤트 https://pf.kakao.com/_KGxhtn
+	$('#navbarKakao').on('click', function(e) {
+		e.preventDefault();
+		open('https://pf.kakao.com/_KGxhtn', 'sendPopup', 'width=500,height=850,scrollbars=yes,resizable=yes');
+	});
+
 
 	/**
 	 * 헤더의 문자전송 버튼 클릭 처리
