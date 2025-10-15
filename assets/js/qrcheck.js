@@ -4,6 +4,10 @@
 var pastoralGrid = null;
 var pastoralGridData = [];
 var attendanceTypes = [];
+// 전역 변수 섹션에 추가
+var html5QrcodeScanner = null;
+var currentFacingMode = "environment"; // 기본값: 후면 카메라
+
 
 /**
  * 파일 위치: assets/js/qrcheck.js
@@ -42,6 +46,7 @@ function initializePage() {
 /**
  * 이벤트 바인딩
  */
+
 function bindEvents() {
 	// 주차 이동 버튼
 	$('.prev-week').off('click').on('click', navigateToPrevWeek);
@@ -51,6 +56,12 @@ function bindEvents() {
 	$('#input-search').on('input', handleSearchInput);
 	$('#input-search').on('keypress', handleSearchKeypress);
 	$('#btn-submit').on('click', addAttStamp);
+
+	// QR 카메라 토글 이벤트 추가
+	$('#switchCheckCamera').on('change', handleQrCameraToggle);
+
+	// QR 카메라 offcanvas 이벤트 바인딩 (카메라 전환 포함)
+	bindQrCameraOffcanvasEvents();
 
 	// 회원 카드 클릭
 	$(document).on('click', '.member-card', handleMemberCardClick);
@@ -1794,4 +1805,139 @@ function handleAjaxError(xhr, defaultMessage) {
 	} else {
 		showToast(errorMessage, 'error');
 	}
+}
+
+
+
+/**
+ * QR 카메라 스캐너 초기화
+ */
+function initQrScanner() {
+	if (html5QrcodeScanner) {
+		return;
+	}
+
+	html5QrcodeScanner = new Html5Qrcode("qr-reader");
+
+	const config = {
+		fps: 10,
+		qrbox: { width: 250, height: 250 },
+		aspectRatio: 1.0
+	};
+
+	html5QrcodeScanner.start(
+		{ facingMode: currentFacingMode },
+		config,
+		onQrScanSuccess,
+		onQrScanFailure
+	).catch(err => {
+		console.error("QR 스캐너 시작 실패:", err);
+		showToast('카메라를 시작할 수 없습니다.', 'error');
+		$('#switchCheckCamera').prop('checked', false);
+		$('#qrCameraOffcanvas').offcanvas('hide');
+	});
+}
+
+/**
+ * QR 스캔 성공 핸들러
+ */
+function onQrScanSuccess(decodedText, decodedResult) {
+	// 입력란에 값 설정 및 출석 체크 실행
+	$('#input-search').val(decodedText);
+	$('#btn-submit').click();
+
+	// 입력란 초기화 (다음 스캔 준비)
+	setTimeout(function() {
+		$('#input-search').val('');
+	}, 1000);
+}
+
+/**
+ * QR 스캔 실패 핸들러 (선택사항 - 에러 메시지를 표시하지 않음)
+ */
+function onQrScanFailure(error) {
+	// 스캔 실패는 정상적인 상황이므로 로그만 남김
+}
+
+/**
+ * QR 카메라 스캐너 중지
+ */
+function stopQrScanner() {
+	if (html5QrcodeScanner) {
+		html5QrcodeScanner.stop().then(() => {
+			html5QrcodeScanner = null;
+		}).catch(err => {
+			console.error("QR 스캐너 중지 실패:", err);
+		});
+	}
+}
+
+/**
+ * QR 카메라 토글 핸들러
+ */
+function handleQrCameraToggle() {
+	const isChecked = $('#switchCheckCamera').is(':checked');
+
+	if (isChecked) {
+		// offcanvas 열기
+		$('#qrCameraOffcanvas').offcanvas('show');
+	} else {
+		// offcanvas 닫기
+		$('#qrCameraOffcanvas').offcanvas('hide');
+	}
+}
+
+/**
+ * 카메라 전환
+ */
+function switchCamera() {
+	if (!html5QrcodeScanner) {
+		return;
+	}
+
+	// 현재 카메라 중지
+	html5QrcodeScanner.stop().then(() => {
+		html5QrcodeScanner = null;
+
+		// 카메라 모드 전환
+		currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+
+		// 새로운 카메라로 재시작
+		setTimeout(() => {
+			initQrScanner();
+		}, 100);
+	}).catch(err => {
+		console.error("카메라 전환 실패:", err);
+		showToast('카메라 전환에 실패했습니다.', 'error');
+	});
+}
+
+
+/**
+ * QR 카메라 offcanvas 이벤트 핸들러
+ */
+function bindQrCameraOffcanvasEvents() {
+	// offcanvas가 완전히 열린 후 카메라 시작
+	$('#qrCameraOffcanvas').on('shown.bs.offcanvas', function () {
+		// 카메라 모드 초기화 (후면 카메라)
+		currentFacingMode = "environment";
+		$('#switchCameraFacing').prop('checked', false);
+		initQrScanner();
+	});
+
+	// offcanvas가 닫힐 때 카메라 정지 및 체크박스 해제
+	$('#qrCameraOffcanvas').on('hidden.bs.offcanvas', function () {
+		stopQrScanner();
+		$('#switchCheckCamera').prop('checked', false);
+	});
+
+	// offcanvas의 X 버튼 클릭 시에도 체크박스 해제
+	$('#qrCameraOffcanvas .btn-close').on('click', function() {
+		$('#switchCheckCamera').prop('checked', false);
+	});
+
+	// 카메라 전환 토글 이벤트
+	$('#switchCameraFacing').on('change', function() {
+		switchCamera();
+	});
 }

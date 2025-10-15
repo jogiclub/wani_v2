@@ -19,7 +19,7 @@
 					<button type="button" class="input-group-text next-week"><i class="bi bi-chevron-right"></i></button>
 				</div>
 			</div>
-			<div class="col-lg-7 mb-2">
+			<div class="col-lg-7 mb-2 d-flex align-items-between justify-content-end">
 				<div class="input-group">
 					<input type="text" class="form-control" placeholder="검색중..." aria-label="검색중..." aria-describedby="basic-addon2" id="input-search" value="검색중..." autocomplete="off"  disabled>
 					<div class="att-dropdown-wrap">
@@ -40,6 +40,10 @@
 						</ul>
 					</div>
 					<button class="btn btn-primary" id="btn-submit"><i class="bi bi-check2-square"></i> 출석</button>
+				</div>
+				<div class="form-check form-switch d-flex align-items-center ms-2" style="width: 100px">
+					<input class="form-check-input" type="checkbox" role="switch" id="switchCheckCamera">
+					<label class="form-check-label" for="switchCheckCamera">카메라</label>
 				</div>
 			</div>
 
@@ -141,6 +145,29 @@
 	</div>
 </div>
 
+
+
+
+<!-- QR 카메라 스캔 offcanvas -->
+<div class="offcanvas offcanvas-bottom z-2" tabindex="-1" id="qrCameraOffcanvas" data-bs-scroll="true" data-bs-backdrop="false" aria-labelledby="qrCameraOffcanvasLabel" style="height: 270px;">
+	<div class="offcanvas-header">
+		<div class="d-flex align-items-center">
+		<h5 class="offcanvas-title" id="qrCameraOffcanvasLabel">QR 코드 스캔</h5>
+		<div class="d-flex align-items-center">
+			<div class="form-check form-switch ms-3">
+				<input class="form-check-input" type="checkbox" role="switch" id="switchCameraFacing">
+				<label class="form-check-label" for="switchCameraFacing">전면카메라</label>
+			</div>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+		</div>
+		</div>
+	</div>
+	<div class="offcanvas-body p-1 bg-dark">
+		<div id="qr-reader" style="height: 200px; width: 200px"></div>
+	</div>
+</div>
+
+
 <!-- 출석체크 offcanvas (pqgrid용으로 수정) -->
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="static" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel" style="width: 800px;">
 	<div class="offcanvas-header text-start">
@@ -167,6 +194,9 @@
 
 <!-- ParamQuery JavaScript 라이브러리 추가 -->
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+
+<!-- html5-qrcode 라이브러리 추가 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" integrity="sha512-r6rDA7W6ZeQhvl8S7yRVQUKVHdexq+GAlNkNNqVC7YyIV+NwqCTJe2hDWCiffTyRNOeGEzRRJ9ifvRm/HCzGYg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/masonry/4.2.2/masonry.pkgd.min.js" integrity="sha512-JRlcvSZAXT8+5SQQAvklXGJuxXTouyq8oIMaYERZQasB8SBDHZaUbeASsJWpk0UUrf89DP3/aefPPrlMR1h1yQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
