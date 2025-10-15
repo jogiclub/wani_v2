@@ -10,6 +10,7 @@ class Member_info extends CI_Controller
 		$this->load->model('Org_model');
 		$this->load->model('Memo_model');
 		$this->load->model('Detail_field_model');
+		$this->load->model('Message_model');
 		$this->load->helper('url');
 	}
 
@@ -157,7 +158,7 @@ class Member_info extends CI_Controller
 
 
 	/**
-	 * 정착메모 추가 (AJAX)
+	 * 역할: 정착메모 추가 및 메시지 발송
 	 */
 	public function add_settlement_memo()
 	{
@@ -185,7 +186,7 @@ class Member_info extends CI_Controller
 			// 정착메모 타입 확인 및 추가
 			$this->ensure_settlement_memo_type($org_id);
 
-			// 메모 저장 - memo_type을 텍스트로 저장
+			// 메모 저장
 			$data = [
 				'member_idx' => $member_idx,
 				'memo_type' => '정착메모',
@@ -197,8 +198,26 @@ class Member_info extends CI_Controller
 			];
 
 			$this->db->trans_start();
+
 			$this->db->insert('wb_memo', $data);
 			$insert_id = $this->db->insert_id();
+
+			// 메모 저장 성공 시 메시지 추가
+			if ($insert_id) {
+				$message_title = "{$member_info['member_name']}님의 정착메모가 도착했습니다.";
+
+				$message_data = array(
+					'message_type' => 'settlement_memo',
+					'message_title' => $message_title,
+					'message_content' => $memo_content,
+					'message_date' => date('Y-m-d H:i:s'),
+					'member_idx_list' => json_encode(array($member_idx), JSON_UNESCAPED_UNICODE)
+				);
+
+				// 조직의 모든 사용자에게 메시지 발송
+				$this->Message_model->send_message_to_org($org_id, $message_data);
+			}
+
 			$this->db->trans_complete();
 
 			if ($this->db->trans_status() === TRUE && $insert_id) {

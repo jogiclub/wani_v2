@@ -1,8 +1,4 @@
 <?php
-/**
- * 파일 위치: application/controllers/Member_card.php
- * 역할: 회원카드 URL을 통한 회원 등록 처리
- */
 defined('BASEPATH') or exit('No direct script access allowed');
 
 class Member_card extends CI_Controller
@@ -14,6 +10,7 @@ class Member_card extends CI_Controller
 		$this->load->model('Member_area_model');
 		$this->load->model('Detail_field_model');
 		$this->load->model('Org_model');
+		$this->load->model('Message_model');
 		$this->load->library('session');
 		$this->load->helper('url');
 	}
@@ -162,10 +159,26 @@ class Member_card extends CI_Controller
 			$member_data['member_detail'] = json_encode($member_detail, JSON_UNESCAPED_UNICODE);
 		}
 
-		// 회원 등록
+		// 회원 등록 및 메시지 추가
 		$this->db->trans_start();
 
 		$result = $this->Member_model->add_member($member_data);
+
+		// 회원 등록 성공 시 메시지 추가
+		if ($result) {
+			$message_content = "{$member_name}님께서 온라인으로 {$area_info['area_name']}에 회원 등록이 되었습니다.";
+
+			$message_data = array(
+				'message_type' => 'online_signup',
+				'message_title' => '온라인 회원 가입',
+				'message_content' => $message_content,
+				'message_date' => date('Y-m-d H:i:s'),
+				'member_idx_list' => json_encode(array($result), JSON_UNESCAPED_UNICODE)
+			);
+
+			// 조직의 모든 사용자에게 메시지 발송
+			$this->Message_model->send_message_to_org($org_id, $message_data);
+		}
 
 		$this->db->trans_complete();
 

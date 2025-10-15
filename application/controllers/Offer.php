@@ -13,6 +13,7 @@ class Offer extends CI_Controller
 		$this->load->model('Member_model');
 		$this->load->model('Org_model');
 		$this->load->model('Transfer_org_model');
+		$this->load->model('Message_model');
 		$this->load->library('session');
 		$this->load->helper('url');
 	}
@@ -184,7 +185,23 @@ class Offer extends CI_Controller
 
 		$this->db->where('member_idx', $member_idx);
 		$this->db->where('org_id', $org_id);
-		$this->db->update('wb_member', $update_data);
+		$result = $this->db->update('wb_member', $update_data);
+
+		// 교회 선택 성공 시 메시지 추가
+		if ($result) {
+			$message_content = "{$member_info['member_name']}님께서 결연교회({$selected_church['transfer_org_name']}) 선택을 완료했습니다.";
+
+			$message_data = array(
+				'message_type' => 'church_selection',
+				'message_title' => '결연교회 선택 완료',
+				'message_content' => $message_content,
+				'message_date' => date('Y-m-d H:i:s'),
+				'member_idx_list' => json_encode(array($member_idx), JSON_UNESCAPED_UNICODE)
+			);
+
+			// 조직의 모든 사용자에게 메시지 발송
+			$this->Message_model->send_message_to_org($org_id, $message_data);
+		}
 
 		$this->db->trans_complete();
 

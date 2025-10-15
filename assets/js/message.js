@@ -1,9 +1,58 @@
-/**
- * 파일 위치: assets/js/message.js
- * 역할: 메시지 관련 JavaScript 기능
- */
+
 
 $(document).ready(function() {
+
+	// 이전 읽지 않은 메시지 개수 저장 (새 메시지 감지용)
+	let previousUnreadCount = null;
+
+	// 오디오 unlock 상태
+	let audioUnlocked = false;
+
+	// 오디오 요소 미리 생성 및 로드
+	let soundElement = null;
+
+	function initAudioElement() {
+		if (!soundElement) {
+			soundElement = document.createElement('audio');
+			soundElement.id = 'sound-ok';
+			soundElement.src = '/assets/sound/sound_message.mp3';
+			soundElement.preload = 'auto';
+			document.body.appendChild(soundElement);
+		}
+		return soundElement;
+	}
+
+	// 오디오 unlock 함수 (사용자의 첫 상호작용 시 실행)
+	function unlockAudio() {
+		if (audioUnlocked) return;
+
+		const audio = initAudioElement();
+
+		// 볼륨을 0으로 설정하고 재생 시도
+		const originalVolume = audio.volume;
+		audio.volume = 0;
+
+		audio.play().then(function() {
+			audio.pause();
+			audio.currentTime = 0;
+			audio.volume = originalVolume;
+			audioUnlocked = true;
+			console.log('오디오 unlock 성공');
+
+			// unlock 이벤트 리스너 제거
+			document.removeEventListener('click', unlockAudio);
+			document.removeEventListener('touchstart', unlockAudio);
+		}).catch(function(error) {
+			console.warn('오디오 unlock 실패:', error);
+		});
+	}
+
+	// 페이지 로드 시 오디오 요소 초기화
+	initAudioElement();
+
+	// 사용자의 첫 클릭/터치 시 오디오 unlock
+	document.addEventListener('click', unlockAudio, { once: true });
+	document.addEventListener('touchstart', unlockAudio, { once: true });
 
 	// 안전한 HTML 이스케이프 함수
 	function safeEscapeHtml(text) {
@@ -11,7 +60,6 @@ $(document).ready(function() {
 			return '';
 		}
 
-		// 문자열로 강제 변환
 		const str = String(text);
 
 		const entityMap = {
@@ -34,7 +82,6 @@ $(document).ready(function() {
 			return false;
 		}
 
-		// 필수 필드 확인
 		if (!message.idx || isNaN(parseInt(message.idx))) {
 			return false;
 		}
@@ -63,6 +110,27 @@ $(document).ready(function() {
 		}
 	}
 
+	// 새 메시지 알림 사운드 재생
+	function playMessageSound() {
+		if (!audioUnlocked) {
+			console.warn('오디오가 아직 unlock되지 않았습니다. 사용자 상호작용이 필요합니다.');
+			return;
+		}
+
+		try {
+			const audio = soundElement || initAudioElement();
+
+			// 사운드 재생
+			audio.currentTime = 0;
+			audio.volume = 1.0;
+			audio.play().catch(function(error) {
+				console.warn('사운드 재생 실패:', error);
+			});
+		} catch (error) {
+			console.error('사운드 재생 오류:', error);
+		}
+	}
+
 	// 메시지 읽음 처리 함수
 	function markMessageAsRead(messageIdx, accordionItem) {
 		if (!messageIdx || !accordionItem) {
@@ -78,18 +146,14 @@ $(document).ready(function() {
 			timeout: 10000,
 			success: function(response) {
 				if (response && response.success) {
-					// 읽음 상태로 변경
 					accordionItem.addClass('message-read');
 
-					// 아이콘 변경
 					const icon = accordionItem.find('.message-icon i');
 					icon.removeClass('bi-envelope-fill text-warning')
 						.addClass('bi-envelope-open-fill text-secondary');
 
-					// 읽음 버튼 숨기기
 					accordionItem.find('.mark-as-read').hide();
 
-					// 카운트 업데이트
 					updateUnreadCount();
 				} else {
 					console.error('Mark as read failed:', response);
@@ -110,7 +174,6 @@ $(document).ready(function() {
 			return;
 		}
 
-		// 메시지가 없는 경우
 		if (!messages || !Array.isArray(messages) || messages.length === 0) {
 			messageContent.html(`
                 <div class="text-center text-muted py-5">
@@ -123,24 +186,20 @@ $(document).ready(function() {
 			return;
 		}
 
-		// 메시지 목록 HTML 생성
 		let html = '<div class="accordion accordion-flush" id="msgList">';
 
 		messages.forEach(function(message) {
-			// 메시지 데이터 검증
 			if (!validateMessageData(message)) {
 				console.warn('Invalid message data:', message);
 				return;
 			}
 
-			// 안전한 데이터 추출
 			const messageIdx = parseInt(message.idx);
 			const messageTitle = safeEscapeHtml(message.message_title || '제목 없음');
 			const messageContent = safeEscapeHtml(message.message_content || '내용 없음');
 			const isRead = message.read_yn === 'Y';
 			const timeText = getRelativeTime(message.message_date);
 
-			// CSS 클래스 설정
 			const itemClass = isRead ? 'message-read' : '';
 			const iconClass = isRead ? 'bi-envelope-open-fill text-secondary' : 'bi-envelope-fill text-warning';
 
@@ -159,8 +218,6 @@ $(document).ready(function() {
                                 ${messageTitle}
                                 <small class="badge text-secondary ms-auto">${timeText}</small>
                             </span> 
-                            
-                            
                         </button>
                     </h2>
                     <div id="flush-collapse-${messageIdx}" class="accordion-collapse collapse" data-bs-parent="#msgList">
@@ -187,7 +244,6 @@ $(document).ready(function() {
 
 		html += '</div>';
 
-		// 모든 읽음 처리 및 삭제 버튼
 		if (unreadCount > 0 || messages.length > 0) {
 			html += '<div class="text-center mt-3 d-flex gap-2 justify-content-center">';
 
@@ -239,7 +295,7 @@ $(document).ready(function() {
 		}
 	}
 
-	// 읽지 않은 메시지 수 업데이트
+	// 읽지 않은 메시지 수 업데이트 (새 메시지 감지 및 사운드 재생 포함)
 	function updateUnreadCount() {
 		$.ajax({
 			url: '/message/get_messages',
@@ -249,10 +305,19 @@ $(document).ready(function() {
 			success: function(response) {
 				if (response && response.success) {
 					const unreadCount = parseInt(response.unread_count) || 0;
+
+					// 새로운 메시지가 도착했는지 확인
+					if (previousUnreadCount !== null && unreadCount > previousUnreadCount) {
+						// 새 메시지가 있으면 사운드 재생
+						playMessageSound();
+					}
+
+					// 현재 개수를 이전 개수로 저장
+					previousUnreadCount = unreadCount;
+
 					updateBadgeCount(unreadCount);
 					updateSidebarTitle(unreadCount);
 
-					// 모든 읽음 처리 버튼 상태 업데이트
 					if (unreadCount === 0) {
 						$('#markAllAsRead').hide();
 					}
@@ -282,7 +347,6 @@ $(document).ready(function() {
 			},
 			error: function(xhr, status, error) {
 				console.error('AJAX error in refreshMessageList:', error);
-				// 오류 시 기본 메시지 표시
 				$('#message-content').html(`
                     <div class="text-center text-muted py-5">
                         <i class="bi bi-exclamation-triangle display-1"></i>
@@ -312,7 +376,6 @@ $(document).ready(function() {
 			return;
 		}
 
-		// 아코디언이 열릴 때만 읽음 처리
 		setTimeout(function() {
 			const targetCollapse = $('#flush-collapse-' + messageIdx);
 			if (targetCollapse.hasClass('show')) {
@@ -344,7 +407,6 @@ $(document).ready(function() {
 						showToast('메시지가 읽음으로 처리되었습니다.', 'success');
 					}
 
-					// UI 업데이트
 					accordionItem.addClass('message-read');
 					const icon = accordionItem.find('.message-icon i');
 					icon.removeClass('bi-envelope-fill text-warning')
@@ -380,7 +442,6 @@ $(document).ready(function() {
 							showToast(response.message || '모든 메시지가 읽음으로 처리되었습니다.', 'success');
 						}
 
-						// 모든 메시지 읽음 상태로 변경
 						$('.accordion-item').addClass('message-read');
 						$('.message-icon i').removeClass('bi-envelope-fill text-warning')
 							.addClass('bi-envelope-open-fill text-secondary');
@@ -402,7 +463,6 @@ $(document).ready(function() {
 			});
 		};
 
-		// 확인 모달 또는 기본 confirm 사용
 		if (typeof showConfirmModal === 'function') {
 			showConfirmModal('확인', '모든 메시지를 읽음으로 처리하시겠습니까?', confirmFunction);
 		} else if (confirm('모든 메시지를 읽음으로 처리하시겠습니까?')) {
@@ -424,7 +484,6 @@ $(document).ready(function() {
 							showToast(response.message || '모든 메시지가 삭제되었습니다.', 'success');
 						}
 
-						// 메시지 목록 초기화
 						$('#message-content').html(`
                             <div class="text-center text-muted py-5">
                                 <i class="bi bi-envelope-open display-1"></i>
@@ -432,7 +491,6 @@ $(document).ready(function() {
                             </div>
                         `);
 
-						// 배지 및 타이틀 업데이트
 						updateBadgeCount(0);
 						updateSidebarTitle(0);
 					} else {
@@ -449,7 +507,6 @@ $(document).ready(function() {
 			});
 		};
 
-		// 확인 모달 또는 기본 confirm 사용
 		if (typeof showConfirmModal === 'function') {
 			showConfirmModal(
 				'경고',
@@ -485,11 +542,9 @@ $(document).ready(function() {
 							showToast(response.message || '메시지가 삭제되었습니다.', 'success');
 						}
 
-						// 메시지 아이템 제거
 						accordionItem.fadeOut(300, function() {
 							$(this).remove();
 
-							// 모든 메시지가 삭제되었는지 확인
 							if ($('#msgList .accordion-item').length === 0) {
 								$('#message-content').html(`
                                     <div class="text-center text-muted py-5">
@@ -515,23 +570,12 @@ $(document).ready(function() {
 			});
 		};
 
-		// 확인 모달 또는 기본 confirm 사용
 		if (typeof showConfirmModal === 'function') {
 			showConfirmModal('확인', '이 메시지를 삭제하시겠습니까?', deleteFunction);
 		} else if (confirm('이 메시지를 삭제하시겠습니까?')) {
 			deleteFunction();
 		}
 	});
-
-	// 주기적 메시지 확인 (5분마다)
-	setInterval(function() {
-		updateUnreadCount();
-	}, 100000); //60,000 = 1분 현재는 1분 40초
-
-	// 초기 로드 시 배지 상태 확인
-	setTimeout(function() {
-		updateUnreadCount();
-	}, 1000);
 
 	// 문자전송 버튼 클릭 이벤트
 	$(document).on('click', '.send-message', function(e) {
@@ -599,12 +643,20 @@ $(document).ready(function() {
 		form.appendChild(input);
 		document.body.appendChild(form);
 
-		// 팝업 창 열기
 		window.open('', 'sendPopup', `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes`);
 
 		form.submit();
 		document.body.removeChild(form);
 	}
 
+	// 주기적 메시지 확인 (100초마다)
+	setInterval(function() {
+		updateUnreadCount();
+	}, 100000);
+
+	// 초기 로드 시 배지 상태 확인
+	setTimeout(function() {
+		updateUnreadCount();
+	}, 1000);
 
 });
