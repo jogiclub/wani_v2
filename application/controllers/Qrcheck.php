@@ -18,7 +18,7 @@ class Qrcheck extends My_Controller
 
 	public function index()
 	{
-		// 사용자가 로그인되어 있는지 확인
+		// 사용자가 로그인되어 있는지 확인 (MY_Controller에서 자동 체크되지만 명시적으로 확인)
 		if (!$this->session->userdata('user_id')) {
 			redirect('login/index');
 			return;
@@ -26,16 +26,11 @@ class Qrcheck extends My_Controller
 
 		$user_id = $this->session->userdata('user_id');
 
-		// 헤더 데이터 준비
+		// 헤더 데이터 준비 (조직이 없으면 MY_Controller에서 이미 리다이렉트됨)
 		$header_data = $this->prepare_header_data();
-		if (empty($header_data['user_orgs'])) {
-			redirect('dashboard');
-			return;
-		}
-
 		$data = $header_data;
 
-		// POST로 조직 변경 요청 처리 (My_Controller의 메소드 사용)
+		// POST로 조직 변경 요청 처리
 		$this->handle_org_change($data);
 
 		$currentOrgId = $data['current_org']['org_id'];
@@ -65,8 +60,6 @@ class Qrcheck extends My_Controller
 		$this->load->model('Attendance_model');
 		$data['attendance_types'] = $this->Attendance_model->get_attendance_types($currentOrgId);
 
-		// 선택된 모드 설정 (기본값: mode-1)
-		$data['mode'] = $this->input->post('mode') ?? 'mode-1';
 
 		$this->load->view('qrcheck', $data);
 	}

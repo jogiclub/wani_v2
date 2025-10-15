@@ -3,7 +3,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class MY_Controller extends CI_Controller
 {
-
 	public function __construct()
 	{
 		parent::__construct();
@@ -11,6 +10,52 @@ class MY_Controller extends CI_Controller
 		$this->load->helper('url');
 		$this->load->model('User_model');
 		$this->load->model('Org_model');
+
+		// 로그인 확인
+		$user_id = $this->session->userdata('user_id');
+		if (!$user_id) {
+			redirect('login');
+			return;
+		}
+
+		// 조직 확인
+		$this->check_user_has_organization();
+	}
+
+	/**
+	 * 사용자가 조직에 속해 있는지 확인
+	 */
+	private function check_user_has_organization()
+	{
+		$user_id = $this->session->userdata('user_id');
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 마스터 사용자의 경우 managed_areas 확인
+		$user = $this->User_model->get_user_by_id($user_id);
+		$visible_categories = array();
+		if ($master_yn === 'Y' && !empty($user['managed_areas'])) {
+			$managed_areas = json_decode($user['managed_areas'], true);
+			if (is_array($managed_areas) && !empty($managed_areas)) {
+				$visible_categories = $managed_areas;
+			}
+		}
+
+		// 조직 목록 조회
+		if ($master_yn === "N") {
+			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+		} else {
+			if (!empty($visible_categories)) {
+				$user_orgs = $this->Org_model->get_user_orgs_master_filtered($user_id, $visible_categories);
+			} else {
+				$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+			}
+		}
+
+		// 조직이 없으면 login으로 리다이렉트
+		if (empty($user_orgs)) {
+			redirect('login');
+			return;
+		}
 	}
 
 	/**
@@ -75,14 +120,12 @@ class MY_Controller extends CI_Controller
 		// 읽지 않은 메시지와 최근 메시지 조회
 		if (isset($data['current_org'])) {
 			$this->load->model('Message_model');
-			// 올바른 메서드명 사용
 			$data['unread_message_count'] = $this->Message_model->get_unread_count($user_id, $data['current_org']['org_id']);
 			$data['recent_messages'] = $this->Message_model->get_recent_messages($user_id, $data['current_org']['org_id'], 10);
 		}
 
 		return $data;
 	}
-
 
 	/**
 	 * 현재 선택된 조직 ID 가져오기
@@ -117,7 +160,7 @@ class MY_Controller extends CI_Controller
 			}
 		}
 
-		// 4. 사용자의 첫 번째 조직 반환
+		// 4. 기본값으로 첫 번째 조직 반환
 		if (!empty($user_orgs)) {
 			return $user_orgs[0]['org_id'];
 		}
@@ -125,84 +168,23 @@ class MY_Controller extends CI_Controller
 		return null;
 	}
 
-
 	/**
-	 * 현재 활성화된 조직 정보 가져오기 (우선순위: 쿠키 > 세션 > 첫 번째 조직)
-	 */
-	private function get_current_organization($user_orgs)
-	{
-		if (empty($user_orgs)) {
-			return null;
-		}
-
-		$current_org = null;
-
-		// 1순위: 쿠키에서 활성 조직 ID 가져오기
-		$active_org_id = $this->input->cookie('activeOrg');
-
-		// 2순위: 세션에서 현재 조직 ID 가져오기
-		if (!$active_org_id) {
-			$active_org_id = $this->session->userdata('current_org_id');
-		}
-
-		// 활성 조직 ID가 있는 경우 해당 조직 정보 찾기
-		if ($active_org_id) {
-			foreach ($user_orgs as $org) {
-				if ($org['org_id'] == $active_org_id) {
-					$current_org = $org;
-					break;
-				}
-			}
-		}
-
-		// 활성화된 조직이 없거나 유효하지 않으면 첫 번째 조직을 기본값으로 설정
-		if (!$current_org) {
-			$current_org = $user_orgs[0];
-
-			// 쿠키와 세션에 새로운 기본 조직 설정
-			$this->input->set_cookie('activeOrg', $current_org['org_id'], 86400);
-			$this->session->set_userdata('current_org_id', $current_org['org_id']);
-			$this->session->set_userdata('current_org_name', $current_org['org_name']);
-
-			log_message('info', "사용자 {$this->session->userdata('user_id')}의 현재 조직이 {$current_org['org_id']}로 설정되었습니다.");
-		}
-
-		return $current_org;
-	}
-
-	/**
-	 * 조직 변경 처리
+	 * 조직 변경 요청 처리
 	 */
 	protected function handle_org_change(&$data)
 	{
 		$post_org_id = $this->input->post('org_id');
-
 		if ($post_org_id) {
-			// POST로 전달된 조직 ID로 변경
-			$found = false;
 			foreach ($data['user_orgs'] as $org) {
 				if ($org['org_id'] == $post_org_id) {
 					$data['current_org'] = $org;
 					$this->input->set_cookie('activeOrg', $post_org_id, 86400);
-					$this->session->set_userdata('current_org_id', $post_org_id);
-					$found = true;
+					$this->session->set_userdata([
+						'current_org_id' => $post_org_id,
+						'current_org_name' => $org['org_name']
+					]);
 					break;
 				}
-			}
-
-			if (!$found && !empty($data['user_orgs'])) {
-				$data['current_org'] = $data['user_orgs'][0];
-				$this->input->set_cookie('activeOrg', $data['user_orgs'][0]['org_id'], 86400);
-				$this->session->set_userdata('current_org_id', $data['user_orgs'][0]['org_id']);
-			}
-
-			// 메시지 정보 재조회
-			if (isset($data['current_org'])) {
-				$this->load->model('Message_model');
-				$user_id = $this->session->userdata('user_id');
-				// 올바른 메서드명 사용
-				$data['unread_message_count'] = $this->Message_model->get_unread_count($user_id, $data['current_org']['org_id']);
-				$data['recent_messages'] = $this->Message_model->get_recent_messages($user_id, $data['current_org']['org_id'], 10);
 			}
 		}
 	}
@@ -215,14 +197,11 @@ class MY_Controller extends CI_Controller
 		$user_id = $this->session->userdata('user_id');
 		$master_yn = $this->session->userdata('master_yn');
 
-		// 마스터는 모든 조직 접근 가능
-		if ($master_yn === 'Y') {
-			return true;
+		if ($master_yn === "N") {
+			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+		} else {
+			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
 		}
-
-		// 일반 사용자는 소속된 조직만 접근 가능
-		$this->load->model('Org_model');
-		$user_orgs = $this->Org_model->get_user_orgs($user_id);
 
 		foreach ($user_orgs as $org) {
 			if ($org['org_id'] == $org_id) {
@@ -232,7 +211,6 @@ class MY_Controller extends CI_Controller
 
 		return false;
 	}
-
 
 	/**
 	 * 접근 거부 처리
@@ -251,10 +229,7 @@ class MY_Controller extends CI_Controller
 		}
 	}
 
-	/**
-	 * 파일 위치: application/core/MY_Controller.php - get_active_org_id() 함수 수정
-	 * 역할: 현재 활성 조직 ID 가져오기
-	 */
+
 	protected function get_active_org_id()
 	{
 		// 1순위: 쿠키에서 가져오기
@@ -294,38 +269,4 @@ class MY_Controller extends CI_Controller
 		return $org_id;
 	}
 
-
-	/**
-	 * 파일 위치: application/core/MY_Controller.php - has_user_organizations() 함수 수정
-	 * 역할: 사용자 조직 존재 여부 확인
-	 */
-	protected function has_user_organizations($user_id = null)
-	{
-		if (!$user_id) {
-			$user_id = $this->session->userdata('user_id');
-		}
-
-		if (!$user_id) {
-			return false;
-		}
-
-		$master_yn = $this->session->userdata('master_yn');
-
-		// User_management_model 사용
-		if (!isset($this->User_management_model)) {
-			$this->load->model('User_management_model');
-		}
-
-		if ($master_yn === "N") {
-			$user_orgs = $this->User_management_model->get_user_orgs($user_id);
-		} else {
-			$user_orgs = $this->User_management_model->get_user_orgs_master($user_id);
-		}
-
-		return !empty($user_orgs);
-	}
-
-
-
 }
-

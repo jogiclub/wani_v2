@@ -271,7 +271,6 @@
 			// 일반 관리자인 경우
 			if (!hasManagementPermission) {
 				// 관리 권한이 없는 경우 모든 관리 기능 비활성화
-				$('.mode-list input[type="radio"]').prop('disabled', true);
 				$('#input-search').prop('disabled', true).attr('placeholder', '관리 권한이 필요합니다');
 				$('.att-dropdown-wrap').hide();
 				$('#btn-submit').prop('disabled', true);

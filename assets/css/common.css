@@ -168,12 +168,9 @@ main{width: calc(100% - 200px)!important; margin-left: 200px;}
 .total-memo-list dt{display: inline-block; margin: 0;padding:2px 5px 1px; font-size: 12px; background: #666; color:#fff; margin: 0 5px 0 10px; border-radius: 3px; font-weight: 500; background: #CB3227}
 .total-memo-list dd{display: inline-block; margin: 0}
 
-.mode-list label{border: 0; border-radius: 0; background: #fff!important; color:#999; padding: 10px}
-.mode-list .btn-check:checked+.btn{border-bottom: 2px solid #0d9af0; color:#0d9af0!important;}
 
 @media screen and (max-width: 1200px){
-    .mode-list .btn-org{width: 100%}
-    .mode-list label i{display: block; width: 100%; font-size: 30px;}
+
     .total-list-wrap{flex-direction: column; overflow: hidden;}
     .total-list{display: block; white-space: nowrap;}
     .total-att-list{display: block; white-space: nowrap;}

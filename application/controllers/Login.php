@@ -1,9 +1,4 @@
 <?php
-/**
- * 파일 위치: application/controllers/Login.php
- * 역할: 로그인 처리 및 초기 조직 설정
- */
-
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Login extends CI_Controller
@@ -20,9 +15,33 @@ class Login extends CI_Controller
 	public function index()
 	{
 		$user_id = $this->session->userdata('user_id');
+
+		// 로그인된 경우
 		if ($user_id) {
-			redirect('login/logout');
+			// 사용자 정보 확인
+			$user = $this->User_model->get_user_by_id($user_id);
+
+			if ($user) {
+				$master_yn = $user['master_yn'] ?? 'N';
+
+				// 조직 정보 가져오기
+				$user_orgs = ($master_yn === "N")
+					? $this->Org_model->get_user_orgs($user_id)
+					: $this->Org_model->get_user_orgs_master($user_id);
+
+				// 조직이 있으면 qrcheck로 이동
+				if (!empty($user_orgs)) {
+					redirect('qrcheck');
+					return;
+				}
+
+				// 조직이 없으면 join 페이지로 이동
+				redirect('login/join');
+				return;
+			}
 		}
+
+		// 로그인되지 않은 경우 로그인 페이지 표시
 		$this->load->view('login');
 	}
 
