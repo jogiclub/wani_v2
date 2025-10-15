@@ -1,58 +1,9 @@
-
+'use strict'
 
 $(document).ready(function() {
 
 	// 이전 읽지 않은 메시지 개수 저장 (새 메시지 감지용)
 	let previousUnreadCount = null;
-
-	// 오디오 unlock 상태
-	let audioUnlocked = false;
-
-	// 오디오 요소 미리 생성 및 로드
-	let soundElement = null;
-
-	function initAudioElement() {
-		if (!soundElement) {
-			soundElement = document.createElement('audio');
-			soundElement.id = 'sound-ok';
-			soundElement.src = '/assets/sound/sound_message.mp3';
-			soundElement.preload = 'auto';
-			document.body.appendChild(soundElement);
-		}
-		return soundElement;
-	}
-
-	// 오디오 unlock 함수 (사용자의 첫 상호작용 시 실행)
-	function unlockAudio() {
-		if (audioUnlocked) return;
-
-		const audio = initAudioElement();
-
-		// 볼륨을 0으로 설정하고 재생 시도
-		const originalVolume = audio.volume;
-		audio.volume = 0;
-
-		audio.play().then(function() {
-			audio.pause();
-			audio.currentTime = 0;
-			audio.volume = originalVolume;
-			audioUnlocked = true;
-			console.log('오디오 unlock 성공');
-
-			// unlock 이벤트 리스너 제거
-			document.removeEventListener('click', unlockAudio);
-			document.removeEventListener('touchstart', unlockAudio);
-		}).catch(function(error) {
-			console.warn('오디오 unlock 실패:', error);
-		});
-	}
-
-	// 페이지 로드 시 오디오 요소 초기화
-	initAudioElement();
-
-	// 사용자의 첫 클릭/터치 시 오디오 unlock
-	document.addEventListener('click', unlockAudio, { once: true });
-	document.addEventListener('touchstart', unlockAudio, { once: true });
 
 	// 안전한 HTML 이스케이프 함수
 	function safeEscapeHtml(text) {
@@ -74,6 +25,30 @@ $(document).ready(function() {
 		return str.replace(/[&<>"'\/]/g, function(s) {
 			return entityMap[s];
 		});
+	}
+
+
+	// 새 메시지 알림 사운드 재생
+	function playMessageSound() {
+		try {
+			let soundElement = document.getElementById('sound-ok');
+
+			// 사운드 요소가 없으면 생성
+			if (!soundElement) {
+				soundElement = document.createElement('audio');
+				soundElement.id = 'sound-ok';
+				soundElement.src = '/assets/sound/sound_message.mp3';
+				document.body.appendChild(soundElement);
+			}
+
+			// 사운드 재생
+			soundElement.currentTime = 0;
+			soundElement.play().catch(function(error) {
+				console.warn('사운드 재생 실패:', error);
+			});
+		} catch (error) {
+			console.error('사운드 재생 오류:', error);
+		}
 	}
 
 	// 안전한 메시지 데이터 검증
@@ -110,26 +85,6 @@ $(document).ready(function() {
 		}
 	}
 
-	// 새 메시지 알림 사운드 재생
-	function playMessageSound() {
-		if (!audioUnlocked) {
-			console.warn('오디오가 아직 unlock되지 않았습니다. 사용자 상호작용이 필요합니다.');
-			return;
-		}
-
-		try {
-			const audio = soundElement || initAudioElement();
-
-			// 사운드 재생
-			audio.currentTime = 0;
-			audio.volume = 1.0;
-			audio.play().catch(function(error) {
-				console.warn('사운드 재생 실패:', error);
-			});
-		} catch (error) {
-			console.error('사운드 재생 오류:', error);
-		}
-	}
 
 	// 메시지 읽음 처리 함수
 	function markMessageAsRead(messageIdx, accordionItem) {
