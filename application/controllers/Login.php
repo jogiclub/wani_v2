@@ -124,7 +124,7 @@ class Login extends CI_Controller
 		$state = uniqid();
 		$this->session->set_userdata('oauth_state', $state);
 
-		$oauth_url = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=Cw90dWKPQbexg4b4I8Kv&redirect_uri=" .
+		$oauth_url = "https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=Y1NmqjsVEECPXYKRsutT&redirect_uri=" .
 			urlencode(base_url('login/naver_callback')) . "&state=" . $state;
 
 		redirect($oauth_url);
@@ -144,7 +144,7 @@ class Login extends CI_Controller
 			return;
 		}
 
-		$token_url = "https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=Cw90dWKPQbexg4b4I8Kv&client_secret=MdUHZlLXl2&redirect_uri=" .
+		$token_url = "https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id=Y1NmqjsVEECPXYKRsutT&client_secret=PC2YgKcwd4&redirect_uri=" .
 			urlencode(base_url('login/naver_callback')) . "&code=" . $code . "&state=" . $state;
 
 		$response = file_get_contents($token_url);
