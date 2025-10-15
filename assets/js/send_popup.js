@@ -145,9 +145,11 @@ $(document).ready(function() {
 
 	// 문자충전 버튼 클릭
 	$('#btnChargeModal').on('click', function() {
-		loadChargePackages();
-		const offcanvas = new bootstrap.Offcanvas(document.getElementById('chargeOffcanvas'));
-		offcanvas.show();
+		showToast('불편드려 죄송합니다. 시스템 점검 중입니다. 10/27(월) 오픈 예정','error');
+
+		// loadChargePackages();
+		// const offcanvas = new bootstrap.Offcanvas(document.getElementById('chargeOffcanvas'));
+		// offcanvas.show();
 	});
 
 	// 결제하기 버튼 클릭
@@ -613,9 +615,10 @@ function renderSenderList(senders) {
 	});
 
 	$('.btn-auth-sender').on('click', function() {
-		const senderIdx = $(this).data('sender-idx');
-		const senderNumber = $(this).data('sender-number');
-		requestAuthCode(senderIdx, senderNumber);
+		showToast('불편드려 죄송합니다. 시스템 점검 중입니다. 10/27(월) 오픈 예정','error');
+		// const senderIdx = $(this).data('sender-idx');
+		// const senderNumber = $(this).data('sender-number');
+		// requestAuthCode(senderIdx, senderNumber);
 	});
 
 	$('.btn-delete-sender').on('click', function() {

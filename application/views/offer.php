@@ -124,7 +124,29 @@
 															<i class="bi bi-tags text-info"></i>
 															<strong>태그:</strong>
 															<?php
-															$tags = explode(',', $church['transfer_org_tag']);
+															$tags = [];
+															$tagData = $church['transfer_org_tag'];
+
+															// JSON 문자열인지 확인 (예: "[\"기성\",\"청년부활성화\"]")
+															if (is_string($tagData) && strpos(trim($tagData), '[') === 0) {
+																$decoded = json_decode($tagData, true);
+																if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+																	$tags = $decoded;
+																} else {
+																	// JSON 파싱 실패 시 일반 문자열로 처리
+																	$tags = array_map('trim', explode(',', $tagData));
+																}
+															}
+															// 이미 배열인 경우
+															else if (is_array($tagData)) {
+																$tags = $tagData;
+															}
+															// 일반 쉼표 구분 문자열인 경우
+															else if (is_string($tagData)) {
+																$tags = array_map('trim', explode(',', $tagData));
+															}
+
+															// 태그 출력
 															foreach ($tags as $tag) {
 																$tag = trim($tag);
 																if (!empty($tag)) {
@@ -200,7 +222,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
+<script src="/assets/js/common.js?<?php echo WB_VERSION; ?>"></script>
 <script>
 	$(document).ready(function () {
 		let selectedChurchId = null;

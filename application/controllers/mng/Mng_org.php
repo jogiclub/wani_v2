@@ -649,7 +649,11 @@ class Mng_org extends CI_Controller
 			if (is_string($org_tag)) {
 				$org_tag = json_decode($org_tag, true);
 			}
-			$data['org_tag'] = $org_tag;
+			if (is_array($org_tag) && count($org_tag) > 0) {
+				$data['org_tag'] = $org_tag; // Org_model에서 JSON으로 인코딩됨
+			} else {
+				$data['org_tag'] = null;
+			}
 		} else {
 			$data['org_tag'] = null;
 		}

@@ -1802,6 +1802,37 @@ class Member extends My_Controller
 				return;
 			}
 
+			// 태그 처리 - 다양한 입력 형식 지원
+			$org_tag = $this->input->post('org_tag');
+			$processed_tag = null;
+
+			if (!empty($org_tag)) {
+				$tag_array = [];
+
+				// 이미 배열인 경우
+				if (is_array($org_tag)) {
+					$tag_array = array_filter($org_tag); // 빈 값 제거
+				}
+				// 문자열인 경우
+				else if (is_string($org_tag)) {
+					// JSON 문자열인지 확인
+					$decoded = json_decode($org_tag, true);
+					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+						$tag_array = $decoded;
+					}
+					// 쉼표로 구분된 문자열인 경우
+					else {
+						$tag_array = array_map('trim', explode(',', $org_tag));
+						$tag_array = array_filter($tag_array); // 빈 값 제거
+					}
+				}
+
+				// 배열이 비어있지 않으면 JSON으로 인코딩
+				if (!empty($tag_array)) {
+					$processed_tag = json_encode(array_values($tag_array), JSON_UNESCAPED_UNICODE);
+				}
+			}
+
 			$data = [
 				'member_idx' => $member_idx,
 				'org_id' => $org_id,
@@ -1812,7 +1843,7 @@ class Member extends My_Controller
 				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
 				'transfer_description' => $this->input->post('transfer_description'),
-				'org_tag' => $this->input->post('org_tag'),
+				'org_tag' => $processed_tag,
 				'transfer_org_id' => $this->input->post('transfer_org_id'),
 				'regi_date' => date('Y-m-d H:i:s'),
 				'modi_date' => date('Y-m-d H:i:s'),
@@ -1869,6 +1900,37 @@ class Member extends My_Controller
 				return;
 			}
 
+			// 태그 처리 - 다양한 입력 형식 지원
+			$org_tag = $this->input->post('org_tag');
+			$processed_tag = null;
+
+			if (!empty($org_tag)) {
+				$tag_array = [];
+
+				// 이미 배열인 경우
+				if (is_array($org_tag)) {
+					$tag_array = array_filter($org_tag); // 빈 값 제거
+				}
+				// 문자열인 경우
+				else if (is_string($org_tag)) {
+					// JSON 문자열인지 확인
+					$decoded = json_decode($org_tag, true);
+					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+						$tag_array = $decoded;
+					}
+					// 쉼표로 구분된 문자열인 경우
+					else {
+						$tag_array = array_map('trim', explode(',', $org_tag));
+						$tag_array = array_filter($tag_array); // 빈 값 제거
+					}
+				}
+
+				// 배열이 비어있지 않으면 JSON으로 인코딩
+				if (!empty($tag_array)) {
+					$processed_tag = json_encode(array_values($tag_array), JSON_UNESCAPED_UNICODE);
+				}
+			}
+
 			$data = [
 				'member_idx' => $member_idx,
 				'transfer_region' => $this->input->post('transfer_region'),
@@ -1878,7 +1940,7 @@ class Member extends My_Controller
 				'contact_phone' => $this->input->post('contact_phone'),
 				'contact_email' => $this->input->post('contact_email'),
 				'transfer_description' => $this->input->post('transfer_description'),
-				'org_tag' => $this->input->post('org_tag'),
+				'org_tag' => $processed_tag,
 				'modi_date' => date('Y-m-d H:i:s')
 			];
 

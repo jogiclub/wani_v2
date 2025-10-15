@@ -56,10 +56,23 @@ class Transfer_org_model extends CI_Model
 		$query = $this->db->get();
 		$results = $query->result_array();
 
-		// 선택 상태 표시 추가
+		// 선택 상태 표시 추가 및 태그 디코딩
 		foreach ($results as &$result) {
 			if (in_array($result['idx'], $selected_orgs)) {
 				$result['is_selected'] = 'selected';
+			}
+
+			// 태그 JSON 디코딩
+			if (!empty($result['transfer_org_tag'])) {
+				$decoded_tag = json_decode($result['transfer_org_tag'], true);
+				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_tag)) {
+					$result['transfer_org_tag'] = $decoded_tag;
+				} else {
+					// JSON이 아닌 경우 빈 배열로 설정
+					$result['transfer_org_tag'] = array();
+				}
+			} else {
+				$result['transfer_org_tag'] = array();
 			}
 		}
 
@@ -260,7 +273,20 @@ class Transfer_org_model extends CI_Model
 				continue;
 			}
 
-			// wb_transfer_org에 삽입 - 실제 필드명 사용
+			// 태그 처리
+			$org_tag = $church['org_tag'] ?? '';
+			$processed_tag = null;
+
+			if (!empty($org_tag)) {
+				if (is_string($org_tag)) {
+					$decoded = json_decode($org_tag, true);
+					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+						$processed_tag = $org_tag; // 이미 JSON 문자열
+					}
+				}
+			}
+
+			// wb_transfer_org에 삽입
 			$insert_data = [
 				'transfer_org_name' => $church['org_name'] ?? '',
 				'transfer_org_address' => $church['org_address'] ?? '',
@@ -268,7 +294,7 @@ class Transfer_org_model extends CI_Model
 				'transfer_org_rep' => $church['org_rep'] ?? '',
 				'transfer_org_manager' => $church['org_manager'] ?? '',
 				'transfer_org_desc' => $church['org_desc'] ?? '',
-				'transfer_org_tag' => $church['org_tag'] ?? '',
+				'transfer_org_tag' => $processed_tag,
 				'regi_date' => date('Y-m-d H:i:s'),
 				'modi_date' => date('Y-m-d H:i:s'),
 				'del_yn' => 'N'
@@ -307,26 +333,39 @@ class Transfer_org_model extends CI_Model
 			return false;
 		}
 
-		$linked_ids = json_decode($row['transfer_org_json'], true);
-		if (!is_array($linked_ids)) {
+		$json_data = json_decode($row['transfer_org_json'], true);
+		if (!is_array($json_data)) {
+			return false;
+		}
+
+		// JSON에서 실제 transfer_org_id만 추출 (숫자 값만)
+		$linked_transfer_org_ids = array();
+		foreach ($json_data as $key => $value) {
+			if (is_numeric($value)) {
+				$linked_transfer_org_ids[] = $value;
+			}
+		}
+
+		// 연결된 transfer_org_id가 없으면 중복 아님
+		if (empty($linked_transfer_org_ids)) {
 			return false;
 		}
 
 		// wb_org에서 org_id로 주소 조회
 		$this->db->select('org_address');
 		$this->db->from('wb_org');
-		$this->db->where('org_id', $org_idx); // org_id 사용
+		$this->db->where('org_id', $org_idx);
 		$org_query = $this->db->get();
 		$org = $org_query->row_array();
 
-		if (empty($org)) {
+		if (empty($org) || empty($org['org_address'])) {
 			return false;
 		}
 
 		// 동일한 주소의 파송교회가 이미 있는지 확인
 		$this->db->select('transfer_org_id');
 		$this->db->from('wb_transfer_org');
-		$this->db->where_in('transfer_org_id', $linked_ids);
+		$this->db->where_in('transfer_org_id', $linked_transfer_org_ids);
 		$this->db->where('transfer_org_address', $org['org_address']);
 		$this->db->where('del_yn', 'N');
 		$existing = $this->db->get();
@@ -524,10 +563,23 @@ class Transfer_org_model extends CI_Model
 		$query = $this->db->get();
 		$results = $query->result_array();
 
-		// 선택 상태 표시 추가
+		// 선택 상태 표시 추가 및 태그 디코딩
 		foreach ($results as &$result) {
 			if (in_array($result['idx'], $selected_org_ids)) {
 				$result['is_selected'] = 'selected';
+			}
+
+			// 태그 JSON 디코딩
+			if (!empty($result['transfer_org_tag'])) {
+				$decoded_tag = json_decode($result['transfer_org_tag'], true);
+				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded_tag)) {
+					$result['transfer_org_tag'] = $decoded_tag;
+				} else {
+					// JSON이 아닌 경우 빈 배열로 설정
+					$result['transfer_org_tag'] = array();
+				}
+			} else {
+				$result['transfer_org_tag'] = array();
 			}
 		}
 

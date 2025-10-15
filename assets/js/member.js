@@ -338,6 +338,76 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
+	/**
+	 * 파송교회 목록 렌더링 (수정: 선택 상태 표시)
+	 */
+	function renderTransferOrgList(churches) {
+		const listContainer = $('#transferOrgList');
+		const emptyMessage = $('#emptyTransferOrgMessage');
+
+		if (!churches || churches.length === 0) {
+			emptyMessage.text('파송교회 정보가 없습니다.').show();
+			listContainer.empty();
+			return;
+		}
+
+		emptyMessage.hide();
+		listContainer.empty();
+
+		churches.forEach(function (church) {
+			// 선택 상태 확인
+			const isSelected = church.is_selected === 'selected';
+			const selectedBadge = isSelected ? '<span class="badge bg-success ms-2">선택됨</span>' : '';
+			const borderClass = isSelected ? 'border-success' : '';
+
+			// 태그 파싱 및 표시
+			let tagHtml = '';
+			if (church.transfer_org_tag) {
+				const tags = Array.isArray(church.transfer_org_tag)
+					? church.transfer_org_tag
+					: church.transfer_org_tag.split(',');
+
+				tags.forEach(tag => {
+					if (tag && tag.trim()) {
+						tagHtml += `<span class="badge bg-secondary me-1">${escapeHtml(tag.trim())}</span>`;
+					}
+				});
+			}
+
+			const churchItem = `
+        <div class="mission-church-item border rounded p-3 mb-3 ${borderClass}" data-church-data='${JSON.stringify(church)}'>
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="flex-grow-1">
+                    <h5 class="mb-2">
+                        <strong>${escapeHtml(church.transfer_org_name || '교회명 미등록')}</strong>                        
+                        <small class="ms-2">${escapeHtml(church.transfer_org_rep || '')} ${church.transfer_org_rep ? '담임목사' : ''}</small>
+                        ${selectedBadge}
+                    </h5>
+                    <div class=""><i class="bi bi-geo-alt"></i> ${escapeHtml(church.transfer_org_address || '지역 미등록')}</div>
+                    <div class="text-muted d-flex justify-content-start align-items-center">
+                        ${church.transfer_org_manager ? '<span class="me-3"><i class="bi bi-person-badge"></i> ' + escapeHtml(church.transfer_org_manager) + '</span>' : ''}
+                        ${church.transfer_org_phone ? '<span class="me-3"><i class="bi bi-telephone"></i> ' + escapeHtml(church.transfer_org_phone) + '</span>' : ''}
+                        ${church.transfer_org_email ? '<span class="me-3"><i class="bi bi-envelope"></i> ' + escapeHtml(church.transfer_org_email) + '</span>' : ''}
+                    </div>
+                    ${church.transfer_org_desc ? '<div class="mt-2 text-muted small">' + escapeHtml(church.transfer_org_desc) + '</div>' : ''}
+                    ${tagHtml ? '<div class="mt-2">' + tagHtml + '</div>' : ''}
+                </div>
+                <div class="btn-group-vertical">
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-mission-edit" data-idx="${church.idx}">
+                        <i class="bi bi-pencil"></i> 수정
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-mission-delete" data-idx="${church.idx}">
+                        <i class="bi bi-trash"></i> 삭제
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+
+			listContainer.append(churchItem);
+		});
+	}
+
 
 	/**
 	 * Split.js 초기화
@@ -3802,73 +3872,90 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 
 	/**
-	 * 파송교회 목록 렌더링 (수정: 선택 상태 표시)
+	 * 파송교회 모달 열기
 	 */
-	function renderTransferOrgList(churches) {
-		const listContainer = $('#transferOrgList');
-		const emptyMessage = $('#emptyTransferOrgMessage');
+	function openTransferOrgModal(mode, idx = null, transferData = null) {
+		const modal = $('#transferOrgModal');
+		const form = $('#transferOrgForm')[0];
 
-		if (!churches || churches.length === 0) {
-			emptyMessage.text('파송교회 정보가 없습니다.').show();
-			listContainer.empty();
-			return;
+		form.reset();
+		$('#transfer_org_idx').val('');
+
+		// Select2 초기화 및 태그 입력 설정
+		if (!$('#org_tags').hasClass('select2-hidden-accessible')) {
+			$('#org_tags').select2({
+				tags: true,
+				tokenSeparators: [' ', ','],
+				placeholder: '태그를 입력하세요 (예: 병장 상병)',
+				dropdownParent: $('#transferOrgModal'),
+				createTag: function (params) {
+					const term = $.trim(params.term);
+					if (term === '') {
+						return null;
+					}
+					const tagText = term.replace(/^#/, '');
+					return {
+						id: tagText,
+						text: tagText,
+						newTag: true
+					};
+				}
+			});
 		}
 
-		emptyMessage.hide();
-		listContainer.empty();
+		if (mode === 'add') {
+			$('#transferOrgModalLabel').text('파송교회 추가');
+			$('#transfer_member_idx').val(currentMemberMissionIdx);
+			$('#org_tags').val(null).trigger('change');
 
-		churches.forEach(function (church) {
-			// 선택 상태 확인
-			const isSelected = church.is_selected === 'selected';
-			const selectedBadge = isSelected ? '<span class="badge bg-success ms-2">선택됨</span>' : '';
-			const borderClass = isSelected ? 'border-success' : '';
+		} else if (mode === 'edit' && transferData) {
+			$('#transferOrgModalLabel').text('파송교회 수정');
 
-			// 태그 파싱 및 표시
-			let tagsHtml = '';
-			if (church.transfer_org_tag) {
-				const tags = church.transfer_org_tag.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-				if (tags.length > 0) {
-					tagsHtml = '<div class="mt-2">';
-					tags.forEach(tag => {
-						const displayTag = tag.replace(/^#/, '');
-						tagsHtml += `<span class="badge bg-secondary me-1">${displayTag}</span>`;
-					});
-					tagsHtml += '</div>';
+			$('#transfer_org_idx').val(idx);
+			$('#transfer_member_idx').val(currentMemberMissionIdx);
+
+			// 폼 데이터 채우기 (변경된 필드명)
+			$('#transfer_region').val(transferData.transfer_org_address || '');
+			$('#transfer_name').val(transferData.transfer_org_name || '');
+			$('#pastor_name').val(transferData.transfer_org_rep || '');
+			$('#contact_person').val(transferData.transfer_org_manager || '');
+			$('#contact_phone').val(transferData.transfer_org_phone || '');
+			$('#contact_email').val(transferData.transfer_org_email || '');
+			$('#transfer_description').val(transferData.transfer_org_desc || '');
+			$('#transfer_org_id').val(transferData.transfer_org_id || '');
+
+			// 태그 데이터 파싱 및 설정 (배열과 문자열 모두 처리)
+			if (transferData.transfer_org_tag) {
+				let tags = [];
+
+				// 배열인 경우
+				if (Array.isArray(transferData.transfer_org_tag)) {
+					tags = transferData.transfer_org_tag;
 				}
+				// 문자열인 경우
+				else if (typeof transferData.transfer_org_tag === 'string') {
+					tags = transferData.transfer_org_tag.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+				}
+
+				if (tags.length > 0) {
+					// # 기호 제거 및 Select2 옵션 추가
+					tags.forEach(function (tag) {
+						const displayTag = tag.replace(/^#/, '');
+						if (!$('#org_tags').find(`option[value='${displayTag}']`).length) {
+							const newOption = new Option(displayTag, displayTag, true, true);
+							$('#org_tags').append(newOption);
+						}
+					});
+
+					// Select2에 값 설정
+					$('#org_tags').val(tags.map(tag => tag.replace(/^#/, ''))).trigger('change');
+				}
+			} else {
+				$('#org_tags').val(null).trigger('change');
 			}
+		}
 
-			const churchItem = `
-        <div class="mission-church-item border rounded p-3 mb-3 ${borderClass}" data-church-data='${JSON.stringify(church)}'>
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="flex-grow-1">
-                    <h5 class="mb-2">
-                        <strong>${church.transfer_org_name || '교회명 미등록'}</strong>                        
-                        <small class="ms-2">${church.transfer_org_rep || ''} ${church.transfer_org_rep ? '담임목사' : ''}</small>
-                        ${selectedBadge}
-                    </h5>
-                    <div class=""><i class="bi bi-geo-alt"></i> ${church.transfer_org_address || '지역 미등록'}</div>
-                    <div class="text-muted d-flex justify-content-start align-items-center">
-                        ${church.transfer_org_manager ? '<span class="me-3"><i class="bi bi-person-badge"></i> ' + church.transfer_org_manager + '</span>' : ''}
-                        ${church.transfer_org_phone ? '<span class="me-3"><i class="bi bi-telephone"></i> ' + church.transfer_org_phone + '</span>' : ''}
-                        ${church.transfer_org_email ? '<span class="me-3"><i class="bi bi-envelope"></i> ' + church.transfer_org_email + '</span>' : ''}
-                    </div>
-                    ${church.transfer_org_desc ? '<div class="mt-2 text-muted small">' + church.transfer_org_desc + '</div>' : ''}
-                    ${tagsHtml}
-                </div>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-sm btn-outline-primary btn-mission-edit" data-idx="${church.idx}">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-mission-delete" data-idx="${church.idx}">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        `;
-
-			listContainer.append(churchItem);
-		});
+		modal.modal('show');
 	}
 
 
@@ -4076,18 +4163,45 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		}
 
 		churches.forEach(function (church) {
-			const tags = church.org_tag ? church.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
-			const tagsHtml = tags.map(tag => `<span class="badge bg-secondary me-1">${escapeHtml(tag)}</span>`).join('');
+			// 태그 처리 (JSON 문자열, 배열, 일반 문자열 모두 지원)
+			let tags = [];
+			if (church.org_tag) {
+				// JSON 문자열인 경우 (예: "[\"기성\",\"청년부활성화\"]")
+				if (typeof church.org_tag === 'string' && church.org_tag.trim().startsWith('[')) {
+					try {
+						tags = JSON.parse(church.org_tag);
+					} catch (e) {
+						console.warn('태그 JSON 파싱 실패:', church.org_tag, e);
+						// JSON 파싱 실패 시 일반 문자열로 처리
+						tags = church.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+					}
+				}
+				// 이미 배열인 경우
+				else if (Array.isArray(church.org_tag)) {
+					tags = church.org_tag;
+				}
+				// 일반 쉼표 구분 문자열인 경우 (예: "기성,청년부활성화")
+				else if (typeof church.org_tag === 'string') {
+					tags = church.org_tag.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+				}
+
+				// 최종 정제: 문자열 변환 및 trim
+				tags = tags.map(tag => String(tag).trim()).filter(tag => tag.length > 0);
+			}
+
+			const tagsHtml = tags.length > 0
+				? tags.map(tag => `<span class="badge bg-secondary me-1">${escapeHtml(tag)}</span>`).join('')
+				: '<span class="text-muted small">태그 없음</span>';
 
 			const row = `
             <tr>
-                <td>
+                <td class="text-center">
                     <input type="checkbox" class="form-check-input match-church-checkbox" 
                         data-church='${JSON.stringify(church).replace(/'/g, "&apos;")}'>
                 </td>
-                <td>${escapeHtml(church.org_name || '')}</td>
-                <td>${escapeHtml(church.org_rep || '')}</td>
-                <td>${escapeHtml(church.org_address || '')}</td>
+                <td>${escapeHtml(church.org_name || '-')}</td>
+                <td>${escapeHtml(church.org_rep || '-')}</td>
+                <td>${escapeHtml(church.org_address || '-')}</td>
                 <td>${tagsHtml}</td>
             </tr>
         `;
