@@ -64,12 +64,41 @@ class Nginx_manager
 	{
 		$root_dir = $this->homepage_dir . $org_code;
 
-		$config = <<<EOT
+		// SSL 인증서 경로
+		$ssl_cert = '/etc/letsencrypt/live/' . $domain . '/fullchain.pem';
+		$ssl_key = '/etc/letsencrypt/live/' . $domain . '/privkey.pem';
+
+		// SSL 인증서 존재 여부 확인
+		$has_ssl = file_exists($ssl_cert) && file_exists($ssl_key);
+
+		if ($has_ssl) {
+			// SSL 인증서가 있는 경우: HTTPS 설정
+			$config = <<<EOT
 # {$org_name} ({$org_code}) - Auto Generated
+
+# HTTP to HTTPS redirect
 server {
     listen 80;
     listen [::]:80;
     server_name {$domain} www.{$domain};
+    
+    return 301 https://\$host\$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name {$domain} www.{$domain};
+
+    ssl_certificate {$ssl_cert};
+    ssl_certificate_key {$ssl_key};
+    
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
 
     root {$root_dir};
     index index.html index.htm;
@@ -80,8 +109,15 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     client_max_body_size 20M;
+
+    # 공통 정적 파일 경로 (테마, JS, CSS) - 중요: rewrite 사용
+    location /homepage/ {
+        alias /var/www/wani/public/homepage/;
+        try_files \$uri \$uri/ =404;
+    }
 
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
         expires 30d;
@@ -111,6 +147,62 @@ server {
 }
 
 EOT;
+		} else {
+			// SSL 인증서가 없는 경우: HTTP만 사용
+			$config = <<<EOT
+# {$org_name} ({$org_code}) - Auto Generated
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {$domain} www.{$domain};
+
+    root {$root_dir};
+    index index.html index.htm;
+
+    access_log /var/log/nginx/{$org_code}_access.log;
+    error_log /var/log/nginx/{$org_code}_error.log;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    client_max_body_size 20M;
+
+    # 공통 정적 파일 경로 (테마, JS, CSS)
+    location /homepage/ {
+        alias /var/www/wani/public/homepage/;
+        try_files \$uri \$uri/ =404;
+    }
+
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+    }
+
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location = /robots.txt {
+        access_log off;
+        log_not_found off;
+    }
+
+    location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+    }
+}
+
+EOT;
+		}
 
 		return $config;
 	}
@@ -155,6 +247,12 @@ EOT;
 
 		$index_file = $org_dir . '/index.html';
 
+		// 기존 파일이 있으면 삭제 (테마 변경 시 새로 생성하기 위함)
+		if (file_exists($index_file)) {
+			@unlink($index_file);
+			log_message('info', '기존 index.html 파일 삭제: ' . $index_file);
+		}
+
 		if (@file_put_contents($index_file, $index_content) === false) {
 			log_message('error', 'index.html 파일 생성 실패: ' . $index_file);
 			return array('success' => false, 'message' => 'index.html 파일을 생성할 수 없습니다.');
@@ -178,9 +276,17 @@ EOT;
 	/**
 	 * 템플릿 변수 치환
 	 */
+	/**
+	 * 템플릿 변수 치환
+	 */
 	private function replace_template_variables($template_content, $org_code, $org_name, $homepage_setting)
 	{
 		$homepage_name = isset($homepage_setting['homepage_name']) ? $homepage_setting['homepage_name'] : $org_name;
+		$domain = isset($homepage_setting['homepage_domain']) ? $homepage_setting['homepage_domain'] : '';
+
+		// 도메인에서 프로토콜 제거
+		$domain = preg_replace('#^https?://#', '', $domain);
+		$domain = trim($domain, '/');
 
 		// JavaScript에 조직 코드 주입
 		$org_code_script = "<script>const ORG_CODE = '{$org_code}';</script>";
@@ -191,12 +297,12 @@ EOT;
 		// 템플릿 변수 치환
 		$replacements = array(
 			'{{homepage_name}}' => htmlspecialchars($homepage_name),
-			'{{org_code}}' => htmlspecialchars($org_code)
+			'{{org_code}}' => htmlspecialchars($org_code),
+			'{{domain}}' => htmlspecialchars($domain)
 		);
 
 		return str_replace(array_keys($replacements), array_values($replacements), $template_content);
 	}
-
 	/**
 	 * Nginx 설정 테스트 및 재시작
 	 */

@@ -110,39 +110,43 @@ class Homepage_setting extends My_Controller
 			return;
 		}
 
-		// Nginx 설정 파일 및 홈페이지 디렉토리 생성
-		if (!empty($homepage_domain)) {
-			// 라이브러리 로드
-			$this->load->library('nginx_manager');
+		// 라이브러리 로드
+		$this->load->library('nginx_manager');
 
-			// Nginx 설정 파일 생성
+		$nginx_result = array('success' => true);
+		$dir_result = array('success' => true);
+
+		// 도메인이 있는 경우에만 Nginx 설정 파일 생성
+		if (!empty($homepage_domain)) {
 			$nginx_result = $this->nginx_manager->create_nginx_config($org_code, $homepage_domain, $org_name);
 
 			if (!$nginx_result['success']) {
 				log_message('error', 'Nginx 설정 생성 실패: ' . $nginx_result['message']);
 			}
-
-			// 홈페이지 디렉토리 및 index.php 생성 (org_id 파라미터 추가)
-			$dir_result = $this->nginx_manager->create_homepage_directory($org_code, $org_name, $homepage_setting, $org_id);
-
-			if (!$dir_result['success']) {
-				log_message('error', '홈페이지 디렉토리 생성 실패: ' . $dir_result['message']);
-			}
-
-			$message = '홈페이지 설정이 저장되었습니다.';
-			if ($nginx_result['success'] && $dir_result['success']) {
-				$message .= ' Nginx 설정 및 홈페이지가 생성되었습니다.';
-			}
-
-			echo json_encode(array(
-				'success' => true,
-				'message' => $message,
-				'nginx_result' => $nginx_result,
-				'directory_result' => $dir_result
-			));
-		} else {
-			echo json_encode(array('success' => true, 'message' => '홈페이지 설정이 저장되었습니다.'));
 		}
+
+		// 홈페이지 디렉토리 및 index.html은 항상 생성 (테마 변경 반영)
+		$dir_result = $this->nginx_manager->create_homepage_directory($org_code, $org_name, $homepage_setting, $org_id);
+
+		if (!$dir_result['success']) {
+			log_message('error', '홈페이지 디렉토리 생성 실패: ' . $dir_result['message']);
+		}
+
+		$message = '홈페이지 설정이 저장되었습니다.';
+		if ($nginx_result['success'] && $dir_result['success']) {
+			if (!empty($homepage_domain)) {
+				$message .= ' Nginx 설정 및 홈페이지가 생성되었습니다.';
+			} else {
+				$message .= ' 홈페이지가 업데이트되었습니다.';
+			}
+		}
+
+		echo json_encode(array(
+			'success' => true,
+			'message' => $message,
+			'nginx_result' => $nginx_result,
+			'directory_result' => $dir_result
+		));
 	}
 
 	/**

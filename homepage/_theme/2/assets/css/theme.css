@@ -1,0 +1,286 @@
+/**
+ * 파일 위치: /var/www/wani/public/homepage/_theme/1/assets/css/theme.css
+ * 역할: 테마 1 전용 스타일 (클래식 스타일)
+ */
+
+body {
+	font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Header 스타일 */
+header {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+	font-weight: 700;
+	font-size: 1.5rem;
+	color: white !important;
+}
+
+.logo-container {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.logo-container img {
+	max-height: 50px;
+	max-width: 150px;
+	object-fit: contain;
+	background: rgba(255, 255, 255, 0.9);
+	padding: 0.5rem;
+	border-radius: 8px;
+}
+
+.nav-link {
+	color: rgba(255,255,255,0.9) !important;
+	font-weight: 500;
+	transition: color 0.3s;
+	padding: 0.5rem 1rem !important;
+}
+
+.nav-link:hover {
+	color: white !important;
+}
+
+.dropdown-menu {
+	border-radius: 8px;
+	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+	border: none;
+}
+
+.dropdown-item {
+	padding: 0.5rem 1rem;
+	transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+	background-color: #f8f9fa;
+}
+
+/* Main 스타일 */
+main {
+	flex: 1;
+	padding: 3rem 0;
+	background: #f8f9fa;
+}
+
+.loading {
+	text-align: center;
+	padding: 3rem;
+}
+
+.spinner-border {
+	width: 3rem;
+	height: 3rem;
+}
+
+/* 게시판 스타일 */
+.board-container {
+	background: white;
+	padding: 2rem;
+	border-radius: 12px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.board-container h4 {
+	color: #333;
+	font-weight: 700;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid #667eea;
+}
+
+.table {
+	margin-top: 1.5rem;
+}
+
+.table thead {
+	background-color: #f8f9fa;
+}
+
+.table thead th {
+	border-bottom: 2px solid #dee2e6;
+	color: #495057;
+	font-weight: 600;
+	padding: 1rem;
+}
+
+.table tbody tr {
+	transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+	background-color: #f8f9fa;
+}
+
+.table tbody td {
+	padding: 1rem;
+	vertical-align: middle;
+}
+
+/* 게시글 상세 스타일 */
+.board-detail {
+	background: white;
+	padding: 2rem;
+	border-radius: 12px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.board-detail h4 {
+	color: #333;
+	font-weight: 700;
+	margin-bottom: 1rem;
+}
+
+.board-content {
+	line-height: 1.8;
+	color: #333;
+	min-height: 200px;
+}
+
+/* 페이지네이션 스타일 */
+.pagination {
+	margin-top: 2rem;
+}
+
+.page-link {
+	color: #667eea;
+	border: 1px solid #dee2e6;
+	padding: 0.5rem 0.75rem;
+	transition: all 0.2s;
+}
+
+.page-link:hover {
+	background-color: #667eea;
+	color: white;
+	border-color: #667eea;
+}
+
+.page-item.active .page-link {
+	background-color: #667eea;
+	border-color: #667eea;
+}
+
+/* Footer 스타일 */
+footer {
+	background: #343a40;
+	color: white;
+	padding: 2rem 0;
+	margin-top: auto;
+}
+
+footer h5 {
+	font-weight: 700;
+	margin-bottom: 1rem;
+}
+
+footer a {
+	color: rgba(255,255,255,0.8);
+	text-decoration: none;
+	transition: color 0.2s;
+}
+
+footer a:hover {
+	color: white;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+	.navbar-brand {
+		font-size: 1.2rem;
+	}
+
+	.logo-container {
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.logo-container img {
+		max-width: 100px;
+		max-height: 40px;
+	}
+
+	main {
+		padding: 2rem 0;
+	}
+
+	.board-container,
+	.board-detail {
+		padding: 1rem;
+	}
+
+	.table {
+		font-size: 0.9rem;
+	}
+
+	.table thead th,
+	.table tbody td {
+		padding: 0.5rem;
+	}
+}
+
+@media (max-width: 576px) {
+	.table {
+		font-size: 0.85rem;
+	}
+
+	.board-container h4,
+	.board-detail h4 {
+		font-size: 1.2rem;
+	}
+}
+
+/* 유틸리티 클래스 */
+.text-primary-custom {
+	color: #667eea !important;
+}
+
+.bg-primary-custom {
+	background-color: #667eea !important;
+}
+
+.border-primary-custom {
+	border-color: #667eea !important;
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.fade-in {
+	animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 버튼 스타일 */
+.btn-primary {
+	background-color: #667eea;
+	border-color: #667eea;
+}
+
+.btn-primary:hover {
+	background-color: #5568d3;
+	border-color: #5568d3;
+}
+
+.btn-secondary {
+	background-color: #6c757d;
+	border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+	background-color: #5a6268;
+	border-color: #545b62;
+}
