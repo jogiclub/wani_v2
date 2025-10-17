@@ -131,3 +131,13 @@ if (defined('STDIN')) {
 	$route['cron/poll_sms_results'] = 'cron/poll_sms_results';
 	$route['cron/process_scheduled_messages'] = 'cron/process_scheduled_messages';
 }
+
+
+
+// 홈페이지 API 라우팅
+$route['api/homepage/menu/(:any)'] = 'api/homepage_api/get_menu/$1';
+$route['api/homepage/page/(:any)/(:any)'] = 'api/homepage_api/get_page/$1/$2';
+$route['api/homepage/link/(:any)/(:any)'] = 'api/homepage_api/get_link/$1/$2';
+$route['api/homepage/board/(:any)/(:any)'] = 'api/homepage_api/get_board_list/$1/$2';
+$route['api/homepage/board/detail/(:any)/(:num)'] = 'api/homepage_api/get_board_detail/$1/$2';
+$route['api/homepage/org/(:any)'] = 'api/homepage_api/get_org_info/$1';
