@@ -1,367 +1,67 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="robots" content="index, follow">
-    <title>오병이어교회 1교구</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-        }
-        
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .logo-container img {
-            max-height: 50px;
-            max-width: 150px;
-            object-fit: contain;
-        }
-        
-        .nav-link {
-            color: rgba(255,255,255,0.9) !important;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .nav-link:hover {
-            color: white !important;
-        }
-        
-        .dropdown-menu {
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        main {
-            flex: 1;
-            padding: 3rem 0;
-            background: #f8f9fa;
-        }
-        
-        footer {
-            background: #343a40;
-            color: white;
-            padding: 2rem 0;
-            margin-top: auto;
-        }
-        
-        footer a {
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-        }
-        
-        footer a:hover {
-            color: white;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 3rem;
-        }
-        
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="index, follow">
+	<title>오병이어교회 1교구111</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+	<link href="/homepage/_theme/1/assets/css/theme.css" rel="stylesheet">
+<script>const ORG_CODE = '52ch_area0101';</script>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark">
-            <div class="container">
-                <div class="logo-container">
-                    <img src="https://wani.im/uploads/homepage_logos/logo_3_logo1_1760679702.png" alt="Logo 1">
+<header>
+	<nav class="navbar navbar-expand-lg navbar-dark">
+		<div class="container">
+			<div class="logo-container">
+				<div id="logoArea"></div>
+				<a class="navbar-brand" href="/" id="homepageName">오병이어교회 1교구111</a>
+			</div>
+			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse" id="navbarNav">
+				<ul class="navbar-nav ms-auto" id="mainMenu">
+					<li class="nav-item">
+						<div class="spinner-border spinner-border-sm text-light" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+	</nav>
+</header>
 
-                    <a class="navbar-brand" href="/">오병이어교회 1교구</a>
-                </div>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto" id="mainMenu">
-                        <li class="nav-item">
-                            <div class="spinner-border spinner-border-sm text-light" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
+<main>
+	<div class="container">
+		<div id="mainContent" class="loading">
+			<div class="spinner-border text-primary" role="status">
+				<span class="visually-hidden">Loading...</span>
+			</div>
+			<p class="mt-3 text-muted">페이지를 불러오는 중...</p>
+		</div>
+	</div>
+</main>
 
-    <main>
-        <div class="container">
-            <div id="mainContent" class="loading">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-3 text-muted">페이지를 불러오는 중...</p>
-            </div>
-        </div>
-    </main>
+<footer>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-6">
+				<h5 id="footerOrgName">오병이어교회 1교구111</h5>
+				<p class="mb-0">조직 코드: <span id="footerOrgCode">52ch_area0101</span></p>
+			</div>
+			<div class="col-md-6 text-md-end">
+				<p class="mb-0">&copy; <span id="currentYear"></span> <span id="footerCopyright">오병이어교회 1교구111</span>. All rights reserved.</p>
+				<small class="text-muted">Powered by 왔니</small>
+			</div>
+		</div>
+	</div>
+</footer>
 
-    <footer>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>오병이어교회 1교구</h5>
-                    <p class="mb-0">조직 코드: 52ch_area0101</p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="mb-0">&copy; <span id="currentYear"></span> 오병이어교회 1교구. All rights reserved.</p>
-                    <small class="text-muted">Powered by 왔니</small>
-                </div>
-            </div>
-        </div>
-    </footer>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const API_BASE_URL = 'https://wani.im/api/homepage';
-        const ORG_CODE = '52ch_area0101';
-        
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-        
-        // 메뉴 생성 함수
-        function generateMenuHtml(menus) {
-            let html = '';
-            
-            menus.forEach(menu => {
-                const hasChildren = menus.some(m => m.parent_id === menu.id);
-                
-                if (!menu.parent_id) {
-                    if (hasChildren) {
-                        html += `
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                    ${escapeHtml(menu.name)}
-                                </a>
-                                <ul class="dropdown-menu">`;
-                        
-                        menus.forEach(child => {
-                            if (child.parent_id === menu.id) {
-                                html += `<li><a class="dropdown-item" href="#" data-menu-id="${child.id}" data-menu-type="${child.type}">${escapeHtml(child.name)}</a></li>`;
-                            }
-                        });
-                        
-                        html += `</ul></li>`;
-                    } else {
-                        html += `<li class="nav-item"><a class="nav-link" href="#" data-menu-id="${menu.id}" data-menu-type="${menu.type}">${escapeHtml(menu.name)}</a></li>`;
-                    }
-                }
-            });
-            
-            return html;
-        }
-        
-        // HTML 이스케이프 함수
-        function escapeHtml(text) {
-            const map = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#039;'
-            };
-            return text.replace(/[&<>"']/g, m => map[m]);
-        }
-        
-        // 메뉴 데이터 로드
-        async function loadMenu() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/menu/${ORG_CODE}`);
-                const result = await response.json();
-                
-                if (result.success && result.data) {
-                    const menuHtml = generateMenuHtml(result.data);
-                    document.getElementById('mainMenu').innerHTML = menuHtml;
-                    
-                    // 메뉴 클릭 이벤트 바인딩
-                    document.querySelectorAll('[data-menu-id]').forEach(link => {
-                        link.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const menuId = e.target.dataset.menuId;
-                            const menuType = e.target.dataset.menuType;
-                            loadContent(menuId, menuType);
-                        });
-                    });
-                } else {
-                    document.getElementById('mainMenu').innerHTML = '';
-                }
-            } catch (error) {
-                console.error('메뉴 로드 실패:', error);
-                document.getElementById('mainMenu').innerHTML = '';
-            }
-        }
-        
-        // 페이지 내용 로드
-        async function loadPageContent(menuId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/page/${ORG_CODE}/${menuId}`);
-                const result = await response.json();
-                
-                if (result.success && result.data) {
-                    document.getElementById('mainContent').innerHTML = result.data.page_content || '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
-                } else {
-                    document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지를 찾을 수 없습니다.</p></div>';
-                }
-            } catch (error) {
-                console.error('페이지 로드 실패:', error);
-                document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">페이지를 불러오는 중 오류가 발생했습니다.</p></div>';
-            }
-        }
-        
-        // 링크 처리
-        async function loadLinkContent(menuId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/link/${ORG_CODE}/${menuId}`);
-                const result = await response.json();
-                
-                if (result.success && result.data && result.data.link_url) {
-                    const target = result.data.link_target || '_self';
-                    window.open(result.data.link_url, target);
-                } else {
-                    alert('링크 정보를 찾을 수 없습니다.');
-                }
-            } catch (error) {
-                console.error('링크 로드 실패:', error);
-                alert('링크를 불러오는 중 오류가 발생했습니다.');
-            }
-        }
-        
-        // 게시판 목록 로드
-        async function loadBoardContent(menuId, page = 1) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/board/${ORG_CODE}/${menuId}?page=${page}&limit=20`);
-                const result = await response.json();
-                
-                if (result.success) {
-                    let html = '<div class="board-container">';
-                    html += '<h4 class="mb-4">게시판</h4>';
-                    
-                    if (result.data && result.data.length > 0) {
-                        html += '<div class="table-responsive"><table class="table table-hover">';
-                        html += '<thead><tr><th>번호</th><th>제목</th><th>작성자</th><th>조회수</th><th>작성일</th></tr></thead>';
-                        html += '<tbody>';
-                        
-                        result.data.forEach((item, index) => {
-                            const num = result.total - ((page - 1) * result.limit) - index;
-                            const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
-                            html += `<tr style="cursor:pointer" onclick="loadBoardDetail('${menuId}', ${item.idx})">
-                                <td>${num}</td>
-                                <td class="text-start">${escapeHtml(item.board_title)}</td>
-                                <td>${escapeHtml(item.writer_name || '')}</td>
-                                <td>${item.view_count}</td>
-                                <td>${date}</td>
-                            </tr>`;
-                        });
-                        
-                        html += '</tbody></table></div>';
-                        
-                        // 페이징
-                        if (result.total > result.limit) {
-                            const totalPages = Math.ceil(result.total / result.limit);
-                            html += '<nav><ul class="pagination justify-content-center">';
-                            
-                            for (let i = 1; i <= totalPages; i++) {
-                                html += `<li class="page-item ${i === page ? 'active' : ''}">
-                                    <a class="page-link" href="#" onclick="loadBoardContent('${menuId}', ${i}); return false;">${i}</a>
-                                </li>`;
-                            }
-                            
-                            html += '</ul></nav>';
-                        }
-                    } else {
-                        html += '<div class="text-center py-5"><p class="text-muted">등록된 게시글이 없습니다.</p></div>';
-                    }
-                    
-                    html += '</div>';
-                    document.getElementById('mainContent').innerHTML = html;
-                } else {
-                    document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-muted">게시판을 찾을 수 없습니다.</p></div>';
-                }
-            } catch (error) {
-                console.error('게시판 로드 실패:', error);
-                document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">게시판을 불러오는 중 오류가 발생했습니다.</p></div>';
-            }
-        }
-        
-        // 게시글 상세 로드
-        async function loadBoardDetail(menuId, idx) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
-                const result = await response.json();
-                
-                if (result.success && result.data) {
-                    const item = result.data;
-                    const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
-                    
-                    let html = '<div class="board-detail">';
-                    html += `<h4 class="mb-3">${escapeHtml(item.board_title)}</h4>`;
-                    html += `<div class="mb-3 text-muted">
-                        <small>작성자: ${escapeHtml(item.writer_name || '')}</small> | 
-                        <small>작성일: ${date}</small> | 
-                        <small>조회수: ${item.view_count}</small>
-                    </div>`;
-                    html += '<hr>';
-                    html += `<div class="board-content py-4">${item.board_content}</div>`;
-                    html += '<hr>';
-                    html += `<button class="btn btn-secondary" onclick="loadBoardContent('${menuId}')">목록으로</button>`;
-                    html += '</div>';
-                    
-                    document.getElementById('mainContent').innerHTML = html;
-                } else {
-                    alert('게시글을 찾을 수 없습니다.');
-                }
-            } catch (error) {
-                console.error('게시글 로드 실패:', error);
-                alert('게시글을 불러오는 중 오류가 발생했습니다.');
-            }
-        }
-        
-        // 컨텐츠 로드 (타입별 분기)
-        function loadContent(menuId, menuType) {
-            switch(menuType) {
-                case 'page':
-                    loadPageContent(menuId);
-                    break;
-                case 'link':
-                    loadLinkContent(menuId);
-                    break;
-                case 'board':
-                    loadBoardContent(menuId);
-                    break;
-                default:
-                    document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-muted">지원하지 않는 메뉴 타입입니다.</p></div>';
-            }
-        }
-        
-        // 페이지 로드 시 초기화
-        document.addEventListener('DOMContentLoaded', () => {
-            loadMenu();
-            loadPageContent('main'); // 메인 페이지 로드
-        });
-    </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/homepage/_js/common.js"></script>
+<script src="/homepage/_theme/1/assets/js/theme.js"></script>
 </body>
 </html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>API 디버깅 페이지</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script>const ORG_CODE = '52ch_area0101';</script>
+</head>
+<body>
+<div class="container mt-5">
+	<h2>홈페이지 API 디버깅</h2>
+	<hr>
+
+	<div class="mb-3">
+		<h4>1. 조직 정보 테스트</h4>
+		<button class="btn btn-primary" onclick="testOrgInfo()">조직 정보 조회</button>
+		<pre id="orgResult" class="mt-3 p-3 bg-light"></pre>
+	</div>
+
+	<div class="mb-3">
+		<h4>2. 메뉴 정보 테스트</h4>
+		<button class="btn btn-primary" onclick="testMenu()">메뉴 조회</button>
+		<pre id="menuResult" class="mt-3 p-3 bg-light"></pre>
+	</div>
+
+	<div class="mb-3">
+		<h4>3. 메인 페이지 테스트</h4>
+		<button class="btn btn-primary" onclick="testPage()">페이지 조회</button>
+		<pre id="pageResult" class="mt-3 p-3 bg-light"></pre>
+	</div>
+
+	<div class="mb-3">
+		<h4>4. 전체 초기화 테스트</h4>
+		<button class="btn btn-success" onclick="testFullInit()">전체 초기화 실행</button>
+		<pre id="fullResult" class="mt-3 p-3 bg-light"></pre>
+	</div>
+</div>
+
+<script>
+	const API_BASE_URL = 'https://wani.im/api/homepage';
+
+	async function testOrgInfo() {
+		const resultEl = document.getElementById('orgResult');
+		resultEl.textContent = '로딩 중...';
+
+		try {
+			console.log('조직 정보 API 호출:', `${API_BASE_URL}/org/${ORG_CODE}`);
+			const response = await fetch(`${API_BASE_URL}/org/${ORG_CODE}`);
+			const text = await response.text();
+
+			console.log('응답 상태:', response.status);
+			console.log('응답 텍스트:', text);
+
+			// JSON 파싱 시도
+			try {
+				const result = JSON.parse(text);
+				resultEl.textContent = JSON.stringify(result, null, 2);
+
+				if (result.success) {
+					console.log('✅ 조직 정보 조회 성공:', result.data);
+				} else {
+					console.error('❌ 조직 정보 조회 실패:', result.message);
+				}
+			} catch (e) {
+				resultEl.textContent = '응답이 JSON이 아닙니다:\n' + text;
+				console.error('JSON 파싱 오류:', e);
+			}
+		} catch (error) {
+			resultEl.textContent = '오류 발생: ' + error.message;
+			console.error('API 호출 오류:', error);
+		}
+	}
+
+	async function testMenu() {
+		const resultEl = document.getElementById('menuResult');
+		resultEl.textContent = '로딩 중...';
+
+		try {
+			console.log('메뉴 API 호출:', `${API_BASE_URL}/menu/${ORG_CODE}`);
+			const response = await fetch(`${API_BASE_URL}/menu/${ORG_CODE}`);
+			const text = await response.text();
+
+			console.log('응답 상태:', response.status);
+			console.log('응답 텍스트:', text);
+
+			try {
+				const result = JSON.parse(text);
+				resultEl.textContent = JSON.stringify(result, null, 2);
+
+				if (result.success) {
+					console.log('✅ 메뉴 조회 성공:', result.data);
+				} else {
+					console.error('❌ 메뉴 조회 실패:', result.message);
+				}
+			} catch (e) {
+				resultEl.textContent = '응답이 JSON이 아닙니다:\n' + text;
+				console.error('JSON 파싱 오류:', e);
+			}
+		} catch (error) {
+			resultEl.textContent = '오류 발생: ' + error.message;
+			console.error('API 호출 오류:', error);
+		}
+	}
+
+	async function testPage() {
+		const resultEl = document.getElementById('pageResult');
+		resultEl.textContent = '로딩 중...';
+
+		try {
+			console.log('페이지 API 호출:', `${API_BASE_URL}/page/${ORG_CODE}/main`);
+			const response = await fetch(`${API_BASE_URL}/page/${ORG_CODE}/main`);
+			const text = await response.text();
+
+			console.log('응답 상태:', response.status);
+			console.log('응답 텍스트:', text);
+
+			try {
+				const result = JSON.parse(text);
+				resultEl.textContent = JSON.stringify(result, null, 2);
+
+				if (result.success) {
+					console.log('✅ 페이지 조회 성공:', result.data);
+				} else {
+					console.error('❌ 페이지 조회 실패:', result.message);
+				}
+			} catch (e) {
+				resultEl.textContent = '응답이 JSON이 아닙니다:\n' + text;
+				console.error('JSON 파싱 오류:', e);
+			}
+		} catch (error) {
+			resultEl.textContent = '오류 발생: ' + error.message;
+			console.error('API 호출 오류:', error);
+		}
+	}
+
+	async function testFullInit() {
+		const resultEl = document.getElementById('fullResult');
+		let results = [];
+
+		resultEl.textContent = '전체 초기화 테스트 시작...\n';
+
+		// 1. 조직 정보
+		results.push('1. 조직 정보 조회 중...');
+		try {
+			const orgResponse = await fetch(`${API_BASE_URL}/org/${ORG_CODE}`);
+			const orgResult = await orgResponse.json();
+			if (orgResult.success) {
+				results.push('✅ 조직 정보 조회 성공');
+				results.push('   조직명: ' + (orgResult.data.org_name || 'N/A'));
+				results.push('   홈페이지명: ' + (orgResult.data.homepage_setting?.homepage_name || 'N/A'));
+			} else {
+				results.push('❌ 조직 정보 조회 실패: ' + orgResult.message);
+			}
+		} catch (e) {
+			results.push('❌ 조직 정보 API 오류: ' + e.message);
+		}
+
+		// 2. 메뉴 정보
+		results.push('\n2. 메뉴 정보 조회 중...');
+		try {
+			const menuResponse = await fetch(`${API_BASE_URL}/menu/${ORG_CODE}`);
+			const menuResult = await menuResponse.json();
+			if (menuResult.success) {
+				results.push('✅ 메뉴 조회 성공');
+				results.push('   메뉴 개수: ' + (menuResult.data?.length || 0));
+			} else {
+				results.push('❌ 메뉴 조회 실패: ' + menuResult.message);
+			}
+		} catch (e) {
+			results.push('❌ 메뉴 API 오류: ' + e.message);
+		}
+
+		// 3. 메인 페이지
+		results.push('\n3. 메인 페이지 조회 중...');
+		try {
+			const pageResponse = await fetch(`${API_BASE_URL}/page/${ORG_CODE}/main`);
+			const pageResult = await pageResponse.json();
+			if (pageResult.success) {
+				results.push('✅ 페이지 조회 성공');
+				results.push('   컨텐츠 길이: ' + (pageResult.data?.page_content?.length || 0) + ' 글자');
+			} else {
+				results.push('❌ 페이지 조회 실패: ' + pageResult.message);
+			}
+		} catch (e) {
+			results.push('❌ 페이지 API 오류: ' + e.message);
+		}
+
+		resultEl.textContent = results.join('\n');
+	}
+
+	// 페이지 로드 시 자동 실행
+	document.addEventListener('DOMContentLoaded', () => {
+		console.log('디버깅 페이지 로드 완료');
+		console.log('조직 코드:', ORG_CODE);
+		console.log('API 베이스 URL:', API_BASE_URL);
+	});
+</script>
+
+</body>
+</html>
