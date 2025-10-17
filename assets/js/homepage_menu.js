@@ -103,6 +103,7 @@ function loadMenuList() {
 	});
 }
 
+
 /**
  * 메뉴 목록 렌더링
  */
@@ -110,8 +111,23 @@ function renderMenuList(menus) {
 	const $menuList = $('#menuList');
 	$menuList.empty();
 
+	// 메인화면 메뉴 (상시 최상단 고정)
+	const mainMenuHtml = `
+		<li class="list-group-item menu-item-main" data-menu-id="main" data-parent-id="">
+			<div class="menu-item">
+				<span class="menu-item-title text-truncate" style="cursor: pointer;">
+					메인화면
+					<span class="badge menu-badge bg-success">페이지</span>
+				</span>
+				<div class="menu-item-buttons btn-group">
+					<button type="button" class="btn btn-sm btn-outline-secondary btn-edit-menu" title="수정"><i class="bi bi-pencil"></i></button>
+				</div>
+			</div>
+		</li>
+	`;
+	$menuList.append(mainMenuHtml);
+
 	if (!menus || menus.length === 0) {
-		$menuList.append('<li class="list-group-item text-center text-muted">메뉴를 추가해주세요.</li>');
 		return;
 	}
 
@@ -189,6 +205,7 @@ function initializeSortable() {
 		placeholder: 'ui-sortable-placeholder',
 		forcePlaceholderSize: true,
 		tolerance: 'pointer',
+		items: 'li:not(.menu-item-main)',
 		update: function(event, ui) {
 			saveMenuOrder();
 		},
@@ -286,6 +303,17 @@ function handleEditMenu(e) {
 
 	const $item = $(this).closest('li');
 	const menuId = $item.data('menu-id');
+
+	// 메인화면 메뉴인 경우
+	if (menuId === 'main') {
+		loadPageContent('main');
+		$('#menuList li').removeClass('active');
+		$item.addClass('active');
+		currentMenuId = 'main';
+		currentMenuType = 'page';
+		return;
+	}
+
 	const menu = findMenuById(menuId);
 
 	if (!menu) {
@@ -463,6 +491,19 @@ function handleMenuClick(e) {
 
 	const $item = $(this).closest('li');
 	const menuId = $item.data('menu-id');
+
+	// 메인화면 메뉴인 경우
+	if (menuId === 'main') {
+		$('#menuList li').removeClass('active');
+		$item.addClass('active');
+
+		currentMenuId = 'main';
+		currentMenuType = 'page';
+
+		loadPageContent('main');
+		return;
+	}
+
 	const menu = findMenuById(menuId);
 
 	if (!menu) {
@@ -694,9 +735,9 @@ function renderBoardContent(boardList, total) {
 	if (boardList && boardList.length > 0) {
 		boardList.forEach(function(board) {
 			tableRows += `
-				<tr class="btn-board-edit" data-idx="${board.idx}">
+				<tr class="btn-board-edit" data-idx="${board.idx}" style="cursor: pointer">
 					<td><input type="checkbox" class="form-check-input" value="${board.idx}"></td>
-					<td>${escapeHtml(board.board_title)}</td>
+					<td class="text-start">${escapeHtml(board.board_title)}</td>
 					<td>${board.view_count}</td>
 					<td>${formatDate(board.reg_date)}</td>
 					<td>${escapeHtml(board.writer_name || '')}</td>

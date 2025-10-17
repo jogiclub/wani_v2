@@ -23,7 +23,7 @@
 .menu-sortable .list-group-item {
 	border-left: 0;
 	border-right: 0;
-	padding: 12px 15px 12px 47px;
+	padding: 12px 15px 12px 40px;
 	list-style: none;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .menu-item-child {
-	padding-left: 50px !important;
+	padding-left: 40px !important;
 	background-color: #f8f9fa;
 }
 
@@ -110,7 +110,7 @@
 	margin-right: 5px;
 }
 
-.list-group-item+.list-group-item.active{color: #995300}
+.list-group-item.active .menu-item-title{color: #ff6400}
 
 .menu-badge {
 	font-size: 0.75rem;
@@ -160,3 +160,5 @@
 .ui-sortable-helper * {
 	cursor: grabbing !important;
 }
+
+
