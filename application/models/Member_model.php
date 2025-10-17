@@ -881,7 +881,12 @@ class Member_model extends CI_Model
 		}
 
 		$this->db->insert('wb_member', $data);
-		return $this->db->affected_rows() > 0;
+
+		if ($this->db->affected_rows() > 0) {
+			return $this->db->insert_id();
+		}
+
+		return false;
 	}
 
 	/**

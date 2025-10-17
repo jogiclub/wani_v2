@@ -428,13 +428,19 @@ $is_master = $this->session->userdata('master_yn');
 <!-- 파일 위치: application/views/header.php - 메시지 사이드바 수정 -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="msgSidebar" aria-labelledby="msgSidebarLabel">
 	<div class="offcanvas-header">
-		<h5 class="offcanvas-title" id="msgSidebarLabel">
-			<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
-				총 <b class="text-primary"><?php echo $unread_message_count; ?></b>개의 읽지 않은 메시지
-			<?php else: ?>
-				메시지
-			<?php endif; ?>
-		</h5>
+		<div class="d-flex align-items-center justify-content-start">
+			<h5 class="offcanvas-title" id="msgSidebarLabel">
+				<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
+					읽지 않은 메시지(<span class="text-primary"><?php echo $unread_message_count; ?></span>개)
+				<?php else: ?>
+					메시지
+				<?php endif; ?>
+			</h5>
+			<div class="form-check form-switch ms-3">
+				<input class="form-check-input" type="checkbox" role="switch" id="messageSoundToggle" checked>
+				<small class="form-check-label ms-2" for="messageSoundToggle">소리</small>
+			</div>
+		</div>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">

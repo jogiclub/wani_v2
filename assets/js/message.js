@@ -5,6 +5,171 @@ $(document).ready(function() {
 	// 이전 읽지 않은 메시지 개수 저장 (새 메시지 감지용)
 	let previousUnreadCount = null;
 
+	// 오디오 unlock 상태
+	let audioUnlocked = false;
+
+	// 소리 재생 활성화 상태
+	let soundEnabled = true;
+
+	// 오디오 요소 미리 생성 및 로드
+	let soundElement = null;
+
+	function initAudioElement() {
+		if (!soundElement) {
+			soundElement = document.createElement('audio');
+			soundElement.id = 'sound-ok';
+			soundElement.src = '/assets/sound/sound_message.mp3';
+			soundElement.preload = 'auto';
+			document.body.appendChild(soundElement);
+		}
+		return soundElement;
+	}
+
+	// 오디오 unlock 함수 (사용자의 첫 상호작용 시 실행)
+	function unlockAudio() {
+		if (audioUnlocked) return;
+
+		const audio = initAudioElement();
+
+		// 볼륨을 0으로 설정하고 재생 시도
+		const originalVolume = audio.volume;
+		audio.volume = 0;
+
+		audio.play().then(function() {
+			audio.pause();
+			audio.currentTime = 0;
+			audio.volume = originalVolume;
+			audioUnlocked = true;
+			console.log('오디오 unlock 성공');
+
+			// unlock 이벤트 리스너 제거
+			document.removeEventListener('click', unlockAudio);
+			document.removeEventListener('touchstart', unlockAudio);
+		}).catch(function(error) {
+			console.warn('오디오 unlock 실패:', error);
+		});
+	}
+
+	// 페이지 로드 시 오디오 요소 초기화
+	initAudioElement();
+
+	// 사용자의 첫 클릭/터치 시 오디오 unlock
+	document.addEventListener('click', unlockAudio, { once: true });
+	document.addEventListener('touchstart', unlockAudio, { once: true });
+
+	/**
+	 * 소리 재생 토글 이벤트 핸들러
+	 */
+	$(document).on('change', '#messageSoundToggle', function() {
+		soundEnabled = $(this).is(':checked');
+
+		const soundIcon = $('#soundIcon');
+
+		if (soundEnabled) {
+			soundIcon.removeClass('bi-volume-mute-fill').addClass('bi-volume-up-fill');
+
+			// 토글을 켰을 때 오디오 unlock 시도
+			if (!audioUnlocked) {
+				unlockAudio();
+			}
+
+			if (typeof showToast === 'function') {
+				showToast('메시지 알림음이 활성화되었습니다.', 'success');
+			}
+		} else {
+			soundIcon.removeClass('bi-volume-up-fill').addClass('bi-volume-mute-fill');
+
+			if (typeof showToast === 'function') {
+				showToast('메시지 알림음이 비활성화되었습니다.', 'info');
+			}
+		}
+	});
+
+	// 안전한 HTML 이스케이프 함수
+	function safeEscapeHtml(text) {
+		if (text === null || text === undefined || text === '') {
+			return '';
+		}
+
+		const str = String(text);
+
+		const entityMap = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#39;',
+			'/': '&#x2F;'
+		};
+
+		return str.replace(/[&<>"'\/]/g, function(s) {
+			return entityMap[s];
+		});
+	}
+
+	// 안전한 메시지 데이터 검증
+	function validateMessageData(message) {
+		if (!message || typeof message !== 'object') {
+			return false;
+		}
+
+		if (!message.idx || isNaN(parseInt(message.idx))) {
+			return false;
+		}
+
+		return true;
+	}
+
+	// 상대적 시간 계산
+	function getRelativeTime(messageDate) {
+		try {
+			const date = new Date(messageDate);
+			const now = new Date();
+			const diffTime = Math.abs(now - date);
+			const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+			if (diffDays === 0) {
+				return 'TODAY';
+			} else if (diffDays === 1) {
+				return '1일전';
+			} else {
+				return diffDays + '일전';
+			}
+		} catch (error) {
+			console.warn('Date parsing error:', error);
+			return '알 수 없음';
+		}
+	}
+
+	/**
+	 * 새 메시지 알림 사운드 재생
+	 */
+	function playMessageSound() {
+		// 소리 재생이 비활성화되어 있으면 재생하지 않음
+		if (!soundEnabled) {
+			console.log('소리 재생이 비활성화되어 있습니다.');
+			return;
+		}
+
+		if (!audioUnlocked) {
+			console.warn('오디오가 아직 unlock되지 않았습니다. 사용자 상호작용이 필요합니다.');
+			return;
+		}
+
+		try {
+			const audio = soundElement || initAudioElement();
+
+			// 사운드 재생
+			audio.currentTime = 0;
+			audio.volume = 1.0;
+			audio.play().catch(function(error) {
+				console.warn('사운드 재생 실패:', error);
+			});
+		} catch (error) {
+			console.error('사운드 재생 오류:', error);
+		}
+	}
+
 	// 안전한 HTML 이스케이프 함수
 	function safeEscapeHtml(text) {
 		if (text === null || text === undefined || text === '') {
@@ -31,21 +196,37 @@ $(document).ready(function() {
 	// 새 메시지 알림 사운드 재생
 	function playMessageSound() {
 		try {
-			let soundElement = document.getElementById('sound-ok');
+			const audio = soundElement || initAudioElement();
 
-			// 사운드 요소가 없으면 생성
-			if (!soundElement) {
-				soundElement = document.createElement('audio');
-				soundElement.id = 'sound-ok';
-				soundElement.src = '/assets/sound/sound_message.mp3';
-				document.body.appendChild(soundElement);
+			// unlock이 안 되어 있다면 자동으로 unlock 시도
+			if (!audioUnlocked) {
+				const originalVolume = audio.volume;
+				audio.volume = 0;
+
+				audio.play().then(function() {
+					audio.pause();
+					audio.currentTime = 0;
+					audio.volume = originalVolume;
+					audioUnlocked = true;
+					console.log('오디오 자동 unlock 성공');
+
+					// 이제 실제 사운드 재생
+					audio.currentTime = 0;
+					audio.volume = 1.0;
+					audio.play().catch(function(error) {
+						console.warn('사운드 재생 실패:', error);
+					});
+				}).catch(function(error) {
+					console.warn('오디오 자동 unlock 실패:', error);
+				});
+			} else {
+				// 이미 unlock 되어 있으면 바로 재생
+				audio.currentTime = 0;
+				audio.volume = 1.0;
+				audio.play().catch(function(error) {
+					console.warn('사운드 재생 실패:', error);
+				});
 			}
-
-			// 사운드 재생
-			soundElement.currentTime = 0;
-			soundElement.play().catch(function(error) {
-				console.warn('사운드 재생 실패:', error);
-			});
 		} catch (error) {
 			console.error('사운드 재생 오류:', error);
 		}
