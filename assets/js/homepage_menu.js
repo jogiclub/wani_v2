@@ -142,12 +142,12 @@ function createMenuItemHtml(menu, isChild) {
 				<span class="menu-drag-handle" title="드래그하여 순서 변경">
 					<i class="bi bi-grip-vertical"></i>
 				</span>
-				<span class="menu-item-title" style="cursor: pointer;">
+				<span class="menu-item-title text-truncate" style="cursor: pointer;">
 					${escapeHtml(menu.name)}
 					<span class="badge menu-badge ${typeBadgeClass}">${typeLabel}</span>
 				</span>
-				<div class="menu-item-buttons">
-					${!isChild ? '<button type="button" class="btn btn-sm btn-outline-primary btn-add-submenu" title="하위메뉴 추가"><i class="bi bi-plus"></i></button>' : ''}
+				<div class="menu-item-buttons btn-group">
+					${!isChild ? '<button type="button" class="btn btn-sm btn-primary btn-add-submenu" title="하위메뉴 추가"><i class="bi bi-plus-lg"></i></button>' : ''}
 					<button type="button" class="btn btn-sm btn-outline-secondary btn-edit-menu" title="수정"><i class="bi bi-pencil"></i></button>
 					<button type="button" class="btn btn-sm btn-outline-danger btn-delete-menu" title="삭제"><i class="bi bi-trash"></i></button>
 				</div>
@@ -703,20 +703,20 @@ function renderBoardContent(boardList, total) {
 					<td>${board.modi_date ? formatDate(board.modi_date) : ''}</td>
 					<td>${escapeHtml(board.modifier_name || '')}</td>
 					<td>
-						<button type="button" class="btn btn-sm btn-outline-primary btn-board-edit" data-idx="${board.idx}">수정</button>
+						<button type="button" class="btn btn-xs btn-outline-primary btn-board-edit" data-idx="${board.idx}">수정</button>
 					</td>
 				</tr>
 			`;
 		});
 	} else {
-		tableRows = '<tr><td colspan="8" class="text-center text-muted">등록된 게시글이 없습니다.</td></tr>';
+		tableRows = '<tr><td colspan="8" class="text-center text-muted" style="height: 100px">등록된 게시글이 없습니다.</td></tr>';
 	}
 
 	const html = `
 		<div class="d-flex justify-content-between align-items-center mb-3">
 			<h5 class="mb-0">게시판 관리</h5>
 			<button type="button" class="btn btn-sm btn-primary" id="btnAddBoardItem">
-				<i class="bi bi-plus-circle"></i> 글쓰기
+				<i class="bi bi-plus-lg"></i> 글쓰기
 			</button>
 		</div>
 		<div class="d-flex justify-content-between align-items-center mb-2">
@@ -727,17 +727,17 @@ function renderBoardContent(boardList, total) {
 			</div>
 		</div>
 		<div class="table-responsive">
-			<table class="table table-sm table-hover board-table">
+			<table class="table table-hover board-table">
 				<thead>
 					<tr>
 						<th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAllBoard"></th>
 						<th>제목</th>
-						<th style="width: 80px;">조회수</th>
+						<th style="width: 60px;">조회수</th>
 						<th style="width: 100px;">작성일</th>
-						<th style="width: 100px;">작성자</th>
+						<th style="width: 60px;">작성자</th>
 						<th style="width: 100px;">수정일</th>
-						<th style="width: 100px;">수정자</th>
-						<th style="width: 80px;">관리</th>
+						<th style="width: 60px;">수정자</th>
+						<th style="width: 50px;">관리</th>
 					</tr>
 				</thead>
 				<tbody>

@@ -25,7 +25,7 @@
 					<div class="card-header d-flex justify-content-between align-items-center">
 						<h5 class="mb-0">메뉴관리</h5>
 						<button type="button" class="btn btn-sm btn-primary" id="btnAddMenu">
-							<i class="bi bi-plus-circle"></i>
+							<i class="bi bi-plus-lg"></i>
 						</button>
 					</div>
 					<div class="card-body p-0" style="min-height: 500px;">
@@ -100,18 +100,17 @@
 		<input type="hidden" id="board_idx">
 
 		<div class="mb-3">
-			<label for="board_title" class="form-label">제목</label>
+			<label for="board_title" class="form-label mb-1">제목</label>
 			<input type="text" class="form-control" id="board_title" placeholder="제목을 입력하세요">
 		</div>
 
 		<div class="mb-3">
-			<label for="board_content" class="form-label">내용</label>
+			<label for="board_content" class="form-label mb-1">내용</label>
 			<textarea class="form-control" id="board_content" rows="15" placeholder="내용을 입력하세요"></textarea>
 		</div>
 
 		<div class="d-flex gap-2">
 			<button type="button" class="btn btn-primary flex-fill" id="btnSaveBoard">저장</button>
-			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">취소</button>
 		</div>
 	</div>
 </div>

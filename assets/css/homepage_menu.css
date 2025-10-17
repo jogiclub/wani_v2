@@ -94,7 +94,7 @@
 
 .menu-item-buttons {
 	display: flex;
-	gap: 5px;
+	/*gap: 5px;*/
 	flex-shrink: 0;
 	margin-left: auto;
 }
