@@ -175,7 +175,7 @@ function getMenuTypeBadgeClass(type) {
 	const badgeClasses = {
 		'link': 'bg-primary',
 		'page': 'bg-success',
-		'board': 'bg-info'
+		'board': 'bg-warning'
 	};
 	return badgeClasses[type] || 'bg-secondary';
 }
@@ -694,17 +694,14 @@ function renderBoardContent(boardList, total) {
 	if (boardList && boardList.length > 0) {
 		boardList.forEach(function(board) {
 			tableRows += `
-				<tr>
+				<tr class="btn-board-edit" data-idx="${board.idx}">
 					<td><input type="checkbox" class="form-check-input" value="${board.idx}"></td>
 					<td>${escapeHtml(board.board_title)}</td>
 					<td>${board.view_count}</td>
 					<td>${formatDate(board.reg_date)}</td>
 					<td>${escapeHtml(board.writer_name || '')}</td>
 					<td>${board.modi_date ? formatDate(board.modi_date) : ''}</td>
-					<td>${escapeHtml(board.modifier_name || '')}</td>
-					<td>
-						<button type="button" class="btn btn-xs btn-outline-primary btn-board-edit" data-idx="${board.idx}">수정</button>
-					</td>
+					<td>${escapeHtml(board.modifier_name || '')}</td>					
 				</tr>
 			`;
 		});
@@ -736,8 +733,7 @@ function renderBoardContent(boardList, total) {
 						<th style="width: 100px;">작성일</th>
 						<th style="width: 60px;">작성자</th>
 						<th style="width: 100px;">수정일</th>
-						<th style="width: 60px;">수정자</th>
-						<th style="width: 50px;">관리</th>
+						<th style="width: 60px;">수정자</th>						
 					</tr>
 				</thead>
 				<tbody>

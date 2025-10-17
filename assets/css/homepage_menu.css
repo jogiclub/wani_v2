@@ -110,6 +110,8 @@
 	margin-right: 5px;
 }
 
+.list-group-item+.list-group-item.active{color: #995300}
+
 .menu-badge {
 	font-size: 0.75rem;
 	padding: 3px 8px;
