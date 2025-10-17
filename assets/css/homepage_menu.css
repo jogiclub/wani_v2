@@ -1,0 +1,160 @@
+/**
+ * 파일 위치: assets/css/homepage_menu.css
+ * 역할: 홈페이지 메뉴 설정 화면 스타일
+ */
+
+.split-container {
+	display: flex;
+	height: calc(100vh - 200px);
+	gap: 10px;
+}
+
+.split-pane {
+	overflow: auto;
+}
+
+.menu-sortable {
+	min-height: 400px;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.menu-sortable .list-group-item {
+	border-left: 0;
+	border-right: 0;
+	padding: 12px 15px 12px 47px;
+	list-style: none;
+}
+
+.menu-sortable .list-group-item:first-child {
+	border-top: 0;
+}
+
+.menu-sortable .list-group-item.ui-sortable-helper {
+	background-color: #f8f9fa;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	border: 1px solid #dee2e6;
+	list-style: none;
+}
+
+.menu-sortable .list-group-item.ui-sortable-placeholder {
+	visibility: visible !important;
+	background-color: #e9ecef;
+	border: 2px dashed #6c757d;
+	list-style: none;
+}
+
+.menu-sortable .list-group-item.active {
+	background-color: #e7f3ff;
+	border-left: 3px solid #0d6efd;
+}
+
+.menu-item {
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 10px;
+}
+
+.menu-drag-handle {
+	cursor: move;
+	color: #6c757d;
+	font-size: 1.2rem;
+	display: flex;
+	align-items: center;
+	padding: 0 5px;
+	flex-shrink: 0;
+	user-select: none;
+	position: absolute;
+	left: 0;
+}
+
+.menu-drag-handle:hover {
+	color: #0d6efd;
+}
+
+.menu-drag-handle:active {
+	cursor: grabbing;
+}
+
+.menu-item-title {
+	font-weight: 500;
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.menu-item-title:hover {
+	color: #0d6efd;
+}
+
+.menu-item-buttons {
+	display: flex;
+	gap: 5px;
+	flex-shrink: 0;
+	margin-left: auto;
+}
+
+.menu-item-child {
+	padding-left: 50px !important;
+	background-color: #f8f9fa;
+}
+
+.menu-item-child .menu-item-title::before {
+	content: "└ ";
+	color: #6c757d;
+	margin-right: 5px;
+}
+
+.menu-badge {
+	font-size: 0.75rem;
+	padding: 3px 8px;
+	font-weight: 500;
+	border-radius: 4px;
+}
+
+#contentArea {
+	min-height: 500px;
+}
+
+.board-table {
+	font-size: 0.9rem;
+}
+
+.board-table th {
+	background-color: #f8f9fa;
+	font-weight: 600;
+}
+
+.board-table td {
+	vertical-align: middle;
+}
+
+.board-search-box {
+	max-width: 300px;
+}
+
+/* Split.js 스타일 */
+.gutter {
+	background-color: #dee2e6;
+	background-repeat: no-repeat;
+	background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+	background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+	cursor: col-resize;
+}
+
+/* 드래그 중 커서 스타일 */
+.ui-sortable-helper {
+	cursor: grabbing !important;
+}
+
+.ui-sortable-helper * {
+	cursor: grabbing !important;
+}
