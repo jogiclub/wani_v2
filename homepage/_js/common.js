@@ -3,6 +3,9 @@
  * 역할: 모든 테마에서 공통으로 사용하는 홈페이지 생성 로직
  */
 
+
+
+
 const API_BASE_URL = 'https://wani.im/api/homepage';
 let orgInfo = null;
 
@@ -19,28 +22,54 @@ function escapeHtml(text) {
 	return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
+// 에러 표시 함수
+function showError(message) {
+	const mainContent = document.getElementById('mainContent');
+	if (mainContent) {
+		mainContent.innerHTML = `
+			<div class="alert alert-danger" role="alert">
+				<h4 class="alert-heading">오류 발생</h4>
+				<p>${message}</p>
+				<hr>
+				<p class="mb-0">브라우저 콘솔(F12)을 확인하여 자세한 오류 내용을 확인하세요.</p>
+			</div>
+		`;
+		mainContent.classList.remove('loading');
+	}
+}
+
 // 조직 정보 로드
 async function loadOrgInfo() {
 	try {
+		console.log('조직 정보 로드 시작:', ORG_CODE);
+		console.log('API URL:', `${API_BASE_URL}/org/${ORG_CODE}`);
+
 		const response = await fetch(`${API_BASE_URL}/org/${ORG_CODE}`);
+		console.log('API 응답 상태:', response.status);
+
 		const result = await response.json();
+		console.log('API 응답 데이터:', result);
 
 		if (result.success && result.data) {
 			orgInfo = result.data;
 			applyOrgInfo(orgInfo);
 			return orgInfo;
 		} else {
-			console.error('조직 정보를 찾을 수 없습니다.');
+			console.error('조직 정보 조회 실패:', result.message);
+			showError('조직 정보를 찾을 수 없습니다: ' + (result.message || '알 수 없는 오류'));
 			return null;
 		}
 	} catch (error) {
 		console.error('조직 정보 로드 실패:', error);
+		showError('조직 정보를 불러오는 중 오류가 발생했습니다: ' + error.message);
 		return null;
 	}
 }
 
 // 조직 정보 적용
 function applyOrgInfo(info) {
+	console.log('조직 정보 적용:', info);
+
 	const setting = info.homepage_setting || {};
 	const homepageName = setting.homepage_name || info.org_name;
 
@@ -110,10 +139,14 @@ function generateMenuHtml(menus) {
 // 메뉴 데이터 로드
 async function loadMenu() {
 	try {
+		console.log('메뉴 로드 시작');
 		const response = await fetch(`${API_BASE_URL}/menu/${ORG_CODE}`);
-		const result = await response.json();
+		console.log('메뉴 API 응답 상태:', response.status);
 
-		if (result.success && result.data) {
+		const result = await response.json();
+		console.log('메뉴 응답:', result);
+
+		if (result.success && result.data && result.data.length > 0) {
 			const menuHtml = generateMenuHtml(result.data);
 			document.getElementById('mainMenu').innerHTML = menuHtml;
 
@@ -126,7 +159,10 @@ async function loadMenu() {
 					loadContent(menuId, menuType);
 				});
 			});
+
+			console.log('메뉴 로드 완료');
 		} else {
+			console.log('메뉴가 없습니다.');
 			document.getElementById('mainMenu').innerHTML = '';
 		}
 	} catch (error) {
@@ -138,20 +174,29 @@ async function loadMenu() {
 // 페이지 내용 로드
 async function loadPageContent(menuId) {
 	try {
+		console.log('페이지 로드 시작:', menuId);
 		const response = await fetch(`${API_BASE_URL}/page/${ORG_CODE}/${menuId}`);
+		console.log('페이지 API 응답 상태:', response.status);
+
 		const result = await response.json();
+		console.log('페이지 응답:', result);
 
 		const mainContent = document.getElementById('mainContent');
 
 		if (result.success && result.data && result.data.page_content) {
 			mainContent.innerHTML = result.data.page_content;
+			mainContent.classList.remove('loading');
 			mainContent.classList.add('fade-in');
+			console.log('페이지 로드 완료');
 		} else {
 			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
+			mainContent.classList.remove('loading');
 		}
 	} catch (error) {
 		console.error('페이지 로드 실패:', error);
-		document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">페이지를 불러오는 중 오류가 발생했습니다.</p></div>';
+		const mainContent = document.getElementById('mainContent');
+		mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">페이지를 불러오는 중 오류가 발생했습니다.</p></div>';
+		mainContent.classList.remove('loading');
 	}
 }
 
@@ -305,22 +350,29 @@ function loadContent(menuId, menuType) {
 	}
 }
 
-// 페이지 초기화
+// 페이지 초기화 함수 수정
 async function initializePage() {
-	// ORG_CODE는 HTML에서 주입됨
-	if (!window.ORG_CODE) {
-		document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">조직 정보를 찾을 수 없습니다.</p></div>';
+	console.log('=== 홈페이지 초기화 시작 ===');
+
+	// ORG_CODE 확인
+	if (typeof ORG_CODE === 'undefined') {
+		console.error('ORG_CODE가 정의되지 않았습니다!');
+		showError('조직 코드를 찾을 수 없습니다.');
 		return;
 	}
 
-	// 조직 정보 로드
+	console.log('ORG_CODE:', ORG_CODE);
+
+	// 조직 정보 로드 (선택사항 - 로고 표시용)
 	await loadOrgInfo();
 
-	// 메뉴 로드
+	// 메뉴 로드 (필수)
 	await loadMenu();
 
-	// 메인 페이지 로드
+	// 메인 페이지 로드 (필수)
 	await loadPageContent('main');
+
+	console.log('=== 홈페이지 초기화 완료 ===');
 }
 
 // 페이지 로드 시 초기화

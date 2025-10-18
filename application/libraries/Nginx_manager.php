@@ -1,7 +1,7 @@
 <?php
 /**
  * 파일 위치: application/libraries/Nginx_manager.php
- * 역할: Nginx 설정 파일 및 홈페이지 디렉토리 관리 (최소화 버전)
+ * 역할: Nginx 설정 파일 및 홈페이지 디렉토리 관리
  */
 defined('BASEPATH') OR exit('No direct script access allowed');
 
@@ -26,26 +26,26 @@ class Nginx_manager
 			return array('success' => false, 'message' => '조직 코드 또는 도메인이 비어있습니다.');
 		}
 
-		// 도메인 정리 (프로토콜 제거)
 		$domain = preg_replace('#^https?://#', '', $domain);
 		$domain = trim($domain, '/');
 
 		$config_content = $this->generate_nginx_config_content($org_code, $domain, $org_name);
 		$config_file = $this->nginx_conf_dir . $org_code . '.conf';
 
-		// 디렉토리 생성
 		if (!is_dir($this->nginx_conf_dir)) {
 			if (!@mkdir($this->nginx_conf_dir, 0755, true)) {
+				log_message('error', 'Nginx config directory 생성 실패: ' . $this->nginx_conf_dir);
 				return array('success' => false, 'message' => 'Nginx 설정 디렉토리를 생성할 수 없습니다.');
 			}
 		}
 
-		// 설정 파일 저장
 		if (@file_put_contents($config_file, $config_content) === false) {
-			return array('success' => false, 'message' => 'Nginx 설정 파일을 생성할 수 없습니다.');
+			log_message('error', 'Nginx config 파일 생성 실패: ' . $config_file);
+			return array('success' => false, 'message' => 'Nginx 설정 파일을 생성할 수 없습니다. 권한을 확인하세요.');
 		}
 
-		// Nginx 재시작
+		log_message('info', 'Nginx config 파일 생성 완료: ' . $config_file);
+
 		$reload_result = $this->reload_nginx();
 
 		return array(
@@ -57,21 +57,17 @@ class Nginx_manager
 	}
 
 	/**
-	 * Nginx 설정 파일 내용 생성 (최소화 버전)
+	 * Nginx 설정 파일 내용 생성
 	 */
 	private function generate_nginx_config_content($org_code, $domain, $org_name)
 	{
 		$root_dir = $this->homepage_dir . $org_code;
 
-		// SSL 인증서 경로
 		$ssl_cert = '/etc/letsencrypt/live/' . $domain . '/fullchain.pem';
 		$ssl_key = '/etc/letsencrypt/live/' . $domain . '/privkey.pem';
-
-		// SSL 인증서 존재 여부 확인
 		$has_ssl = file_exists($ssl_cert) && file_exists($ssl_key);
 
 		if ($has_ssl) {
-			// HTTPS 설정
 			$config = <<<EOT
 # {$org_name} ({$org_code})
 
@@ -113,7 +109,6 @@ server {
 }
 EOT;
 		} else {
-			// HTTP만 사용
 			$config = <<<EOT
 # {$org_name} ({$org_code})
 
@@ -158,8 +153,11 @@ EOT;
 		// 디렉토리 생성
 		if (!is_dir($org_dir)) {
 			if (!@mkdir($org_dir, 0755, true)) {
+				log_message('error', '홈페이지 디렉토리 생성 실패: ' . $org_dir);
 				return array('success' => false, 'message' => '홈페이지 디렉토리를 생성할 수 없습니다.');
 			}
+			@chown($org_dir, 'www-data');
+			@chgrp($org_dir, 'www-data');
 			@chmod($org_dir, 0755);
 		}
 
@@ -170,7 +168,8 @@ EOT;
 		$theme_file = $this->theme_dir . $theme . '/main.html';
 
 		if (!file_exists($theme_file)) {
-			return array('success' => false, 'message' => '테마 파일을 찾을 수 없습니다.');
+			log_message('error', '테마 파일을 찾을 수 없음: ' . $theme_file);
+			return array('success' => false, 'message' => '테마 파일을 찾을 수 없습니다: theme ' . $theme);
 		}
 
 		// 테마 HTML 읽기
@@ -183,10 +182,15 @@ EOT;
 		$index_file = $org_dir . '/index.html';
 
 		if (@file_put_contents($index_file, $index_content) === false) {
+			log_message('error', 'index.html 파일 생성 실패: ' . $index_file);
 			return array('success' => false, 'message' => 'index.html 파일을 생성할 수 없습니다.');
 		}
 
 		@chmod($index_file, 0644);
+		@chown($index_file, 'www-data');
+		@chgrp($index_file, 'www-data');
+
+		log_message('info', '홈페이지 디렉토리 및 index.html 생성 완료: ' . $org_dir);
 
 		return array(
 			'success' => true,
@@ -204,42 +208,47 @@ EOT;
 	{
 		$homepage_name = isset($homepage_setting['homepage_name']) ? $homepage_setting['homepage_name'] : $org_name;
 
-		// 조직 코드를 JavaScript 변수로 주입
-		$org_code_script = "<script>const ORG_CODE = '{$org_code}';</script>";
-		$template_content = str_replace('</head>', $org_code_script . "\n</head>", $template_content);
+		// 캐시 버스팅용 타임스탬프
+		$timestamp = date('YmdHis');
 
-		// 템플릿 변수 치환 (조직명과 조직코드만)
+		// ORG_CODE를 JavaScript 변수로 <head> 맨 위에 주입
+		$org_code_script = "\n<script>const ORG_CODE = '{$org_code}';</script>";
+		$template_content = str_replace('<head>', '<head>' . $org_code_script, $template_content);
+
+		// 템플릿 변수 치환
 		$replacements = array(
-			'{{homepage_name}}' => htmlspecialchars($homepage_name),
-			'{{org_code}}' => htmlspecialchars($org_code)
+			'{{homepage_name}}' => htmlspecialchars($homepage_name, ENT_QUOTES, 'UTF-8'),
+			'{{org_code}}' => htmlspecialchars($org_code, ENT_QUOTES, 'UTF-8'),
+			'{{timestamp}}' => $timestamp
 		);
 
 		return str_replace(array_keys($replacements), array_values($replacements), $template_content);
 	}
 
 	/**
-	 * Nginx 재시작
+	 * Nginx 설정 테스트 및 재시작
 	 */
 	private function reload_nginx()
 	{
-		// Nginx 설정 테스트
 		$test_output = array();
 		$test_return = 0;
 		@exec('sudo nginx -t 2>&1', $test_output, $test_return);
 
 		if ($test_return !== 0) {
+			log_message('error', 'Nginx 설정 테스트 실패: ' . implode("\n", $test_output));
 			return array('success' => false, 'message' => 'Nginx 설정 테스트 실패');
 		}
 
-		// Nginx 재시작
 		$reload_output = array();
 		$reload_return = 0;
 		@exec('sudo systemctl reload nginx 2>&1', $reload_output, $reload_return);
 
 		if ($reload_return !== 0) {
+			log_message('error', 'Nginx 재시작 실패: ' . implode("\n", $reload_output));
 			return array('success' => false, 'message' => 'Nginx 재시작 실패');
 		}
 
+		log_message('info', 'Nginx 설정이 성공적으로 적용되었습니다.');
 		return array('success' => true, 'message' => 'Nginx가 재시작되었습니다.');
 	}
 
@@ -253,8 +262,10 @@ EOT;
 		if (file_exists($config_file)) {
 			if (@unlink($config_file)) {
 				$this->reload_nginx();
+				log_message('info', 'Nginx 설정 파일 삭제: ' . $config_file);
 				return array('success' => true, 'message' => 'Nginx 설정 파일이 삭제되었습니다.');
 			} else {
+				log_message('error', 'Nginx 설정 파일 삭제 실패: ' . $config_file);
 				return array('success' => false, 'message' => 'Nginx 설정 파일 삭제 실패');
 			}
 		}
@@ -270,7 +281,6 @@ EOT;
 		$org_dir = $this->homepage_dir . $org_code;
 
 		if (is_dir($org_dir)) {
-			// 디렉토리 내 파일 삭제
 			$files = glob($org_dir . '/*');
 			foreach ($files as $file) {
 				if (is_file($file)) {
@@ -278,10 +288,11 @@ EOT;
 				}
 			}
 
-			// 디렉토리 삭제
 			if (@rmdir($org_dir)) {
+				log_message('info', '홈페이지 디렉토리 삭제: ' . $org_dir);
 				return array('success' => true, 'message' => '홈페이지 디렉토리가 삭제되었습니다.');
 			} else {
+				log_message('error', '홈페이지 디렉토리 삭제 실패: ' . $org_dir);
 				return array('success' => false, 'message' => '홈페이지 디렉토리 삭제 실패');
 			}
 		}
