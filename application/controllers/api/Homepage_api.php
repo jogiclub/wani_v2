@@ -19,31 +19,22 @@ class Homepage_api extends CI_Controller
 	 * 메뉴 데이터 조회
 	 * GET /api/homepage_api/get_menu/{org_code}
 	 */
-	public function get_menu($org_code = null)
+	public function get_menu($org_code)
 	{
-		if (empty($org_code)) {
-			echo json_encode([
-				'success' => false,
-				'message' => '조직 코드가 필요합니다.',
-				'data' => null
-			]);
-			return;
-		}
-
 		$menu_data = $this->Homepage_api_model->get_menu_by_org_code($org_code);
 
 		if ($menu_data !== false) {
-			echo json_encode([
+			// 메뉴 데이터에 menu_category 정보 포함 (이미 있으면 그대로 전달)
+			echo json_encode(array(
 				'success' => true,
 				'message' => '메뉴 조회 성공',
 				'data' => $menu_data
-			]);
+			));
 		} else {
-			echo json_encode([
+			echo json_encode(array(
 				'success' => false,
-				'message' => '메뉴를 찾을 수 없습니다.',
-				'data' => []
-			]);
+				'message' => '메뉴 조회 실패'
+			));
 		}
 	}
 

@@ -57,8 +57,10 @@ class Nginx_manager
 	}
 
 	/**
-	 * Nginx 설정 파일 내용 생성
+	 * 파일 위치: application/libraries/Nginx_manager.php
+	 * 역할: generate_nginx_config_content 메소드의 라우팅 규칙 수정
 	 */
+
 	private function generate_nginx_config_content($org_code, $domain, $org_name)
 	{
 		$root_dir = $this->homepage_dir . $org_code;
@@ -99,6 +101,11 @@ server {
 
     client_max_body_size 20M;
 
+    # 페이지, 게시판 라우팅 - 모두 index.html로
+    location ~ ^/(page|board)/ {
+        try_files \$uri /index.html;
+    }
+
     location / {
         try_files \$uri \$uri/ /index.html;
     }
@@ -124,6 +131,11 @@ server {
     error_log /var/log/nginx/{$org_code}_error.log;
 
     client_max_body_size 20M;
+
+    # 페이지, 게시판 라우팅 - 모두 index.html로
+    location ~ ^/(page|board)/ {
+        try_files \$uri /index.html;
+    }
 
     location / {
         try_files \$uri \$uri/ /index.html;
@@ -207,6 +219,7 @@ EOT;
 	private function replace_template_variables($template_content, $org_code, $org_name, $homepage_setting)
 	{
 		$homepage_name = isset($homepage_setting['homepage_name']) ? $homepage_setting['homepage_name'] : $org_name;
+		$theme = isset($homepage_setting['theme']) ? $homepage_setting['theme'] : '1';
 
 		// 캐시 버스팅용 타임스탬프
 		$timestamp = date('YmdHis');
@@ -219,6 +232,7 @@ EOT;
 		$replacements = array(
 			'{{homepage_name}}' => htmlspecialchars($homepage_name, ENT_QUOTES, 'UTF-8'),
 			'{{org_code}}' => htmlspecialchars($org_code, ENT_QUOTES, 'UTF-8'),
+			'{{theme}}' => htmlspecialchars($theme, ENT_QUOTES, 'UTF-8'),
 			'{{timestamp}}' => $timestamp
 		);
 

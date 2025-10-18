@@ -32,7 +32,7 @@ class Homepage_setting_model extends CI_Model
 			'homepage_domain' => '',
 			'logo1' => '',
 			'logo2' => '',
-			'theme' => '1'
+			'theme' => ''
 		);
 	}
 

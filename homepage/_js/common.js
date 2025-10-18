@@ -1,13 +1,11 @@
 /**
  * 파일 위치: /var/www/wani/public/homepage/_js/common.js
- * 역할: 모든 테마에서 공통으로 사용하는 홈페이지 생성 로직
+ * 역할: 게시판 URL 라우팅 및 기능 개선
  */
-
-
-
 
 const API_BASE_URL = 'https://wani.im/api/homepage';
 let orgInfo = null;
+let menuData = [];
 
 // HTML 이스케이프 함수
 function escapeHtml(text) {
@@ -42,13 +40,8 @@ function showError(message) {
 async function loadOrgInfo() {
 	try {
 		console.log('조직 정보 로드 시작:', ORG_CODE);
-		console.log('API URL:', `${API_BASE_URL}/org/${ORG_CODE}`);
-
 		const response = await fetch(`${API_BASE_URL}/org/${ORG_CODE}`);
-		console.log('API 응답 상태:', response.status);
-
 		const result = await response.json();
-		console.log('API 응답 데이터:', result);
 
 		if (result.success && result.data) {
 			orgInfo = result.data;
@@ -68,29 +61,22 @@ async function loadOrgInfo() {
 
 // 조직 정보 적용
 function applyOrgInfo(info) {
-	console.log('조직 정보 적용:', info);
-
 	const setting = info.homepage_setting || {};
 	const homepageName = setting.homepage_name || info.org_name;
 
-	// 타이틀 설정
 	document.title = homepageName;
 
-	// 페이지 내 조직명 설정
 	const nameElements = document.querySelectorAll('#homepageName, #footerOrgName, #footerCopyright');
 	nameElements.forEach(el => {
 		if (el) el.textContent = homepageName;
 	});
 
-	// 조직 코드 설정
 	const codeElement = document.getElementById('footerOrgCode');
 	if (codeElement) codeElement.textContent = info.org_code;
 
-	// 현재 연도 설정
 	const yearElement = document.getElementById('currentYear');
 	if (yearElement) yearElement.textContent = new Date().getFullYear();
 
-	// 로고 설정
 	const logoArea = document.getElementById('logoArea');
 	if (logoArea && (setting.logo1 || setting.logo2)) {
 		let logoHtml = '';
@@ -109,9 +95,9 @@ function generateMenuHtml(menus) {
 	let html = '';
 
 	menus.forEach(menu => {
-		const hasChildren = menus.some(m => m.parent_id === menu.id);
-
 		if (!menu.parent_id) {
+			const hasChildren = menu.children && menu.children.length > 0;
+
 			if (hasChildren) {
 				html += `
                     <li class="nav-item dropdown">
@@ -120,15 +106,15 @@ function generateMenuHtml(menus) {
                         </a>
                         <ul class="dropdown-menu">`;
 
-				menus.forEach(child => {
-					if (child.parent_id === menu.id) {
-						html += `<li><a class="dropdown-item" href="#" data-menu-id="${child.id}" data-menu-type="${child.type}">${escapeHtml(child.name)}</a></li>`;
-					}
+				menu.children.forEach(child => {
+					const url = getMenuUrl(child.type, child.id);
+					html += `<li><a class="dropdown-item" href="${url}" data-menu-id="${child.id}" data-menu-type="${child.type}">${escapeHtml(child.name)}</a></li>`;
 				});
 
 				html += `</ul></li>`;
 			} else {
-				html += `<li class="nav-item"><a class="nav-link" href="#" data-menu-id="${menu.id}" data-menu-type="${menu.type}">${escapeHtml(menu.name)}</a></li>`;
+				const url = getMenuUrl(menu.type, menu.id);
+				html += `<li class="nav-item"><a class="nav-link" href="${url}" data-menu-id="${menu.id}" data-menu-type="${menu.type}">${escapeHtml(menu.name)}</a></li>`;
 			}
 		}
 	});
@@ -136,27 +122,38 @@ function generateMenuHtml(menus) {
 	return html;
 }
 
+// 메뉴 타입에 따른 URL 생성
+function getMenuUrl(menuType, menuId) {
+	if (menuType === 'page') {
+		return `/page/${menuId}`;
+	} else if (menuType === 'board') {
+		return `/board/${menuId}/`;
+	} else {
+		return '#';
+	}
+}
+
 // 메뉴 데이터 로드
 async function loadMenu() {
 	try {
 		console.log('메뉴 로드 시작');
 		const response = await fetch(`${API_BASE_URL}/menu/${ORG_CODE}`);
-		console.log('메뉴 API 응답 상태:', response.status);
-
 		const result = await response.json();
-		console.log('메뉴 응답:', result);
 
 		if (result.success && result.data && result.data.length > 0) {
+			menuData = result.data;
 			const menuHtml = generateMenuHtml(result.data);
 			document.getElementById('mainMenu').innerHTML = menuHtml;
 
-			// 메뉴 클릭 이벤트 바인딩
 			document.querySelectorAll('[data-menu-id]').forEach(link => {
 				link.addEventListener('click', (e) => {
-					e.preventDefault();
-					const menuId = e.target.dataset.menuId;
 					const menuType = e.target.dataset.menuType;
-					loadContent(menuId, menuType);
+
+					if (menuType === 'link') {
+						e.preventDefault();
+						const menuId = e.target.dataset.menuId;
+						loadLinkContent(menuId);
+					}
 				});
 			});
 
@@ -176,10 +173,7 @@ async function loadPageContent(menuId) {
 	try {
 		console.log('페이지 로드 시작:', menuId);
 		const response = await fetch(`${API_BASE_URL}/page/${ORG_CODE}/${menuId}`);
-		console.log('페이지 API 응답 상태:', response.status);
-
 		const result = await response.json();
-		console.log('페이지 응답:', result);
 
 		const mainContent = document.getElementById('mainContent');
 
@@ -187,7 +181,6 @@ async function loadPageContent(menuId) {
 			mainContent.innerHTML = result.data.page_content;
 			mainContent.classList.remove('loading');
 			mainContent.classList.add('fade-in');
-			console.log('페이지 로드 완료');
 		} else {
 			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
 			mainContent.classList.remove('loading');
@@ -219,14 +212,20 @@ async function loadLinkContent(menuId) {
 }
 
 // 게시판 목록 로드
-async function loadBoardContent(menuId, page = 1) {
+async function loadBoardList(menuId, page = 1) {
 	try {
 		const response = await fetch(`${API_BASE_URL}/board/${ORG_CODE}/${menuId}?page=${page}&limit=20`);
 		const result = await response.json();
 
+		const mainContent = document.getElementById('mainContent');
+		mainContent.classList.remove('loading');
+
 		if (result.success) {
 			let html = '<div class="board-container fade-in">';
-			html += '<h4>게시판</h4>';
+			html += '<div class="d-flex justify-content-between align-items-center mb-3">';
+			html += '<h4 class="mb-0">게시판</h4>';
+			html += `<a href="/board/${menuId}/write" class="btn btn-primary">글쓰기</a>`;
+			html += '</div>';
 
 			if (result.data && result.data.length > 0) {
 				html += '<div class="table-responsive"><table class="table table-hover">';
@@ -234,9 +233,9 @@ async function loadBoardContent(menuId, page = 1) {
 				html += '<tbody>';
 
 				result.data.forEach((item, index) => {
-					const num = result.total - ((page - 1) * result.limit) - index;
+					const num = result.total - ((page - 1) * 20) - index;
 					const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
-					html += `<tr style="cursor:pointer" onclick="loadBoardDetail('${menuId}', ${item.idx})">
+					html += `<tr style="cursor:pointer" onclick="window.location.href='/board/${menuId}/${item.idx}'">
                         <td>${num}</td>
                         <td class="text-start">${escapeHtml(item.board_title)}</td>
                         <td>${escapeHtml(item.writer_name || '')}</td>
@@ -248,28 +247,25 @@ async function loadBoardContent(menuId, page = 1) {
 				html += '</tbody></table></div>';
 
 				// 페이징
-				if (result.total > result.limit) {
-					const totalPages = Math.ceil(result.total / result.limit);
+				if (result.total > 20) {
+					const totalPages = Math.ceil(result.total / 20);
 					html += '<nav><ul class="pagination justify-content-center">';
 
-					// 이전 버튼
 					if (page > 1) {
-						html += `<li class="page-item"><a class="page-link" href="#" onclick="loadBoardContent('${menuId}', ${page - 1}); return false;">이전</a></li>`;
+						html += `<li class="page-item"><a class="page-link" href="/board/${menuId}/?page=${page - 1}">이전</a></li>`;
 					}
 
-					// 페이지 번호
 					const startPage = Math.max(1, page - 2);
 					const endPage = Math.min(totalPages, page + 2);
 
 					for (let i = startPage; i <= endPage; i++) {
 						html += `<li class="page-item ${i === page ? 'active' : ''}">
-                            <a class="page-link" href="#" onclick="loadBoardContent('${menuId}', ${i}); return false;">${i}</a>
+                            <a class="page-link" href="/board/${menuId}/?page=${i}">${i}</a>
                         </li>`;
 					}
 
-					// 다음 버튼
 					if (page < totalPages) {
-						html += `<li class="page-item"><a class="page-link" href="#" onclick="loadBoardContent('${menuId}', ${page + 1}); return false;">다음</a></li>`;
+						html += `<li class="page-item"><a class="page-link" href="/board/${menuId}/?page=${page + 1}">다음</a></li>`;
 					}
 
 					html += '</ul></nav>';
@@ -279,9 +275,9 @@ async function loadBoardContent(menuId, page = 1) {
 			}
 
 			html += '</div>';
-			document.getElementById('mainContent').innerHTML = html;
+			mainContent.innerHTML = html;
 		} else {
-			document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-muted">게시판을 찾을 수 없습니다.</p></div>';
+			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">게시판을 찾을 수 없습니다.</p></div>';
 		}
 	} catch (error) {
 		console.error('게시판 로드 실패:', error);
@@ -294,6 +290,9 @@ async function loadBoardDetail(menuId, idx) {
 	try {
 		const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
 		const result = await response.json();
+
+		const mainContent = document.getElementById('mainContent');
+		mainContent.classList.remove('loading');
 
 		if (result.success && result.data) {
 			const item = result.data;
@@ -316,45 +315,126 @@ async function loadBoardDetail(menuId, idx) {
 			html += `<div class="board-content py-4">${item.board_content}</div>`;
 			html += '<hr>';
 			html += '<div class="d-flex gap-2">';
-			html += `<button class="btn btn-secondary" onclick="loadBoardContent('${menuId}')">목록으로</button>`;
+			html += `<a href="/board/${menuId}/" class="btn btn-secondary">목록으로</a>`;
 			html += '</div>';
 			html += '</div>';
 
-			document.getElementById('mainContent').innerHTML = html;
+			mainContent.innerHTML = html;
 		} else {
-			alert('게시글을 찾을 수 없습니다.');
+			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 찾을 수 없습니다.</p></div>';
 		}
 	} catch (error) {
 		console.error('게시글 로드 실패:', error);
-		alert('게시글을 불러오는 중 오류가 발생했습니다.');
+		document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 불러오는 중 오류가 발생했습니다.</p></div>';
 	}
 }
 
-// 컨텐츠 로드 (타입별 분기)
-function loadContent(menuId, menuType) {
-	// 스크롤 최상단으로
-	window.scrollTo({ top: 0, behavior: 'smooth' });
+// 게시글 작성 폼 표시
+function showBoardWriteForm(menuId) {
+	const mainContent = document.getElementById('mainContent');
+	mainContent.classList.remove('loading');
 
-	switch(menuType) {
-		case 'page':
-			loadPageContent(menuId);
-			break;
-		case 'link':
-			loadLinkContent(menuId);
-			break;
-		case 'board':
-			loadBoardContent(menuId);
-			break;
-		default:
-			document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-muted">지원하지 않는 메뉴 타입입니다.</p></div>';
+	let html = '<div class="board-write fade-in">';
+	html += '<h4>게시글 작성</h4>';
+	html += '<hr>';
+	html += '<form id="boardWriteForm">';
+	html += '<div class="mb-3">';
+	html += '<label for="boardTitle" class="form-label">제목</label>';
+	html += '<input type="text" class="form-control" id="boardTitle" required>';
+	html += '</div>';
+	html += '<div class="mb-3">';
+	html += '<label for="boardContent" class="form-label">내용</label>';
+	html += '<textarea class="form-control" id="boardContent" rows="10" required></textarea>';
+	html += '</div>';
+	html += '<div class="mb-3">';
+	html += '<label for="writerName" class="form-label">작성자</label>';
+	html += '<input type="text" class="form-control" id="writerName" required>';
+	html += '</div>';
+	html += '<hr>';
+	html += '<div class="d-flex gap-2">';
+	html += `<a href="/board/${menuId}/" class="btn btn-secondary">취소</a>`;
+	html += '<button type="submit" class="btn btn-primary">등록</button>';
+	html += '</div>';
+	html += '</form>';
+	html += '</div>';
+
+	mainContent.innerHTML = html;
+
+	// 폼 제출 이벤트
+	document.getElementById('boardWriteForm').addEventListener('submit', async (e) => {
+		e.preventDefault();
+
+		const title = document.getElementById('boardTitle').value.trim();
+		const content = document.getElementById('boardContent').value.trim();
+		const writerName = document.getElementById('writerName').value.trim();
+
+		if (!title || !content || !writerName) {
+			alert('모든 항목을 입력해주세요.');
+			return;
+		}
+
+		// TODO: 실제 저장 API 구현 필요
+		alert('게시글 작성 기능은 준비 중입니다.');
+		// 임시로 목록으로 이동
+		window.location.href = `/board/${menuId}/`;
+	});
+}
+
+// URL 라우팅 처리
+function handleRouting() {
+	const path = window.location.pathname;
+	const searchParams = new URLSearchParams(window.location.search);
+	console.log('현재 경로:', path);
+
+	const mainContent = document.getElementById('mainContent');
+	if (mainContent) {
+		mainContent.classList.add('loading');
+	}
+
+	// 경로 분석
+	if (path === '/' || path === '') {
+		// 홈 - 메인 페이지 로드
+		loadPageContent('main');
+	} else if (path.startsWith('/page/')) {
+		// 페이지 컨텐츠
+		const menuId = path.replace('/page/', '').replace(/\/$/, '');
+		loadPageContent(menuId);
+	} else if (path.startsWith('/board/')) {
+		// 게시판 관련 라우팅
+		const pathParts = path.replace('/board/', '').replace(/\/$/, '').split('/');
+		const menuId = pathParts[0];
+
+		if (pathParts.length === 1 || pathParts[1] === '') {
+			// 게시판 목록
+			const page = parseInt(searchParams.get('page')) || 1;
+			loadBoardList(menuId, page);
+		} else if (pathParts[1] === 'write') {
+			// 글쓰기
+			showBoardWriteForm(menuId);
+		} else if (/^\d+$/.test(pathParts[1])) {
+			// 게시글 상세 (숫자인 경우)
+			const idx = parseInt(pathParts[1]);
+			loadBoardDetail(menuId, idx);
+		} else {
+			// 잘못된 경로
+			if (mainContent) {
+				mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">잘못된 경로입니다.</p></div>';
+				mainContent.classList.remove('loading');
+			}
+		}
+	} else {
+		// 404
+		if (mainContent) {
+			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">페이지를 찾을 수 없습니다.</p></div>';
+			mainContent.classList.remove('loading');
+		}
 	}
 }
 
-// 페이지 초기화 함수 수정
+// 페이지 초기화
 async function initializePage() {
 	console.log('=== 홈페이지 초기화 시작 ===');
 
-	// ORG_CODE 확인
 	if (typeof ORG_CODE === 'undefined') {
 		console.error('ORG_CODE가 정의되지 않았습니다!');
 		showError('조직 코드를 찾을 수 없습니다.');
@@ -363,17 +443,18 @@ async function initializePage() {
 
 	console.log('ORG_CODE:', ORG_CODE);
 
-	// 조직 정보 로드 (선택사항 - 로고 표시용)
 	await loadOrgInfo();
-
-	// 메뉴 로드 (필수)
 	await loadMenu();
-
-	// 메인 페이지 로드 (필수)
-	await loadPageContent('main');
+	handleRouting();
 
 	console.log('=== 홈페이지 초기화 완료 ===');
 }
+
+// popstate 이벤트 처리
+window.addEventListener('popstate', function(e) {
+	console.log('popstate 이벤트 발생');
+	handleRouting();
+});
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', initializePage);
