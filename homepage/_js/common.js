@@ -177,8 +177,17 @@ async function loadPageContent(menuId) {
 
 		const mainContent = document.getElementById('mainContent');
 
-		if (result.success && result.data && result.data.page_content) {
-			mainContent.innerHTML = result.data.page_content;
+		if (result.success && result.data) {
+			// page_content_html이 있으면 사용, 없으면 page_content 사용
+			if (result.data.page_content_html) {
+				mainContent.innerHTML = result.data.page_content_html;
+			} else if (result.data.page_content) {
+				// 구버전 호환성: page_content가 있으면 사용
+				mainContent.innerHTML = result.data.page_content;
+			} else {
+				mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
+			}
+
 			mainContent.classList.remove('loading');
 			mainContent.classList.add('fade-in');
 		} else {

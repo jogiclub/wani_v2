@@ -314,4 +314,44 @@ class Homepage_menu extends My_Controller
 			echo json_encode(['success' => false, 'message' => '게시글 삭제에 실패했습니다.']);
 		}
 	}
+
+	/**
+	 * 이미지 업로드 (Editor.js용)
+	 */
+	public function upload_image()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$config['upload_path'] = './uploads/homepage/';
+		$config['allowed_types'] = 'gif|jpg|jpeg|png|webp';
+		$config['max_size'] = 5120; // 5MB
+		$config['encrypt_name'] = TRUE;
+
+		if (!is_dir($config['upload_path'])) {
+			mkdir($config['upload_path'], 0755, true);
+		}
+
+		$this->load->library('upload', $config);
+
+		if ($this->upload->do_upload('image')) {
+			$upload_data = $this->upload->data();
+			$file_url = base_url('uploads/homepage/' . $upload_data['file_name']);
+
+			echo json_encode([
+				'success' => 1,
+				'file' => [
+					'url' => $file_url
+				]
+			]);
+		} else {
+			echo json_encode([
+				'success' => 0,
+				'message' => $this->upload->display_errors('', '')
+			]);
+		}
+	}
+
+
 }

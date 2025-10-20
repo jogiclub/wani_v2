@@ -7,6 +7,7 @@ let splitInstance = null;
 let currentMenuId = null;
 let currentMenuType = null;
 let menuData = [];
+let pageContentEditor = null;  // Editor.js 인스턴스 추가
 
 $(document).ready(function() {
 	initializePage();
@@ -658,42 +659,304 @@ function renderPageContent(data) {
 	const html = `
 		<h5 class="mb-3">페이지 설정</h5>
 		<div class="mb-3">
-			<label for="page_content" class="form-label">페이지 내용 (HTML)</label>
-			<textarea class="form-control" id="page_content" rows="15" placeholder="HTML 태그를 입력하세요">${escapeHtml(pageContent)}</textarea>
+			<label for="page_content" class="form-label">페이지 내용</label>
+			<div id="page_content_editor" style="border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 15px; min-height: 400px;"></div>
 		</div>
 		<hr>
 		<button type="button" class="btn btn-primary" id="btnSavePage">저장</button>
 	`;
 
 	$('#contentArea').html(html);
+
+
+		initPageContentEditor(pageContent);
+
 }
+
+/**
+ * Editor.js 초기화
+ */
+function initPageContentEditor(content) {
+	// 기존 에디터 인스턴스가 있으면 제거
+	if (pageContentEditor) {
+		pageContentEditor.destroy();
+		pageContentEditor = null;
+	}
+
+	// 저장된 데이터 파싱
+	let parsedData = null;
+	if (content) {
+		try {
+			parsedData = JSON.parse(content);
+		} catch (e) {
+			parsedData = {
+				blocks: [{
+					type: 'paragraph',
+					data: { text: content }
+				}]
+			};
+		}
+	}
+
+	// EditorJS가 로드되었는지 확인
+	if (typeof EditorJS === 'undefined') {
+		console.error('EditorJS가 로드되지 않았습니다.');
+		showToast('에디터를 불러올 수 없습니다.');
+		return;
+	}
+
+	// 사용 가능한 도구 확인 및 설정
+	const availableTools = {};
+
+	// Header
+	if (typeof window.Header !== 'undefined') {
+		availableTools.header = {
+			class: window.Header,
+			config: {
+				placeholder: '제목을 입력하세요',
+				levels: [1, 2, 3, 4, 5, 6],
+				defaultLevel: 2
+			},
+			inlineToolbar: true
+		};
+	}
+
+	// Paragraph
+	if (typeof window.Paragraph !== 'undefined') {
+		availableTools.paragraph = {
+			class: window.Paragraph,
+			inlineToolbar: true
+		};
+	}
+
+	// List
+	if (typeof window.List !== 'undefined') {
+		availableTools.list = {
+			class: window.List,
+			inlineToolbar: true,
+			config: {
+				defaultStyle: 'unordered'
+			}
+		};
+	}
+
+	// Nested List
+	if (typeof window.NestedList !== 'undefined') {
+		availableTools.nestedList = {
+			class: window.NestedList,
+			inlineToolbar: true
+		};
+	}
+
+	// Checklist
+	if (typeof window.Checklist !== 'undefined') {
+		availableTools.checklist = {
+			class: window.Checklist,
+			inlineToolbar: true
+		};
+	}
+
+	// Quote
+	if (typeof window.Quote !== 'undefined') {
+		availableTools.quote = {
+			class: window.Quote,
+			inlineToolbar: true,
+			config: {
+				quotePlaceholder: '인용문을 입력하세요',
+				captionPlaceholder: '출처'
+			}
+		};
+	}
+
+	// Code
+	if (typeof window.CodeTool !== 'undefined') {
+		availableTools.code = {
+			class: window.CodeTool,
+			placeholder: '코드를 입력하세요'
+		};
+	}
+
+	// Image
+	if (typeof window.ImageTool !== 'undefined') {
+		availableTools.image = {
+			class: window.ImageTool,
+			config: {
+				endpoints: {
+					byFile: '/homepage_menu/upload_image',
+					byUrl: '/homepage_menu/fetch_url_image'
+				}
+			}
+		};
+	}
+
+	// Embed
+	if (typeof window.Embed !== 'undefined') {
+		availableTools.embed = {
+			class: window.Embed,
+			config: {
+				services: {
+					youtube: true,
+					vimeo: true,
+					facebook: true,
+					instagram: true,
+					twitter: true
+				}
+			}
+		};
+	}
+
+	// Link Tool
+	if (typeof window.LinkTool !== 'undefined') {
+		availableTools.linkTool = {
+			class: window.LinkTool,
+			config: {
+				endpoint: '/homepage_menu/fetch_url_meta'
+			}
+		};
+	}
+
+	// Attaches
+	if (typeof window.AttachesTool !== 'undefined') {
+		availableTools.attaches = {
+			class: window.AttachesTool,
+			config: {
+				endpoint: '/homepage_menu/upload_file'
+			}
+		};
+	}
+
+	// Table
+	if (typeof window.Table !== 'undefined') {
+		availableTools.table = {
+			class: window.Table,
+			inlineToolbar: true,
+			config: {
+				rows: 2,
+				cols: 3
+			}
+		};
+	}
+
+	// Delimiter
+	if (typeof window.Delimiter !== 'undefined') {
+		availableTools.delimiter = window.Delimiter;
+	}
+
+	// Warning
+	if (typeof window.Warning !== 'undefined') {
+		availableTools.warning = {
+			class: window.Warning,
+			inlineToolbar: true,
+			config: {
+				titlePlaceholder: '제목',
+				messagePlaceholder: '메시지'
+			}
+		};
+	}
+
+	// Marker (Inline tool)
+	if (typeof window.Marker !== 'undefined') {
+		availableTools.marker = {
+			class: window.Marker
+		};
+	}
+
+	// Inline Code
+	if (typeof window.InlineCode !== 'undefined') {
+		availableTools.inlineCode = {
+			class: window.InlineCode
+		};
+	}
+
+	// Underline
+	if (typeof window.Underline !== 'undefined') {
+		availableTools.underline = window.Underline;
+	}
+
+	// Raw HTML
+	if (typeof window.RawTool !== 'undefined') {
+		availableTools.raw = window.RawTool;
+	}
+
+	// Personality
+	if (typeof window.Personality !== 'undefined') {
+		availableTools.personality = {
+			class: window.Personality,
+			config: {
+				endpoint: '/homepage_menu/upload_avatar'
+			}
+		};
+	}
+
+	console.log('사용 가능한 도구:', Object.keys(availableTools));
+
+	// Editor.js 생성
+	try {
+		pageContentEditor = new EditorJS({
+			holder: 'page_content_editor',
+			tools: availableTools,
+			data: parsedData || {},
+			placeholder: '내용을 입력하세요...',
+			minHeight: 300,
+
+			onReady: function() {
+				console.log('Editor.js 초기화 완료');
+			},
+
+			onChange: function(api, event) {
+				// 변경 감지 (필요시 사용)
+			}
+		});
+
+	} catch (error) {
+		console.error('Editor.js 초기화 실패:', error);
+		showToast('에디터 초기화에 실패했습니다: ' + error.message);
+	}
+}
+
+
+
+
 
 /**
  * 페이지 저장 핸들러
  */
 function handleSavePage() {
 	const orgId = $('#current_org_id').val();
-	const pageContent = $('#page_content').val();
 
-	$.ajax({
-		url: '/homepage_menu/save_page',
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			org_id: orgId,
-			menu_id: currentMenuId,
-			page_content: pageContent
-		},
-		success: function(response) {
-			if (response.success) {
-				showToast(response.message);
-			} else {
-				showToast(response.message);
+	if (!pageContentEditor) {
+		showToast('에디터가 초기화되지 않았습니다.');
+		return;
+	}
+
+	// Editor.js에서 데이터 가져오기
+	pageContentEditor.save().then(function(outputData) {
+		// JSON 형식으로 저장
+		const pageContent = JSON.stringify(outputData);
+
+		$.ajax({
+			url: '/homepage_menu/save_page',
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				org_id: orgId,
+				menu_id: currentMenuId,
+				page_content: pageContent
+			},
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message);
+				} else {
+					showToast(response.message);
+				}
+			},
+			error: function() {
+				showToast('페이지 저장에 실패했습니다.');
 			}
-		},
-		error: function() {
-			showToast('페이지 저장에 실패했습니다.');
-		}
+		});
+	}).catch(function(error) {
+		console.error('저장 실패:', error);
+		showToast('데이터 저장 중 오류가 발생했습니다.');
 	});
 }
 
@@ -934,17 +1197,15 @@ function handleSearchBoard() {
  * 컨텐츠 영역 초기화
  */
 function clearContentArea() {
+	// Editor.js 인스턴스 제거
+	if (pageContentEditor) {
+		pageContentEditor.destroy();
+		pageContentEditor = null;
+	}
+
+	$('#contentArea').html('<div class="text-center text-muted py-5">메뉴를 선택하세요</div>');
 	currentMenuId = null;
 	currentMenuType = null;
-
-	const html = `
-		<div class="text-center text-muted py-5">
-			<i class="bi bi-hand-index display-1"></i>
-			<p class="mt-3">왼쪽에서 메뉴를 선택해주세요.</p>
-		</div>
-	`;
-
-	$('#contentArea').html(html);
 }
 
 /**

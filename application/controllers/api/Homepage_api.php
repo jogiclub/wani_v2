@@ -56,6 +56,11 @@ class Homepage_api extends CI_Controller
 		$page_data = $this->Homepage_api_model->get_page_by_org_code_and_menu_id($org_code, $menu_id);
 
 		if ($page_data !== false) {
+			// Editor.js JSON을 HTML로 변환
+			if (!empty($page_data['page_content'])) {
+				$page_data['page_content_html'] = $this->convert_editorjs_to_html($page_data['page_content']);
+			}
+
 			echo json_encode([
 				'success' => true,
 				'message' => '페이지 조회 성공',
@@ -68,6 +73,173 @@ class Homepage_api extends CI_Controller
 				'data' => null
 			]);
 		}
+	}
+
+	/**
+	 * Editor.js JSON을 HTML로 변환
+	 */
+	private function convert_editorjs_to_html($json_content)
+	{
+		$data = json_decode($json_content, true);
+
+		if (!$data || !isset($data['blocks'])) {
+			return $json_content;
+		}
+
+		$html = '';
+
+		foreach ($data['blocks'] as $block) {
+			$type = $block['type'] ?? '';
+			$data_content = $block['data'] ?? [];
+
+			switch ($type) {
+				case 'header':
+					$level = $data_content['level'] ?? 2;
+					$text = $data_content['text'] ?? '';
+					$html .= "<h{$level}>{$text}</h{$level}>\n";
+					break;
+
+				case 'paragraph':
+					$text = $data_content['text'] ?? '';
+					$html .= "<p>{$text}</p>\n";
+					break;
+
+				case 'list':
+					$style = $data_content['style'] ?? 'unordered';
+					$items = $data_content['items'] ?? [];
+					$tag = $style === 'ordered' ? 'ol' : 'ul';
+					$html .= "<{$tag}>\n";
+					foreach ($items as $item) {
+						$html .= "<li>{$item}</li>\n";
+					}
+					$html .= "</{$tag}>\n";
+					break;
+
+				case 'image':
+					$url = $data_content['file']['url'] ?? '';
+					$caption = $data_content['caption'] ?? '';
+					$withBorder = $data_content['withBorder'] ?? false;
+					$stretched = $data_content['stretched'] ?? false;
+					$withBackground = $data_content['withBackground'] ?? false;
+
+					$classes = [];
+					if ($withBorder) $classes[] = 'img-border';
+					if ($stretched) $classes[] = 'img-stretched';
+					if ($withBackground) $classes[] = 'img-background';
+					$class_attr = !empty($classes) ? ' class="' . implode(' ', $classes) . '"' : '';
+
+					$html .= '<figure' . $class_attr . '>';
+					$html .= '<img src="' . htmlspecialchars($url) . '" alt="' . htmlspecialchars($caption) . '">';
+					if ($caption) {
+						$html .= '<figcaption>' . htmlspecialchars($caption) . '</figcaption>';
+					}
+					$html .= "</figure>\n";
+					break;
+
+				case 'quote':
+					$text = $data_content['text'] ?? '';
+					$caption = $data_content['caption'] ?? '';
+					$html .= '<blockquote>';
+					$html .= "<p>{$text}</p>";
+					if ($caption) {
+						$html .= "<cite>{$caption}</cite>";
+					}
+					$html .= "</blockquote>\n";
+					break;
+
+				case 'code':
+					$code = $data_content['code'] ?? '';
+					$html .= '<pre><code>' . htmlspecialchars($code) . "</code></pre>\n";
+					break;
+
+				case 'delimiter':
+					$html .= "<hr>\n";
+					break;
+
+				case 'table':
+					$content = $data_content['content'] ?? [];
+					$html .= "<table>\n";
+					foreach ($content as $row) {
+						$html .= "<tr>\n";
+						foreach ($row as $cell) {
+							$html .= "<td>{$cell}</td>\n";
+						}
+						$html .= "</tr>\n";
+					}
+					$html .= "</table>\n";
+					break;
+
+				case 'warning':
+					$title = $data_content['title'] ?? '';
+					$message = $data_content['message'] ?? '';
+					$html .= '<div class="alert alert-warning">';
+					if ($title) {
+						$html .= "<h4>{$title}</h4>";
+					}
+					$html .= "<p>{$message}</p>";
+					$html .= "</div>\n";
+					break;
+
+				case 'checklist':
+					$items = $data_content['items'] ?? [];
+					$html .= '<ul class="checklist">';
+					foreach ($items as $item) {
+						$checked = $item['checked'] ?? false;
+						$text = $item['text'] ?? '';
+						$checked_attr = $checked ? ' checked' : '';
+						$html .= '<li>';
+						$html .= '<input type="checkbox" disabled' . $checked_attr . '> ';
+						$html .= $text;
+						$html .= '</li>';
+					}
+					$html .= "</ul>\n";
+					break;
+
+				case 'embed':
+					$service = $data_content['service'] ?? '';
+					$source = $data_content['source'] ?? '';
+					$embed = $data_content['embed'] ?? '';
+					$caption = $data_content['caption'] ?? '';
+
+					$html .= '<figure class="embed">';
+					$html .= '<iframe src="' . htmlspecialchars($embed) . '" frameborder="0" allowfullscreen></iframe>';
+					if ($caption) {
+						$html .= '<figcaption>' . htmlspecialchars($caption) . '</figcaption>';
+					}
+					$html .= "</figure>\n";
+					break;
+
+				case 'linkTool':
+					$link = $data_content['link'] ?? '';
+					$meta = $data_content['meta'] ?? [];
+					$title = $meta['title'] ?? $link;
+					$description = $meta['description'] ?? '';
+					$image = $meta['image']['url'] ?? '';
+
+					$html .= '<div class="link-preview">';
+					if ($image) {
+						$html .= '<img src="' . htmlspecialchars($image) . '" alt="">';
+					}
+					$html .= '<div class="link-content">';
+					$html .= '<a href="' . htmlspecialchars($link) . '" target="_blank">' . htmlspecialchars($title) . '</a>';
+					if ($description) {
+						$html .= '<p>' . htmlspecialchars($description) . '</p>';
+					}
+					$html .= '</div>';
+					$html .= "</div>\n";
+					break;
+
+				case 'raw':
+					$html .= $data_content['html'] ?? '';
+					break;
+
+				default:
+					// 알 수 없는 블록 타입
+					break;
+			}
+		}
+
+		return $html;
 	}
 
 	/**
