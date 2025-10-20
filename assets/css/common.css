@@ -2,7 +2,7 @@
 
 
 /*기본*/
-html, body{font-family: "Pretendard Std Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif; font-size: 16px;}
+html, body{font-family: "Pretendard", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif; font-size: 16px;}
 a{text-decoration: none; color: #0b0b0b}
 ul, dl{}
 
@@ -320,7 +320,7 @@ ul.fancytree-container{border: 0!important;}
 .gutter.gutter-horizontal:hover {background-color: #007bff;}
 
 /* Fancytree 커스텀 스타일 */
-.ui-fancytree {border: none;font-family: "Pretendard Std Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;}
+.ui-fancytree {border: none;font-family: "Pretendard", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;}
 .fancytree-container {border: none;}
 .fancytree-node {border: none;padding: 2px 0;}
 
@@ -335,7 +335,7 @@ span.fancytree-icon{margin-left: 0; margin-right: 0;background-image:none!import
 span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font-size: 15px; color: #e09529;}
 
 /* ParamQuery Grid 커스텀 스타일 */
-.pq-grid {font-family: "Pretendard Std Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+.pq-grid {font-family: "Pretendard", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 	border-right: 0 !important;
 	border-left: 0 !important;}
 .pq-grid-header {background-color: #f8f9fa;border-bottom: 2px solid #dee2e6;}
