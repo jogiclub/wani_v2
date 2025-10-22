@@ -1,8 +1,3 @@
-/**
- * 파일 위치: assets/js/wani-preach.js
- * 역할: Editor.js용 게시판 블록 커스텀 플러그인
- */
-
 class WaniPreach {
 	static get toolbox() {
 		return {
@@ -11,208 +6,171 @@ class WaniPreach {
 		};
 	}
 
-	constructor({data, api}) {
+	constructor({data, api, config, block}) {
 		this.api = api;
+		this.config = config;
+		this.block = block;
 		this.data = {
-			menu_id: data.menu_id || '',
-			limit: data.limit || 5,
-			board_list: data.board_list || []
+			boards: data.boards || [
+				{ menu_id: '', limit: 5 },
+				{ menu_id: '', limit: 5 }
+			]
 		};
 		this.wrapper = null;
-		this.orgId = $('#current_org_id').val();
+		this.boardMenus = [];
 	}
 
 	render() {
 		this.wrapper = document.createElement('div');
-		this.wrapper.classList.add('wani-preach-block');
+		this.wrapper.classList.add('wani-preach-wrapper');
 
-		const selectContainer = document.createElement('div');
-		selectContainer.classList.add('mb-3', 'p-3', 'border', 'rounded', 'bg-light');
-		selectContainer.innerHTML = `
-			<div class="row g-2 align-items-center">
-				<div class="col-md-6">
-					<label class="form-label mb-1 small">게시판 선택</label>
-					<select class="form-select form-select-sm wani-preach-menu-select">
-						<option value="">게시판을 선택하세요</option>
-					</select>
-				</div>
-				<div class="col-md-3">
-					<label class="form-label mb-1 small">표시 게시물 수</label>
-					<select class="form-select form-select-sm wani-preach-limit-select">
-						<option value="3">3개</option>
-						<option value="5">5개</option>
-						<option value="10">10개</option>
-					</select>
-				</div>
-				<div class="col-md-3">
-					<label class="form-label mb-1 small">&nbsp;</label>
-					<button type="button" class="btn btn-sm btn-primary w-100 wani-preach-load-btn">
-						<i class="bi bi-arrow-clockwise"></i> 불러오기
-					</button>
-				</div>
-			</div>
-		`;
+		const container = document.createElement('div');
+		container.classList.add('wani-preach-config');
 
-		const previewContainer = document.createElement('div');
-		previewContainer.classList.add('wani-preach-preview', 'mt-3');
+		// 2개의 게시판 선택 영역
+		container.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <small class="text-muted fw-bold">게시판 1</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <select class="form-select form-select-sm wani-preach-menu" data-index="0">
+                                    <option value="">게시판 선택</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select class="form-select form-select-sm wani-preach-limit" data-index="0">
+                                    <option value="3">3개</option>
+                                    <option value="5">5개</option>
+                                    <option value="10">10개</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <small class="text-muted fw-bold">게시판 2</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <select class="form-select form-select-sm wani-preach-menu" data-index="1">
+                                    <option value="">게시판 선택</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select class="form-select form-select-sm wani-preach-limit" data-index="1">
+                                    <option value="3">3개</option>
+                                    <option value="5">5개</option>
+                                    <option value="10">10개</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3 p-3 bg-light rounded">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> 실제 홈페이지에서 선택한 게시판의 최근 게시물이 좌우로 표시됩니다. (게시판을 선택하지 않으면 표시되지 않습니다)
+                </small>
+            </div>
+        `;
 
-		this.wrapper.appendChild(selectContainer);
-		this.wrapper.appendChild(previewContainer);
+		this.wrapper.appendChild(container);
 
-		this.loadBoardMenus();
-		this.attachEvents();
+		// 게시판 메뉴 목록 로드
+		const menuSelects = container.querySelectorAll('.wani-preach-menu');
+		const limitSelects = container.querySelectorAll('.wani-preach-limit');
 
-		if (this.data.menu_id) {
-			setTimeout(() => {
-				const menuSelect = this.wrapper.querySelector('.wani-preach-menu-select');
-				const limitSelect = this.wrapper.querySelector('.wani-preach-limit-select');
-				menuSelect.value = this.data.menu_id;
-				limitSelect.value = this.data.limit;
-				this.renderPreview();
-			}, 500);
-		}
+		this.loadBoardMenus().then(() => {
+			// 게시판 메뉴 옵션 추가
+			menuSelects.forEach(select => {
+				this.boardMenus.forEach(menu => {
+					const option = document.createElement('option');
+					option.value = menu.id;
+					option.textContent = menu.name;
+					select.appendChild(option);
+				});
+
+				const index = parseInt(select.dataset.index);
+				if (this.data.boards[index] && this.data.boards[index].menu_id) {
+					select.value = this.data.boards[index].menu_id;
+				}
+			});
+		});
+
+		// 저장된 limit 값 설정
+		limitSelects.forEach(select => {
+			const index = parseInt(select.dataset.index);
+			if (this.data.boards[index]) {
+				select.value = this.data.boards[index].limit;
+			}
+		});
+
+		// 이벤트 리스너
+		menuSelects.forEach(select => {
+			select.addEventListener('change', (e) => {
+				const index = parseInt(e.target.dataset.index);
+				this.data.boards[index].menu_id = e.target.value;
+			});
+		});
+
+		limitSelects.forEach(select => {
+			select.addEventListener('change', (e) => {
+				const index = parseInt(e.target.dataset.index);
+				this.data.boards[index].limit = parseInt(e.target.value);
+			});
+		});
 
 		return this.wrapper;
 	}
 
 	loadBoardMenus() {
-		const menuSelect = this.wrapper.querySelector('.wani-preach-menu-select');
-
-		$.ajax({
-			url: '/homepage_menu/get_board_menus',
-			type: 'POST',
-			dataType: 'json',
-			data: { org_id: this.orgId },
-			success: (response) => {
-				if (response.success && response.data) {
-					response.data.forEach(menu => {
-						const option = document.createElement('option');
-						option.value = menu.id;
-						option.textContent = menu.name;
-						menuSelect.appendChild(option);
-					});
-				}
-			},
-			error: () => {
-				console.error('게시판 메뉴 로드 실패');
+		return new Promise((resolve, reject) => {
+			const orgId = document.getElementById('current_org_id')?.value;
+			if (!orgId) {
+				resolve();
+				return;
 			}
-		});
-	}
 
-	attachEvents() {
-		const loadBtn = this.wrapper.querySelector('.wani-preach-load-btn');
-		loadBtn.addEventListener('click', () => this.loadBoardData());
-	}
-
-	loadBoardData() {
-		const menuSelect = this.wrapper.querySelector('.wani-preach-menu-select');
-		const limitSelect = this.wrapper.querySelector('.wani-preach-limit-select');
-		const menuId = menuSelect.value;
-		const limit = limitSelect.value;
-
-		if (!menuId) {
-			showToast('게시판을 선택해주세요.');
-			return;
-		}
-
-		$.ajax({
-			url: '/homepage_menu/get_board_list',
-			type: 'POST',
-			dataType: 'json',
-			data: {
-				org_id: this.orgId,
-				menu_id: menuId,
-				search_keyword: '',
-				page: 1
-			},
-			success: (response) => {
-				if (response.success) {
-					this.data.menu_id = menuId;
-					this.data.limit = parseInt(limit);
-					this.data.board_list = response.data.slice(0, this.data.limit);
-					this.renderPreview();
-					showToast('게시판이 로드되었습니다.');
+			$.ajax({
+				url: '/homepage_menu/get_board_menus',
+				method: 'POST',
+				data: { org_id: orgId },
+				dataType: 'json',
+				success: (response) => {
+					if (response.success && response.data) {
+						this.boardMenus = response.data;
+					}
+					resolve();
+				},
+				error: () => {
+					resolve();
 				}
-			},
-			error: () => {
-				showToast('게시판 로드에 실패했습니다.');
-			}
+			});
 		});
-	}
-
-	renderPreview() {
-		const previewContainer = this.wrapper.querySelector('.wani-preach-preview');
-		const menuSelect = this.wrapper.querySelector('.wani-preach-menu-select');
-		const selectedMenuName = menuSelect.options[menuSelect.selectedIndex]?.text || '게시판';
-
-		if (!this.data.board_list || this.data.board_list.length === 0) {
-			previewContainer.innerHTML = '<div class="text-center text-muted py-3">게시판을 선택하고 불러오기 버튼을 클릭하세요.</div>';
-			return;
-		}
-
-		let html = `
-			<div class="card">
-				<div class="card-header d-flex justify-content-between align-items-center bg-white py-2">
-					<h6 class="mb-0 fw-bold">${this.escapeHtml(selectedMenuName)}</h6>
-					<a href="#" class="text-primary text-decoration-none small" onclick="return false;">
-						<i class="bi bi-plus-circle"></i> 더보기
-					</a>
-				</div>
-				<ul class="list-group list-group-flush">
-		`;
-
-		this.data.board_list.forEach(board => {
-			const date = this.formatDate(board.reg_date);
-			html += `
-				<li class="list-group-item d-flex justify-content-between align-items-center py-2">
-					<span class="text-truncate me-2">${this.escapeHtml(board.board_title)}</span>
-					<small class="text-muted text-nowrap">${date}</small>
-				</li>
-			`;
-		});
-
-		html += `
-				</ul>
-			</div>
-		`;
-
-		previewContainer.innerHTML = html;
 	}
 
 	save() {
 		return {
-			menu_id: this.data.menu_id,
-			limit: this.data.limit,
-			board_list: this.data.board_list
+			boards: this.data.boards
 		};
 	}
 
-	formatDate(dateString) {
-		if (!dateString) return '';
-		const date = new Date(dateString);
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		const day = String(date.getDate()).padStart(2, '0');
-		return `${year}-${month}-${day}`;
-	}
+	validate(savedData) {
+		// 최소 1개 이상의 게시판이 선택되어야 함
+		if (!savedData.boards || savedData.boards.length === 0) {
+			return false;
+		}
 
-	escapeHtml(text) {
-		if (!text) return '';
-		const map = {
-			'&': '&amp;',
-			'<': '&lt;',
-			'>': '&gt;',
-			'"': '&quot;',
-			"'": '&#039;'
-		};
-		return text.replace(/[&<>"']/g, m => map[m]);
-	}
-
-	static get isReadOnlySupported() {
-		return true;
+		const hasValidBoard = savedData.boards.some(board => board.menu_id);
+		return hasValidBoard;
 	}
 }
-
 if (typeof window !== 'undefined') {
 	window.WaniPreach = WaniPreach;
 }

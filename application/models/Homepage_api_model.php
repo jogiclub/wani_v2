@@ -168,4 +168,85 @@ class Homepage_api_model extends CI_Model
 
 		return $result;
 	}
+
+	/**
+	 * 게시판 블록용 게시물 목록 조회
+	 */
+	/**
+	 * 게시판 블록용 게시물 목록 조회
+	 */
+	public function get_board_list_for_block($org_code, $menu_id, $limit = 5)
+	{
+		$this->db->select('hb.idx, hb.board_title, hb.reg_date');
+		$this->db->from('wb_homepage_board hb');
+		$this->db->join('wb_org org', 'org.org_id = hb.org_id');
+		$this->db->where('org.org_code', $org_code);
+		$this->db->where('hb.menu_id', $menu_id);
+		$this->db->where('hb.del_yn', 'N');
+		$this->db->order_by('hb.idx', 'DESC');
+		$this->db->limit($limit);
+
+		$query = $this->db->get();
+
+		if ($query === false) {
+			log_message('error', 'get_board_list_for_block 쿼리 실행 실패: ' . $this->db->error()['message']);
+			return [];
+		}
+
+		return $query->result_array();
+	}
+
+	/**
+	 * 메뉴 정보 조회
+	 */
+	public function get_menu_info($org_code, $menu_id)
+	{
+		$this->db->select('homepage_menu');
+		$this->db->from('wb_org');
+		$this->db->where('org_code', $org_code);
+
+		$query = $this->db->get();
+
+		if ($query === false || $query->num_rows() === 0) {
+			log_message('error', 'get_menu_info 조회 실패: org_code=' . $org_code);
+			return null;
+		}
+
+		$row = $query->row_array();
+		$menu_json = json_decode($row['homepage_menu'], true);
+
+		if (!$menu_json || !is_array($menu_json)) {
+			log_message('error', 'get_menu_info JSON 파싱 실패: org_code=' . $org_code);
+			return null;
+		}
+
+		// 메뉴 트리에서 해당 menu_id 찾기
+		return $this->find_menu_by_id($menu_json, $menu_id);
+	}
+
+	/**
+	 * 메뉴 트리에서 특정 메뉴 찾기 (재귀)
+	 */
+	private function find_menu_by_id($menus, $menu_id)
+	{
+		if (!is_array($menus)) {
+			return null;
+		}
+
+		foreach ($menus as $menu) {
+			if (isset($menu['id']) && $menu['id'] == $menu_id) {
+				return ['menu_name' => $menu['name']];
+			}
+
+			if (isset($menu['children']) && is_array($menu['children']) && !empty($menu['children'])) {
+				$found = $this->find_menu_by_id($menu['children'], $menu_id);
+				if ($found) {
+					return $found;
+				}
+			}
+		}
+
+		return null;
+	}
+
 }
