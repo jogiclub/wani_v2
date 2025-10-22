@@ -230,11 +230,49 @@ class Homepage_api extends CI_Controller
 					break;
 
 				case 'raw':
-					$html .= $data_content['html'] ?? '';
+					$html_content = $data_content['html'] ?? '';
+					$html .= $html_content;
+					break;
+
+				case 'waniPreach':
+					$menu_id = $data_content['menu_id'] ?? '';
+					$limit = $data_content['limit'] ?? 5;
+					$board_list = $data_content['board_list'] ?? [];
+
+					if (!empty($board_list)) {
+						$html .= '<div class="wani-preach-block">';
+						$html .= '<div class="card">';
+						$html .= '<div class="card-header d-flex justify-content-between align-items-center bg-white py-2">';
+						$html .= '<h6 class="mb-0 fw-bold">게시판</h6>';
+						$html .= '<a href="#" class="text-primary text-decoration-none small">';
+						$html .= '<i class="bi bi-plus-circle"></i> 더보기';
+						$html .= '</a>';
+						$html .= '</div>';
+						$html .= '<ul class="list-group list-group-flush">';
+
+						foreach ($board_list as $board) {
+							$title = htmlspecialchars($board['board_title'] ?? '');
+							$reg_date = $board['reg_date'] ?? '';
+
+							$date = '';
+							if ($reg_date) {
+								$timestamp = strtotime($reg_date);
+								$date = date('Y-m-d', $timestamp);
+							}
+
+							$html .= '<li class="list-group-item d-flex justify-content-between align-items-center py-2">';
+							$html .= '<span class="text-truncate me-2">' . $title . '</span>';
+							$html .= '<small class="text-muted text-nowrap">' . $date . '</small>';
+							$html .= '</li>';
+						}
+
+						$html .= '</ul>';
+						$html .= '</div>';
+						$html .= "</div>\n";
+					}
 					break;
 
 				default:
-					// 알 수 없는 블록 타입
 					break;
 			}
 		}

@@ -888,6 +888,13 @@ function initPageContentEditor(content) {
 		};
 	}
 
+	// WaniPreach - 게시판 블록 (새로 추가)
+	if (typeof window.WaniPreach !== 'undefined') {
+		availableTools.waniPreach = {
+			class: window.WaniPreach
+		};
+	}
+
 	console.log('사용 가능한 도구:', Object.keys(availableTools));
 
 	// Editor.js 생성
@@ -913,6 +920,13 @@ function initPageContentEditor(content) {
 		showToast('에디터 초기화에 실패했습니다: ' + error.message);
 	}
 }
+
+
+
+
+
+
+
 
 
 

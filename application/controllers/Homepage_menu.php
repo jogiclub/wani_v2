@@ -354,4 +354,47 @@ class Homepage_menu extends My_Controller
 	}
 
 
+	/**
+	 * 게시판 타입 메뉴 목록 조회 (AJAX)
+	 */
+	public function get_board_menus()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$menus = $this->Homepage_menu_model->get_menu_list($org_id);
+		$board_menus = $this->extract_board_menus($menus);
+
+		echo json_encode(['success' => true, 'data' => $board_menus]);
+	}
+
+	/**
+	 * 메뉴 트리에서 게시판 타입만 추출
+	 */
+	private function extract_board_menus($menus, &$result = [])
+	{
+		foreach ($menus as $menu) {
+			if (isset($menu['type']) && $menu['type'] === 'board') {
+				$result[] = [
+					'id' => $menu['id'],
+					'name' => $menu['name']
+				];
+			}
+
+			if (isset($menu['children']) && is_array($menu['children'])) {
+				$this->extract_board_menus($menu['children'], $result);
+			}
+		}
+
+		return $result;
+	}
+
 }

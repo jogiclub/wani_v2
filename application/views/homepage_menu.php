@@ -152,4 +152,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/personality@latest"></script>
 
+
+<!-- 게시판 블록 커스텀 플러그인 -->
+<script src="/assets/js/wani-preach.js?<?php echo WB_VERSION; ?>"></script>
+
 <script src="/assets/js/homepage_menu.js?<?php echo WB_VERSION; ?>"></script>
