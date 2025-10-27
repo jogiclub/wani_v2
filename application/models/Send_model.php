@@ -1215,4 +1215,18 @@ class Send_model extends CI_Model
 	}
 
 
+	/**
+	 * 패키지 정보 조회
+	 */
+	public function get_package_info($package_idx)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_send_package');
+		$this->db->where('package_idx', $package_idx);
+		$this->db->where('active_yn', 'Y');
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 }

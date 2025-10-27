@@ -145,21 +145,73 @@ $(document).ready(function() {
 
 	// 문자충전 버튼 클릭
 	$('#btnChargeModal').on('click', function() {
-		showToast('불편드려 죄송합니다. 시스템 점검 중입니다. 10/27(월) 오픈 예정','error');
+		// showToast('불편드려 죄송합니다. 시스템 점검 중입니다. 10/27(월) 오픈 예정','error');
 
-		// loadChargePackages();
-		// const offcanvas = new bootstrap.Offcanvas(document.getElementById('chargeOffcanvas'));
-		// offcanvas.show();
+		loadChargePackages();
+		const offcanvas = new bootstrap.Offcanvas(document.getElementById('chargeOffcanvas'));
+		offcanvas.show();
 	});
 
 	// 결제하기 버튼 클릭
-	$('#btnCharge').on('click', function() {
-		if (!selectedPackage) {
-			showToast('충전 패키지를 선택해주세요.', 'warning');
+	$(document).on('click', '#btnCharge', function() {
+		const selectedPackage = $('input[name="charge_package"]:checked');
+
+		if (selectedPackage.length === 0) {
+			showToast('충전할 패키지를 선택해주세요.');
 			return;
 		}
-		processCharge();
+
+		const packageIdx = selectedPackage.val();
+		const chargeAmount = selectedPackage.data('amount');
+		const packageName = selectedPackage.data('name');
+
+		// 결제 확인 모달 표시
+		showConfirmModal(
+			'결제 확인',
+			`<strong>${packageName}</strong><br>${numberFormat(chargeAmount)}원을 결제하시겠습니까?`,
+			function() {
+				// 확인 버튼 클릭 시 결제 페이지 팝업
+				openPaymentPopup(packageIdx, chargeAmount);
+			}
+		);
 	});
+
+	/**
+	 * 결제 페이지 팝업 열기
+	 */
+	function openPaymentPopup(packageIdx, chargeAmount) {
+		const form = $('<form>', {
+			method: 'POST',
+			action: '/payment/request',
+			target: 'paymentPopup'
+		});
+
+		form.append($('<input>', {
+			type: 'hidden',
+			name: 'package_idx',
+			value: packageIdx
+		}));
+
+		form.append($('<input>', {
+			type: 'hidden',
+			name: 'charge_amount',
+			value: chargeAmount
+		}));
+
+		$('body').append(form);
+
+		// 팝업 창 열기
+		const popup = window.open('', 'paymentPopup', 'width=600,height=800,scrollbars=yes');
+
+		if (!popup) {
+			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+			form.remove();
+			return;
+		}
+
+		form.submit();
+		form.remove();
+	}
 
 	// 발신번호 관리 버튼 클릭
 	$('#btnAddSender').on('click', function() {
@@ -615,10 +667,10 @@ function renderSenderList(senders) {
 	});
 
 	$('.btn-auth-sender').on('click', function() {
-		showToast('불편드려 죄송합니다. 시스템 점검 중입니다. 10/27(월) 오픈 예정','error');
-		// const senderIdx = $(this).data('sender-idx');
-		// const senderNumber = $(this).data('sender-number');
-		// requestAuthCode(senderIdx, senderNumber);
+		// showToast('불편드려 죄송합니다. 시스템 점검 중입니다. 10/27(월) 오픈 예정','error');
+		const senderIdx = $(this).data('sender-idx');
+		const senderNumber = $(this).data('sender-number');
+		requestAuthCode(senderIdx, senderNumber);
 	});
 
 	$('.btn-delete-sender').on('click', function() {
