@@ -21,8 +21,8 @@ if ($environment === 'production') {
 	// 테스트 환경 설정
 	$config['smartro_pg'] = array(
 		'mode' => 'STG',
-		'mid' => 'smartrotest',  // 테스트 MID (발급받은 값으로 변경)
-		'merchant_key' => 'testmerchantkey123',  // 테스트 상점키 (발급받은 값으로 변경)
+		'mid' => 't_2510201m',  // 테스트 MID (발급받은 값으로 변경)
+		'merchant_key' => '0/4GFsSd7ERVRGX9WHOzJ96GyeMTwvIaKSWUCKmN3fDklNRGw3CualCFoMPZaS99YiFGOuwtzTkrLo4bR4V+Ow==',  // 테스트 상점키 (발급받은 값으로 변경)
 		'sdk_url' => 'https://tpay.smartropay.co.kr/asset/js/SmartroPAY-1.0.min.js',
 		'approval_url' => 'https://tapproval.smartropay.co.kr/payment/approval/urlCallApproval.do'
 	);

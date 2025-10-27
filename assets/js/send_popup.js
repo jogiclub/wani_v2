@@ -159,14 +159,14 @@ $(document).ready(function() {
 			return;
 		}
 
-		const packageIdx = selectedPackage.idx;
+		const packageIdx = selectedPackage.package_idx;  // idx가 아닌 package_idx 사용
 		const chargeAmount = selectedPackage.amount;
-		const packageName = selectedPackage.name;
+		const packageName = selectedPackage.package_name; // name이 아닌 package_name 사용
 
 		// 결제 확인 모달 표시
 		showConfirmModal(
 			'결제 확인',
-			`<strong>${packageName}</strong><br>${numberFormat(chargeAmount)}원을 결제하시겠습니까?`,
+			`<strong>${packageName}</strong><br>${formatNumber(chargeAmount)}원을 결제하시겠습니까?`,
 			function() {
 				// 확인 버튼 클릭 시 결제 페이지 팝업
 				openPaymentPopup(packageIdx, chargeAmount);
@@ -212,7 +212,7 @@ $(document).ready(function() {
 		const popup = window.open('', 'paymentPopup', 'width=600,height=800,scrollbars=yes');
 
 		if (!popup) {
-			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
 			form.remove();
 			return;
 		}
@@ -220,6 +220,7 @@ $(document).ready(function() {
 		form.submit();
 		form.remove();
 	}
+
 
 	// 발신번호 관리 버튼 클릭
 	$('#btnAddSender').on('click', function() {

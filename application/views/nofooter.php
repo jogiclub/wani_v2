@@ -2,7 +2,11 @@
 		</div>
 	</div>
 </div>
-
+		<footer style="position: absolute; left: 0; bottom:0; width: 100%">
+			<div class="py-3 text-center">© 2024 WEBHOWS. All Rights Reserved.
+			<small class="d-flex justify-content-center">사업자번호 721-41-012278 | 대표이사 : 정충상 | 이메일 : hello@webhows.com | 연락처 : 010-7292-9259  | 경기도 시흥시 목감남서로 38</small>
+			</div>
+		</footer>
 
 <!-- 공통 Toast 컨테이너 -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">

@@ -37,6 +37,17 @@ class Payment_model extends CI_Model
 			'package_idx' => $package_idx
 		));
 
+		// 사용자 정보 안전하게 처리
+		$buyer_name = isset($user_info['user_name']) ? $user_info['user_name'] : '구매자';
+		$buyer_tel = isset($user_info['user_hp']) && !empty($user_info['user_hp'])
+			? $user_info['user_hp']
+			: '01000000000';
+		$buyer_email = isset($user_info['user_mail']) && !empty($user_info['user_mail'])
+			? $user_info['user_mail']
+			: (isset($user_info['user_email']) && !empty($user_info['user_email'])
+				? $user_info['user_email']
+				: $user_id . '@temp.com');
+
 		$params = array(
 			'PayMethod' => 'CARD',
 			'GoodsCnt' => '1',
@@ -46,20 +57,20 @@ class Payment_model extends CI_Model
 			'Mid' => $this->pg_config['mid'],
 			'ReturnUrl' => base_url('payment/return_url'),
 			'StopUrl' => base_url('payment/stop_url'),
-			'BuyerName' => $user_info['user_name'],
-			'BuyerTel' => $user_info['user_phone'] ?? '01000000000',
-			'BuyerEmail' => $user_info['user_email'],
+			'BuyerName' => $buyer_name,
+			'BuyerTel' => $buyer_tel,
+			'BuyerEmail' => $buyer_email,
 			'EncryptData' => $encrypt_data,
 			'EdiDate' => $edi_date,
 			'MallReserved' => $mall_reserved,
 			'TaxAmt' => '',
 			'TaxFreeAmt' => '',
-			'VatAmt' => ''
+			'VatAmt' => '',
+			'sdk_url' => $this->pg_config['sdk_url']  // SDK URL 추가
 		);
 
 		return $params;
 	}
-
 	/**
 	 * 파일 위치: application/models/Payment_model.php
 	 * 역할: 암호화 데이터 생성 (SHA256)

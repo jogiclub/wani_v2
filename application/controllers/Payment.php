@@ -54,7 +54,7 @@ class Payment extends MY_Controller
 
 		// 사용자 정보 조회
 		$this->load->model('User_model');
-		$user_info = $this->User_model->get_user_info($user_id);
+		$user_info = $this->User_management_model->get_user_info($user_id);
 
 		// 결제 파라미터 생성
 		$payment_data = $this->Payment_model->generate_payment_params(

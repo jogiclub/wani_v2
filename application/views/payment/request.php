@@ -1,3 +1,4 @@
+
 <?php
 /**
  * 파일 위치: application/views/payment/request.php
@@ -44,15 +45,15 @@
 <form id="paymentForm" name="paymentForm" method="post" style="display: none;">
 	<input type="hidden" name="PayMethod" value="<?php echo $payment_data['PayMethod']; ?>">
 	<input type="hidden" name="GoodsCnt" value="<?php echo $payment_data['GoodsCnt']; ?>">
-	<input type="hidden" name="GoodsName" value="<?php echo $payment_data['GoodsName']; ?>">
+	<input type="hidden" name="GoodsName" value="<?php echo htmlspecialchars($payment_data['GoodsName']); ?>">
 	<input type="hidden" name="Amt" value="<?php echo $payment_data['Amt']; ?>">
 	<input type="hidden" name="Moid" value="<?php echo $payment_data['Moid']; ?>">
 	<input type="hidden" name="Mid" value="<?php echo $payment_data['Mid']; ?>">
 	<input type="hidden" name="ReturnUrl" value="<?php echo $payment_data['ReturnUrl']; ?>">
 	<input type="hidden" name="StopUrl" value="<?php echo $payment_data['StopUrl']; ?>">
-	<input type="hidden" name="BuyerName" value="<?php echo $payment_data['BuyerName']; ?>">
+	<input type="hidden" name="BuyerName" value="<?php echo htmlspecialchars($payment_data['BuyerName']); ?>">
 	<input type="hidden" name="BuyerTel" value="<?php echo $payment_data['BuyerTel']; ?>">
-	<input type="hidden" name="BuyerEmail" value="<?php echo $payment_data['BuyerEmail']; ?>">
+	<input type="hidden" name="BuyerEmail" value="<?php echo htmlspecialchars($payment_data['BuyerEmail']); ?>">
 	<input type="hidden" name="EncryptData" value="<?php echo $payment_data['EncryptData']; ?>">
 	<input type="hidden" name="EdiDate" value="<?php echo $payment_data['EdiDate']; ?>">
 	<input type="hidden" name="MallReserved" value="<?php echo htmlspecialchars($payment_data['MallReserved']); ?>">
@@ -69,7 +70,11 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script>
-	const PG_MODE = '<?php echo $this->config->item('smartro_pg')['mode']; ?>';
+	<?php
+	$this->load->config('payment');
+	$pg_config = $this->config->item('smartro_pg');
+	?>
+	const PG_MODE = '<?php echo $pg_config['mode']; ?>';
 	const RETURN_URL = '<?php echo $payment_data['ReturnUrl']; ?>';
 
 	// 결제하기 버튼 클릭
