@@ -1229,4 +1229,68 @@ class Send_model extends CI_Model
 		return $query->row_array();
 	}
 
+
+	/**
+	 * 충전 취소 처리
+	 */
+	public function cancel_charge($org_id, $cancel_amount)
+	{
+		$this->db->trans_start();
+
+		try {
+			// 가장 최근 충전 내역부터 취소 금액만큼 차감
+			$this->db->select('history_idx, remaining_balance');
+			$this->db->from('wb_send_charge_history');
+			$this->db->where('org_id', $org_id);
+			$this->db->where('payment_status', 'completed');
+			$this->db->where('remaining_balance >', 0);
+			$this->db->order_by('history_idx', 'DESC');
+
+			$query = $this->db->get();
+			$charge_histories = $query->result_array();
+
+			$remaining_cancel = $cancel_amount;
+
+			foreach ($charge_histories as $history) {
+				if ($remaining_cancel <= 0) {
+					break;
+				}
+
+				$history_idx = $history['history_idx'];
+				$available_balance = $history['remaining_balance'];
+
+				if ($available_balance >= $remaining_cancel) {
+					// 현재 내역에서 전액 차감 가능
+					$this->db->where('history_idx', $history_idx);
+					$this->db->set('remaining_balance', 'remaining_balance - ' . $remaining_cancel, FALSE);
+					$this->db->update('wb_send_charge_history');
+
+					$remaining_cancel = 0;
+				} else {
+					// 현재 내역의 잔액을 모두 차감
+					$this->db->where('history_idx', $history_idx);
+					$this->db->update('wb_send_charge_history', array(
+						'remaining_balance' => 0
+					));
+
+					$remaining_cancel -= $available_balance;
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return FALSE;
+			}
+
+			return TRUE;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Cancel charge failed: ' . $e->getMessage());
+			return FALSE;
+		}
+	}
+
+
 }

@@ -152,18 +152,16 @@ $(document).ready(function() {
 		offcanvas.show();
 	});
 
-	// 결제하기 버튼 클릭
+	// 결제하기 버튼 클릭 (기존 코드 - 155~177라인 대체)
 	$(document).on('click', '#btnCharge', function() {
-		const selectedPackage = $('input[name="charge_package"]:checked');
-
-		if (selectedPackage.length === 0) {
-			showToast('충전할 패키지를 선택해주세요.');
+		if (!selectedPackage) {
+			showToast('충전할 패키지를 선택해주세요.', 'warning');
 			return;
 		}
 
-		const packageIdx = selectedPackage.val();
-		const chargeAmount = selectedPackage.data('amount');
-		const packageName = selectedPackage.data('name');
+		const packageIdx = selectedPackage.idx;
+		const chargeAmount = selectedPackage.amount;
+		const packageName = selectedPackage.name;
 
 		// 결제 확인 모달 표시
 		showConfirmModal(
@@ -174,6 +172,16 @@ $(document).ready(function() {
 				openPaymentPopup(packageIdx, chargeAmount);
 			}
 		);
+	});
+
+// 충전 패키지 선택 이벤트 (새로 추가)
+	$(document).on('change', 'input[name="charge_package"]', function() {
+		const $selected = $(this);
+		selectedPackage = {
+			idx: $selected.val(),
+			amount: $selected.data('amount'),
+			name: $selected.data('name')
+		};
 	});
 
 	/**

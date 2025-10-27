@@ -178,6 +178,13 @@ function initOrgSelector() {
 }
 
 /**
+ * 숫자 포맷팅 함수
+ */
+function numberFormat(number) {
+	return new Intl.NumberFormat('ko-KR').format(number);
+}
+
+/**
  * 조직 검색 기능 초기화
  */
 function initOrgSearch() {

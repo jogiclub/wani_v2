@@ -241,4 +241,181 @@ class Payment_model extends CI_Model
 
 		return $calculated_sign === $sign_value;
 	}
+	/**
+	 * 파일 위치: application/models/Payment_model.php
+	 * 역할: TID로 결제 정보 조회
+	 */
+	public function get_payment_by_tid($tid)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_payment_log');
+		$this->db->where('tid', $tid);
+
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
+	/**
+	 * 파일 위치: application/models/Payment_model.php
+	 * 역할: 결제 취소 요청
+	 */
+	public function request_cancel($tid, $cancel_amount, $cancel_reason, $user_id)
+	{
+		$url = $this->pg_config['cancel_url'] ?? 'https://approval.smartropay.co.kr/payment/cancel/cancelApproval.do';
+
+		// 취소 요청 데이터
+		$post_data = array(
+			'Tid' => $tid,
+			'Amt' => strval($cancel_amount),
+			'Moid' => 'CANCEL_' . time(),
+			'CancelMsg' => $cancel_reason ?: '사용자 요청'
+		);
+
+		try {
+			$response = $this->call_pg_api($url, $post_data);
+
+			if ($response && isset($response['ResultCode']) && $response['ResultCode'] === '2001') {
+				// 취소 성공
+				$this->update_cancel_status($tid, $cancel_amount, $response);
+
+				return array(
+					'success' => true,
+					'data' => $response
+				);
+			} else {
+				return array(
+					'success' => false,
+					'message' => $response['ResultMsg'] ?? '취소 요청 실패'
+				);
+			}
+		} catch (Exception $e) {
+			log_message('error', 'PG cancel request failed: ' . $e->getMessage());
+			return array(
+				'success' => false,
+				'message' => '취소 요청 중 오류가 발생했습니다.'
+			);
+		}
+	}
+
+	/**
+	 * 파일 위치: application/models/Payment_model.php
+	 * 역할: 취소 상태 업데이트
+	 */
+	private function update_cancel_status($tid, $cancel_amount, $cancel_info)
+	{
+		$this->db->trans_start();
+
+		try {
+			$this->db->where('tid', $tid);
+			$this->db->update('wb_payment_log', array(
+				'payment_status' => 'cancelled',
+				'error_message' => '결제 취소됨',
+				'updated_at' => date('Y-m-d H:i:s')
+			));
+
+			$this->db->trans_complete();
+
+			return $this->db->trans_status();
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Cancel status update failed: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 파일 위치: application/models/Payment_model.php
+	 * 역할: 조직의 전체 결제 금액 조회
+	 */
+	public function get_total_payment_amount($org_id)
+	{
+		$this->db->select('COALESCE(SUM(amount), 0) as total_amount');
+		$this->db->from('wb_payment_log');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('payment_status', 'completed');
+
+		$query = $this->db->get();
+		$result = $query->row_array();
+
+		return $result['total_amount'];
+	}
+
+	/**
+	 * 파일 위치: application/models/Payment_model.php
+	 * 역할: 최근 결제 내역 조회
+	 */
+	public function get_recent_payments($org_id, $limit = 5)
+	{
+		$this->db->select('p.*, u.user_name');
+		$this->db->from('wb_payment_log p');
+		$this->db->join('wb_user u', 'p.user_id = u.user_id', 'left');
+		$this->db->where('p.org_id', $org_id);
+		$this->db->order_by('p.created_at', 'DESC');
+		$this->db->limit($limit);
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+	/**
+	 * 충전 취소 처리
+	 */
+	public function cancel_charge($org_id, $cancel_amount)
+	{
+		$this->db->trans_start();
+
+		try {
+			// 가장 최근 충전 내역부터 취소 금액만큼 차감
+			$this->db->select('history_idx, remaining_balance');
+			$this->db->from('wb_send_charge_history');
+			$this->db->where('org_id', $org_id);
+			$this->db->where('payment_status', 'completed');
+			$this->db->where('remaining_balance >', 0);
+			$this->db->order_by('history_idx', 'DESC');
+
+			$query = $this->db->get();
+			$charge_histories = $query->result_array();
+
+			$remaining_cancel = $cancel_amount;
+
+			foreach ($charge_histories as $history) {
+				if ($remaining_cancel <= 0) {
+					break;
+				}
+
+				$history_idx = $history['history_idx'];
+				$available_balance = $history['remaining_balance'];
+
+				if ($available_balance >= $remaining_cancel) {
+					// 현재 내역에서 전액 차감 가능
+					$this->db->where('history_idx', $history_idx);
+					$this->db->set('remaining_balance', 'remaining_balance - ' . $remaining_cancel, FALSE);
+					$this->db->update('wb_send_charge_history');
+
+					$remaining_cancel = 0;
+				} else {
+					// 현재 내역의 잔액을 모두 차감
+					$this->db->where('history_idx', $history_idx);
+					$this->db->update('wb_send_charge_history', array(
+						'remaining_balance' => 0
+					));
+
+					$remaining_cancel -= $available_balance;
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return FALSE;
+			}
+
+			return TRUE;
+
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Cancel charge failed: ' . $e->getMessage());
+			return FALSE;
+		}
+	}
 }

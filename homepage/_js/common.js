@@ -459,6 +459,9 @@ async function initializePage() {
 	console.log('=== 홈페이지 초기화 완료 ===');
 }
 
+
+
+
 // popstate 이벤트 처리
 window.addEventListener('popstate', function(e) {
 	console.log('popstate 이벤트 발생');

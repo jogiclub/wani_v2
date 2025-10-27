@@ -186,4 +186,71 @@ class Payment extends MY_Controller
 			'data' => $result
 		));
 	}
+
+
+	/**
+	 * 파일 위치: application/controllers/Payment.php
+	 * 역할: 결제 취소 요청 (AJAX)
+	 */
+	public function cancel()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		if (!$user_id) {
+			echo json_encode(array('success' => false, 'message' => '인증이 필요합니다.'));
+			return;
+		}
+
+		$tid = $this->input->post('tid');
+		$cancel_amount = $this->input->post('cancel_amount');
+		$cancel_reason = $this->input->post('cancel_reason');
+
+		if (!$tid || !$cancel_amount) {
+			echo json_encode(array('success' => false, 'message' => '취소 정보가 올바르지 않습니다.'));
+			return;
+		}
+
+		// 결제 정보 조회
+		$payment_info = $this->Payment_model->get_payment_by_tid($tid);
+
+		if (!$payment_info) {
+			echo json_encode(array('success' => false, 'message' => '결제 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 확인 (해당 조직의 사용자인지)
+		$org_id = $this->input->cookie('activeOrg');
+		if ($payment_info['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 취소 요청
+		$cancel_result = $this->Payment_model->request_cancel(
+			$tid,
+			$cancel_amount,
+			$cancel_reason,
+			$user_id
+		);
+
+		if ($cancel_result['success']) {
+			// 취소 성공 - 충전 내역도 처리
+			$this->Send_model->cancel_charge($payment_info['org_id'], $cancel_amount);
+
+			echo json_encode(array(
+				'success' => true,
+				'message' => '결제가 취소되었습니다.',
+				'data' => $cancel_result['data']
+			));
+		} else {
+			echo json_encode(array(
+				'success' => false,
+				'message' => $cancel_result['message']
+			));
+		}
+	}
+
 }
