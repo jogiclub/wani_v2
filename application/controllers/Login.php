@@ -461,6 +461,13 @@ class Login extends CI_Controller
 				'regi_date' => date('Y-m-d H:i:s'),
 				'modi_date' => date('Y-m-d H:i:s')
 			]);
+
+			// 신규 회원 가입 후 세션에 기본 정보 설정
+			$this->session->set_userdata([
+				'user_grade' => 0,
+				'user_hp' => '',
+				'master_yn' => 'N'  // 신규 가입자는 일반 사용자
+			]);
 		}
 
 		$join_result = $this->process_invite_code($user_id, $invite_code);
@@ -474,9 +481,27 @@ class Login extends CI_Controller
 
 	/**
 	 * 회원가입 후 리다이렉트
+	 * 회원가입 직후에도 조직 정보 설정 필요
 	 */
 	public function redirect_after_join()
 	{
+		$user_id = $this->session->userdata('user_id');
+
+		if ($user_id) {
+			$user = $this->User_model->get_user_by_id($user_id);
+			$master_yn = $user['master_yn'] ?? 'N';
+
+			// 세션에 사용자 정보 업데이트
+			$this->session->set_userdata([
+				'user_grade' => $user['user_grade'] ?? 0,
+				'user_hp' => $user['user_hp'] ?? '',
+				'master_yn' => $master_yn
+			]);
+
+			// 회원가입 후에도 조직 설정 수행
+			$this->setup_user_organization($user_id, $master_yn);
+		}
+
 		$this->load->view('login_redirect', ['redirect_url' => '/dashboard']);
 	}
 
@@ -496,10 +521,11 @@ class Login extends CI_Controller
 			return true;
 		}
 
+		// 초대코드로 직접 가입하는 경우 즉시 활성화 상태(level=1)로 추가
 		$result = $this->Org_model->insert_org_user([
 			'user_id' => $user_id,
 			'org_id' => $org['org_id'],
-			'level' => 0,
+			'level' => 1,  // level을 0에서 1로 변경
 			'join_date' => date('Y-m-d H:i:s')
 		]);
 

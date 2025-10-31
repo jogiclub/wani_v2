@@ -483,19 +483,21 @@ class Org_model extends CI_Model {
 	public function get_user_orgs($user_id)
 	{
 		$this->db->select('
-            o.org_id,
-            o.org_name,
-            o.org_type,
-            o.org_icon,
-            o.leader_name,
-            o.new_name,
-            ou.level,
-            (SELECT COUNT(*) FROM wb_member m WHERE m.org_id = o.org_id AND m.del_yn = "N") as member_count
-        ');
+		o.org_id,
+		o.org_name,
+		o.org_type,
+		o.org_icon,
+		o.leader_name,
+		o.new_name,
+		ou.level,
+		(SELECT COUNT(*) FROM wb_member m WHERE m.org_id = o.org_id AND m.del_yn = "N") as member_count
+	');
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id');
 		$this->db->where('ou.user_id', $user_id);
 		$this->db->where('o.del_yn', 'N');
+		$this->db->where('ou.level >=', 1);  // level >= 1인 조직만 반환
+		$this->db->order_by('o.org_type', 'ASC');
 		$this->db->order_by('o.org_name', 'ASC');
 		$query = $this->db->get();
 		return $query->result_array();
@@ -871,18 +873,6 @@ class Org_model extends CI_Model {
 	 */
 	public function get_user_orgs_master_filtered($user_id, $visible_categories)
 	{
-		if (empty($visible_categories)) {
-			return $this->get_user_orgs_master($user_id);
-		}
-
-		// visible_categories와 그 하위 카테고리들의 ID 수집
-		$this->load->model('Org_category_model');
-		$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
-
-		if (empty($category_ids)) {
-			return array();
-		}
-
 		$this->db->select('
 		o.org_id,
 		o.org_name,
@@ -895,7 +885,12 @@ class Org_model extends CI_Model {
 	');
 		$this->db->from('wb_org o');
 		$this->db->where('o.del_yn', 'N');
-		$this->db->where_in('o.category_idx', $category_ids);
+
+		// 카테고리 필터링
+		if (!empty($visible_categories)) {
+			$this->db->where_in('o.category_idx', $visible_categories);
+		}
+
 		$this->db->order_by('o.org_type', 'ASC');
 		$this->db->order_by('o.org_name', 'ASC');
 		$query = $this->db->get();

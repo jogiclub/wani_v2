@@ -5,6 +5,7 @@
       <sshConfig authType="PASSWORD" connectionConfig="{&quot;serverAliveInterval&quot;:300}" host="115.68.218.42" id="ac475c95-9ef0-4bf1-a397-e26f50f626da" port="22" customName="webhows" nameFormat="CUSTOM" username="root" useOpenSSHConfig="true">
         <option name="customName" value="webhows" />
       </sshConfig>
+      <sshConfig host="52.78.233.8" id="48da65db-f876-4db2-b73b-9d9ec692dd0f" keyPath="D:\SynologyDrive\52server\wani_web_20251021.ppk" port="22" nameFormat="DESCRIPTIVE" username="ubuntu" useOpenSSHConfig="true" />
     </configs>
   </component>
 </project>
