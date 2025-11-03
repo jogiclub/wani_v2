@@ -16,6 +16,10 @@ $(document).ready(function () {
 	let attendanceData = {};           // 출석 데이터
 	let currentMembers = [];           // 현재 회원 목록
 	let selectedAttTypeIdx = 'all';    // 선택된 출석유형 (기본: 전체)
+	let currentSundayDate = null;      // 현재 offcanvas에 표시된 주차의 일요일 날짜
+	let currentWeekMemberIndices = []; // 현재 주차의 회원 인덱스 목록
+	let attendanceDetailGrid = null;   // 출석 상세 그리드 인스턴스
+	let attendanceDetailGridData = []; // 출석 상세 그리드 데이터
 
 
 
@@ -90,13 +94,13 @@ $(document).ready(function () {
 				direction: 'horizontal',
 				onDragEnd: function (sizes) {
 
-						if (attendanceGrid) {
-							try {
-								attendanceGrid.pqGrid("refresh");
-							} catch (error) {
-								console.error('그리드 리프레시 실패:', error);
-							}
+					if (attendanceGrid) {
+						try {
+							attendanceGrid.pqGrid("refresh");
+						} catch (error) {
+							console.error('그리드 리프레시 실패:', error);
 						}
+					}
 					// 로컬스토리지에 크기 저장 (선택사항)
 					localStorage.setItem('member-split-sizes', JSON.stringify(sizes));
 				}
@@ -146,6 +150,21 @@ $(document).ready(function () {
 		// 출석저장 버튼 - saveAttendanceDetail 함수로 수정
 		$('#btnSaveAttendance').off('click').on('click', function () {
 			saveAttendanceDetail();
+		});
+
+		// 이전주 버튼
+		$('#btnPrevWeek').off('click').on('click', function () {
+			navigateWeek(-1);
+		});
+
+		// 다음주 버튼
+		$('#btnNextWeek').off('click').on('click', function () {
+			navigateWeek(1);
+		});
+
+		// 주차 출석 엑셀 다운로드 버튼
+		$('#btnPrintWeekAttendance').off('click').on('click', function () {
+			downloadWeekAttendanceExcel();
 		});
 
 		// 출석유형별 탭 이벤트 추가
@@ -891,7 +910,7 @@ $(document).ready(function () {
 	}
 
 
-	
+
 
 	/**
 	 * 그리드 데이터 준비 - 실제 포인트 합계 계산
@@ -954,17 +973,15 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 역할: 전역 변수에 attendance detail grid 추가
-	 */
-	let attendanceDetailGrid = null;
-	let attendanceDetailGridData = [];
-
-	/**
 	 * 역할: 출석 상세 정보 열기 - pqgrid 방식으로 변경
 	 */
 	function openAttendanceDetail(sunday) {
 		const date = new Date(sunday);
 		const formattedDate = date.getFullYear() + '.' + (date.getMonth() + 1) + '.' + date.getDate();
+
+		// 전역 변수 설정
+		currentSundayDate = sunday;
+		currentWeekMemberIndices = currentMembers.map(member => member.member_idx);
 
 		$('#attendanceOffcanvasLabel').text(formattedDate + ' 출석상세');
 
@@ -1035,10 +1052,21 @@ $(document).ready(function () {
 	 * 출석상세 pqgrid 초기화 - 이벤트 바인딩 개선
 	 */
 	function initializeAttendanceDetailGrid(attendanceTypes) {
-		if (attendanceDetailGrid) {
-			attendanceDetailGrid.pqGrid("destroy");
-			attendanceDetailGrid = null;
+		// DOM 요소 확인 및 안전한 destroy 처리
+		const $gridElement = $('#attendanceDetailGrid');
+		if ($gridElement.length > 0) {
+			try {
+				// pqGrid가 실제로 초기화되어 있는지 확인
+				const gridInstance = $gridElement.data('pqGrid');
+				if (gridInstance) {
+					$gridElement.pqGrid("destroy");
+				}
+			} catch (error) {
+				console.warn('기존 그리드 제거 중 오류 (무시됨):', error);
+			}
 		}
+
+		attendanceDetailGrid = null;
 
 		let colModel = [
 			{
@@ -1996,6 +2024,290 @@ $(document).ready(function () {
 		const month = String(now.getMonth() + 1).padStart(2, '0');
 		const day = String(now.getDate()).padStart(2, '0');
 		return `${year}${month}${day}`;
+	}
+
+	/**
+	 * 역할: 주차 이동 (이전주/다음주)
+	 */
+	function navigateWeek(direction) {
+		if (!currentSundayDate) {
+			showToast('주차 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		const currentDate = new Date(currentSundayDate);
+		currentDate.setDate(currentDate.getDate() + (direction * 7));
+		const newSundayDate = currentDate.toISOString().split('T')[0];
+
+		// 연도 범위 검증
+		const newYear = currentDate.getFullYear();
+		if (newYear < 2020 || newYear > 2030) {
+			showToast('조회 가능한 연도 범위를 벗어났습니다.', 'warning');
+			return;
+		}
+
+		// 미래 주차 방지
+		const today = new Date();
+		const todaySunday = new Date(today);
+		const daysFromSunday = today.getDay();
+		todaySunday.setDate(today.getDate() - daysFromSunday);
+
+		if (currentDate > todaySunday) {
+			showToast('미래 주차는 조회할 수 없습니다.', 'warning');
+			return;
+		}
+
+		// 새로운 주차 데이터 로드
+		currentSundayDate = newSundayDate;
+		loadWeekAttendanceDetail(currentSundayDate, currentWeekMemberIndices);
+	}
+
+	/**
+	 * 역할: 특정 주차의 출석 상세 정보 로드
+	 */
+	function loadWeekAttendanceDetail(sundayDate, memberIndices) {
+		const $content = $('#attendanceDetailContent');
+
+		// 로딩 스피너 표시
+		$content.html(`
+			<div class="text-center py-5">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">로딩중...</span>
+				</div>
+				<div class="mt-2 text-muted">출석 정보를 불러오는 중...</div>
+			</div>
+		`);
+
+		$.ajax({
+			url: window.attendancePageData.baseUrl + 'attendance/get_week_attendance_detail',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				sunday_date: sundayDate,
+				member_indices: memberIndices
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					renderAttendanceDetail(response.data, sundayDate);
+				} else {
+					$content.html(`
+						<div class="alert alert-warning" role="alert">
+							${response.message || '데이터를 불러올 수 없습니다.'}
+						</div>
+					`);
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('출석 상세 정보 로드 실패:', error);
+				$content.html(`
+					<div class="alert alert-danger" role="alert">
+						출석 정보를 불러오는 중 오류가 발생했습니다.
+					</div>
+				`);
+			}
+		});
+	}
+
+	/**
+	 * 역할: 주차별 출석 데이터를 엑셀로 다운로드
+	 */
+	function downloadWeekAttendanceExcel() {
+		if (!currentSundayDate || !currentWeekMemberIndices || currentWeekMemberIndices.length === 0) {
+			showToast('다운로드할 출석 데이터가 없습니다.', 'warning');
+			return;
+		}
+
+		if (!selectedOrgId) {
+			showToast('조직을 먼저 선택해주세요.', 'warning');
+			return;
+		}
+
+		const $btn = $('#btnPrintWeekAttendance');
+		const originalHtml = $btn.html();
+		$btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 생성중...');
+
+		$.ajax({
+			url: window.attendancePageData.baseUrl + 'attendance/get_week_attendance_detail',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				sunday_date: currentSundayDate,
+				member_indices: currentWeekMemberIndices
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					try {
+						const excelData = prepareWeekExcelData(response.data);
+						createAndDownloadWeekExcel(excelData, currentSundayDate);
+						showToast('엑셀 파일이 다운로드되었습니다.', 'success');
+					} catch (error) {
+						console.error('엑셀 생성 오류:', error);
+						showToast('엑셀 파일 생성 중 오류가 발생했습니다.', 'error');
+					}
+				} else {
+					showToast(response.message || '데이터를 불러올 수 없습니다.', 'error');
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error('데이터 로드 실패:', error);
+				showToast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
+			},
+			complete: function() {
+				$btn.prop('disabled', false).html(originalHtml);
+			}
+		});
+	}
+
+	/**
+	 * 역할: 주차 이동 시 출석 상세 정보 렌더링 (제목 및 그리드 업데이트)
+	 */
+	function renderAttendanceDetail(data, sundayDate) {
+		// 제목 업데이트
+		const date = new Date(sundayDate);
+		const formattedDate = date.getFullYear() + '.' + (date.getMonth() + 1) + '.' + date.getDate();
+		$('#attendanceOffcanvasLabel').text(formattedDate + ' 출석상세');
+
+		// 그리드 컨테이너 초기화
+		$('#attendanceDetailContent').html('<div id="attendanceDetailGrid"></div>');
+
+		// 그리드 렌더링
+		renderAttendanceDetailGrid(data, sundayDate);
+	}
+
+	/**
+	 * 역할: 주차별 출석 데이터를 엑셀 형식으로 변환
+	 */
+	function prepareWeekExcelData(data) {
+		const { members_info, attendance_records, attendance_types, memo_records, week_dates } = data;
+
+		// attendance_records를 안전하게 배열로 변환
+		const attendanceArray = Array.isArray(attendance_records)
+			? attendance_records
+			: (attendance_records ? Object.values(attendance_records) : []);
+
+		// 헤더 생성: 소그룹, 이름, 한줄메모, 출석유형별 컬럼
+		const headers = ['소그룹', '이름', '한줄메모'];
+		attendance_types.forEach(type => {
+			headers.push(type.att_type_nickname || type.att_type_name);
+		});
+
+		// 데이터 행 생성
+		const rows = [];
+		members_info.forEach(member => {
+			const row = [];
+
+			// 소그룹
+			row.push(member.area_name || '미배정');
+
+			// 이름
+			row.push(member.member_name || '');
+
+			// 한줄메모 - memo_records는 객체 형태 (member_idx가 키)
+			let memoContent = '';
+			if (memo_records) {
+				if (typeof memo_records === 'object' && !Array.isArray(memo_records)) {
+					// 객체인 경우 member_idx로 직접 접근
+					const memo = memo_records[member.member_idx];
+					memoContent = memo ? (memo.memo_content || '') : '';
+				} else if (Array.isArray(memo_records)) {
+					// 배열인 경우 find 사용
+					const memo = memo_records.find(m => m && m.member_idx == member.member_idx);
+					memoContent = memo ? (memo.memo_content || '') : '';
+				}
+			}
+			row.push(memoContent);
+
+			// 출석유형별 데이터
+			attendance_types.forEach(type => {
+				const attendanceRecord = attendanceArray.find(
+					r => r && r.member_idx == member.member_idx && r.att_type_idx == type.att_type_idx
+				);
+
+				if (attendanceRecord) {
+					if (type.att_type_input === 'text') {
+						row.push(attendanceRecord.att_value || '');
+					} else {
+						row.push('O');
+					}
+				} else {
+					row.push('');
+				}
+			});
+
+			rows.push(row);
+		});
+
+		return {
+			headers: headers,
+			data: rows
+		};
+	}
+
+	/**
+	 * 역할: 주차별 엑셀 파일 생성 및 다운로드
+	 */
+	function createAndDownloadWeekExcel(excelData, sundayDate) {
+		if (typeof XLSX === 'undefined') {
+			console.error('XLSX 라이브러리가 로드되지 않았습니다.');
+			showToast('엑셀 라이브러리를 불러올 수 없습니다.', 'error');
+			return;
+		}
+
+		// 워크시트 데이터 준비
+		const wsData = [excelData.headers, ...excelData.data];
+
+		// 워크시트 생성
+		const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+		// 컬럼 너비 설정
+		const colWidths = [
+			{wch: 15}, // 소그룹
+			{wch: 12}, // 이름
+			{wch: 30}  // 한줄메모
+		];
+		// 출석유형 컬럼 너비 추가
+		for (let i = 3; i < excelData.headers.length; i++) {
+			colWidths.push({wch: 10});
+		}
+		ws['!cols'] = colWidths;
+
+		// 헤더 스타일 설정
+		const headerRange = XLSX.utils.decode_range(ws['!ref']);
+		for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+			const headerCell = XLSX.utils.encode_cell({r: 0, c: C});
+			if (!ws[headerCell]) continue;
+
+			ws[headerCell].s = {
+				font: { bold: true, color: { rgb: "FFFFFF" } },
+				fill: { fgColor: { rgb: "4472C4" } },
+				alignment: { horizontal: "center", vertical: "center" }
+			};
+		}
+
+		// 워크북 생성
+		const wb = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, "출석상세");
+
+		// 파일명 생성
+		const orgNameElement = $('#selectedOrgName');
+		let orgName = '출석상세';
+		if (orgNameElement.length > 0) {
+			const orgText = orgNameElement.text().trim();
+			if (orgText && orgText !== '조직을 선택해주세요') {
+				orgName = orgText.replace(/[<>:"/\\|?*]/g, '');
+			}
+		}
+
+		// 날짜 형식 변환 (YYYY-MM-DD -> YYYY년MM월DD일)
+		const dateObj = new Date(sundayDate);
+		const dateStr = `${dateObj.getFullYear()}년${String(dateObj.getMonth() + 1).padStart(2, '0')}월${String(dateObj.getDate()).padStart(2, '0')}일`;
+
+		const fileName = `${orgName}_${dateStr}_출석상세.xlsx`;
+
+		// 파일 다운로드
+		XLSX.writeFile(wb, fileName);
 	}
 
 });

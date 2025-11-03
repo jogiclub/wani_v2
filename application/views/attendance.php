@@ -29,9 +29,9 @@
 			</ul>
 		</div>
 	</div>
-	
-	
-	
+
+
+
 
 	<!-- Split.js를 위한 단일 컨테이너 -->
 	<div class="split-container">
@@ -87,11 +87,11 @@
 
 							<!-- 연도 선택 컨트롤 -->
 							<div>
-							<div class="input-group input-group-sm year-selector justify-content-start justify-content-lg-end">
-								<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
-								<label class="input-group-text year-display " id="currentYear">2025</label>
-								<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
-							</div>
+								<div class="input-group input-group-sm year-selector justify-content-start justify-content-lg-end">
+									<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
+									<label class="input-group-text year-display " id="currentYear">2025</label>
+									<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
+								</div>
 							</div>
 
 
@@ -118,9 +118,24 @@
 
 <!-- 출석 상세 정보 offcanvas -->
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" id="attendanceOffcanvas" aria-labelledby="attendanceOffcanvasLabel" style="width: 700px">
-	<div class="offcanvas-header text-start">
-		<h5 class="offcanvas-title" id="attendanceOffcanvasLabel"></h5>
-		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	<div class="offcanvas-header text-start border-bottom">
+		<div class="d-flex align-items-center justify-content-start w-100">
+
+			<h5 class="offcanvas-title mb-0" id="attendanceOffcanvasLabel"></h5>
+			<div class="d-flex gap-1 ms-2">
+				<button type="button" class="btn btn-xs btn-outline-primary" id="btnPrevWeek">
+					<i class="bi bi-chevron-left"></i> 이전주
+				</button>
+				<button type="button" class="btn btn-xs btn-outline-primary" id="btnNextWeek">
+					다음주 <i class="bi bi-chevron-right"></i>
+				</button>
+				<button type="button" class="btn btn-xs btn-outline-success" id="btnPrintWeekAttendance">
+					<i class="bi bi-file-earmark-excel"></i> 엑셀
+				</button>
+
+			</div>
+		</div>
+		<button type="button" class="btn-close text-reset position-absolute top-0 end-0 mt-2 me-2" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">
 		<div id="attendanceDetailContent">

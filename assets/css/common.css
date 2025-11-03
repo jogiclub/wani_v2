@@ -27,7 +27,7 @@ ul, dl{}
 .offcanvas-header{flex-direction: column!important; background: #f9f9f9}
 .offcanvas-header .btn-close{position: absolute; right: 20px; top: 20px}
 .width-100{width:100%}
-.btn-xs{font-size: 12px; padding: 1px 5px;border-radius: 3px;}
+.btn-xs{font-size: 12px; padding: 1px 7px;border-radius: 3px;}
 .popover{font-family: 'Pretendard'; font-size: 16px;}
 .popover .popover-header{font-size: 16px;}
 .popover .popover-body{font-size: 16px;}

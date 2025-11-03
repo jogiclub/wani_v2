@@ -255,7 +255,7 @@ $is_master = $this->session->userdata('master_yn');
 
 					<!-- OVERVIEW 섹션 -->
 
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
 							OVERVIEW
 						</h6>
 						<ul class="nav flex-column">
@@ -278,7 +278,7 @@ $is_master = $this->session->userdata('master_yn');
 						can_access_menu('MEMO_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level);
 					?>
 					<?php if ($show_member_section): ?>
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
 							MEMBER
 						</h6>
 						<ul class="nav flex-column mb-auto">
@@ -324,7 +324,7 @@ $is_master = $this->session->userdata('master_yn');
 					<?php endif; ?>
 
 					<!-- HOMEPAGE 섹션 -->
-					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
 						HOMEPAGE
 					</h6>
 					<ul class="nav flex-column mb-auto">
@@ -349,7 +349,7 @@ $is_master = $this->session->userdata('master_yn');
 						can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master, $current_user_level);
 					?>
 					<?php if ($show_statics_section): ?>
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
 							STATICS
 						</h6>
 						<ul class="nav flex-column mb-auto">
@@ -381,7 +381,7 @@ $is_master = $this->session->userdata('master_yn');
 						can_access_menu('USER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level);
 					?>
 					<?php if ($show_setting_section): ?>
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-body-secondary text-uppercase">
+						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
 							SETTING
 						</h6>
 						<ul class="nav flex-column mb-auto">

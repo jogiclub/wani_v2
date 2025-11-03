@@ -86,7 +86,7 @@ function can_access_master_menu($menu_key, $master_managed_menus) {
 		</div>
 		<div class="offcanvas-body d-xl-flex flex-column p-0 pt-xl-3 overflow-y-auto">
 			<!-- 대시보드 (항상 표시) -->
-			<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase">
+			<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-muted text-uppercase">
 				<span>OVERVIEW</span>
 			</h6>
 			<ul class="nav flex-column">
@@ -99,7 +99,7 @@ function can_access_master_menu($menu_key, $master_managed_menus) {
 
 			<!-- 조직관리 (권한 확인) -->
 			<?php if (can_access_master_menu('mng_org', $master_managed_menus)): ?>
-				<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase">
+				<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-muted text-uppercase">
 					<span>ORG</span>
 				</h6>
 				<ul class="nav flex-column">
@@ -113,7 +113,7 @@ function can_access_master_menu($menu_key, $master_managed_menus) {
 
 			<!-- 마스터관리 (권한 확인) -->
 			<?php if (can_access_master_menu('mng_master', $master_managed_menus)): ?>
-				<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase">
+				<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-muted text-uppercase">
 					<span>MASTER</span>
 				</h6>
 				<ul class="nav flex-column">
