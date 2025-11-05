@@ -8,6 +8,8 @@ let currentMenuId = null;
 let currentMenuType = null;
 let menuData = [];
 let pageContentEditor = null;  // Editor.js 인스턴스 추가
+let boardDropzone = null;
+let uploadedFileList = [];
 
 $(document).ready(function() {
 	initializePage();
@@ -1065,20 +1067,25 @@ function renderBoardContent(boardList, total) {
 }
 
 /**
- * 게시글 추가 핸들러
+ * 게시글 추가 핸들러 (수정)
  */
 function handleAddBoardItem() {
 	$('#boardOffcanvasLabel').text('게시글 작성');
 	$('#board_idx').val('');
 	$('#board_title').val('');
 	$('#board_content').val('');
+	$('#youtube_url').val('');
+	$('#uploaded_files').val('');
+
+	// Dropzone 초기화
+	initializeBoardDropzone();
 
 	const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
 	boardOffcanvas.show();
 }
 
 /**
- * 게시글 수정 핸들러
+ * 게시글 수정 핸들러 (수정)
  */
 function handleEditBoardItem() {
 	const idx = $(this).data('idx');
@@ -1094,6 +1101,20 @@ function handleEditBoardItem() {
 				$('#board_idx').val(response.data.idx);
 				$('#board_title').val(response.data.board_title);
 				$('#board_content').val(response.data.board_content);
+				$('#youtube_url').val(response.data.youtube_url || '');
+
+				// Dropzone 초기화
+				initializeBoardDropzone();
+
+				// 기존 파일 복원
+				if (response.data.file_path) {
+					try {
+						const files = JSON.parse(response.data.file_path);
+						restoreUploadedFiles(files);
+					} catch (e) {
+						console.error('파일 데이터 파싱 오류:', e);
+					}
+				}
 
 				const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
 				boardOffcanvas.show();
@@ -1135,31 +1156,51 @@ function handleDeleteBoardItem() {
 }
 
 /**
- * 게시글 저장 핸들러
+ * 게시글 저장 핸들러 - 디버깅 추가
  */
 function handleSaveBoard() {
 	const orgId = $('#current_org_id').val();
 	const idx = $('#board_idx').val();
 	const boardTitle = $('#board_title').val().trim();
 	const boardContent = $('#board_content').val();
+	const youtubeUrl = $('#youtube_url').val().trim();
+	const uploadedFiles = $('#uploaded_files').val();
+
+	console.log('=== 게시글 저장 시작 ===');
+	console.log('uploadedFileList:', uploadedFileList);
+	console.log('uploaded_files input 값:', uploadedFiles);
 
 	if (!boardTitle) {
 		showToast('제목을 입력해주세요.');
 		return;
 	}
 
+	// YouTube URL 유효성 검사 (입력된 경우에만)
+	if (youtubeUrl && !isValidYoutubeUrl(youtubeUrl)) {
+		showToast('올바른 YouTube URL을 입력해주세요.');
+		return;
+	}
+
+	const postData = {
+		org_id: orgId,
+		menu_id: currentMenuId,
+		idx: idx,
+		board_title: boardTitle,
+		board_content: boardContent,
+		youtube_url: youtubeUrl,
+		file_path: uploadedFiles
+	};
+
+	console.log('전송할 데이터:', postData);
+
 	$.ajax({
 		url: '/homepage_menu/save_board',
 		type: 'POST',
 		dataType: 'json',
-		data: {
-			org_id: orgId,
-			menu_id: currentMenuId,
-			idx: idx,
-			board_title: boardTitle,
-			board_content: boardContent
-		},
+		data: postData,
 		success: function(response) {
+			console.log('서버 응답:', response);
+
 			if (response.success) {
 				showToast(response.message);
 
@@ -1171,11 +1212,21 @@ function handleSaveBoard() {
 				showToast(response.message);
 			}
 		},
-		error: function() {
+		error: function(xhr, status, error) {
+			console.error('저장 실패:', error);
+			console.error('응답:', xhr.responseText);
 			showToast('게시글 저장에 실패했습니다.');
 		}
 	});
 }
+/**
+ * YouTube URL 유효성 검사
+ */
+function isValidYoutubeUrl(url) {
+	const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)[\w-]+/;
+	return youtubeRegex.test(url);
+}
+
 
 /**
  * 게시판 검색 핸들러
@@ -1252,3 +1303,368 @@ function escapeHtml(text) {
 
 	return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
+
+
+/**
+ * Dropzone 초기화
+ */
+function initializeBoardDropzone() {
+	// 기존 Dropzone 인스턴스 완전 제거
+	if (boardDropzone) {
+		try {
+			boardDropzone.destroy();
+			boardDropzone = null;
+		} catch (e) {
+			console.log('Dropzone 제거 중 오류:', e);
+		}
+	}
+
+	// DOM 요소에서 Dropzone 클래스 제거
+	const dropzoneElement = document.querySelector("#dropzoneArea");
+	if (dropzoneElement && dropzoneElement.dropzone) {
+		try {
+			dropzoneElement.dropzone.destroy();
+		} catch (e) {
+			console.log('DOM Dropzone 제거 중 오류:', e);
+		}
+	}
+
+	// Dropzone 클래스 제거
+	if (dropzoneElement) {
+		dropzoneElement.classList.remove('dz-clickable');
+		dropzoneElement.innerHTML = '';
+	}
+
+	// 파일 목록 초기화
+	uploadedFileList = [];
+	$('#uploaded_files').val('');
+	console.log('[Dropzone] 초기화: uploadedFileList 비움');
+
+	// Dropzone 자동 발견 비활성화
+	Dropzone.autoDiscover = false;
+
+	// 새 Dropzone 인스턴스 생성
+	try {
+		boardDropzone = new Dropzone("#dropzoneArea", {
+			url: "/homepage_menu/upload_board_file",
+			paramName: "file",
+			maxFilesize: 10, // MB
+			maxFiles: 5,
+			addRemoveLinks: true,
+			dictDefaultMessage: "파일을 드래그하거나 클릭하여 업로드하세요",
+			dictRemoveFile: "삭제",
+			dictCancelUpload: "취소",
+			dictMaxFilesExceeded: "최대 5개까지만 업로드 가능합니다",
+			dictInvalidFileType: "허용되지 않는 파일 형식입니다",
+			acceptedFiles: "image/jpeg,image/jpg,image/png,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.hwp,.hwpx,.zip",
+
+			// 썸네일 설정
+			thumbnailWidth: 120,
+			thumbnailHeight: 120,
+			thumbnailMethod: 'contain',
+
+			init: function() {
+				const dropzoneInstance = this;
+
+				this.on("sending", function(file, xhr, formData) {
+					const orgId = $('#current_org_id').val();
+					formData.append("org_id", orgId);
+					console.log('[Dropzone] 파일 전송 시작:', file.name);
+				});
+
+				this.on("success", function(file, response) {
+					// 문자열 응답 파싱
+					if (typeof response === 'string') {
+						response = JSON.parse(response);
+					}
+
+					if (response && response.success) {
+						// 파일 정보 저장 (중요!)
+						file.serverPath = response.file_path;
+						file.serverFileName = response.file_name;
+
+						uploadedFileList.push({
+							name: response.file_name,
+							path: response.file_path,
+							size: file.size,
+							type: file.type
+						});
+
+						updateUploadedFilesInput();
+					}
+				});
+
+				this.on("error", function(file, errorMessage, xhr) {
+					// 실제로는 성공인지 확인
+					if (xhr && xhr.status === 200 && xhr.responseText) {
+						try {
+							const response = JSON.parse(xhr.responseText);
+							if (response && response.success) {
+								// 성공 처리
+								file.serverPath = response.file_path;
+								file.serverFileName = response.file_name;
+
+								uploadedFileList.push({
+									name: response.file_name,
+									path: response.file_path,
+									size: file.size,
+									type: file.type
+								});
+
+								updateUploadedFilesInput();
+								return; // 파일 삭제 안 함!
+							}
+						} catch (e) {}
+					}
+
+					// 진짜 에러만 처리
+					showToast(typeof errorMessage === 'string' ? errorMessage : '파일 업로드 실패');
+					this.removeFile(file);
+				});
+
+				this.on("removedfile", function(file) {
+					console.log('[Dropzone] 파일 삭제:', file.name);
+
+					// 서버에 업로드된 파일 정보로 필터링
+					if (file.serverPath || file.serverFileName) {
+						const beforeLength = uploadedFileList.length;
+						uploadedFileList = uploadedFileList.filter(f => f.path !== file.serverPath);
+						console.log('[Dropzone] 삭제 전:', beforeLength, '삭제 후:', uploadedFileList.length);
+						console.log('[Dropzone] 현재 uploadedFileList:', uploadedFileList);
+
+						updateUploadedFilesInput();
+						console.log('[Dropzone] uploaded_files 값:', $('#uploaded_files').val());
+					}
+				});
+
+				this.on("maxfilesexceeded", function(file) {
+					showToast('최대 5개까지만 업로드 가능합니다');
+					this.removeFile(file);
+				});
+
+				// 썸네일 생성 후 이벤트
+				this.on("thumbnail", function(file, dataUrl) {
+					console.log('[Dropzone] 썸네일 생성됨:', file.name);
+				});
+			},
+
+			// 파일 검증 함수
+			accept: function(file, done) {
+				const fileName = file.name.toLowerCase();
+
+				// 이미지 파일 체크
+				const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+				const isImage = imageExtensions.some(ext => fileName.endsWith(ext));
+
+				// 문서 파일 체크
+				const docExtensions = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.hwp', '.hwpx', '.zip'];
+				const isDocument = docExtensions.some(ext => fileName.endsWith(ext));
+
+				if (isImage) {
+					done();
+				} else if (isDocument) {
+					done();
+				} else {
+					done("이미지(jpg, jpeg, png, gif) 또는 문서(pdf, doc, docx, ppt, pptx, xls, xlsx, hwp, hwpx, zip) 파일만 업로드 가능합니다.");
+				}
+			},
+
+			// 이미지 리사이징 처리
+			transformFile: function(file, done) {
+				// 이미지 파일인지 확인
+				if (file.type.match(/image.*/)) {
+					const reader = new FileReader();
+					reader.onload = function(e) {
+						const img = new Image();
+						img.onload = function() {
+							let width = img.width;
+							let height = img.height;
+
+							console.log('[Dropzone] 원본 이미지 크기:', width, 'x', height);
+
+							// 긴 쪽이 2000px 넘으면 리사이징
+							if (width > 2000 || height > 2000) {
+								const canvas = document.createElement('canvas');
+								const ctx = canvas.getContext('2d');
+
+								// 비율 계산
+								if (width > height) {
+									if (width > 2000) {
+										height = Math.round((height * 2000) / width);
+										width = 2000;
+									}
+								} else {
+									if (height > 2000) {
+										width = Math.round((width * 2000) / height);
+										height = 2000;
+									}
+								}
+
+								console.log('[Dropzone] 리사이징 후 크기:', width, 'x', height);
+
+								canvas.width = width;
+								canvas.height = height;
+								ctx.drawImage(img, 0, 0, width, height);
+
+								// Canvas를 Blob으로 변환
+								canvas.toBlob(function(blob) {
+									// Blob에 원본 파일명 추가
+									blob.name = file.name;
+									blob.lastModified = new Date();
+									done(blob);
+								}, file.type, 0.9);
+							} else {
+								console.log('[Dropzone] 리사이징 불필요');
+								// 리사이징 불필요
+								done(file);
+							}
+						};
+						img.src = e.target.result;
+					};
+					reader.readAsDataURL(file);
+				} else {
+					// 이미지가 아니면 원본 그대로
+					done(file);
+				}
+			}
+		});
+
+		console.log('[Dropzone] 초기화 완료');
+
+	} catch (e) {
+		console.error('[Dropzone] 초기화 실패:', e);
+		showToast('파일 업로드 영역 초기화에 실패했습니다.');
+	}
+}
+
+
+/**
+ * 업로드된 파일 목록 업데이트
+ */
+function updateUploadedFilesInput() {
+	const jsonString = JSON.stringify(uploadedFileList);
+	$('#uploaded_files').val(jsonString);
+	console.log('[updateUploadedFilesInput] 업데이트됨:', jsonString);
+}
+
+/**
+ * 역할: 파일 복원 시 썸네일 표시 및 삭제 기능 수정
+ */
+
+/**
+ * 기존 파일 복원 (수정 시) - 썸네일 표시 및 삭제 기능 개선
+ */
+function restoreUploadedFiles(files) {
+	if (!files || !Array.isArray(files) || files.length === 0) {
+		console.log('[restoreUploadedFiles] 복원할 파일 없음');
+		return;
+	}
+
+	console.log('[restoreUploadedFiles] 파일 복원 시작:', files);
+
+	uploadedFileList = files;
+	updateUploadedFilesInput();
+
+	// boardDropzone가 초기화된 후에 파일 추가
+	if (boardDropzone) {
+		files.forEach(function(fileData) {
+			const mockFile = {
+				name: fileData.name,
+				size: fileData.size,
+				type: fileData.type,
+				// 서버 경로 정보 저장 (삭제 시 필요)
+				serverPath: fileData.path,
+				serverFileName: fileData.name,
+				// 업로드 완료 상태로 설정
+				status: Dropzone.SUCCESS,
+				accepted: true
+			};
+
+			// 파일 추가
+			boardDropzone.emit("addedfile", mockFile);
+
+			// 이미지 파일인 경우 썸네일 표시
+			if (fileData.type && fileData.type.match(/image.*/)) {
+				// 썸네일 URL 생성 (실제 이미지 경로 사용)
+				const thumbnailUrl = fileData.path;
+
+				// 썸네일 수동 설정
+				boardDropzone.emit("thumbnail", mockFile, thumbnailUrl);
+
+				// 썸네일 이미지가 생성되면 크기 조정
+				setTimeout(function() {
+					const preview = mockFile.previewElement;
+					if (preview) {
+						const img = preview.querySelector('img');
+						if (img) {
+							img.style.width = '100%';
+							img.style.height = '100%';
+							img.style.objectFit = 'contain';
+						}
+					}
+				}, 100);
+			} else {
+				// 문서 파일인 경우 기본 아이콘 표시
+				boardDropzone.emit("thumbnail", mockFile, null);
+			}
+
+			// 완료 상태로 표시
+			boardDropzone.emit("complete", mockFile);
+
+			// Dropzone 파일 목록에 추가
+			boardDropzone.files.push(mockFile);
+
+			console.log('[restoreUploadedFiles] 파일 복원됨:', fileData.name);
+		});
+
+		console.log('[restoreUploadedFiles] 복원 완료, 전체 파일 수:', boardDropzone.files.length);
+	}
+}
+
+/**
+ * removedfile 이벤트 핸들러 (init 함수 내부에서 수정)
+ */
+// init 함수 내부의 removedfile 이벤트를 다음과 같이 수정:
+
+this.on("removedfile", function(file) {
+	console.log('[Dropzone] 파일 삭제 요청:', file.name);
+	console.log('[Dropzone] serverPath:', file.serverPath);
+	console.log('[Dropzone] serverFileName:', file.serverFileName);
+
+	// 서버에 업로드된 파일 정보로 필터링
+	if (file.serverPath || file.serverFileName) {
+		const beforeLength = uploadedFileList.length;
+
+		// uploadedFileList에서 제거
+		uploadedFileList = uploadedFileList.filter(function(f) {
+			const isMatch = f.path === file.serverPath;
+			if (isMatch) {
+				console.log('[Dropzone] 매칭된 파일 찾음:', f.name);
+			}
+			return !isMatch;
+		});
+
+		const afterLength = uploadedFileList.length;
+		console.log('[Dropzone] 삭제 전:', beforeLength, '→ 삭제 후:', afterLength);
+		console.log('[Dropzone] 현재 uploadedFileList:', uploadedFileList);
+
+		// hidden input 업데이트
+		updateUploadedFilesInput();
+		console.log('[Dropzone] uploaded_files 값:', $('#uploaded_files').val());
+
+		// 실제로 삭제되었는지 확인
+		if (beforeLength > afterLength) {
+			console.log('[Dropzone] 파일이 uploadedFileList에서 제거됨');
+		} else {
+			console.log('[Dropzone] 경고: uploadedFileList에서 제거되지 않음!');
+		}
+	} else {
+		console.log('[Dropzone] serverPath 없음 - 업로드 전 파일');
+	}
+});
+
+
+
+
+
+

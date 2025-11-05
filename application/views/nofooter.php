@@ -5,7 +5,7 @@
 
 <footer style="position: absolute; left: 0; bottom:0; width: 100%">
 	<div class="py-3 text-center">© 2024 WEBHOWS. All Rights Reserved.
-	<small class="d-flex justify-content-center">사업자번호 721-41-012278 | 대표이사 : 정충상 | 이메일 : hello@webhows.com | 연락처 : 010-7292-9259  | 경기도 시흥시 목감남서로 38</small>
+	<small class="d-flex justify-content-center">상호명 : 웹하우스 | 사업자번호 721-41-01278 | 대표이사 : 정충상 | 이메일 : hello@webhows.com | 연락처 : 010-7292-9259  | 경기도 시흥시 목감남서로 38 호반서밋 407동 1102호</small>
 	</div>
 </footer>
 

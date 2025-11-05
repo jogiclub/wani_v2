@@ -259,6 +259,8 @@ class Homepage_menu extends My_Controller
 		$idx = $this->input->post('idx');
 		$board_title = $this->input->post('board_title');
 		$board_content = $this->input->post('board_content');
+		$youtube_url = $this->input->post('youtube_url');
+		$file_path = $this->input->post('file_path');
 
 		if (!$org_id || !$menu_id || !$board_title) {
 			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
@@ -269,7 +271,9 @@ class Homepage_menu extends My_Controller
 			'org_id' => $org_id,
 			'menu_id' => $menu_id,
 			'board_title' => $board_title,
-			'board_content' => $board_content
+			'board_content' => $board_content,
+			'youtube_url' => $youtube_url ? $youtube_url : NULL,
+			'file_path' => $file_path ? $file_path : NULL
 		];
 
 		if ($idx) {
@@ -339,17 +343,19 @@ class Homepage_menu extends My_Controller
 			$upload_data = $this->upload->data();
 			$file_url = base_url('uploads/homepage/' . $upload_data['file_name']);
 
+			// upload_board_file() 함수
 			echo json_encode([
-				'success' => 1,
-				'file' => [
-					'url' => $file_url
-				]
-			]);
+				'success' => true,
+				'message' => '파일이 업로드되었습니다.',
+				'file_path' => $file_path,
+				'file_name' => $upload_data['orig_name']
+			], JSON_UNESCAPED_UNICODE);
 		} else {
+			// save_board() 함수
 			echo json_encode([
-				'success' => 0,
-				'message' => $this->upload->display_errors('', '')
-			]);
+				'success' => true,
+				'message' => '게시글이 저장되었습니다.'
+			], JSON_UNESCAPED_UNICODE);
 		}
 	}
 
@@ -396,5 +402,69 @@ class Homepage_menu extends My_Controller
 
 		return $result;
 	}
+
+
+	/**
+	 * 파일 위치: application/controllers/Homepage_menu.php
+	 * 역할: 게시판 파일 업로드 - 파일 타입 제한 업데이트
+	 */
+
+	/**
+	 * 게시판 파일 업로드 (AJAX)
+	 */
+	public function upload_board_file()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		// 업로드 경로 설정: /var/www/wani/public/uploads/homepage/{org_id}/년/월/일/
+		$date_path = date('Y') . '/' . date('m') . '/' . date('d');
+		$upload_path = '/var/www/wani/public/uploads/homepage/' . $org_id . '/' . $date_path . '/';
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			if (!mkdir($upload_path, 0755, true)) {
+				echo json_encode(['success' => false, 'message' => '업로드 디렉토리 생성에 실패했습니다.']);
+				return;
+			}
+		}
+
+		// 업로드 설정
+		$config['upload_path'] = $upload_path;
+		// 이미지: jpg, jpeg, png, gif
+		// 문서: pdf, doc, docx, ppt, pptx, xls, xlsx, hwp, hwpx, zip
+		$config['allowed_types'] = 'jpg|jpeg|png|gif|pdf|doc|docx|ppt|pptx|xls|xlsx|hwp|hwpx|zip';
+		$config['max_size'] = 10240; // 10MB
+		$config['encrypt_name'] = TRUE;
+
+		$this->load->library('upload', $config);
+
+		if ($this->upload->do_upload('file')) {
+			$upload_data = $this->upload->data();
+
+			// 상대 경로 저장 (공개 경로)
+			$file_path = '/uploads/homepage/' . $org_id . '/' . $date_path . '/' . $upload_data['file_name'];
+
+			echo json_encode([
+				'success' => true,
+				'message' => '파일이 업로드되었습니다.',
+				'file_path' => $file_path,
+				'file_name' => $upload_data['orig_name']
+			]);
+		} else {
+			$error = $this->upload->display_errors('', '');
+			echo json_encode(['success' => false, 'message' => '파일 업로드 실패: ' . $error]);
+		}
+	}
+
+
 
 }
