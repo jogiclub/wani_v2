@@ -182,6 +182,14 @@ class Homepage_menu extends My_Controller
 			return;
 		}
 
+		// 기존 페이지 정보 조회
+		$old_page = $this->Homepage_menu_model->get_page_info($org_id, $menu_id);
+
+		// 기존 내용과 비교하여 삭제된 이미지 정리
+		if ($old_page && !empty($old_page['page_content'])) {
+			$this->cleanup_removed_images($old_page['page_content'], $page_content);
+		}
+
 		$data = [
 			'org_id' => $org_id,
 			'menu_id' => $menu_id,
@@ -196,6 +204,8 @@ class Homepage_menu extends My_Controller
 			echo json_encode(['success' => false, 'message' => '페이지 정보 저장에 실패했습니다.']);
 		}
 	}
+
+
 
 	/**
 	 * 게시판 목록 조회 (AJAX)
@@ -267,6 +277,14 @@ class Homepage_menu extends My_Controller
 			return;
 		}
 
+		// 수정인 경우, 기존 내용과 비교하여 삭제된 이미지 처리
+		if ($idx) {
+			$old_board = $this->Homepage_menu_model->get_board_detail($idx);
+			if ($old_board && !empty($old_board['board_content'])) {
+				$this->cleanup_removed_images($old_board['board_content'], $board_content);
+			}
+		}
+
 		$data = [
 			'org_id' => $org_id,
 			'menu_id' => $menu_id,
@@ -294,6 +312,61 @@ class Homepage_menu extends My_Controller
 		}
 	}
 
+	/**
+	 * 게시글 수정 시 삭제된 이미지 정리
+	 */
+	private function cleanup_removed_images($old_content, $new_content)
+	{
+		try {
+			$old_images = $this->extract_image_urls($old_content);
+			$new_images = $this->extract_image_urls($new_content);
+
+			// 기존에 있었지만 새 내용에는 없는 이미지 = 삭제된 이미지
+			$removed_images = array_diff($old_images, $new_images);
+
+			foreach ($removed_images as $image_url) {
+				$this->delete_image_from_url($image_url);
+				log_message('info', '[게시글 수정] 사용하지 않는 이미지 삭제: ' . $image_url);
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '[게시글 수정] 이미지 정리 중 오류: ' . $e->getMessage());
+		}
+	}
+
+	/**
+	 * Editor.js 본문에서 이미지 URL 배열 추출
+	 */
+	private function extract_image_urls($content)
+	{
+		$image_urls = [];
+
+		try {
+			$content_data = json_decode($content, true);
+
+			if (!$content_data || !isset($content_data['blocks'])) {
+				return $image_urls;
+			}
+
+			foreach ($content_data['blocks'] as $block) {
+				// 이미지 블록
+				if ($block['type'] === 'image' && isset($block['data']['file']['url'])) {
+					$image_urls[] = $block['data']['file']['url'];
+				}
+
+				// Attaches 블록
+				if ($block['type'] === 'attaches' && isset($block['data']['file']['url'])) {
+					$image_urls[] = $block['data']['file']['url'];
+				}
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '[이미지 URL 추출] 오류: ' . $e->getMessage());
+		}
+
+		return $image_urls;
+	}
+
 
 	/**
 	 * 이미지 업로드 (Editor.js용)
@@ -304,36 +377,291 @@ class Homepage_menu extends My_Controller
 			show_404();
 		}
 
-		$config['upload_path'] = './uploads/homepage/';
-		$config['allowed_types'] = 'gif|jpg|jpeg|png|webp';
-		$config['max_size'] = 10240; // 10MB
-		$config['encrypt_name'] = TRUE;
+		// org_id 가져오기 (POST 또는 세션에서)
+		$org_id = $this->input->post('org_id');
 
-		if (!is_dir($config['upload_path'])) {
-			mkdir($config['upload_path'], 0755, true);
+		if (!$org_id) {
+			// 세션에서 현재 조직 정보 가져오기
+			$current_org = $this->session->userdata('current_org');
+			$org_id = $current_org['org_id'] ?? null;
 		}
+
+		if (!$org_id) {
+			echo json_encode([
+				'success' => 0,
+				'message' => '조직 정보가 없습니다.'
+			]);
+			return;
+		}
+
+		// 업로드 경로 설정 (게시판 파일과 동일)
+		$year = date('Y');
+		$month = date('m');
+		$day = date('d');
+		$upload_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/";
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'gif|jpg|jpeg|png|webp';
+		$config['max_size'] = 5120; // 5MB
+		$config['encrypt_name'] = TRUE;
 
 		$this->load->library('upload', $config);
 
 		if ($this->upload->do_upload('image')) {
 			$upload_data = $this->upload->data();
-			$file_url = base_url('uploads/homepage/' . $upload_data['file_name']);
+			$file_name = $upload_data['file_name'];
+			$file_url = base_url("uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/{$file_name}");
 
-			// upload_board_file() 함수
+			// Editor.js 응답 형식
 			echo json_encode([
-				'success' => true,
-				'message' => '파일이 업로드되었습니다.',
-				'file_path' => $file_path,
-				'file_name' => $upload_data['orig_name']
-			], JSON_UNESCAPED_UNICODE);
+				'success' => 1,
+				'file' => [
+					'url' => $file_url
+				]
+			]);
 		} else {
-			// save_board() 함수
+			$error = $this->upload->display_errors('', '');
 			echo json_encode([
-				'success' => true,
-				'message' => '게시글이 저장되었습니다.'
-			], JSON_UNESCAPED_UNICODE);
+				'success' => 0,
+				'message' => '이미지 업로드 실패: ' . $error
+			]);
 		}
 	}
+
+	/**
+	 * URL에서 이미지 가져오기 (Editor.js용)
+	 */
+	public function fetch_url_image()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$url = $this->input->post('url');
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			$current_org = $this->session->userdata('current_org');
+			$org_id = $current_org['org_id'] ?? null;
+		}
+
+		if (!$url || !$org_id) {
+			echo json_encode([
+				'success' => 0,
+				'message' => '필수 정보가 누락되었습니다.'
+			]);
+			return;
+		}
+
+		// URL 유효성 검사
+		if (!filter_var($url, FILTER_VALIDATE_URL)) {
+			echo json_encode([
+				'success' => 0,
+				'message' => '유효하지 않은 URL입니다.'
+			]);
+			return;
+		}
+
+		// 이미지 다운로드
+		$image_content = @file_get_contents($url);
+
+		if (!$image_content) {
+			echo json_encode([
+				'success' => 0,
+				'message' => '이미지를 가져올 수 없습니다.'
+			]);
+			return;
+		}
+
+		// 파일 확장자 추출
+		$path_info = pathinfo(parse_url($url, PHP_URL_PATH));
+		$extension = isset($path_info['extension']) ? strtolower($path_info['extension']) : 'jpg';
+
+		// 허용된 확장자인지 확인
+		$allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+		if (!in_array($extension, $allowed_extensions)) {
+			$extension = 'jpg';
+		}
+
+		// 업로드 경로 설정
+		$year = date('Y');
+		$month = date('m');
+		$day = date('d');
+		$upload_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/";
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		// 파일명 생성
+		$file_name = 'url_' . uniqid() . '.' . $extension;
+		$file_path = $upload_path . $file_name;
+
+		// 파일 저장
+		if (file_put_contents($file_path, $image_content)) {
+			$file_url = base_url("uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/{$file_name}");
+
+			echo json_encode([
+				'success' => 1,
+				'file' => [
+					'url' => $file_url
+				]
+			]);
+		} else {
+			echo json_encode([
+				'success' => 0,
+				'message' => '파일 저장에 실패했습니다.'
+			]);
+		}
+	}
+
+	/**
+	 * URL 메타데이터 가져오기 (Editor.js Link Tool용)
+	 */
+	public function fetch_url_meta()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$url = $this->input->post('url');
+
+		if (!$url) {
+			echo json_encode([
+				'success' => 0,
+				'message' => 'URL이 필요합니다.'
+			]);
+			return;
+		}
+
+		// URL 유효성 검사
+		if (!filter_var($url, FILTER_VALIDATE_URL)) {
+			echo json_encode([
+				'success' => 0,
+				'message' => '유효하지 않은 URL입니다.'
+			]);
+			return;
+		}
+
+		// HTML 가져오기
+		$html = @file_get_contents($url);
+
+		if (!$html) {
+			echo json_encode([
+				'success' => 0,
+				'message' => 'URL을 가져올 수 없습니다.'
+			]);
+			return;
+		}
+
+		// 메타 정보 추출
+		$title = '';
+		$description = '';
+		$image = '';
+
+		// Title 추출
+		if (preg_match('/<title>(.*?)<\/title>/i', $html, $matches)) {
+			$title = $matches[1];
+		}
+
+		// Description 추출
+		if (preg_match('/<meta[^>]+name=["\']description["\'][^>]+content=["\'](.*?)["\']/i', $html, $matches)) {
+			$description = $matches[1];
+		} elseif (preg_match('/<meta[^>]+property=["\']og:description["\'][^>]+content=["\'](.*?)["\']/i', $html, $matches)) {
+			$description = $matches[1];
+		}
+
+		// Image 추출
+		if (preg_match('/<meta[^>]+property=["\']og:image["\'][^>]+content=["\'](.*?)["\']/i', $html, $matches)) {
+			$image = $matches[1];
+		}
+
+		echo json_encode([
+			'success' => 1,
+			'meta' => [
+				'title' => $title ?: $url,
+				'description' => $description ?: '',
+				'image' => [
+					'url' => $image ?: ''
+				]
+			]
+		]);
+	}
+
+	/**
+	 * 파일 업로드 (Editor.js Attaches Tool용)
+	 */
+	public function upload_file()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			$current_org = $this->session->userdata('current_org');
+			$org_id = $current_org['org_id'] ?? null;
+		}
+
+		if (!$org_id) {
+			echo json_encode([
+				'success' => 0,
+				'message' => '조직 정보가 없습니다.'
+			]);
+			return;
+		}
+
+		// 업로드 경로 설정
+		$year = date('Y');
+		$month = date('m');
+		$day = date('d');
+		$upload_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/";
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'pdf|doc|docx|xls|xlsx|ppt|pptx|zip|txt';
+		$config['max_size'] = 10240; // 10MB
+		$config['encrypt_name'] = TRUE;
+
+		$this->load->library('upload', $config);
+
+		if ($this->upload->do_upload('file')) {
+			$upload_data = $this->upload->data();
+			$file_name = $upload_data['file_name'];
+			$file_url = base_url("uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/{$file_name}");
+			$file_size = $upload_data['file_size'] * 1024; // KB to bytes
+
+			// Editor.js Attaches 응답 형식
+			echo json_encode([
+				'success' => 1,
+				'file' => [
+					'url' => $file_url,
+					'size' => $file_size,
+					'name' => $upload_data['orig_name'],
+					'extension' => $upload_data['file_ext']
+				]
+			]);
+		} else {
+			$error = $this->upload->display_errors('', '');
+			echo json_encode([
+				'success' => 0,
+				'message' => '파일 업로드 실패: ' . $error
+			]);
+		}
+	}
+
+
 
 
 	/**
@@ -589,14 +917,15 @@ class Homepage_menu extends My_Controller
 		$failed_count = 0;
 
 		foreach ($idx_list as $idx) {
-			// 게시글 정보 조회 (첨부파일 정보 확인)
+			// 게시글 정보 조회 (첨부파일 및 본문 정보 확인)
 			$board = $this->Homepage_menu_model->get_board_detail($idx);
 
 			if ($board) {
-				// 첨부파일 삭제
-				if (!empty($board['file_path'])) {
-					$this->delete_board_files($board['file_path']);
-				}
+				// 첨부파일 및 Editor.js 이미지 삭제
+				$this->delete_board_files(
+					$board['file_path'] ?? null,
+					$board['board_content'] ?? null
+				);
 
 				// 게시글 삭제
 				$result = $this->Homepage_menu_model->delete_board($idx);
@@ -623,7 +952,7 @@ class Homepage_menu extends My_Controller
 	}
 
 	/**
-	 * 게시글 삭제 (AJAX) - 파일 삭제 추가
+	 * 게시글 삭제 (AJAX) - 파일 및 Editor.js 이미지 삭제 추가
 	 */
 	public function delete_board()
 	{
@@ -638,14 +967,15 @@ class Homepage_menu extends My_Controller
 			return;
 		}
 
-		// 게시글 정보 조회 (첨부파일 정보 확인)
+		// 게시글 정보 조회 (첨부파일 및 본문 정보 확인)
 		$board = $this->Homepage_menu_model->get_board_detail($idx);
 
 		if ($board) {
-			// 첨부파일 삭제
-			if (!empty($board['file_path'])) {
-				$this->delete_board_files($board['file_path']);
-			}
+			// 첨부파일 및 Editor.js 이미지 삭제
+			$this->delete_board_files(
+				$board['file_path'] ?? null,
+				$board['board_content'] ?? null
+			);
 
 			// 게시글 삭제
 			$result = $this->Homepage_menu_model->delete_board($idx);
@@ -661,41 +991,170 @@ class Homepage_menu extends My_Controller
 	}
 
 	/**
-	 * 게시글 첨부파일 삭제
+	 * 게시글 첨부파일 및 Editor.js 이미지 삭제
 	 */
-	private function delete_board_files($file_path_json)
+	private function delete_board_files($file_path_json, $board_content = null)
 	{
 		try {
-			$files = json_decode($file_path_json, true);
+			// 1. Dropzone으로 업로드한 첨부파일 삭제
+			if (!empty($file_path_json)) {
+				$files = json_decode($file_path_json, true);
 
-			if (!is_array($files) || empty($files)) {
-				return;
-			}
+				if (is_array($files) && !empty($files)) {
+					foreach ($files as $file) {
+						if (isset($file['path'])) {
+							// 원본 파일 삭제
+							$original_file = '.' . $file['path'];
+							if (file_exists($original_file)) {
+								@unlink($original_file);
+								log_message('info', '[게시글 삭제] 첨부파일 삭제: ' . $original_file);
+							}
 
-			foreach ($files as $file) {
-				if (isset($file['path'])) {
-					// 원본 파일 삭제
-					$original_file = '.' . $file['path'];
-					if (file_exists($original_file)) {
-						@unlink($original_file);
-						log_message('info', '파일 삭제: ' . $original_file);
-					}
-
-					// 썸네일 파일 삭제 (이미지인 경우)
-					if (isset($file['thumb_path']) && !empty($file['thumb_path'])) {
-						$thumb_file = '.' . $file['thumb_path'];
-						if (file_exists($thumb_file)) {
-							@unlink($thumb_file);
-							log_message('info', '썸네일 삭제: ' . $thumb_file);
+							// 썸네일 파일 삭제 (이미지인 경우)
+							if (isset($file['thumb_path']) && !empty($file['thumb_path'])) {
+								$thumb_file = '.' . $file['thumb_path'];
+								if (file_exists($thumb_file)) {
+									@unlink($thumb_file);
+									log_message('info', '[게시글 삭제] 썸네일 삭제: ' . $thumb_file);
+								}
+							}
 						}
 					}
 				}
 			}
+
+			// 2. Editor.js 본문 내 이미지 삭제
+			if (!empty($board_content)) {
+				$this->delete_editorjs_images($board_content);
+			}
+
 		} catch (Exception $e) {
-			log_message('error', '파일 삭제 중 오류: ' . $e->getMessage());
+			log_message('error', '[게시글 삭제] 파일 삭제 중 오류: ' . $e->getMessage());
 		}
 	}
 
+	/**
+	 * Editor.js 본문에서 이미지 URL 추출 및 삭제
+	 */
+	private function delete_editorjs_images($board_content)
+	{
+		try {
+			$content_data = json_decode($board_content, true);
+
+			if (!$content_data || !isset($content_data['blocks'])) {
+				return;
+			}
+
+			foreach ($content_data['blocks'] as $block) {
+				// 이미지 블록 처리
+				if ($block['type'] === 'image' && isset($block['data']['file']['url'])) {
+					$image_url = $block['data']['file']['url'];
+					$this->delete_image_from_url($image_url);
+				}
+
+				// Attaches 블록 처리 (파일 첨부)
+				if ($block['type'] === 'attaches' && isset($block['data']['file']['url'])) {
+					$file_url = $block['data']['file']['url'];
+					$this->delete_image_from_url($file_url);
+				}
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '[게시글 삭제] Editor.js 이미지 삭제 중 오류: ' . $e->getMessage());
+		}
+	}
+
+
+	/**
+	 * URL에서 실제 파일 경로 추출 및 삭제
+	 */
+	private function delete_image_from_url($url)
+	{
+		try {
+			// base_url 제거하고 실제 파일 경로만 추출
+			$base = base_url();
+
+			if (strpos($url, $base) === 0) {
+				$file_path = str_replace($base, './', $url);
+			} else {
+				// 상대 경로인 경우
+				$file_path = '.' . $url;
+			}
+
+			if (file_exists($file_path)) {
+				if (@unlink($file_path)) {
+					log_message('info', '[게시글 삭제] Editor.js 이미지 삭제: ' . $file_path);
+				} else {
+					log_message('error', '[게시글 삭제] Editor.js 이미지 삭제 실패: ' . $file_path);
+				}
+			}
+
+		} catch (Exception $e) {
+			log_message('error', '[게시글 삭제] 이미지 URL 처리 중 오류: ' . $e->getMessage());
+		}
+	}
+
+
+	/**
+	 * 메뉴 삭제 시 관련 데이터 삭제
+	 */
+	public function delete_menu_data()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$menu_id = $this->input->post('menu_id');
+		$menu_type = $this->input->post('menu_type');
+
+		if (!$org_id || !$menu_id || !$menu_type) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		try {
+			if ($menu_type === 'page') {
+				// 페이지 정보 조회
+				$page = $this->Homepage_menu_model->get_page_info($org_id, $menu_id);
+
+				if ($page && !empty($page['page_content'])) {
+					// 페이지 내 이미지 삭제
+					$this->delete_editorjs_images($page['page_content']);
+				}
+
+				// 페이지 데이터 삭제
+				$this->Homepage_menu_model->delete_page($org_id, $menu_id);
+
+			} elseif ($menu_type === 'board') {
+				// 게시판의 모든 게시글 조회
+				$boards = $this->Homepage_menu_model->get_all_boards_by_menu($org_id, $menu_id);
+
+				foreach ($boards as $board) {
+					// 첨부파일 삭제
+					if (!empty($board['file_path'])) {
+						$this->delete_board_files($board['file_path'], $board['board_content']);
+					} elseif (!empty($board['board_content'])) {
+						// 첨부파일은 없지만 본문에 이미지가 있을 수 있음
+						$this->delete_editorjs_images($board['board_content']);
+					}
+				}
+
+				// 게시판의 모든 게시글 삭제
+				$this->Homepage_menu_model->delete_all_boards_by_menu($org_id, $menu_id);
+
+			} elseif ($menu_type === 'link') {
+				// 링크 데이터 삭제
+				$this->Homepage_menu_model->delete_link($org_id, $menu_id);
+			}
+
+			echo json_encode(['success' => true, 'message' => '메뉴 데이터가 삭제되었습니다.']);
+
+		} catch (Exception $e) {
+			log_message('error', '[메뉴 삭제] 오류: ' . $e->getMessage());
+			echo json_encode(['success' => false, 'message' => '메뉴 데이터 삭제 중 오류가 발생했습니다.']);
+		}
+	}
 
 
 }

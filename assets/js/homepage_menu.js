@@ -7,7 +7,8 @@ let splitInstance = null;
 let currentMenuId = null;
 let currentMenuType = null;
 let menuData = [];
-let pageContentEditor = null;  // Editor.js 인스턴스 추가
+let pageContentEditor = null;
+let boardContentEditor = null;
 let boardDropzone = null;
 let uploadedFileList = [];
 let currentBoardPage = 1;
@@ -119,7 +120,202 @@ function loadMenuList() {
 		}
 	});
 }
+/**
+ * 게시판 Editor.js 초기화
+ */
+function initBoardContentEditor(content) {
+	// 기존 에디터 인스턴스가 있으면 제거
+	if (boardContentEditor) {
+		try {
+			boardContentEditor.destroy();
+			boardContentEditor = null;
+		} catch (e) {
+			console.log('[게시판 에디터] 기존 인스턴스 제거 중 오류:', e);
+		}
+	}
 
+	// org_id 가져오기
+	const orgId = $('#current_org_id').val();
+
+	// 저장된 데이터 파싱
+	let parsedData = null;
+	if (content) {
+		try {
+			parsedData = JSON.parse(content);
+		} catch (e) {
+			parsedData = {
+				blocks: [{
+					type: 'paragraph',
+					data: { text: content }
+				}]
+			};
+		}
+	}
+
+	// EditorJS가 로드되었는지 확인
+	if (typeof EditorJS === 'undefined') {
+		console.error('[게시판 에디터] EditorJS가 로드되지 않았습니다.');
+		showToast('에디터를 불러올 수 없습니다.');
+		return;
+	}
+
+	// 사용 가능한 도구 설정
+	const availableTools = {};
+
+	if (typeof window.Header !== 'undefined') {
+		availableTools.header = {
+			class: window.Header,
+			config: {
+				placeholder: '제목을 입력하세요',
+				levels: [2, 3, 4],
+				defaultLevel: 2
+			},
+			inlineToolbar: true
+		};
+	}
+
+	if (typeof window.Paragraph !== 'undefined') {
+		availableTools.paragraph = {
+			class: window.Paragraph,
+			inlineToolbar: true
+		};
+	}
+
+	if (typeof window.List !== 'undefined') {
+		availableTools.list = {
+			class: window.List,
+			inlineToolbar: true,
+			config: {
+				defaultStyle: 'unordered'
+			}
+		};
+	}
+
+	if (typeof window.Quote !== 'undefined') {
+		availableTools.quote = {
+			class: window.Quote,
+			inlineToolbar: true,
+			config: {
+				quotePlaceholder: '인용문을 입력하세요',
+				captionPlaceholder: '출처'
+			}
+		};
+	}
+
+	if (typeof window.CodeTool !== 'undefined') {
+		availableTools.code = {
+			class: window.CodeTool,
+			placeholder: '코드를 입력하세요'
+		};
+	}
+
+	if (typeof window.ImageTool !== 'undefined') {
+		availableTools.image = {
+			class: window.ImageTool,
+			config: {
+				endpoints: {
+					byFile: '/homepage_menu/upload_image',
+					byUrl: '/homepage_menu/fetch_url_image'
+				},
+				additionalRequestData: {
+					org_id: orgId
+				}
+			}
+		};
+	}
+
+	if (typeof window.Embed !== 'undefined') {
+		availableTools.embed = {
+			class: window.Embed,
+			config: {
+				services: {
+					youtube: true,
+					vimeo: true,
+					facebook: true,
+					instagram: true,
+					twitter: true
+				}
+			}
+		};
+	}
+
+	if (typeof window.LinkTool !== 'undefined') {
+		availableTools.linkTool = {
+			class: window.LinkTool,
+			config: {
+				endpoint: '/homepage_menu/fetch_url_meta'
+			}
+		};
+	}
+
+	if (typeof window.AttachesTool !== 'undefined') {
+		availableTools.attaches = {
+			class: window.AttachesTool,
+			config: {
+				endpoint: '/homepage_menu/upload_file',
+				additionalRequestData: {
+					org_id: orgId
+				}
+			}
+		};
+	}
+
+	if (typeof window.Table !== 'undefined') {
+		availableTools.table = {
+			class: window.Table,
+			inlineToolbar: true,
+			config: {
+				rows: 2,
+				cols: 3
+			}
+		};
+	}
+
+	if (typeof window.Delimiter !== 'undefined') {
+		availableTools.delimiter = window.Delimiter;
+	}
+
+	if (typeof window.Marker !== 'undefined') {
+		availableTools.marker = {
+			class: window.Marker
+		};
+	}
+
+	if (typeof window.InlineCode !== 'undefined') {
+		availableTools.inlineCode = {
+			class: window.InlineCode
+		};
+	}
+
+	if (typeof window.Underline !== 'undefined') {
+		availableTools.underline = window.Underline;
+	}
+
+	console.log('[게시판 에디터] 사용 가능한 도구:', Object.keys(availableTools));
+
+	// Editor.js 생성
+	try {
+		boardContentEditor = new EditorJS({
+			holder: 'board_content_editor',
+			tools: availableTools,
+			data: parsedData || {},
+			placeholder: '내용을 입력하세요...',
+			minHeight: 200,
+
+			onReady: function() {
+				console.log('[게시판 에디터] 초기화 완료');
+			},
+
+			onChange: function(api, event) {
+				// 변경 감지 (필요시 사용)
+			}
+		});
+
+	} catch (error) {
+		console.error('[게시판 에디터] 초기화 실패:', error);
+		showToast('에디터 초기화에 실패했습니다: ' + error.message);
+	}
+}
 
 /**
  * 메뉴 목록 렌더링
@@ -377,6 +573,34 @@ function handleDeleteMenu(e) {
  * 메뉴 삭제
  */
 function deleteMenu(menuId) {
+	const menu = findMenuById(menuId);
+
+	if (!menu) {
+		showToast('메뉴 정보를 찾을 수 없습니다.');
+		return;
+	}
+
+	// 서버에서 페이지/게시판 데이터 삭제
+	const orgId = $('#current_org_id').val();
+
+	$.ajax({
+		url: '/homepage_menu/delete_menu_data',
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			org_id: orgId,
+			menu_id: menuId,
+			menu_type: menu.type
+		},
+		success: function(response) {
+			console.log('[메뉴 삭제] 서버 데이터 삭제:', response);
+		},
+		error: function() {
+			console.error('[메뉴 삭제] 서버 데이터 삭제 실패');
+		}
+	});
+
+	// 메뉴 구조에서 제거
 	function removeMenuById(menus, id) {
 		for (let i = 0; i < menus.length; i++) {
 			if (menus[i].id === id) {
@@ -792,7 +1016,7 @@ function initPageContentEditor(content) {
 		};
 	}
 
-	// Image
+	// initPageContentEditor 함수 내부의 ImageTool 설정 부분을 다음과 같이 수정
 	if (typeof window.ImageTool !== 'undefined') {
 		availableTools.image = {
 			class: window.ImageTool,
@@ -800,22 +1024,22 @@ function initPageContentEditor(content) {
 				endpoints: {
 					byFile: '/homepage_menu/upload_image',
 					byUrl: '/homepage_menu/fetch_url_image'
+				},
+				additionalRequestData: {
+					org_id: $('#current_org_id').val()
 				}
 			}
 		};
 	}
 
-	// Embed
-	if (typeof window.Embed !== 'undefined') {
-		availableTools.embed = {
-			class: window.Embed,
+// AttachesTool도 동일하게
+	if (typeof window.AttachesTool !== 'undefined') {
+		availableTools.attaches = {
+			class: window.AttachesTool,
 			config: {
-				services: {
-					youtube: true,
-					vimeo: true,
-					facebook: true,
-					instagram: true,
-					twitter: true
+				endpoint: '/homepage_menu/upload_file',
+				additionalRequestData: {
+					org_id: $('#current_org_id').val()
 				}
 			}
 		};
@@ -1000,16 +1224,19 @@ function handleAddBoardItem() {
 	$('#boardOffcanvasLabel').text('게시글 작성');
 	$('#board_idx').val('');
 	$('#board_title').val('');
-	$('#board_content').val('');
 	$('#youtube_url').val('');
 	$('#btnDeleteBoard').hide();
 
 	const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
 	boardOffcanvas.show();
 
-	// Offcanvas가 완전히 표시된 후 Dropzone 초기화
+	// Offcanvas가 완전히 표시된 후 초기화
 	$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
 		setTimeout(function() {
+			// Editor.js 초기화
+			initBoardContentEditor('');
+
+			// Dropzone 초기화
 			initializeBoardDropzone();
 		}, 200);
 	});
@@ -1031,7 +1258,6 @@ function handleEditBoardItem() {
 				$('#boardOffcanvasLabel').text('게시글 수정');
 				$('#board_idx').val(response.data.idx);
 				$('#board_title').val(response.data.board_title);
-				$('#board_content').val(response.data.board_content);
 				$('#youtube_url').val(response.data.youtube_url || '');
 				$('#btnDeleteBoard').show();
 
@@ -1040,6 +1266,10 @@ function handleEditBoardItem() {
 
 				$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
 					setTimeout(function() {
+						// Editor.js 초기화 (기존 내용 로드)
+						initBoardContentEditor(response.data.board_content || '');
+
+						// Dropzone 초기화
 						initializeBoardDropzone();
 
 						// 기존 첨부파일 복원
@@ -1101,44 +1331,65 @@ function handleSaveBoard() {
 	const orgId = $('#current_org_id').val();
 	const idx = $('#board_idx').val();
 	const boardTitle = $('#board_title').val().trim();
-	const boardContent = $('#board_content').val();
 	const youtubeUrl = $('#youtube_url').val().trim();
-	const uploadedFiles = $('#uploaded_files').val();
+	const filePath = $('#uploaded_files').val();
 
 	if (!boardTitle) {
 		showToast('제목을 입력해주세요.');
 		return;
 	}
 
-	$.ajax({
-		url: '/homepage_menu/save_board',
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			org_id: orgId,
-			menu_id: currentMenuId,
-			idx: idx,
-			board_title: boardTitle,
-			board_content: boardContent,
-			youtube_url: youtubeUrl,
-			file_path: uploadedFiles
-		},
-		success: function(response) {
-			if (response.success) {
-				showToast(response.message);
+	if (!boardContentEditor) {
+		showToast('에디터가 초기화되지 않았습니다.');
+		return;
+	}
 
-				const boardOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('boardOffcanvas'));
-				boardOffcanvas.hide();
+	// YouTube URL 유효성 검사
+	if (youtubeUrl && !isValidYoutubeUrl(youtubeUrl)) {
+		showToast('올바른 YouTube URL을 입력해주세요.');
+		return;
+	}
 
-				// 현재 페이지와 검색어 유지하면서 목록 새로고침
-				loadBoardContent(currentMenuId, currentBoardPage, currentSearchKeyword);
-			} else {
-				showToast(response.message);
+	// Editor.js에서 데이터 가져오기
+	boardContentEditor.save().then(function(outputData) {
+		const boardContent = JSON.stringify(outputData);
+
+		$.ajax({
+			url: '/homepage_menu/save_board',
+			type: 'POST',
+			dataType: 'json',
+			data: {
+				org_id: orgId,
+				menu_id: currentMenuId,
+				idx: idx,
+				board_title: boardTitle,
+				board_content: boardContent,
+				youtube_url: youtubeUrl,
+				file_path: filePath
+			},
+			success: function(response) {
+				if (response.success) {
+					showToast(response.message);
+
+					// Offcanvas 닫기
+					const boardOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('boardOffcanvas'));
+					if (boardOffcanvas) {
+						boardOffcanvas.hide();
+					}
+
+					// 목록 새로고침
+					loadBoardContent(currentMenuId, currentBoardPage, currentSearchKeyword);
+				} else {
+					showToast(response.message);
+				}
+			},
+			error: function() {
+				showToast('게시글 저장에 실패했습니다.');
 			}
-		},
-		error: function() {
-			showToast('게시글 저장에 실패했습니다.');
-		}
+		});
+	}).catch(function(error) {
+		console.error('[게시글 저장] 에디터 데이터 추출 실패:', error);
+		showToast('데이터 저장 중 오류가 발생했습니다.');
 	});
 }
 

@@ -101,6 +101,16 @@ class Homepage_menu_model extends CI_Model
 	}
 
 	/**
+	 * 페이지 정보 삭제
+	 */
+	public function delete_page($org_id, $menu_id)
+	{
+		$this->db->where('org_id', $org_id);
+		$this->db->where('menu_id', $menu_id);
+		return $this->db->delete('wb_homepage_page');
+	}
+
+	/**
 	 * 게시판 목록 조회
 	 */
 	public function get_board_list($org_id, $menu_id, $search_keyword = '', $page = 1, $limit = 5)
@@ -178,4 +188,41 @@ class Homepage_menu_model extends CI_Model
 		$this->db->where('idx', $idx);
 		return $this->db->delete('wb_homepage_board');
 	}
+
+	/**
+	 * 메뉴의 모든 게시글 조회
+	 */
+	public function get_all_boards_by_menu($org_id, $menu_id)
+	{
+		$this->db->select('idx, file_path, board_content');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('menu_id', $menu_id);
+		$query = $this->db->get('wb_homepage_board');
+		return $query->result_array();
+	}
+
+	/**
+	 * 메뉴의 모든 게시글 삭제
+	 */
+	public function delete_all_boards_by_menu($org_id, $menu_id)
+	{
+		$this->db->where('org_id', $org_id);
+		$this->db->where('menu_id', $menu_id);
+		return $this->db->delete('wb_homepage_board');
+	}
+
+	/**
+	 * 링크 정보 삭제
+	 */
+	public function delete_link($org_id, $menu_id)
+	{
+		$this->db->where('org_id', $org_id);
+		$this->db->where('menu_id', $menu_id);
+		return $this->db->delete('wb_homepage_link');
+	}
+
+
+
+
+
 }

@@ -30,7 +30,7 @@
 							<i class="bi bi-plus-lg"></i>
 						</button>
 					</div>
-					<div class="card-body p-0" style="min-height: 500px;">
+					<div class="card-body p-0">
 						<ul id="menuList" class="menu-sortable list-group list-group-flush">
 						</ul>
 					</div>
@@ -40,7 +40,7 @@
 			<!-- 오른쪽: 컨텐츠 -->
 			<div class="split-pane" id="right-pane">
 				<div class="card">
-					<div class="card-body" style="min-height: 500px;">
+					<div class="card-body">
 						<div id="contentArea">
 							<div class="text-center text-muted py-5">
 								<i class="bi bi-hand-index display-1"></i>
@@ -110,8 +110,8 @@
 		</div>
 
 		<div class="mb-3">
-			<label for="board_content" class="form-label mb-1">내용</label>
-			<textarea class="form-control" id="board_content" rows="10" placeholder="내용을 입력하세요"></textarea>
+			<label class="form-label mb-1">내용</label>
+			<div id="board_content_editor" style="border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 15px; min-height: 300px; background: #fff;"></div>
 		</div>
 
 		<div class="mb-3">
@@ -122,18 +122,18 @@
 
 		<div class="mb-3">
 			<label class="form-label mb-1">파일 첨부</label>
-			<!-- dropzone 클래스를 제거하여 자동 초기화 방지 -->
 			<div id="dropzoneArea"></div>
-			<small>* 파일은 20개까지 가능, 최대 50Mbyte 가능</small>
 			<input type="hidden" id="uploaded_files" value="">
 		</div>
 
 		<div class="d-flex gap-2">
+			<button type="button" class="btn btn-danger" id="btnDeleteBoard" style="display: none;">
+				<i class="bi bi-trash"></i> 삭제
+			</button>
 			<button type="button" class="btn btn-primary flex-fill" id="btnSaveBoard">저장</button>
 		</div>
 	</div>
 </div>
-
 
 <!-- Dropzone JS - autoDiscover 비활성화 스크립트 추가 -->
 <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
