@@ -209,8 +209,8 @@ class Homepage_menu extends My_Controller
 		$org_id = $this->input->post('org_id');
 		$menu_id = $this->input->post('menu_id');
 		$search_keyword = $this->input->post('search_keyword');
-		$page = $this->input->post('page', 1);
-		$limit = 10;
+		$page = $this->input->post('page') ? (int)$this->input->post('page') : 1;
+		$limit = 10; // 10에서 20으로 변경
 
 		if (!$org_id || !$menu_id) {
 			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);

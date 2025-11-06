@@ -103,12 +103,13 @@ class Homepage_menu_model extends CI_Model
 	/**
 	 * 게시판 목록 조회
 	 */
-	public function get_board_list($org_id, $menu_id, $search_keyword = '', $page = 1, $limit = 20)
+	public function get_board_list($org_id, $menu_id, $search_keyword = '', $page = 1, $limit = 5)
 	{
 		$offset = ($page - 1) * $limit;
 
 		$this->db->where('org_id', $org_id);
 		$this->db->where('menu_id', $menu_id);
+		$this->db->where('del_yn', 'N');
 
 		if (!empty($search_keyword)) {
 			$this->db->group_start();
@@ -118,12 +119,13 @@ class Homepage_menu_model extends CI_Model
 			$this->db->group_end();
 		}
 
+		// total 계산 전에 쿼리 복제
 		$total_query = clone $this->db;
 		$total = $total_query->count_all_results('wb_homepage_board');
 
-		// youtube_url과 file_path 필드 추가
-		$this->db->select('idx, board_title, view_count, writer_name, reg_date, modi_date, modifier_name, youtube_url, file_path');
-		$this->db->order_by('reg_date', 'DESC');
+		// 목록 조회
+		$this->db->select('idx, board_title, view_count, writer_name, modifier_name, reg_date, modi_date, youtube_url, file_path');
+		$this->db->order_by('idx', 'DESC');
 		$this->db->limit($limit, $offset);
 		$query = $this->db->get('wb_homepage_board');
 
