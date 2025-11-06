@@ -569,7 +569,6 @@ class Homepage_menu extends My_Controller
 	}
 
 
-
 	/**
 	 * 선택된 게시글 일괄 삭제 (AJAX)
 	 */
@@ -696,5 +695,7 @@ class Homepage_menu extends My_Controller
 			log_message('error', '파일 삭제 중 오류: ' . $e->getMessage());
 		}
 	}
+
+
 
 }

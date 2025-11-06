@@ -61,6 +61,7 @@ function initializeSplit() {
 	}
 }
 
+
 /**
  * 이벤트 바인딩
  */
@@ -78,9 +79,9 @@ function bindEvents() {
 	$(document).on('click', '#btnSavePage', handleSavePage);
 	$(document).on('click', '#btnAddBoardItem', handleAddBoardItem);
 	$(document).on('click', '.btn-board-edit', handleEditBoardItem);
-	$(document).on('click', '#btnDeleteBoard', handleDeleteBoardInOffcanvas); // Offcanvas 삭제 버튼
+	$(document).on('click', '.btn-board-delete', handleDeleteBoardItem);
 	$(document).on('click', '#btnSearchBoard', handleSearchBoard);
-	$(document).on('click', '#btnDeleteSelected', handleDeleteSelected);
+	$(document).on('click', '#btnDeleteSelected', handleDeleteSelected); // 선택 삭제 추가
 
 	// 검색 입력창에서 엔터키 처리
 	$(document).on('keypress', '#board_search_keyword', function(e) {
@@ -90,7 +91,6 @@ function bindEvents() {
 		}
 	});
 }
-
 
 
 
@@ -1002,8 +1002,6 @@ function handleAddBoardItem() {
 	$('#board_title').val('');
 	$('#board_content').val('');
 	$('#youtube_url').val('');
-
-	// 삭제 버튼 숨김 (작성 모드)
 	$('#btnDeleteBoard').hide();
 
 	const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
@@ -1011,7 +1009,9 @@ function handleAddBoardItem() {
 
 	// Offcanvas가 완전히 표시된 후 Dropzone 초기화
 	$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
-		initializeBoardDropzone();
+		setTimeout(function() {
+			initializeBoardDropzone();
+		}, 200);
 	});
 }
 
@@ -1033,31 +1033,29 @@ function handleEditBoardItem() {
 				$('#board_title').val(response.data.board_title);
 				$('#board_content').val(response.data.board_content);
 				$('#youtube_url').val(response.data.youtube_url || '');
-
-				// 삭제 버튼 표시 (수정 모드)
 				$('#btnDeleteBoard').show();
 
-				// Offcanvas 표시
 				const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
 				boardOffcanvas.show();
 
-				// Offcanvas가 완전히 표시된 후 Dropzone 초기화 및 파일 복원
 				$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
-					initializeBoardDropzone();
+					setTimeout(function() {
+						initializeBoardDropzone();
 
-					// 기존 첨부파일 복원
-					if (response.data.file_path) {
-						try {
-							const files = JSON.parse(response.data.file_path);
-							if (Array.isArray(files) && files.length > 0) {
-								setTimeout(function() {
-									restoreUploadedFiles(files);
-								}, 300);
+						// 기존 첨부파일 복원
+						if (response.data.file_path) {
+							try {
+								const files = JSON.parse(response.data.file_path);
+								if (Array.isArray(files) && files.length > 0) {
+									setTimeout(function() {
+										restoreUploadedFiles(files);
+									}, 300);
+								}
+							} catch (e) {
+								console.error('[게시글 수정] 파일 복원 실패:', e);
 							}
-						} catch (e) {
-							console.error('파일 복원 실패:', e);
 						}
-					}
+					}, 200);
 				});
 			} else {
 				showToast('게시글 정보를 불러오는데 실패했습니다.');
@@ -1247,16 +1245,19 @@ function escapeHtml(text) {
 
 
 /**
- * Dropzone 초기화 - 프론트에서 썸네일 생성 + 문서 파일 아이콘 표시 + 파일 삭제
+ * Dropzone 초기화
  */
 function initializeBoardDropzone() {
+	console.log('[Dropzone] 초기화 시작');
+
 	// 기존 Dropzone 인스턴스 완전 제거
 	if (boardDropzone) {
 		try {
 			boardDropzone.destroy();
 			boardDropzone = null;
+			console.log('[Dropzone] 기존 인스턴스 제거 완료');
 		} catch (e) {
-			console.log('Dropzone 제거 중 오류:', e);
+			console.log('[Dropzone] 기존 인스턴스 제거 중 오류:', e);
 		}
 	}
 
@@ -1264,8 +1265,9 @@ function initializeBoardDropzone() {
 	if (dropzoneElement && dropzoneElement.dropzone) {
 		try {
 			dropzoneElement.dropzone.destroy();
+			console.log('[Dropzone] DOM에 연결된 인스턴스 제거 완료');
 		} catch (e) {
-			console.log('DOM Dropzone 제거 중 오류:', e);
+			console.log('[Dropzone] DOM 인스턴스 제거 중 오류:', e);
 		}
 	}
 
@@ -1276,9 +1278,15 @@ function initializeBoardDropzone() {
 
 	uploadedFileList = [];
 	$('#uploaded_files').val('');
-	console.log('[Dropzone] 초기화: uploadedFileList 비움');
+	console.log('[Dropzone] uploadedFileList 초기화 완료');
 
-	Dropzone.autoDiscover = false;
+	// org_id 확인
+	const orgId = $('#current_org_id').val();
+	if (!orgId) {
+		console.error('[Dropzone] org_id가 없습니다');
+		showToast('조직 정보를 찾을 수 없습니다.');
+		return;
+	}
 
 	try {
 		boardDropzone = new Dropzone("#dropzoneArea", {
@@ -1296,81 +1304,116 @@ function initializeBoardDropzone() {
 			thumbnailWidth: 120,
 			thumbnailHeight: 120,
 			thumbnailMethod: 'contain',
+			headers: {
+				'X-Requested-With': 'XMLHttpRequest'
+			},
 
 			init: function() {
 				const dropzoneInstance = this;
 
+				this.on("addedfile", function(file) {
+					console.log('[Dropzone] 파일 추가됨:', file.name, 'Type:', file.type, 'Size:', file.size);
+				});
+
 				this.on("sending", function(file, xhr, formData) {
-					const orgId = $('#current_org_id').val();
-					formData.append("org_id", orgId);
+					const currentOrgId = $('#current_org_id').val();
+					formData.append("org_id", currentOrgId);
+					console.log('[Dropzone] org_id 추가:', currentOrgId);
 
 					// 이미지 파일이고 썸네일이 생성된 경우 함께 전송
 					if (file.type.match(/image.*/) && file.thumbnailBlob) {
 						formData.append("thumbnail", file.thumbnailBlob, 'thumb_' + file.name);
-						console.log('[Dropzone] 썸네일 포함하여 전송:', file.name);
+						console.log('[Dropzone] 썸네일 포함하여 전송:', file.name, 'Thumbnail size:', file.thumbnailBlob.size);
 					}
 
 					console.log('[Dropzone] 파일 전송 시작:', file.name);
 				});
 
 				this.on("success", function(file, response) {
+					console.log('[Dropzone] 서버 응답 받음:', response);
+
 					if (typeof response === 'string') {
-						response = JSON.parse(response);
+						try {
+							response = JSON.parse(response);
+						} catch (e) {
+							console.error('[Dropzone] JSON 파싱 실패:', e);
+							showToast('파일 업로드 응답 처리 실패');
+							dropzoneInstance.removeFile(file);
+							return;
+						}
 					}
 
 					if (response && response.success) {
 						file.serverPath = response.file_path;
 						file.serverFileName = response.file_name;
-						file.thumbPath = response.thumb_path;
+						file.thumbPath = response.thumb_path || null;
 
-						uploadedFileList.push({
+						const fileInfo = {
 							name: response.file_name,
 							path: response.file_path,
-							thumb_path: response.thumb_path,
+							thumb_path: response.thumb_path || null,
 							size: file.size,
-							type: response.file_type
-						});
+							type: response.file_type || file.type
+						};
 
+						uploadedFileList.push(fileInfo);
 						updateUploadedFilesInput();
+
 						console.log('[Dropzone] 파일 업로드 성공:', response.file_name);
+						console.log('[Dropzone] 저장 경로:', response.file_path);
 						if (response.thumb_path) {
 							console.log('[Dropzone] 썸네일 경로:', response.thumb_path);
 						}
+					} else {
+						console.error('[Dropzone] 업로드 실패:', response);
+						showToast(response.message || '파일 업로드 실패');
+						dropzoneInstance.removeFile(file);
 					}
 				});
 
 				this.on("error", function(file, errorMessage, xhr) {
+					console.error('[Dropzone] 에러 발생:', {
+						file: file.name,
+						errorMessage: errorMessage,
+						xhr: xhr
+					});
+
+					// 200 응답이지만 에러로 처리된 경우 재확인
 					if (xhr && xhr.status === 200 && xhr.responseText) {
 						try {
 							const response = JSON.parse(xhr.responseText);
 							if (response && response.success) {
+								console.log('[Dropzone] 실제로는 성공한 응답, 재처리');
 								file.serverPath = response.file_path;
 								file.serverFileName = response.file_name;
-								file.thumbPath = response.thumb_path;
+								file.thumbPath = response.thumb_path || null;
 
-								uploadedFileList.push({
+								const fileInfo = {
 									name: response.file_name,
 									path: response.file_path,
-									thumb_path: response.thumb_path,
+									thumb_path: response.thumb_path || null,
 									size: file.size,
-									type: response.file_type
-								});
+									type: response.file_type || file.type
+								};
 
+								uploadedFileList.push(fileInfo);
 								updateUploadedFilesInput();
 								return;
 							}
-						} catch (e) {}
+						} catch (e) {
+							console.error('[Dropzone] 에러 응답 파싱 실패:', e);
+						}
 					}
 
-					showToast(typeof errorMessage === 'string' ? errorMessage : '파일 업로드 실패');
-					this.removeFile(file);
+					const errorMsg = typeof errorMessage === 'string' ? errorMessage : '파일 업로드 실패';
+					showToast(errorMsg);
+					dropzoneInstance.removeFile(file);
 				});
 
 				this.on("removedfile", function(file) {
 					console.log('[Dropzone] 파일 삭제:', file.name);
 
 					if (file.serverPath || file.serverFileName) {
-						// 업로드된 파일 목록에서 제거
 						const beforeLength = uploadedFileList.length;
 						const removedFile = uploadedFileList.find(f => f.path === file.serverPath);
 						uploadedFileList = uploadedFileList.filter(f => f.path !== file.serverPath);
@@ -1405,55 +1448,49 @@ function initializeBoardDropzone() {
 
 				this.on("maxfilesexceeded", function(file) {
 					showToast('최대 20개까지만 업로드 가능합니다');
-					this.removeFile(file);
+					dropzoneInstance.removeFile(file);
 				});
 
-				// 썸네일 생성 후 커스터마이징
 				this.on("thumbnail", function(file, dataUrl) {
 					console.log('[Dropzone] 썸네일 생성 완료:', file.name);
 
 					// 문서 파일인 경우 썸네일 영역 커스터마이징
 					if (!file.type.match(/image.*/)) {
-						const preview = file.previewElement;
-						if (preview) {
-							const imgElement = preview.querySelector('.dz-image img');
-							if (imgElement) {
-								const ext = getFileExtension(file.name).toUpperCase();
-
-								// 이미지 대신 확장자 박스 표시
-								imgElement.style.display = 'none';
-								const dzImage = preview.querySelector('.dz-image');
-								if (dzImage) {
-									dzImage.innerHTML = `<div class="dz-file-icon">${ext}</div>`;
+						setTimeout(function() {
+							const preview = file.previewElement;
+							if (preview) {
+								const imgElement = preview.querySelector('.dz-image img');
+								if (imgElement) {
+									const ext = getFileExtension(file.name).toUpperCase();
+									imgElement.style.display = 'none';
+									const dzImage = preview.querySelector('.dz-image');
+									if (dzImage) {
+										dzImage.innerHTML = `<div class="dz-file-icon">${ext}</div>`;
+									}
 								}
 							}
-						}
+						}, 50);
 					}
 				});
 
-				// 완료 후 다운로드 버튼 추가
 				this.on("complete", function(file) {
 					if (file.status === "success") {
-						const preview = file.previewElement;
-						if (preview) {
-							// 삭제 버튼 찾기
-							const removeBtn = preview.querySelector('.dz-remove');
-							if (removeBtn && file.serverPath) {
-								// 다운로드 버튼이 이미 있는지 확인
-								if (!preview.querySelector('.dz-download')) {
-									// 다운로드 버튼 생성
-									const downloadBtn = document.createElement('a');
-									downloadBtn.href = file.serverPath;
-									downloadBtn.download = file.name;
-									downloadBtn.className = 'dz-download';
-									downloadBtn.textContent = '다운로드';
-									downloadBtn.style.marginLeft = '5px';
-
-									// 삭제 버튼 옆에 추가
-									removeBtn.parentNode.insertBefore(downloadBtn, removeBtn.nextSibling);
+						setTimeout(function() {
+							const preview = file.previewElement;
+							if (preview) {
+								const removeBtn = preview.querySelector('.dz-remove');
+								if (removeBtn && file.serverPath) {
+									if (!preview.querySelector('.dz-download')) {
+										const downloadBtn = document.createElement('a');
+										downloadBtn.href = file.serverPath;
+										downloadBtn.download = file.name;
+										downloadBtn.className = 'dz-download btn btn-xs btn-outline-primary';
+										downloadBtn.textContent = '다운로드';
+										removeBtn.parentNode.insertBefore(downloadBtn, removeBtn.nextSibling);
+									}
 								}
 							}
-						}
+						}, 100);
 					}
 				});
 			},
@@ -1483,7 +1520,6 @@ function initializeBoardDropzone() {
 
 							console.log('[Dropzone] 원본 이미지 크기:', width, 'x', height);
 
-							// 원본 이미지 리사이징 (2000px 초과 시)
 							const canvas = document.createElement('canvas');
 							const ctx = canvas.getContext('2d');
 							let needResize = false;
@@ -1501,17 +1537,15 @@ function initializeBoardDropzone() {
 										height = 2000;
 									}
 								}
-
 								console.log('[Dropzone] 원본 리사이징:', width, 'x', height);
 							}
 
-							// 썸네일 생성 (200x200)
+							// 썸네일 생성
 							const thumbCanvas = document.createElement('canvas');
 							const thumbCtx = thumbCanvas.getContext('2d');
 							let thumbWidth = 200;
 							let thumbHeight = 200;
 
-							// 비율 유지하며 썸네일 크기 계산
 							const aspectRatio = img.width / img.height;
 							if (aspectRatio > 1) {
 								thumbHeight = Math.round(thumbWidth / aspectRatio);
@@ -1525,21 +1559,29 @@ function initializeBoardDropzone() {
 
 							console.log('[Dropzone] 썸네일 생성:', thumbWidth, 'x', thumbHeight);
 
-							// 썸네일을 Blob으로 변환하여 파일 객체에 저장
 							thumbCanvas.toBlob(function(thumbBlob) {
-								file.thumbnailBlob = thumbBlob;
-								console.log('[Dropzone] 썸네일 Blob 생성 완료:', thumbBlob.size, 'bytes');
+								if (thumbBlob) {
+									file.thumbnailBlob = thumbBlob;
+									console.log('[Dropzone] 썸네일 Blob 생성 완료:', thumbBlob.size, 'bytes');
+								}
 
-								// 원본 이미지 처리
 								if (needResize) {
 									canvas.width = width;
 									canvas.height = height;
 									ctx.drawImage(img, 0, 0, width, height);
 
 									canvas.toBlob(function(blob) {
-										blob.name = file.name;
-										blob.lastModified = new Date();
-										done(blob);
+										if (blob) {
+											const resizedFile = new File([blob], file.name, {
+												type: file.type,
+												lastModified: new Date().getTime()
+											});
+											console.log('[Dropzone] 리사이즈 완료, 파일 크기:', blob.size, 'bytes');
+											done(resizedFile);
+										} else {
+											console.log('[Dropzone] Blob 생성 실패, 원본 사용');
+											done(file);
+										}
 									}, file.type, 0.9);
 								} else {
 									console.log('[Dropzone] 원본 리사이징 불필요');
@@ -1547,8 +1589,20 @@ function initializeBoardDropzone() {
 								}
 							}, file.type, 0.9);
 						};
+
+						img.onerror = function() {
+							console.error('[Dropzone] 이미지 로드 실패:', file.name);
+							done(file);
+						};
+
 						img.src = e.target.result;
 					};
+
+					reader.onerror = function() {
+						console.error('[Dropzone] 파일 읽기 실패:', file.name);
+						done(file);
+					};
+
 					reader.readAsDataURL(file);
 				} else {
 					done(file);
@@ -1870,6 +1924,8 @@ function renderBoardContent(boardList, total, currentPage = 1) {
 	// 전체 선택 체크박스 이벤트 바인딩
 	bindSelectAllEvent();
 }
+
+
 
 /**
  * 전체 선택 체크박스 이벤트 바인딩
