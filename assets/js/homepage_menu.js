@@ -1309,7 +1309,7 @@ function initializeBoardDropzone() {
 		boardDropzone = new Dropzone("#dropzoneArea", {
 			url: "/homepage_menu/upload_board_file",
 			paramName: "file",
-			maxFilesize: 10,
+			maxFilesize: 50,
 			maxFiles: 20,
 			addRemoveLinks: true,
 			dictDefaultMessage: "파일을 드래그하거나 클릭하여 업로드하세요",

@@ -40,7 +40,7 @@ $(document).ready(function() {
 			audio.currentTime = 0;
 			audio.volume = originalVolume;
 			audioUnlocked = true;
-			console.log('오디오 unlock 성공');
+			// console.log('오디오 unlock 성공');
 
 			// unlock 이벤트 리스너 제거
 			document.removeEventListener('click', unlockAudio);

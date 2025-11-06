@@ -306,7 +306,7 @@ class Homepage_menu extends My_Controller
 
 		$config['upload_path'] = './uploads/homepage/';
 		$config['allowed_types'] = 'gif|jpg|jpeg|png|webp';
-		$config['max_size'] = 5120; // 5MB
+		$config['max_size'] = 10240; // 10MB
 		$config['encrypt_name'] = TRUE;
 
 		if (!is_dir($config['upload_path'])) {
@@ -415,7 +415,7 @@ class Homepage_menu extends My_Controller
 		// 원본 파일 업로드
 		$config['upload_path'] = $upload_path;
 		$config['allowed_types'] = 'gif|jpg|jpeg|png|pdf|doc|docx|ppt|pptx|xls|xlsx|hwp|hwpx|zip';
-		$config['max_size'] = 10240; // 10MB
+		$config['max_size'] = 51200; // 50MB
 		$config['encrypt_name'] = TRUE;
 
 		$this->load->library('upload', $config);

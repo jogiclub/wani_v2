@@ -124,6 +124,7 @@
 			<label class="form-label mb-1">파일 첨부</label>
 			<!-- dropzone 클래스를 제거하여 자동 초기화 방지 -->
 			<div id="dropzoneArea"></div>
+			<small>* 파일은 20개까지 가능, 최대 50Mbyte 가능</small>
 			<input type="hidden" id="uploaded_files" value="">
 		</div>
 
