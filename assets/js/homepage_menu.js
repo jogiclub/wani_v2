@@ -1335,35 +1335,33 @@ function initializeBoardDropzone() {
 					if (file.status === "success" && file.serverPath) {
 						setTimeout(function() {
 							const preview = file.previewElement;
-							if (preview) {
-								const removeBtn = preview.querySelector('.dz-remove');
-								if (removeBtn) {
-									// 삭제 버튼 스타일 변경
-									removeBtn.className = 'btn btn-xs btn-outline-danger';
+							if (!preview) return;
 
-									// 다운로드 버튼이 없으면 생성
-									if (!preview.querySelector('.dz-download')) {
-										const downloadBtn = document.createElement('a');
-										downloadBtn.href = file.serverPath;
-										downloadBtn.download = file.serverFileName || file.name;
-										downloadBtn.className = 'btn btn-xs btn-outline-primary dz-download me-1';
-										downloadBtn.textContent = '다운로드';
-										downloadBtn.onclick = function(e) {
-											e.stopPropagation();
-										};
+							// 기존 삭제 버튼 찾기 (Dropzone이 자동 생성)
+							const removeBtn = preview.querySelector('[data-dz-remove]');
 
-										// 버튼 컨테이너가 없으면 생성
-										let btnContainer = preview.querySelector('.dz-button-container');
-										if (!btnContainer) {
-											btnContainer = document.createElement('div');
-											btnContainer.className = 'dz-button-container';
-											btnContainer.style.textAlign = 'center';
-											preview.appendChild(btnContainer);
-										}
+							if (removeBtn) {
+								// 삭제 버튼 스타일 변경
+								removeBtn.className = 'btn btn-xs btn-outline-danger';
+								removeBtn.textContent = '삭제';
 
-										btnContainer.appendChild(downloadBtn);
-										btnContainer.appendChild(removeBtn);
-									}
+								// 다운로드 버튼이 이미 있는지 확인
+								let downloadBtn = preview.querySelector('.dz-download');
+
+								if (!downloadBtn) {
+									// 다운로드 버튼 생성
+									downloadBtn = document.createElement('a');
+									downloadBtn.href = file.serverPath;
+									downloadBtn.download = file.serverFileName || file.name;
+									downloadBtn.className = 'btn btn-xs btn-outline-primary dz-download';
+									downloadBtn.textContent = '다운로드';
+									downloadBtn.style.marginRight = '5px';
+									downloadBtn.onclick = function(e) {
+										e.stopPropagation();
+									};
+
+									// 삭제 버튼 앞에 다운로드 버튼 삽입
+									removeBtn.parentNode.insertBefore(downloadBtn, removeBtn);
 								}
 							}
 						}, 100);
@@ -1739,20 +1737,28 @@ function restoreUploadedFiles(files) {
 			boardDropzone.files.push(mockFile);
 
 			// 다운로드 버튼 추가
+
 			setTimeout(function() {
 				const preview = mockFile.previewElement;
 				if (preview) {
-					const removeBtn = preview.querySelector('.dz-remove');
-					removeBtn.className = 'btn btn-xs btn-outline-danger';
+					const removeBtn = preview.querySelector('[data-dz-remove]');
 					if (removeBtn && fileData.path) {
+						// 삭제 버튼 스타일 변경
+						removeBtn.className = 'btn btn-xs btn-outline-danger';
+						removeBtn.textContent = '삭제';
+
 						// 이미 다운로드 버튼이 있는지 확인
 						if (!preview.querySelector('.dz-download')) {
 							const downloadBtn = document.createElement('a');
 							downloadBtn.href = fileData.path;
 							downloadBtn.download = fileData.name;
-							downloadBtn.className = 'dz-download btn btn-xs btn-outline-primary me-1';
+							downloadBtn.className = 'btn btn-xs btn-outline-primary dz-download';
 							downloadBtn.textContent = '다운로드';
-							removeBtn.parentNode.insertBefore(downloadBtn, removeBtn.nextSibling);
+							downloadBtn.style.marginRight = '5px';
+							downloadBtn.onclick = function(e) {
+								e.stopPropagation();
+							};
+							removeBtn.parentNode.insertBefore(downloadBtn, removeBtn);
 						}
 					}
 				}
