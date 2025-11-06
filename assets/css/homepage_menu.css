@@ -259,24 +259,7 @@
 }
 
 /* 삭제 버튼 스타일 */
-#dropzoneArea .dz-preview .dz-remove {
-	font-size: 12px;
-	color: #dc3545;
-	text-decoration: none;
-	cursor: pointer;
-	margin-top: 5px;
-	display: inline-block;
-	padding: 2px 8px;
-	border: 1px solid #dc3545;
-	border-radius: 4px;
-	transition: all 0.2s;
-}
 
-#dropzoneArea .dz-preview .dz-remove:hover {
-	background-color: #dc3545;
-	color: white;
-	text-decoration: none;
-}
 
 /* 진행 상태 바 */
 #dropzoneArea .dz-preview .dz-progress {
@@ -284,7 +267,7 @@
 	border-radius: 4px;
 	overflow: hidden;
 	background-color: #e9ecef;
-	margin-top: 8px;
+	margin-bottom: 8px;
 }
 
 #dropzoneArea .dz-preview .dz-progress .dz-upload {
@@ -321,10 +304,7 @@
 	justify-content: center;
 }
 
-#dropzoneArea .dz-preview .dz-image:not([data-dz-thumbnail])::before {
-	content: "📄";
-	font-size: 48px;
-}
+
 
 #dropzoneArea .dz-preview .dz-success-mark,
 #dropzoneArea .dz-preview .dz-error-mark {
@@ -347,3 +327,71 @@
 	border-color: #0d6efd;
 	box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
 }
+/* 게시판 목록 아이콘 스타일 */
+.board-table td .bi {
+	font-size: 0.9rem;
+	vertical-align: middle;
+}
+
+.board-table td .bi-youtube {
+	color: #FF0000;
+}
+
+.board-table td .bi-image {
+	color: #0d6efd;
+}
+
+.board-table td .bi-file-earmark-text {
+	color: #6c757d;
+}
+
+/* Dropzone 문서 파일 아이콘 스타일 */
+.dz-file-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	font-weight: bold;
+	font-size: 14px;
+	border-radius: 4px;
+	padding: 10px;
+	text-align: center;
+	word-break: break-word;
+}
+
+/* PDF */
+.dz-preview:has([download*=".pdf"]) .dz-file-icon,
+.dz-file-icon:contains("PDF") {
+	background: linear-gradient(135deg, #f85032 0%, #e73827 100%);
+}
+
+/* Word */
+.dz-preview:has([download*=".doc"]) .dz-file-icon {
+	background: linear-gradient(135deg, #2b579a 0%, #1e4a7a 100%);
+}
+
+/* Excel */
+.dz-preview:has([download*=".xls"]) .dz-file-icon {
+	background: linear-gradient(135deg, #217346 0%, #1a5c38 100%);
+}
+
+/* PowerPoint */
+.dz-preview:has([download*=".ppt"]) .dz-file-icon {
+	background: linear-gradient(135deg, #d24726 0%, #b83b1f 100%);
+}
+
+/* HWP */
+.dz-preview:has([download*=".hwp"]) .dz-file-icon {
+	background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
+}
+
+/* ZIP */
+.dz-preview:has([download*=".zip"]) .dz-file-icon {
+	background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+}
+
+
+

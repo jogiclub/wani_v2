@@ -10,6 +10,8 @@ let menuData = [];
 let pageContentEditor = null;  // Editor.js 인스턴스 추가
 let boardDropzone = null;
 let uploadedFileList = [];
+let currentBoardPage = 1;
+let currentSearchKeyword = '';
 
 $(document).ready(function() {
 	initializePage();
@@ -76,9 +78,21 @@ function bindEvents() {
 	$(document).on('click', '#btnSavePage', handleSavePage);
 	$(document).on('click', '#btnAddBoardItem', handleAddBoardItem);
 	$(document).on('click', '.btn-board-edit', handleEditBoardItem);
-	$(document).on('click', '.btn-board-delete', handleDeleteBoardItem);
+	$(document).on('click', '#btnDeleteBoard', handleDeleteBoardInOffcanvas); // Offcanvas 삭제 버튼
 	$(document).on('click', '#btnSearchBoard', handleSearchBoard);
+	$(document).on('click', '#btnDeleteSelected', handleDeleteSelected);
+
+	// 검색 입력창에서 엔터키 처리
+	$(document).on('keypress', '#board_search_keyword', function(e) {
+		if (e.which === 13) {
+			e.preventDefault();
+			handleSearchBoard();
+		}
+	});
 }
+
+
+
 
 /**
  * 메뉴 목록 로드
@@ -976,98 +990,11 @@ function handleSavePage() {
 	});
 }
 
-/**
- * 게시판 컨텐츠 로드
- */
-function loadBoardContent(menuId) {
-	const orgId = $('#current_org_id').val();
 
-	$.ajax({
-		url: '/homepage_menu/get_board_list',
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			org_id: orgId,
-			menu_id: menuId,
-			search_keyword: '',
-			page: 1
-		},
-		success: function(response) {
-			if (response.success) {
-				renderBoardContent(response.data, response.total);
-			} else {
-				showToast(response.message);
-			}
-		},
-		error: function() {
-			showToast('게시판 목록을 불러오는데 실패했습니다.');
-		}
-	});
-}
+
 
 /**
- * 게시판 컨텐츠 렌더링
- */
-function renderBoardContent(boardList, total) {
-	let tableRows = '';
-
-	if (boardList && boardList.length > 0) {
-		boardList.forEach(function(board) {
-			tableRows += `
-				<tr class="btn-board-edit" data-idx="${board.idx}" style="cursor: pointer">
-					<td><input type="checkbox" class="form-check-input" value="${board.idx}"></td>
-					<td class="text-start">${escapeHtml(board.board_title)}</td>
-					<td>${board.view_count}</td>
-					<td>${formatDate(board.reg_date)}</td>
-					<td>${escapeHtml(board.writer_name || '')}</td>
-					<td>${board.modi_date ? formatDate(board.modi_date) : ''}</td>
-					<td>${escapeHtml(board.modifier_name || '')}</td>					
-				</tr>
-			`;
-		});
-	} else {
-		tableRows = '<tr><td colspan="8" class="text-center text-muted" style="height: 100px">등록된 게시글이 없습니다.</td></tr>';
-	}
-
-	const html = `
-		<div class="d-flex justify-content-between align-items-center mb-3">
-			<h5 class="mb-0">게시판 관리</h5>
-			<button type="button" class="btn btn-sm btn-primary" id="btnAddBoardItem">
-				<i class="bi bi-plus-lg"></i> 글쓰기
-			</button>
-		</div>
-		<div class="d-flex justify-content-between align-items-center mb-2">
-			<div>전체 ${total}건</div>
-			<div class="input-group board-search-box">
-				<input type="text" class="form-control form-control-sm" id="board_search_keyword" placeholder="검색어 입력">
-				<button class="btn btn-sm btn-outline-secondary" type="button" id="btnSearchBoard">검색</button>
-			</div>
-		</div>
-		<div class="table-responsive">
-			<table class="table table-hover board-table">
-				<thead>
-					<tr>
-						<th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAllBoard"></th>
-						<th>제목</th>
-						<th style="width: 60px;">조회수</th>
-						<th style="width: 100px;">작성일</th>
-						<th style="width: 60px;">작성자</th>
-						<th style="width: 100px;">수정일</th>
-						<th style="width: 60px;">수정자</th>						
-					</tr>
-				</thead>
-				<tbody>
-					${tableRows}
-				</tbody>
-			</table>
-		</div>
-	`;
-
-	$('#contentArea').html(html);
-}
-
-/**
- * 게시글 추가 핸들러 (수정)
+ * 게시글 추가 핸들러
  */
 function handleAddBoardItem() {
 	$('#boardOffcanvasLabel').text('게시글 작성');
@@ -1075,17 +1002,21 @@ function handleAddBoardItem() {
 	$('#board_title').val('');
 	$('#board_content').val('');
 	$('#youtube_url').val('');
-	$('#uploaded_files').val('');
 
-	// Dropzone 초기화
-	initializeBoardDropzone();
+	// 삭제 버튼 숨김 (작성 모드)
+	$('#btnDeleteBoard').hide();
 
 	const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
 	boardOffcanvas.show();
+
+	// Offcanvas가 완전히 표시된 후 Dropzone 초기화
+	$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
+		initializeBoardDropzone();
+	});
 }
 
 /**
- * 게시글 수정 핸들러 (수정)
+ * 게시글 수정 핸들러
  */
 function handleEditBoardItem() {
 	const idx = $(this).data('idx');
@@ -1103,21 +1034,31 @@ function handleEditBoardItem() {
 				$('#board_content').val(response.data.board_content);
 				$('#youtube_url').val(response.data.youtube_url || '');
 
-				// Dropzone 초기화
-				initializeBoardDropzone();
+				// 삭제 버튼 표시 (수정 모드)
+				$('#btnDeleteBoard').show();
 
-				// 기존 파일 복원
-				if (response.data.file_path) {
-					try {
-						const files = JSON.parse(response.data.file_path);
-						restoreUploadedFiles(files);
-					} catch (e) {
-						console.error('파일 데이터 파싱 오류:', e);
-					}
-				}
-
+				// Offcanvas 표시
 				const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
 				boardOffcanvas.show();
+
+				// Offcanvas가 완전히 표시된 후 Dropzone 초기화 및 파일 복원
+				$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
+					initializeBoardDropzone();
+
+					// 기존 첨부파일 복원
+					if (response.data.file_path) {
+						try {
+							const files = JSON.parse(response.data.file_path);
+							if (Array.isArray(files) && files.length > 0) {
+								setTimeout(function() {
+									restoreUploadedFiles(files);
+								}, 300);
+							}
+						} catch (e) {
+							console.error('파일 복원 실패:', e);
+						}
+					}
+				});
 			} else {
 				showToast('게시글 정보를 불러오는데 실패했습니다.');
 			}
@@ -1156,7 +1097,7 @@ function handleDeleteBoardItem() {
 }
 
 /**
- * 게시글 저장 핸들러 - 디버깅 추가
+ * 게시글 저장 핸들러
  */
 function handleSaveBoard() {
 	const orgId = $('#current_org_id').val();
@@ -1166,59 +1107,88 @@ function handleSaveBoard() {
 	const youtubeUrl = $('#youtube_url').val().trim();
 	const uploadedFiles = $('#uploaded_files').val();
 
-	console.log('=== 게시글 저장 시작 ===');
-	console.log('uploadedFileList:', uploadedFileList);
-	console.log('uploaded_files input 값:', uploadedFiles);
-
 	if (!boardTitle) {
 		showToast('제목을 입력해주세요.');
 		return;
 	}
 
-	// YouTube URL 유효성 검사 (입력된 경우에만)
-	if (youtubeUrl && !isValidYoutubeUrl(youtubeUrl)) {
-		showToast('올바른 YouTube URL을 입력해주세요.');
-		return;
-	}
-
-	const postData = {
-		org_id: orgId,
-		menu_id: currentMenuId,
-		idx: idx,
-		board_title: boardTitle,
-		board_content: boardContent,
-		youtube_url: youtubeUrl,
-		file_path: uploadedFiles
-	};
-
-	console.log('전송할 데이터:', postData);
-
 	$.ajax({
 		url: '/homepage_menu/save_board',
 		type: 'POST',
 		dataType: 'json',
-		data: postData,
+		data: {
+			org_id: orgId,
+			menu_id: currentMenuId,
+			idx: idx,
+			board_title: boardTitle,
+			board_content: boardContent,
+			youtube_url: youtubeUrl,
+			file_path: uploadedFiles
+		},
 		success: function(response) {
-			console.log('서버 응답:', response);
-
 			if (response.success) {
 				showToast(response.message);
 
 				const boardOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('boardOffcanvas'));
 				boardOffcanvas.hide();
 
-				loadBoardContent(currentMenuId);
+				// 현재 페이지와 검색어 유지하면서 목록 새로고침
+				loadBoardContent(currentMenuId, currentBoardPage, currentSearchKeyword);
 			} else {
 				showToast(response.message);
 			}
 		},
-		error: function(xhr, status, error) {
-			console.error('저장 실패:', error);
-			console.error('응답:', xhr.responseText);
+		error: function() {
 			showToast('게시글 저장에 실패했습니다.');
 		}
 	});
 }
+
+
+/**
+ * Offcanvas에서 게시글 삭제 핸들러
+ */
+function handleDeleteBoardInOffcanvas() {
+	const idx = $('#board_idx').val();
+
+	if (!idx) {
+		showToast('삭제할 게시글 정보가 없습니다.');
+		return;
+	}
+
+	showConfirmModal(
+		'게시글 삭제',
+		'1건의 게시물을 삭제하시겠습니까?',
+		function() {
+			$.ajax({
+				url: '/homepage_menu/delete_selected_boards',
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					idx_list: [idx]
+				},
+				success: function(response) {
+					if (response.success) {
+						showToast(response.message);
+
+						// Offcanvas 닫기
+						const boardOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('boardOffcanvas'));
+						boardOffcanvas.hide();
+
+						// 목록 새로고침
+						loadBoardContent(currentMenuId, currentBoardPage, currentSearchKeyword);
+					} else {
+						showToast(response.message);
+					}
+				},
+				error: function() {
+					showToast('게시글 삭제에 실패했습니다.');
+				}
+			});
+		}
+	);
+}
+
 /**
  * YouTube URL 유효성 검사
  */
@@ -1228,35 +1198,6 @@ function isValidYoutubeUrl(url) {
 }
 
 
-/**
- * 게시판 검색 핸들러
- */
-function handleSearchBoard() {
-	const orgId = $('#current_org_id').val();
-	const searchKeyword = $('#board_search_keyword').val().trim();
-
-	$.ajax({
-		url: '/homepage_menu/get_board_list',
-		type: 'POST',
-		dataType: 'json',
-		data: {
-			org_id: orgId,
-			menu_id: currentMenuId,
-			search_keyword: searchKeyword,
-			page: 1
-		},
-		success: function(response) {
-			if (response.success) {
-				renderBoardContent(response.data, response.total);
-			} else {
-				showToast(response.message);
-			}
-		},
-		error: function() {
-			showToast('검색에 실패했습니다.');
-		}
-	});
-}
 
 /**
  * 컨텐츠 영역 초기화
@@ -1306,7 +1247,7 @@ function escapeHtml(text) {
 
 
 /**
- * Dropzone 초기화
+ * Dropzone 초기화 - 프론트에서 썸네일 생성 + 문서 파일 아이콘 표시 + 파일 삭제
  */
 function initializeBoardDropzone() {
 	// 기존 Dropzone 인스턴스 완전 제거
@@ -1319,7 +1260,6 @@ function initializeBoardDropzone() {
 		}
 	}
 
-	// DOM 요소에서 Dropzone 클래스 제거
 	const dropzoneElement = document.querySelector("#dropzoneArea");
 	if (dropzoneElement && dropzoneElement.dropzone) {
 		try {
@@ -1329,36 +1269,30 @@ function initializeBoardDropzone() {
 		}
 	}
 
-	// Dropzone 클래스 제거
 	if (dropzoneElement) {
 		dropzoneElement.classList.remove('dz-clickable');
 		dropzoneElement.innerHTML = '';
 	}
 
-	// 파일 목록 초기화
 	uploadedFileList = [];
 	$('#uploaded_files').val('');
 	console.log('[Dropzone] 초기화: uploadedFileList 비움');
 
-	// Dropzone 자동 발견 비활성화
 	Dropzone.autoDiscover = false;
 
-	// 새 Dropzone 인스턴스 생성
 	try {
 		boardDropzone = new Dropzone("#dropzoneArea", {
 			url: "/homepage_menu/upload_board_file",
 			paramName: "file",
-			maxFilesize: 10, // MB
-			maxFiles: 5,
+			maxFilesize: 10,
+			maxFiles: 20,
 			addRemoveLinks: true,
 			dictDefaultMessage: "파일을 드래그하거나 클릭하여 업로드하세요",
 			dictRemoveFile: "삭제",
 			dictCancelUpload: "취소",
-			dictMaxFilesExceeded: "최대 5개까지만 업로드 가능합니다",
+			dictMaxFilesExceeded: "최대 20개까지만 업로드 가능합니다",
 			dictInvalidFileType: "허용되지 않는 파일 형식입니다",
 			acceptedFiles: "image/jpeg,image/jpg,image/png,image/gif,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.hwp,.hwpx,.zip",
-
-			// 썸네일 설정
 			thumbnailWidth: 120,
 			thumbnailHeight: 120,
 			thumbnailMethod: 'contain',
@@ -1369,55 +1303,65 @@ function initializeBoardDropzone() {
 				this.on("sending", function(file, xhr, formData) {
 					const orgId = $('#current_org_id').val();
 					formData.append("org_id", orgId);
+
+					// 이미지 파일이고 썸네일이 생성된 경우 함께 전송
+					if (file.type.match(/image.*/) && file.thumbnailBlob) {
+						formData.append("thumbnail", file.thumbnailBlob, 'thumb_' + file.name);
+						console.log('[Dropzone] 썸네일 포함하여 전송:', file.name);
+					}
+
 					console.log('[Dropzone] 파일 전송 시작:', file.name);
 				});
 
 				this.on("success", function(file, response) {
-					// 문자열 응답 파싱
 					if (typeof response === 'string') {
 						response = JSON.parse(response);
 					}
 
 					if (response && response.success) {
-						// 파일 정보 저장 (중요!)
 						file.serverPath = response.file_path;
 						file.serverFileName = response.file_name;
+						file.thumbPath = response.thumb_path;
 
 						uploadedFileList.push({
 							name: response.file_name,
 							path: response.file_path,
+							thumb_path: response.thumb_path,
 							size: file.size,
-							type: file.type
+							type: response.file_type
 						});
 
 						updateUploadedFilesInput();
+						console.log('[Dropzone] 파일 업로드 성공:', response.file_name);
+						if (response.thumb_path) {
+							console.log('[Dropzone] 썸네일 경로:', response.thumb_path);
+						}
 					}
 				});
 
 				this.on("error", function(file, errorMessage, xhr) {
-					// 실제로는 성공인지 확인
 					if (xhr && xhr.status === 200 && xhr.responseText) {
 						try {
 							const response = JSON.parse(xhr.responseText);
 							if (response && response.success) {
-								// 성공 처리
 								file.serverPath = response.file_path;
 								file.serverFileName = response.file_name;
+								file.thumbPath = response.thumb_path;
 
 								uploadedFileList.push({
 									name: response.file_name,
 									path: response.file_path,
+									thumb_path: response.thumb_path,
 									size: file.size,
-									type: file.type
+									type: response.file_type
 								});
 
 								updateUploadedFilesInput();
-								return; // 파일 삭제 안 함!
+								return;
 							}
 						} catch (e) {}
 					}
 
-					// 진짜 에러만 처리
 					showToast(typeof errorMessage === 'string' ? errorMessage : '파일 업로드 실패');
 					this.removeFile(file);
 				});
@@ -1425,53 +1369,110 @@ function initializeBoardDropzone() {
 				this.on("removedfile", function(file) {
 					console.log('[Dropzone] 파일 삭제:', file.name);
 
-					// 서버에 업로드된 파일 정보로 필터링
 					if (file.serverPath || file.serverFileName) {
+						// 업로드된 파일 목록에서 제거
 						const beforeLength = uploadedFileList.length;
+						const removedFile = uploadedFileList.find(f => f.path === file.serverPath);
 						uploadedFileList = uploadedFileList.filter(f => f.path !== file.serverPath);
 						console.log('[Dropzone] 삭제 전:', beforeLength, '삭제 후:', uploadedFileList.length);
-						console.log('[Dropzone] 현재 uploadedFileList:', uploadedFileList);
 
 						updateUploadedFilesInput();
-						console.log('[Dropzone] uploaded_files 값:', $('#uploaded_files').val());
+
+						// 서버에 파일 삭제 요청
+						if (removedFile) {
+							$.ajax({
+								url: '/homepage_menu/delete_board_file',
+								type: 'POST',
+								dataType: 'json',
+								data: {
+									file_path: removedFile.path,
+									thumb_path: removedFile.thumb_path
+								},
+								success: function(response) {
+									if (response.success) {
+										console.log('[Dropzone] 서버 파일 삭제 완료:', removedFile.path);
+									} else {
+										console.error('[Dropzone] 서버 파일 삭제 실패:', response.message);
+									}
+								},
+								error: function() {
+									console.error('[Dropzone] 서버 파일 삭제 요청 실패');
+								}
+							});
+						}
 					}
 				});
 
 				this.on("maxfilesexceeded", function(file) {
-					showToast('최대 5개까지만 업로드 가능합니다');
+					showToast('최대 20개까지만 업로드 가능합니다');
 					this.removeFile(file);
 				});
 
-				// 썸네일 생성 후 이벤트
+				// 썸네일 생성 후 커스터마이징
 				this.on("thumbnail", function(file, dataUrl) {
-					console.log('[Dropzone] 썸네일 생성됨:', file.name);
+					console.log('[Dropzone] 썸네일 생성 완료:', file.name);
+
+					// 문서 파일인 경우 썸네일 영역 커스터마이징
+					if (!file.type.match(/image.*/)) {
+						const preview = file.previewElement;
+						if (preview) {
+							const imgElement = preview.querySelector('.dz-image img');
+							if (imgElement) {
+								const ext = getFileExtension(file.name).toUpperCase();
+
+								// 이미지 대신 확장자 박스 표시
+								imgElement.style.display = 'none';
+								const dzImage = preview.querySelector('.dz-image');
+								if (dzImage) {
+									dzImage.innerHTML = `<div class="dz-file-icon">${ext}</div>`;
+								}
+							}
+						}
+					}
+				});
+
+				// 완료 후 다운로드 버튼 추가
+				this.on("complete", function(file) {
+					if (file.status === "success") {
+						const preview = file.previewElement;
+						if (preview) {
+							// 삭제 버튼 찾기
+							const removeBtn = preview.querySelector('.dz-remove');
+							if (removeBtn && file.serverPath) {
+								// 다운로드 버튼이 이미 있는지 확인
+								if (!preview.querySelector('.dz-download')) {
+									// 다운로드 버튼 생성
+									const downloadBtn = document.createElement('a');
+									downloadBtn.href = file.serverPath;
+									downloadBtn.download = file.name;
+									downloadBtn.className = 'dz-download';
+									downloadBtn.textContent = '다운로드';
+									downloadBtn.style.marginLeft = '5px';
+
+									// 삭제 버튼 옆에 추가
+									removeBtn.parentNode.insertBefore(downloadBtn, removeBtn.nextSibling);
+								}
+							}
+						}
+					}
 				});
 			},
 
-			// 파일 검증 함수
 			accept: function(file, done) {
 				const fileName = file.name.toLowerCase();
-
-				// 이미지 파일 체크
 				const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
 				const isImage = imageExtensions.some(ext => fileName.endsWith(ext));
-
-				// 문서 파일 체크
 				const docExtensions = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.hwp', '.hwpx', '.zip'];
 				const isDocument = docExtensions.some(ext => fileName.endsWith(ext));
 
-				if (isImage) {
-					done();
-				} else if (isDocument) {
+				if (isImage || isDocument) {
 					done();
 				} else {
 					done("이미지(jpg, jpeg, png, gif) 또는 문서(pdf, doc, docx, ppt, pptx, xls, xlsx, hwp, hwpx, zip) 파일만 업로드 가능합니다.");
 				}
 			},
 
-			// 이미지 리사이징 처리
 			transformFile: function(file, done) {
-				// 이미지 파일인지 확인
 				if (file.type.match(/image.*/)) {
 					const reader = new FileReader();
 					reader.onload = function(e) {
@@ -1482,12 +1483,13 @@ function initializeBoardDropzone() {
 
 							console.log('[Dropzone] 원본 이미지 크기:', width, 'x', height);
 
-							// 긴 쪽이 2000px 넘으면 리사이징
-							if (width > 2000 || height > 2000) {
-								const canvas = document.createElement('canvas');
-								const ctx = canvas.getContext('2d');
+							// 원본 이미지 리사이징 (2000px 초과 시)
+							const canvas = document.createElement('canvas');
+							const ctx = canvas.getContext('2d');
+							let needResize = false;
 
-								// 비율 계산
+							if (width > 2000 || height > 2000) {
+								needResize = true;
 								if (width > height) {
 									if (width > 2000) {
 										height = Math.round((height * 2000) / width);
@@ -1500,30 +1502,55 @@ function initializeBoardDropzone() {
 									}
 								}
 
-								console.log('[Dropzone] 리사이징 후 크기:', width, 'x', height);
-
-								canvas.width = width;
-								canvas.height = height;
-								ctx.drawImage(img, 0, 0, width, height);
-
-								// Canvas를 Blob으로 변환
-								canvas.toBlob(function(blob) {
-									// Blob에 원본 파일명 추가
-									blob.name = file.name;
-									blob.lastModified = new Date();
-									done(blob);
-								}, file.type, 0.9);
-							} else {
-								console.log('[Dropzone] 리사이징 불필요');
-								// 리사이징 불필요
-								done(file);
+								console.log('[Dropzone] 원본 리사이징:', width, 'x', height);
 							}
+
+							// 썸네일 생성 (200x200)
+							const thumbCanvas = document.createElement('canvas');
+							const thumbCtx = thumbCanvas.getContext('2d');
+							let thumbWidth = 200;
+							let thumbHeight = 200;
+
+							// 비율 유지하며 썸네일 크기 계산
+							const aspectRatio = img.width / img.height;
+							if (aspectRatio > 1) {
+								thumbHeight = Math.round(thumbWidth / aspectRatio);
+							} else {
+								thumbWidth = Math.round(thumbHeight * aspectRatio);
+							}
+
+							thumbCanvas.width = thumbWidth;
+							thumbCanvas.height = thumbHeight;
+							thumbCtx.drawImage(img, 0, 0, thumbWidth, thumbHeight);
+
+							console.log('[Dropzone] 썸네일 생성:', thumbWidth, 'x', thumbHeight);
+
+							// 썸네일을 Blob으로 변환하여 파일 객체에 저장
+							thumbCanvas.toBlob(function(thumbBlob) {
+								file.thumbnailBlob = thumbBlob;
+								console.log('[Dropzone] 썸네일 Blob 생성 완료:', thumbBlob.size, 'bytes');
+
+								// 원본 이미지 처리
+								if (needResize) {
+									canvas.width = width;
+									canvas.height = height;
+									ctx.drawImage(img, 0, 0, width, height);
+
+									canvas.toBlob(function(blob) {
+										blob.name = file.name;
+										blob.lastModified = new Date();
+										done(blob);
+									}, file.type, 0.9);
+								} else {
+									console.log('[Dropzone] 원본 리사이징 불필요');
+									done(file);
+								}
+							}, file.type, 0.9);
 						};
 						img.src = e.target.result;
 					};
 					reader.readAsDataURL(file);
 				} else {
-					// 이미지가 아니면 원본 그대로
 					done(file);
 				}
 			}
@@ -1537,6 +1564,12 @@ function initializeBoardDropzone() {
 	}
 }
 
+/**
+ * 파일 확장자 추출
+ */
+function getFileExtension(filename) {
+	return filename.slice((filename.lastIndexOf(".") - 1 >>> 0) + 2);
+}
 
 /**
  * 업로드된 파일 목록 업데이트
@@ -1548,11 +1581,7 @@ function updateUploadedFilesInput() {
 }
 
 /**
- * 역할: 파일 복원 시 썸네일 표시 및 삭제 기능 수정
- */
-
-/**
- * 기존 파일 복원 (수정 시) - 썸네일 표시 및 삭제 기능 개선
+ * 기존 파일 복원 (수정 시) - 썸네일 사용 + 다운로드 버튼 추가
  */
 function restoreUploadedFiles(files) {
 	if (!files || !Array.isArray(files) || files.length === 0) {
@@ -1565,33 +1594,30 @@ function restoreUploadedFiles(files) {
 	uploadedFileList = files;
 	updateUploadedFilesInput();
 
-	// boardDropzone가 초기화된 후에 파일 추가
 	if (boardDropzone) {
 		files.forEach(function(fileData) {
 			const mockFile = {
 				name: fileData.name,
 				size: fileData.size,
 				type: fileData.type,
-				// 서버 경로 정보 저장 (삭제 시 필요)
 				serverPath: fileData.path,
 				serverFileName: fileData.name,
-				// 업로드 완료 상태로 설정
+				thumbPath: fileData.thumb_path,
 				status: Dropzone.SUCCESS,
 				accepted: true
 			};
 
-			// 파일 추가
 			boardDropzone.emit("addedfile", mockFile);
 
 			// 이미지 파일인 경우 썸네일 표시
 			if (fileData.type && fileData.type.match(/image.*/)) {
-				// 썸네일 URL 생성 (실제 이미지 경로 사용)
-				const thumbnailUrl = fileData.path;
+				// 썸네일이 있으면 썸네일 사용, 없으면 원본 사용
+				const thumbnailUrl = fileData.thumb_path ? fileData.thumb_path : fileData.path;
 
-				// 썸네일 수동 설정
+				console.log('[restoreUploadedFiles] 썸네일 URL:', thumbnailUrl);
+
 				boardDropzone.emit("thumbnail", mockFile, thumbnailUrl);
 
-				// 썸네일 이미지가 생성되면 크기 조정
 				setTimeout(function() {
 					const preview = mockFile.previewElement;
 					if (preview) {
@@ -1604,15 +1630,48 @@ function restoreUploadedFiles(files) {
 					}
 				}, 100);
 			} else {
-				// 문서 파일인 경우 기본 아이콘 표시
+				// 문서 파일인 경우 확장자 박스 표시
 				boardDropzone.emit("thumbnail", mockFile, null);
+
+				setTimeout(function() {
+					const preview = mockFile.previewElement;
+					if (preview) {
+						const imgElement = preview.querySelector('.dz-image img');
+						if (imgElement) {
+							const ext = getFileExtension(fileData.name).toUpperCase();
+
+							imgElement.style.display = 'none';
+							const dzImage = preview.querySelector('.dz-image');
+							if (dzImage) {
+								dzImage.innerHTML = `<div class="dz-file-icon">${ext}</div>`;
+							}
+						}
+					}
+				}, 100);
 			}
 
-			// 완료 상태로 표시
 			boardDropzone.emit("complete", mockFile);
-
-			// Dropzone 파일 목록에 추가
 			boardDropzone.files.push(mockFile);
+
+			// 다운로드 버튼 추가
+			setTimeout(function() {
+				const preview = mockFile.previewElement;
+				if (preview) {
+					const removeBtn = preview.querySelector('.dz-remove');
+					removeBtn.className = 'btn btn-xs btn-outline-danger';
+					if (removeBtn && fileData.path) {
+						// 이미 다운로드 버튼이 있는지 확인
+						if (!preview.querySelector('.dz-download')) {
+							const downloadBtn = document.createElement('a');
+							downloadBtn.href = fileData.path;
+							downloadBtn.download = fileData.name;
+							downloadBtn.className = 'dz-download btn btn-xs btn-outline-primary';
+							downloadBtn.textContent = '다운로드';
+							removeBtn.parentNode.insertBefore(downloadBtn, removeBtn.nextSibling);
+						}
+					}
+				}
+			}, 150);
 
 			console.log('[restoreUploadedFiles] 파일 복원됨:', fileData.name);
 		});
@@ -1621,50 +1680,277 @@ function restoreUploadedFiles(files) {
 	}
 }
 
+
+
+
+
 /**
- * removedfile 이벤트 핸들러 (init 함수 내부에서 수정)
+ * 게시판 컨텐츠 로드
  */
-// init 함수 내부의 removedfile 이벤트를 다음과 같이 수정:
+function loadBoardContent(menuId, page = 1, searchKeyword = '') {
+	const orgId = $('#current_org_id').val();
 
-this.on("removedfile", function(file) {
-	console.log('[Dropzone] 파일 삭제 요청:', file.name);
-	console.log('[Dropzone] serverPath:', file.serverPath);
-	console.log('[Dropzone] serverFileName:', file.serverFileName);
+	currentBoardPage = page;
+	currentSearchKeyword = searchKeyword;
 
-	// 서버에 업로드된 파일 정보로 필터링
-	if (file.serverPath || file.serverFileName) {
-		const beforeLength = uploadedFileList.length;
-
-		// uploadedFileList에서 제거
-		uploadedFileList = uploadedFileList.filter(function(f) {
-			const isMatch = f.path === file.serverPath;
-			if (isMatch) {
-				console.log('[Dropzone] 매칭된 파일 찾음:', f.name);
+	$.ajax({
+		url: '/homepage_menu/get_board_list',
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			org_id: orgId,
+			menu_id: menuId,
+			search_keyword: searchKeyword,
+			page: page
+		},
+		success: function(response) {
+			if (response.success) {
+				renderBoardContent(response.data, response.total, page);
+			} else {
+				showToast(response.message);
 			}
-			return !isMatch;
-		});
-
-		const afterLength = uploadedFileList.length;
-		console.log('[Dropzone] 삭제 전:', beforeLength, '→ 삭제 후:', afterLength);
-		console.log('[Dropzone] 현재 uploadedFileList:', uploadedFileList);
-
-		// hidden input 업데이트
-		updateUploadedFilesInput();
-		console.log('[Dropzone] uploaded_files 값:', $('#uploaded_files').val());
-
-		// 실제로 삭제되었는지 확인
-		if (beforeLength > afterLength) {
-			console.log('[Dropzone] 파일이 uploadedFileList에서 제거됨');
-		} else {
-			console.log('[Dropzone] 경고: uploadedFileList에서 제거되지 않음!');
+		},
+		error: function() {
+			showToast('게시판 목록을 불러오는데 실패했습니다.');
 		}
+	});
+}
+
+/**
+ * 게시판 컨텐츠 렌더링 (페이지네이션 포함)
+ */
+function renderBoardContent(boardList, total, currentPage = 1) {
+	let tableRows = '';
+	const limit = 20;
+
+	if (boardList && boardList.length > 0) {
+		boardList.forEach(function(board) {
+			// 아이콘 생성
+			let icons = '';
+
+			// YouTube 아이콘
+			if (board.youtube_url) {
+				icons += '<i class="bi bi-youtube text-danger ms-1" title="YouTube 동영상"></i>';
+			}
+
+			// 파일 첨부 아이콘
+			if (board.file_path) {
+				try {
+					const files = JSON.parse(board.file_path);
+					if (Array.isArray(files) && files.length > 0) {
+						const hasImage = files.some(file => file.type === 'image');
+						if (hasImage) {
+							icons += '<i class="bi bi-image text-primary ms-1" title="이미지 첨부"></i>';
+						}
+
+						const hasDocument = files.some(file => file.type === 'document');
+						if (hasDocument) {
+							icons += '<i class="bi bi-file-earmark-text text-secondary ms-1" title="문서 첨부"></i>';
+						}
+					}
+				} catch (e) {
+					// JSON 파싱 실패 시 무시
+				}
+			}
+
+			tableRows += `
+				<tr class="btn-board-edit" data-idx="${board.idx}" style="cursor: pointer">
+					<td><input type="checkbox" class="form-check-input board-checkbox" value="${board.idx}" onclick="event.stopPropagation();"></td>
+					<td class="text-start">
+						${escapeHtml(board.board_title)}
+						${icons}
+					</td>
+					<td>${board.view_count}</td>
+					<td>${formatDate(board.reg_date)}</td>
+					<td>${escapeHtml(board.writer_name || '')}</td>
+					<td>${board.modi_date ? formatDate(board.modi_date) : ''}</td>
+					<td>${escapeHtml(board.modifier_name || '')}</td>					
+				</tr>
+			`;
+		});
 	} else {
-		console.log('[Dropzone] serverPath 없음 - 업로드 전 파일');
+		tableRows = '<tr><td colspan="7" class="text-center text-muted" style="height: 100px">등록된 게시글이 없습니다.</td></tr>';
 	}
-});
 
+	// 페이지네이션 생성
+	const totalPages = Math.ceil(total / limit);
+	let pagination = '';
 
+	if (totalPages > 1) {
+		pagination = '<nav aria-label="게시판 페이지네이션"><ul class="pagination justify-content-center mb-0">';
 
+		// 이전 버튼
+		if (currentPage > 1) {
+			pagination += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}">이전</a></li>`;
+		} else {
+			pagination += '<li class="page-item disabled"><span class="page-link">이전</span></li>';
+		}
 
+		// 페이지 번호
+		const startPage = Math.max(1, currentPage - 2);
+		const endPage = Math.min(totalPages, currentPage + 2);
 
+		if (startPage > 1) {
+			pagination += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+			if (startPage > 2) {
+				pagination += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+			}
+		}
 
+		for (let i = startPage; i <= endPage; i++) {
+			if (i === currentPage) {
+				pagination += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+			} else {
+				pagination += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+			}
+		}
+
+		if (endPage < totalPages) {
+			if (endPage < totalPages - 1) {
+				pagination += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+			}
+			pagination += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+		}
+
+		// 다음 버튼
+		if (currentPage < totalPages) {
+			pagination += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}">다음</a></li>`;
+		} else {
+			pagination += '<li class="page-item disabled"><span class="page-link">다음</span></li>';
+		}
+
+		pagination += '</ul></nav>';
+	}
+
+	const html = `
+		<div class="d-flex justify-content-between align-items-center mb-3">
+			<h5 class="mb-0">게시판 관리</h5>
+			<div class="d-flex gap-2">
+				<button type="button" class="btn btn-sm btn-danger" id="btnDeleteSelected">
+					<i class="bi bi-trash"></i> 선택 삭제
+				</button>
+				<button type="button" class="btn btn-sm btn-primary" id="btnAddBoardItem">
+					<i class="bi bi-plus-lg"></i> 글쓰기
+				</button>
+			</div>
+		</div>
+		<div class="d-flex justify-content-between align-items-center mb-2">
+			<div>전체 ${total}건</div>
+			<div class="input-group board-search-box">
+				<input type="text" class="form-control form-control-sm" id="board_search_keyword" placeholder="검색어 입력" value="${escapeHtml(currentSearchKeyword)}">
+				<button class="btn btn-sm btn-outline-secondary" type="button" id="btnSearchBoard">검색</button>
+			</div>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-hover board-table">
+				<thead>
+					<tr>
+						<th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAllBoard"></th>
+						<th>제목</th>
+						<th style="width: 60px;">조회수</th>
+						<th style="width: 100px;">작성일</th>
+						<th style="width: 60px;">작성자</th>
+						<th style="width: 100px;">수정일</th>
+						<th style="width: 60px;">수정자</th>						
+					</tr>
+				</thead>
+				<tbody>
+					${tableRows}
+				</tbody>
+			</table>
+		</div>
+		${pagination}
+	`;
+
+	$('#contentArea').html(html);
+
+	// 페이지네이션 클릭 이벤트 바인딩
+	bindPaginationEvents();
+
+	// 전체 선택 체크박스 이벤트 바인딩
+	bindSelectAllEvent();
+}
+
+/**
+ * 전체 선택 체크박스 이벤트 바인딩
+ */
+function bindSelectAllEvent() {
+	$(document).off('change', '#selectAllBoard');
+	$(document).on('change', '#selectAllBoard', function() {
+		const isChecked = $(this).prop('checked');
+		$('.board-checkbox').prop('checked', isChecked);
+	});
+
+	// 개별 체크박스 변경 시 전체 선택 체크박스 상태 업데이트
+	$(document).off('change', '.board-checkbox');
+	$(document).on('change', '.board-checkbox', function() {
+		const totalCheckboxes = $('.board-checkbox').length;
+		const checkedCheckboxes = $('.board-checkbox:checked').length;
+		$('#selectAllBoard').prop('checked', totalCheckboxes === checkedCheckboxes);
+	});
+}
+
+/**
+ * 선택 삭제 핸들러
+ */
+function handleDeleteSelected() {
+	const selectedIds = [];
+	$('.board-checkbox:checked').each(function() {
+		selectedIds.push($(this).val());
+	});
+
+	if (selectedIds.length === 0) {
+		showToast('삭제할 게시물을 선택해주세요.');
+		return;
+	}
+
+	const count = selectedIds.length;
+	showConfirmModal(
+		'게시글 삭제',
+		`${count}건의 게시물을 삭제하시겠습니까?`,
+		function() {
+			$.ajax({
+				url: '/homepage_menu/delete_selected_boards',
+				type: 'POST',
+				dataType: 'json',
+				data: {
+					idx_list: selectedIds
+				},
+				success: function(response) {
+					if (response.success) {
+						showToast(response.message);
+						// 현재 페이지 새로고침
+						loadBoardContent(currentMenuId, currentBoardPage, currentSearchKeyword);
+					} else {
+						showToast(response.message);
+					}
+				},
+				error: function() {
+					showToast('게시글 삭제에 실패했습니다.');
+				}
+			});
+		}
+	);
+}
+
+/**
+ * 페이지네이션 클릭 이벤트 바인딩
+ */
+function bindPaginationEvents() {
+	$(document).off('click', '.pagination .page-link');
+	$(document).on('click', '.pagination .page-link', function(e) {
+		e.preventDefault();
+		const page = $(this).data('page');
+		if (page) {
+			loadBoardContent(currentMenuId, page, currentSearchKeyword);
+		}
+	});
+}
+
+/**
+ * 게시판 검색 핸들러
+ */
+function handleSearchBoard() {
+	const searchKeyword = $('#board_search_keyword').val().trim();
+	loadBoardContent(currentMenuId, 1, searchKeyword);
+}

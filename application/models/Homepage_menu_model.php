@@ -3,6 +3,8 @@
  * 파일 위치: application/models/Homepage_menu_model.php
  * 역할: 홈페이지 메뉴 설정 데이터 처리 모델
  */
+defined('BASEPATH') or exit('No direct script access allowed');
+
 class Homepage_menu_model extends CI_Model
 {
 	public function __construct()
@@ -119,6 +121,8 @@ class Homepage_menu_model extends CI_Model
 		$total_query = clone $this->db;
 		$total = $total_query->count_all_results('wb_homepage_board');
 
+		// youtube_url과 file_path 필드 추가
+		$this->db->select('idx, board_title, view_count, writer_name, reg_date, modi_date, modifier_name, youtube_url, file_path');
 		$this->db->order_by('reg_date', 'DESC');
 		$this->db->limit($limit, $offset);
 		$query = $this->db->get('wb_homepage_board');
@@ -140,9 +144,10 @@ class Homepage_menu_model extends CI_Model
 		$board = $query->row_array();
 
 		if ($board) {
-			$this->db->set('view_count', 'view_count+1', FALSE);
-			$this->db->where('idx', $idx);
-			$this->db->update('wb_homepage_board');
+			// 조회수 증가는 하지 않음 (관리자 페이지)
+			// $this->db->set('view_count', 'view_count+1', FALSE);
+			// $this->db->where('idx', $idx);
+			// $this->db->update('wb_homepage_board');
 		}
 
 		return $board;

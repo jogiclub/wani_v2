@@ -122,12 +122,14 @@
 
 		<div class="mb-3">
 			<label class="form-label mb-1">파일 첨부</label>
-			<!-- dropzone 클래스를 제거하여 자동 초기화 방지 -->
 			<div id="dropzoneArea"></div>
 			<input type="hidden" id="uploaded_files" value="">
 		</div>
 
 		<div class="d-flex gap-2">
+			<button type="button" class="btn btn-danger" id="btnDeleteBoard" style="display: none;">
+				<i class="bi bi-trash"></i> 삭제
+			</button>
 			<button type="button" class="btn btn-primary flex-fill" id="btnSaveBoard">저장</button>
 		</div>
 	</div>
