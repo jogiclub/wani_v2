@@ -163,6 +163,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@latest"></script>
 
+
+
 <!-- Editor.js Media Tools -->
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/image@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@latest"></script>
@@ -186,4 +188,8 @@
 
 <!-- 게시판 블록 커스텀 플러그인 -->
 <script src="/assets/js/wani-preach.js?<?php echo WB_VERSION; ?>"></script>
+
+<!-- 카드 그리드 커스텀 플러그인 (새로 추가) -->
+<script src="/assets/js/wani-card-grid.js?<?php echo WB_VERSION; ?>"></script>
+
 <script src="/assets/js/homepage_menu.js?<?php echo WB_VERSION; ?>"></script>

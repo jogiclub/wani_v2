@@ -1156,5 +1156,131 @@ class Homepage_menu extends My_Controller
 		}
 	}
 
+	/**
+	 * 역할: upload_card_image, delete_card_image 메서드 추가
+	 */
 
+	/**
+	 * 카드 그리드 이미지 업로드
+	 */
+	public function upload_card_image()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		// org_id 가져오기
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			$current_org = $this->session->userdata('current_org');
+			$org_id = $current_org['org_id'] ?? null;
+		}
+
+		if (!$org_id) {
+			echo json_encode([
+				'success' => 0,
+				'message' => '조직 정보가 없습니다.'
+			]);
+			return;
+		}
+
+		// 업로드 경로 설정
+		$year = date('Y');
+		$month = date('m');
+		$day = date('d');
+		$upload_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/";
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'gif|jpg|jpeg|png|webp';
+		$config['max_size'] = 5120; // 5MB
+		$config['encrypt_name'] = TRUE;
+
+		$this->load->library('upload', $config);
+
+		if ($this->upload->do_upload('image')) {
+			$upload_data = $this->upload->data();
+			$file_name = $upload_data['file_name'];
+			$file_url = base_url("uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/{$file_name}");
+
+			echo json_encode([
+				'success' => 1,
+				'file' => [
+					'url' => $file_url
+				]
+			]);
+		} else {
+			$error = $this->upload->display_errors('', '');
+			echo json_encode([
+				'success' => 0,
+				'message' => '이미지 업로드 실패: ' . $error
+			]);
+		}
+	}
+
+	/**
+	 * 카드 그리드 이미지 삭제
+	 */
+	public function delete_card_image()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$json_input = file_get_contents('php://input');
+		$data = json_decode($json_input, true);
+
+		$image_url = $data['image_url'] ?? '';
+
+		if (empty($image_url)) {
+			echo json_encode([
+				'success' => false,
+				'message' => '이미지 URL이 필요합니다.'
+			]);
+			return;
+		}
+
+		try {
+			// URL에서 실제 파일 경로 추출
+			$base = base_url();
+
+			if (strpos($image_url, $base) === 0) {
+				$file_path = str_replace($base, './', $image_url);
+			} else {
+				$file_path = '.' . $image_url;
+			}
+
+			if (file_exists($file_path)) {
+				if (@unlink($file_path)) {
+					log_message('info', '[카드 이미지 삭제] 성공: ' . $file_path);
+					echo json_encode([
+						'success' => true,
+						'message' => '이미지가 삭제되었습니다.'
+					]);
+				} else {
+					log_message('error', '[카드 이미지 삭제] 실패: ' . $file_path);
+					echo json_encode([
+						'success' => false,
+						'message' => '이미지 삭제에 실패했습니다.'
+					]);
+				}
+			} else {
+				echo json_encode([
+					'success' => false,
+					'message' => '파일을 찾을 수 없습니다.'
+				]);
+			}
+		} catch (Exception $e) {
+			log_message('error', '[카드 이미지 삭제] 오류: ' . $e->getMessage());
+			echo json_encode([
+				'success' => false,
+				'message' => '이미지 삭제 중 오류가 발생했습니다.'
+			]);
+		}
+	}
 }

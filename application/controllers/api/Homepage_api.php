@@ -331,6 +331,62 @@ class Homepage_api extends CI_Controller
 					}
 					break;
 
+
+				/**
+				 * 역할: convert_editorjs_to_html 함수에 waniCardGrid 케이스 추가
+				 */
+
+				case 'waniCardGrid':
+					$cards = $data_content['cards'] ?? [];
+
+					if (!empty($cards)) {
+						// 고유 ID 생성
+						$slider_id = 'wani-card-slider-' . uniqid();
+
+						$html .= '<div class="wani-card-grid-block mb-4">';
+						$html .= '<div id="' . $slider_id . '" class="wani-card-slider '.$slider_id.'">';
+
+						foreach ($cards as $card) {
+							$image = $card['image'] ?? '';
+							$title = $card['title'] ?? '';
+							$subtitle = $card['subtitle'] ?? '';
+
+							$html .= '<div class="slide-item">';
+							$html .= '<div class="card h-100 mx-2">';
+
+							if (!empty($image)) {
+								$html .= '<img src="' . htmlspecialchars($image) . '" class="card-img-top" alt="' . htmlspecialchars($title) . '" style="height: 250px; object-fit: cover;">';
+							} else {
+								$html .= '<div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">';
+								$html .= '<i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
+								$html .= '</div>';
+							}
+
+							$html .= '<div class="card-body">';
+
+							if (!empty($title)) {
+								$html .= '<h5 class="card-title">' . htmlspecialchars($title) . '</h5>';
+							}
+
+							if (!empty($subtitle)) {
+								$html .= '<p class="card-text text-muted">' . htmlspecialchars($subtitle) . '</p>';
+							}
+
+							$html .= '</div>';
+							$html .= '</div>';
+							$html .= '</div>';
+						}
+
+						$html .= '</div>';
+
+
+
+						$html .= '</div>';
+					}
+					break;
+
+
+
 				default:
 					log_message('debug', 'Unknown Editor.js block type: ' . $type);
 					break;

@@ -914,7 +914,7 @@ function renderPageContent(data) {
 }
 
 /**
- * Editor.js 초기화
+ * Editor.js 초기화 (페이지용)
  */
 function initPageContentEditor(content) {
 	// 기존 에디터 인스턴스가 있으면 제거
@@ -988,8 +988,6 @@ function initPageContentEditor(content) {
 		};
 	}
 
-
-
 	// Quote
 	if (typeof window.Quote !== 'undefined') {
 		availableTools.quote = {
@@ -1010,7 +1008,7 @@ function initPageContentEditor(content) {
 		};
 	}
 
-	// initPageContentEditor 함수 내부의 ImageTool 설정 부분을 다음과 같이 수정
+	// Image Tool
 	if (typeof window.ImageTool !== 'undefined') {
 		availableTools.image = {
 			class: window.ImageTool,
@@ -1026,14 +1024,17 @@ function initPageContentEditor(content) {
 		};
 	}
 
-// AttachesTool도 동일하게
-	if (typeof window.AttachesTool !== 'undefined') {
-		availableTools.attaches = {
-			class: window.AttachesTool,
+	// Embed
+	if (typeof window.Embed !== 'undefined') {
+		availableTools.embed = {
+			class: window.Embed,
 			config: {
-				endpoint: '/homepage_menu/upload_file',
-				additionalRequestData: {
-					org_id: $('#current_org_id').val()
+				services: {
+					youtube: true,
+					vimeo: true,
+					facebook: true,
+					instagram: true,
+					twitter: true
 				}
 			}
 		};
@@ -1054,7 +1055,10 @@ function initPageContentEditor(content) {
 		availableTools.attaches = {
 			class: window.AttachesTool,
 			config: {
-				endpoint: '/homepage_menu/upload_file'
+				endpoint: '/homepage_menu/upload_file',
+				additionalRequestData: {
+					org_id: $('#current_org_id').val()
+				}
 			}
 		};
 	}
@@ -1112,14 +1116,29 @@ function initPageContentEditor(content) {
 		availableTools.raw = window.RawTool;
 	}
 
-
-
-	// WaniPreach - 게시판 블록 (새로 추가)
+	// WaniPreach - 게시판 블록
 	if (typeof window.WaniPreach !== 'undefined') {
 		availableTools.waniPreach = {
 			class: window.WaniPreach
 		};
 	}
+
+	// WaniCardGrid - 카드 그리드 블록 (기존 WaniPreach 다음에 추가)
+	if (typeof window.WaniCardGrid !== 'undefined') {
+		availableTools.waniCardGrid = {
+			class: window.WaniCardGrid,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
+		};
+	}
+
+
+
+
+
+
+
 
 	console.log('사용 가능한 도구:', Object.keys(availableTools));
 
