@@ -55,6 +55,13 @@
 								<div class="form-text">도메인 주소만 입력해주세요 (http:// 또는 https:// 제외)</div>
 							</div>
 
+							<div class="mb-3">
+								<label for="homepage_domain" class="form-label">홈페이지 URL</label>
+								<ul>
+									<li><a href="http://<?php echo htmlspecialchars($selected_org_detail['org_code'] ?? ''); ?>.wani.im" target="_blank"><?php echo htmlspecialchars($selected_org_detail['org_code'] ?? ''); ?>.wani.im</a></li>
+									<li><a href="https://<?php echo htmlspecialchars($homepage_setting['homepage_domain'] ?? ''); ?>" target="_blank"><?php echo htmlspecialchars($homepage_setting['homepage_domain'] ?? ''); ?></a></li>
+								</ul>
+							</div>
 							<!-- 홈페이지 로고 #1 -->
 							<div class="mb-4">
 								<label class="form-label">홈페이지 로고 #1</label>

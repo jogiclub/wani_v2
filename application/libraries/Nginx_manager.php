@@ -22,13 +22,11 @@ class Nginx_manager
 	 */
 	public function create_nginx_config($org_code, $domain, $org_name)
 	{
-		if (empty($org_code) || empty($domain)) {
-			return array('success' => false, 'message' => '조직 코드 또는 도메인이 비어있습니다.');
+		if (empty($org_code)) {
+			return array('success' => false, 'message' => '조직 코드가 비어있습니다.');
 		}
 
-		$domain = preg_replace('#^https?://#', '', $domain);
-		$domain = trim($domain, '/');
-
+		// domain이 비어있어도 기본 도메인({조직코드}.wani.im)으로 생성
 		$config_content = $this->generate_nginx_config_content($org_code, $domain, $org_name);
 		$config_file = $this->nginx_conf_dir . $org_code . '.conf';
 
@@ -65,8 +63,27 @@ class Nginx_manager
 	{
 		$root_dir = $this->homepage_dir . $org_code;
 
-		$ssl_cert = '/etc/letsencrypt/live/' . $domain . '/fullchain.pem';
-		$ssl_key = '/etc/letsencrypt/live/' . $domain . '/privkey.pem';
+		// 기본 도메인: {조직코드}.wani.im
+		$default_domain = $org_code . '.wani.im';
+
+		// 사용자 설정 도메인이 있는 경우 server_name에 포함
+		$server_names = $default_domain;
+		if (!empty($domain)) {
+			$domain = preg_replace('#^https?://#', '', $domain);
+			$domain = trim($domain, '/');
+			$server_names .= ' ' . $domain . ' www.' . $domain;
+		}
+
+		// SSL 인증서 체크 (기본 도메인 또는 사용자 도메인)
+		$ssl_cert = '/etc/letsencrypt/live/' . $default_domain . '/fullchain.pem';
+		$ssl_key = '/etc/letsencrypt/live/' . $default_domain . '/privkey.pem';
+
+		// 기본 도메인 인증서가 없으면 사용자 도메인 인증서 확인
+		if (!file_exists($ssl_cert) && !empty($domain)) {
+			$ssl_cert = '/etc/letsencrypt/live/' . $domain . '/fullchain.pem';
+			$ssl_key = '/etc/letsencrypt/live/' . $domain . '/privkey.pem';
+		}
+
 		$has_ssl = file_exists($ssl_cert) && file_exists($ssl_key);
 
 		if ($has_ssl) {
@@ -77,7 +94,7 @@ class Nginx_manager
 server {
     listen 80;
     listen [::]:80;
-    server_name {$domain} www.{$domain};
+    server_name {$server_names};
     return 301 https://\$host\$request_uri;
 }
 
@@ -85,7 +102,7 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name {$domain} www.{$domain};
+    server_name {$server_names};
 
     ssl_certificate {$ssl_cert};
     ssl_certificate_key {$ssl_key};
@@ -122,7 +139,7 @@ EOT;
 server {
     listen 80;
     listen [::]:80;
-    server_name {$domain} www.{$domain};
+    server_name {$server_names};
 
     root {$root_dir};
     index index.html;

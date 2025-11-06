@@ -113,19 +113,14 @@ class Homepage_setting extends My_Controller
 		// 라이브러리 로드
 		$this->load->library('nginx_manager');
 
-		$nginx_result = array('success' => true);
-		$dir_result = array('success' => true);
+		// Nginx 설정 파일은 항상 생성 (기본 도메인 + 사용자 도메인)
+		$nginx_result = $this->nginx_manager->create_nginx_config($org_code, $homepage_domain, $org_name);
 
-		// 도메인이 있는 경우에만 Nginx 설정 파일 생성
-		if (!empty($homepage_domain)) {
-			$nginx_result = $this->nginx_manager->create_nginx_config($org_code, $homepage_domain, $org_name);
-
-			if (!$nginx_result['success']) {
-				log_message('error', 'Nginx 설정 생성 실패: ' . $nginx_result['message']);
-			}
+		if (!$nginx_result['success']) {
+			log_message('error', 'Nginx 설정 생성 실패: ' . $nginx_result['message']);
 		}
 
-		// 홈페이지 디렉토리 및 index.html은 항상 생성 (테마 변경 반영)
+		// 홈페이지 디렉토리 및 index.html 생성
 		$dir_result = $this->nginx_manager->create_homepage_directory($org_code, $org_name, $homepage_setting, $org_id);
 
 		if (!$dir_result['success']) {
@@ -134,10 +129,11 @@ class Homepage_setting extends My_Controller
 
 		$message = '홈페이지 설정이 저장되었습니다.';
 		if ($nginx_result['success'] && $dir_result['success']) {
+			$default_domain = $org_code . '.wani.im';
 			if (!empty($homepage_domain)) {
-				$message .= ' Nginx 설정 및 홈페이지가 생성되었습니다.';
+				$message .= ' 기본 도메인(' . $default_domain . ') 및 사용자 도메인으로 접속 가능합니다.';
 			} else {
-				$message .= ' 홈페이지가 업데이트되었습니다.';
+				$message .= ' 기본 도메인(' . $default_domain . ')으로 접속 가능합니다.';
 			}
 		}
 
@@ -145,7 +141,8 @@ class Homepage_setting extends My_Controller
 			'success' => true,
 			'message' => $message,
 			'nginx_result' => $nginx_result,
-			'directory_result' => $dir_result
+			'directory_result' => $dir_result,
+			'default_domain' => $org_code . '.wani.im'
 		));
 	}
 

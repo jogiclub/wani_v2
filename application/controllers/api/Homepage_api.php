@@ -77,9 +77,6 @@ class Homepage_api extends CI_Controller
 		}
 	}
 
-	/**
-	 * Editor.js JSON을 HTML로 변환
-	 */
 	private function convert_editorjs_to_html($json_content, $org_code = null)
 	{
 		$data = json_decode($json_content, true);
@@ -95,7 +92,194 @@ class Homepage_api extends CI_Controller
 			$data_content = $block['data'] ?? [];
 
 			switch ($type) {
-				// ... 기존 case들 유지 ...
+				case 'header':
+					$level = $data_content['level'] ?? 2;
+					$text = $data_content['text'] ?? '';
+					$html .= '<h' . $level . ' class="mb-3">' . $text . '</h' . $level . '>';
+					break;
+
+				case 'paragraph':
+					$text = $data_content['text'] ?? '';
+					if (!empty($text)) {
+						$html .= '<p class="mb-3">' . $text . '</p>';
+					}
+					break;
+
+				case 'list':
+					$style = $data_content['style'] ?? 'unordered';
+					$items = $data_content['items'] ?? [];
+					$tag = ($style === 'ordered') ? 'ol' : 'ul';
+
+					if (!empty($items)) {
+						$html .= '<' . $tag . ' class="mb-3">';
+						foreach ($items as $item) {
+							$html .= '<li>' . $item . '</li>';
+						}
+						$html .= '</' . $tag . '>';
+					}
+					break;
+
+				case 'nestedList':
+					$style = $data_content['style'] ?? 'unordered';
+					$items = $data_content['items'] ?? [];
+					$html .= $this->render_nested_list($items, $style);
+					break;
+
+
+
+				case 'quote':
+					$text = $data_content['text'] ?? '';
+					$caption = $data_content['caption'] ?? '';
+					$html .= '<blockquote class="blockquote mb-3">';
+					$html .= '<p>' . $text . '</p>';
+					if (!empty($caption)) {
+						$html .= '<footer class="blockquote-footer">' . $caption . '</footer>';
+					}
+					$html .= '</blockquote>';
+					break;
+
+				case 'code':
+					$code = htmlspecialchars($data_content['code'] ?? '', ENT_QUOTES, 'UTF-8');
+					$html .= '<pre class="mb-3"><code>' . $code . '</code></pre>';
+					break;
+
+				case 'image':
+					$file = $data_content['file'] ?? [];
+					$url = $file['url'] ?? '';
+					$caption = $data_content['caption'] ?? '';
+					$withBorder = $data_content['withBorder'] ?? false;
+					$withBackground = $data_content['withBackground'] ?? false;
+					$stretched = $data_content['stretched'] ?? false;
+
+					if (!empty($url)) {
+						$imgClass = 'img-fluid mb-3';
+						if ($withBorder) $imgClass .= ' border';
+						if ($stretched) $imgClass .= ' w-100';
+
+						$containerClass = 'mb-3';
+						if ($withBackground) $containerClass .= ' bg-light p-3';
+
+						$html .= '<figure class="' . $containerClass . '">';
+						$html .= '<img src="' . htmlspecialchars($url) . '" class="' . $imgClass . '" alt="' . htmlspecialchars($caption) . '">';
+						if (!empty($caption)) {
+							$html .= '<figcaption class="text-muted small mt-2">' . htmlspecialchars($caption) . '</figcaption>';
+						}
+						$html .= '</figure>';
+					}
+					break;
+
+				case 'embed':
+					$service = $data_content['service'] ?? '';
+					$embed_url = $data_content['embed'] ?? '';
+					$caption = $data_content['caption'] ?? '';
+					$width = $data_content['width'] ?? 0;
+					$height = $data_content['height'] ?? 0;
+
+					if (!empty($embed_url)) {
+						$html .= '<div class="embed-responsive mb-3">';
+						$html .= '<iframe src="' . htmlspecialchars($embed_url) . '" ';
+						if ($width > 0) $html .= 'width="' . $width . '" ';
+						if ($height > 0) $html .= 'height="' . $height . '" ';
+						$html .= 'frameborder="0" allowfullscreen class="w-100"></iframe>';
+						if (!empty($caption)) {
+							$html .= '<p class="text-muted small mt-2">' . htmlspecialchars($caption) . '</p>';
+						}
+						$html .= '</div>';
+					}
+					break;
+
+				case 'table':
+					$content = $data_content['content'] ?? [];
+					$withHeadings = $data_content['withHeadings'] ?? false;
+
+					if (!empty($content)) {
+						$html .= '<div class="table-responsive mb-3">';
+						$html .= '<table class="table table-bordered">';
+
+						foreach ($content as $index => $row) {
+							if ($index === 0 && $withHeadings) {
+								$html .= '<thead><tr>';
+								foreach ($row as $cell) {
+									$html .= '<th>' . $cell . '</th>';
+								}
+								$html .= '</tr></thead><tbody>';
+							} else {
+								if ($index === 0) $html .= '<tbody>';
+								$html .= '<tr>';
+								foreach ($row as $cell) {
+									$html .= '<td>' . $cell . '</td>';
+								}
+								$html .= '</tr>';
+							}
+						}
+
+						$html .= '</tbody></table></div>';
+					}
+					break;
+
+				case 'delimiter':
+					$html .= '<hr class="my-4">';
+					break;
+
+				case 'warning':
+					$title = $data_content['title'] ?? '';
+					$message = $data_content['message'] ?? '';
+					$html .= '<div class="alert alert-warning mb-3" role="alert">';
+					if (!empty($title)) {
+						$html .= '<h5 class="alert-heading">' . $title . '</h5>';
+					}
+					if (!empty($message)) {
+						$html .= '<p class="mb-0">' . $message . '</p>';
+					}
+					$html .= '</div>';
+					break;
+
+				case 'linkTool':
+					$link = $data_content['link'] ?? '';
+					$meta = $data_content['meta'] ?? [];
+					$title = $meta['title'] ?? $link;
+					$description = $meta['description'] ?? '';
+					$image = $meta['image']['url'] ?? '';
+
+					if (!empty($link)) {
+						$html .= '<div class="card mb-3">';
+						if (!empty($image)) {
+							$html .= '<img src="' . htmlspecialchars($image) . '" class="card-img-top" alt="' . htmlspecialchars($title) . '">';
+						}
+						$html .= '<div class="card-body">';
+						$html .= '<h5 class="card-title"><a href="' . htmlspecialchars($link) . '" target="_blank">' . htmlspecialchars($title) . '</a></h5>';
+						if (!empty($description)) {
+							$html .= '<p class="card-text">' . htmlspecialchars($description) . '</p>';
+						}
+						$html .= '</div></div>';
+					}
+					break;
+
+				case 'attaches':
+					$file = $data_content['file'] ?? [];
+					$url = $file['url'] ?? '';
+					$name = $file['name'] ?? '';
+					$size = $file['size'] ?? 0;
+					$title = $data_content['title'] ?? $name;
+
+					if (!empty($url)) {
+						$sizeText = $this->format_file_size($size);
+						$html .= '<div class="card mb-3">';
+						$html .= '<div class="card-body">';
+						$html .= '<i class="bi bi-paperclip me-2"></i>';
+						$html .= '<a href="' . htmlspecialchars($url) . '" target="_blank">' . htmlspecialchars($title) . '</a>';
+						if (!empty($sizeText)) {
+							$html .= ' <small class="text-muted">(' . $sizeText . ')</small>';
+						}
+						$html .= '</div></div>';
+					}
+					break;
+
+				case 'raw':
+					$html_content = $data_content['html'] ?? '';
+					$html .= '<div class="mb-3">' . $html_content . '</div>';
+					break;
+
 
 				case 'waniPreach':
 					$boards = $data_content['boards'] ?? [];
@@ -107,60 +291,48 @@ class Homepage_api extends CI_Controller
 						foreach ($boards as $board_config) {
 							$menu_id = $board_config['menu_id'] ?? '';
 							$limit = $board_config['limit'] ?? 5;
+							$display_type = $board_config['display_type'] ?? 'list';
 
-							// 게시판이 선택되지 않은 경우 스킵
-							if (empty($menu_id)) {
-								continue;
-							}
+							if (!empty($menu_id)) {
+								$posts = $this->get_board_posts($org_code, $menu_id, $limit);
 
-							// 실제 게시물 데이터 조회
-							$board_list = $this->Homepage_api_model->get_board_list_for_block($org_code, $menu_id, $limit);
+								$html .= '<div class="col-12">';
+								$html .= '<div class="card">';
+								$html .= '<div class="card-body">';
 
-							if (!empty($board_list)) {
-								// 메뉴 이름 조회
-								$menu_info = $this->Homepage_api_model->get_menu_info($org_code, $menu_id);
-								$menu_name = $menu_info['menu_name'] ?? '게시판';
-
-								$html .= '<div class="col-md-6">';
-								$html .= '<div class="card h-100">';
-								$html .= '<div class="card-header d-flex justify-content-between align-items-center bg-white py-2">';
-								$html .= '<h6 class="mb-0 fw-bold">' . htmlspecialchars($menu_name) . '</h6>';
-								$html .= '<a href="/board/' . $menu_id . '" class="text-primary text-decoration-none small">';
-								$html .= '<i class="bi bi-plus-circle"></i> 더보기';
-								$html .= '</a>';
-								$html .= '</div>';
-								$html .= '<ul class="list-group list-group-flush">';
-
-								foreach ($board_list as $board) {
-									$title = htmlspecialchars($board['board_title'] ?? '');
-									$idx = $board['idx'] ?? '';
-									$reg_date = $board['reg_date'] ?? '';
-
-									$date = '';
-									if ($reg_date) {
-										$timestamp = strtotime($reg_date);
-										$date = date('Y-m-d', $timestamp);
+								if ($display_type === 'list') {
+									$html .= '<ul class="list-group list-group-flush">';
+									foreach ($posts as $post) {
+										$html .= '<li class="list-group-item">';
+										$html .= '<a href="/board/' . $menu_id . '/' . $post['idx'] . '" class="text-decoration-none">';
+										$html .= htmlspecialchars($post['board_title']);
+										$html .= '</a>';
+										$html .= '<small class="text-muted ms-2">' . date('Y-m-d', strtotime($post['reg_date'])) . '</small>';
+										$html .= '</li>';
 									}
-
-									$html .= '<li class="list-group-item d-flex justify-content-between align-items-center py-2">';
-									$html .= '<a href="/board/' . $menu_id . '/' . $idx . '" class="text-truncate me-2 text-decoration-none text-dark flex-grow-1">' . $title . '</a>';
-									$html .= '<small class="text-muted text-nowrap">' . $date . '</small>';
-									$html .= '</li>';
+									$html .= '</ul>';
+								} else {
+									foreach ($posts as $post) {
+										$html .= '<div class="mb-3">';
+										$html .= '<h6><a href="/board/' . $menu_id . '/' . $post['idx'] . '">' . htmlspecialchars($post['board_title']) . '</a></h6>';
+										if (!empty($post['board_content'])) {
+											$preview = strip_tags(substr($post['board_content'], 0, 150));
+											$html .= '<p class="text-muted small">' . htmlspecialchars($preview) . '...</p>';
+										}
+										$html .= '</div>';
+									}
 								}
 
-								$html .= '</ul>';
-								$html .= '</div>';
-								$html .= '</div>';
+								$html .= '</div></div></div>';
 							}
 						}
 
-						$html .= '</div>';
-						$html .= "</div>\n";
+						$html .= '</div></div>';
 					}
 					break;
 
 				default:
-					// 기존 코드 유지
+					log_message('debug', 'Unknown Editor.js block type: ' . $type);
 					break;
 			}
 		}
@@ -168,33 +340,48 @@ class Homepage_api extends CI_Controller
 		return $html;
 	}
 
-	/**
-	 * 중첩 리스트 렌더링 (재귀)
-	 */
-	private function render_nested_list($items, $tag = 'ul')
+	private function render_nested_list($items, $style = 'unordered')
 	{
 		if (empty($items)) {
 			return '';
 		}
 
-		$html = "<{$tag}>\n";
+		$tag = ($style === 'ordered') ? 'ol' : 'ul';
+		$html = '<' . $tag . ' class="mb-3">';
 
 		foreach ($items as $item) {
-			$content = $item['content'] ?? '';
-			$children = $item['items'] ?? [];
+			$html .= '<li>';
+			$html .= $item['content'] ?? '';
 
-			$html .= "<li>{$content}";
-
-			if (!empty($children)) {
-				$html .= "\n" . $this->render_nested_list($children, $tag);
+			if (!empty($item['items'])) {
+				$html .= $this->render_nested_list($item['items'], $style);
 			}
 
-			$html .= "</li>\n";
+			$html .= '</li>';
 		}
 
-		$html .= "</{$tag}>\n";
+		$html .= '</' . $tag . '>';
 
 		return $html;
+	}
+
+	private function format_file_size($bytes)
+	{
+		if ($bytes == 0) return '';
+
+		$units = array('B', 'KB', 'MB', 'GB');
+		$bytes = max($bytes, 0);
+		$pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+		$pow = min($pow, count($units) - 1);
+		$bytes /= (1 << (10 * $pow));
+
+		return round($bytes, 2) . ' ' . $units[$pow];
+	}
+
+	private function get_board_posts($org_code, $menu_id, $limit)
+	{
+		$this->load->model('Homepage_api_model');
+		return $this->Homepage_api_model->get_board_list($org_code, $menu_id, $limit);
 	}
 
 	/**

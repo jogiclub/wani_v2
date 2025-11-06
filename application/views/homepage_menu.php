@@ -38,8 +38,8 @@
 			</div>
 
 			<!-- 오른쪽: 컨텐츠 -->
-			<div class="split-pane" id="right-pane">
-				<div class="card">
+			<div class="split-pane" id="right-pane" style="overflow: auto">
+				<div class="card" style="overflow: auto">
 					<div class="card-body">
 						<div id="contentArea">
 							<div class="text-center text-muted py-5">
@@ -173,7 +173,6 @@
 <!-- Editor.js Table & Layout Tools -->
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/warning@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/checklist@latest"></script>
 
 <!-- Editor.js Text Styling Tools -->
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/marker@latest"></script>
@@ -182,7 +181,7 @@
 
 <!-- Editor.js Advanced Tools -->
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/nested-list@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/@editorjs/personality@latest"></script>
+
 
 
 <!-- 게시판 블록 커스텀 플러그인 -->

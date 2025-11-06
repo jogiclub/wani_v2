@@ -900,7 +900,7 @@ function renderPageContent(data) {
 		<h5 class="mb-3">페이지 설정</h5>
 		<div class="mb-3">
 			<label for="page_content" class="form-label">페이지 내용</label>
-			<div id="page_content_editor" style="border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 15px; min-height: 400px;"></div>
+			<div id="page_content_editor" style="border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 15px;"></div>
 		</div>
 		<hr>
 		<button type="button" class="btn btn-primary" id="btnSavePage">저장</button>
@@ -988,13 +988,7 @@ function initPageContentEditor(content) {
 		};
 	}
 
-	// Checklist
-	if (typeof window.Checklist !== 'undefined') {
-		availableTools.checklist = {
-			class: window.Checklist,
-			inlineToolbar: true
-		};
-	}
+
 
 	// Quote
 	if (typeof window.Quote !== 'undefined') {
@@ -1118,15 +1112,7 @@ function initPageContentEditor(content) {
 		availableTools.raw = window.RawTool;
 	}
 
-	// Personality
-	if (typeof window.Personality !== 'undefined') {
-		availableTools.personality = {
-			class: window.Personality,
-			config: {
-				endpoint: '/homepage_menu/upload_avatar'
-			}
-		};
-	}
+
 
 	// WaniPreach - 게시판 블록 (새로 추가)
 	if (typeof window.WaniPreach !== 'undefined') {
