@@ -1479,12 +1479,13 @@ function initializeBoardDropzone() {
 							const preview = file.previewElement;
 							if (preview) {
 								const removeBtn = preview.querySelector('.dz-remove');
+								removeBtn.className = 'btn btn-xs btn-outline-danger';
 								if (removeBtn && file.serverPath) {
 									if (!preview.querySelector('.dz-download')) {
 										const downloadBtn = document.createElement('a');
 										downloadBtn.href = file.serverPath;
 										downloadBtn.download = file.name;
-										downloadBtn.className = 'dz-download btn btn-xs btn-outline-primary';
+										downloadBtn.className = 'dz-download btn btn-xs btn-outline-primary ms-2';
 										downloadBtn.textContent = '다운로드';
 										removeBtn.parentNode.insertBefore(downloadBtn, removeBtn.nextSibling);
 									}
@@ -1719,7 +1720,7 @@ function restoreUploadedFiles(files) {
 							const downloadBtn = document.createElement('a');
 							downloadBtn.href = fileData.path;
 							downloadBtn.download = fileData.name;
-							downloadBtn.className = 'dz-download btn btn-xs btn-outline-primary';
+							downloadBtn.className = 'dz-download btn btn-xs btn-outline-primary ms-2';
 							downloadBtn.textContent = '다운로드';
 							removeBtn.parentNode.insertBefore(downloadBtn, removeBtn.nextSibling);
 						}
