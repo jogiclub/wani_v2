@@ -1,3 +1,7 @@
+/**
+ * 파일 위치: _theme/{{theme}}/assets/css/theme.css
+ * 역할: page-loading 스타일 및 fadeout 애니메이션
+ */
 
 /* 유틸리티 클래스 */
 .text-primary-custom {color: #667eea !important;}
@@ -21,26 +25,35 @@
 /* 기본 */
 body {font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;min-height: 100vh;display: flex;flex-direction: column;}
 
+/* 페이지 로딩 스피너 */
+.page-loading {display: flex;align-items: center;justify-content: center;background: #eee;z-index: 9999;position: fixed;width: 100%;height: 100vh;flex-direction: column;top: 0;left: 0;opacity: 1;transition: opacity 0.5s ease-out;pointer-events: all;}
+.page-loading.fade-out {opacity: 0;pointer-events: none;}
+
 /* Header 스타일 */
-header {box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: absolute; top: 0; left: 0; width: 100%; z-index: 5; border-bottom: 1px solid rgba(221, 221, 221, 0.5)}
-.navbar-brand {font-weight: 700;font-size: 1.5rem;color: white !important;}
-.logo-container {display: flex;align-items: center;gap: 1rem;}
-.logo-container img {max-height: 50px;max-width: 150px;object-fit: contain;background: rgba(255, 255, 255, 0.9);padding: 0.5rem;border-radius: 8px;}
-.nav-link {color: rgba(255, 255, 255, 0.9) !important;font-weight: 500;transition: color 0.3s;padding: 0.5rem 1rem !important;}
+header {box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: absolute; top: 0; left: 0; width: 100%; z-index: 5; border-bottom: 1px solid rgba(221, 221, 221, 0.4); }
+.navbar{display: flex;align-items: center;justify-content: space-between;width: 100%;height: 80px;}
+
+.logo-container {display: flex;align-items: center; padding: 0 20px;}
+.logo-container img {max-height: 50px;max-width: 150px;object-fit: contain;background: rgba(255, 255, 255, 0.9);padding: 0.5rem;border-radius: 8px; margin-right: 12px}
+.logo-container .navbar-brand {font-weight: 700;font-size: 1.5rem;color: white !important; margin: 0}
+.navbar-toggler{border: 0; font-size: 30px}
+.navbar-toggler:focus{box-shadow: none;}
+.nav-link {color: rgba(255, 255, 255, 0.9) !important;font-weight: 500;transition: color 0.3s;padding: 0.5rem 1rem !important;font-size: 22px;}
 .nav-link:hover {color: white !important;}
 .dropdown-menu {border-radius: 8px;box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);border: none;}
 .dropdown-item {padding: 0.5rem 1rem;transition: background-color 0.2s;}
 .dropdown-item:hover {background-color: #f8f9fa;}
+.link-list ul {display: flex; margin: 0; padding: 0; padding: 0 20px}
+.link-list ul li{list-style: none; margin: 0 10px; padding: 0; font-size: 20px;color: #fff;}
 
 /* Main 스타일 */
 main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
-.loading {text-align: center;padding: 3rem;}
 .spinner-border {width: 3rem;height: 3rem;}
 .slide-item .cover-slide-img{width: 100%;}
 .slide-item .cover-overlay{position: absolute;top: 0;left: 0;width: 100%; background: #000; opacity: 0.5; z-index: 1}
-.slide-item .cover-text{width: 100%;display: flex;justify-content: center;align-items: center;  position: relative; z-index: 2; flex-direction: column;}
-.slide-item .cover-text .card-title{    font-size: 80px;color: #fff;font-weight: 600;letter-spacing: -5px;}
-.slide-item .cover-text .card-text{font-size: 40px; color: #fff; font-weight: 600;letter-spacing: -2px;}
+.slide-item .cover-text{width: 100%;display: flex;justify-content: center;align-items: center;  position: relative; z-index: 2; flex-direction: column; padding: 0 10%}
+.slide-item .cover-text .card-title{font-size: 100px;color: #fff;font-weight: 800;letter-spacing: -5px; margin-bottom: 20px; text-align: center;word-break: keep-all;}
+.slide-item .cover-text .card-text{font-size: 50px; color: #fff; font-weight: 600;letter-spacing: -2px; opacity: 0.7; text-align: center;word-break: keep-all;}
 .slick-dots{bottom: 30px;}
 .slick-dots li{margin: 0}
 .slick-dots li button:before{font-size: 14px;color: #fff; opacity: 0.7;}
@@ -50,6 +63,7 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 .slick-next {right: 25px;}
 .slick-prev i, .slick-next i{font-size: 50px;color: #fff;}
 .slick-prev:before, .slick-next:before{content:''}
+
 /* 게시판 스타일 */
 .board-container {background: white;padding: 2rem;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);}
 .board-container h4 {color: #333;font-weight: 700;padding-bottom: 1rem;border-bottom: 2px solid #667eea;}
@@ -60,9 +74,11 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 .table tbody tr:hover {background-color: #f8f9fa;}
 .table tbody td {padding: 1rem;vertical-align: middle;}
 
-/* 게시글 상세 스타일 */  .board-detail {background: white;padding: 2rem;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);}
+/* 게시글 상세 스타일 */
+.board-detail {background: white;padding: 2rem;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);}
 .board-detail h4 {color: #333;font-weight: 700;margin-bottom: 1rem;}
 .board-content {line-height: 1.8;color: #333;min-height: 200px;}
+
 /* 페이지네이션 스타일 */
 .pagination {margin-top: 2rem;}
 .page-link {color: #667eea;border: 1px solid #dee2e6;padding: 0.5rem 0.75rem;transition: all 0.2s;}
@@ -76,11 +92,11 @@ footer a {color: rgba(255, 255, 255, 0.8);text-decoration: none;transition: colo
 footer a:hover {color: white;}
 
 /* 반응형 디자인 */
-@media (max-width: 1200px) {
-	.navbar-brand {font-size: 1.2rem;}
-	.logo-container {flex-direction: column;gap: 0.5rem;}
+@media (max-width: 992px) {
+
 	.logo-container img {max-width: 100px;max-height: 40px;}
-	main {}
+	.slide-item .cover-text .card-title{font-size: 80px}
+	.slide-item .cover-text .card-text{font-size: 40px}
 	.board-container, .board-detail {padding: 1rem;}
 	.table {font-size: 0.9rem;}
 	.table thead th, .table tbody td {padding: 0.5rem;}

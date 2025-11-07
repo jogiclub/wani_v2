@@ -1,6 +1,6 @@
 /**
  * 파일 위치: assets/js/wani-cover-slide.js
- * 역할: EditorJS용 카드 그리드 커스텀 플러그인
+ * 역할: EditorJS용 카드 그리드 커스텀 플러그인 - 버튼 기능 추가
  */
 
 class WaniCoverSlide {
@@ -28,7 +28,16 @@ class WaniCoverSlide {
 			id: 'card_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
 			image: '',
 			title: '',
-			subtitle: ''
+			subtitle: '',
+			buttons: [this.createEmptyButton()]
+		};
+	}
+
+	createEmptyButton() {
+		return {
+			id: 'btn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+			name: '',
+			url: ''
 		};
 	}
 
@@ -72,34 +81,7 @@ class WaniCoverSlide {
 		cardElement.style.backgroundColor = '#fff';
 
 		// 이미지 영역
-		const imageWrapper = document.createElement('div');
-		imageWrapper.classList.add('card-image-wrapper');
-		imageWrapper.style.position = 'relative';
-		imageWrapper.style.width = '100%';
-		imageWrapper.style.height = '200px';
-		imageWrapper.style.backgroundColor = '#f8f9fa';
-		imageWrapper.style.border = '2px dashed #dee2e6';
-		imageWrapper.style.borderRadius = '4px';
-		imageWrapper.style.marginBottom = '15px';
-		imageWrapper.style.display = 'flex';
-		imageWrapper.style.alignItems = 'center';
-		imageWrapper.style.justifyContent = 'center';
-		imageWrapper.style.cursor = 'pointer';
-		imageWrapper.style.overflow = 'hidden';
-
-		if (cardData.image) {
-			const img = document.createElement('img');
-			img.src = cardData.image;
-			img.style.width = '100%';
-			img.style.height = '100%';
-			img.style.objectFit = 'cover';
-			imageWrapper.appendChild(img);
-		} else {
-			const placeholder = document.createElement('div');
-			placeholder.innerHTML = '<i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
-			placeholder.style.textAlign = 'center';
-			imageWrapper.appendChild(placeholder);
-		}
+		const imageWrapper = this.createImageWrapper(cardData);
 
 		// 파일 input (숨김)
 		const fileInput = document.createElement('input');
@@ -129,17 +111,20 @@ class WaniCoverSlide {
 		// 서브타이틀 입력
 		const subtitleInput = document.createElement('input');
 		subtitleInput.type = 'text';
-		subtitleInput.classList.add('form-control', 'form-control-sm', 'mb-2');
+		subtitleInput.classList.add('form-control', 'form-control-sm', 'mb-3');
 		subtitleInput.placeholder = '서브타이틀 입력';
 		subtitleInput.value = cardData.subtitle || '';
 		subtitleInput.onchange = () => {
 			cardData.subtitle = subtitleInput.value;
 		};
 
+		// 버튼 목록 영역
+		const buttonsContainer = this.createButtonsContainer(cardData);
+
 		// 삭제 버튼
 		const deleteButton = document.createElement('button');
 		deleteButton.type = 'button';
-		deleteButton.classList.add('btn', 'btn-sm', 'btn-danger', 'w-100');
+		deleteButton.classList.add('btn', 'btn-sm', 'btn-danger', 'w-100', 'mt-3');
 		deleteButton.innerHTML = '<i class="bi bi-trash"></i> 삭제';
 		deleteButton.onclick = () => this.deleteCard(cardElement, cardData, index);
 
@@ -148,9 +133,155 @@ class WaniCoverSlide {
 		cardElement.appendChild(fileInput);
 		cardElement.appendChild(titleInput);
 		cardElement.appendChild(subtitleInput);
+		cardElement.appendChild(buttonsContainer);
 		cardElement.appendChild(deleteButton);
 
 		return cardElement;
+	}
+
+	createImageWrapper(cardData) {
+		const imageWrapper = document.createElement('div');
+		imageWrapper.classList.add('card-image-wrapper');
+		imageWrapper.style.position = 'relative';
+		imageWrapper.style.width = '100%';
+		imageWrapper.style.height = '200px';
+		imageWrapper.style.backgroundColor = '#f8f9fa';
+		imageWrapper.style.border = '2px dashed #dee2e6';
+		imageWrapper.style.borderRadius = '4px';
+		imageWrapper.style.marginBottom = '15px';
+		imageWrapper.style.display = 'flex';
+		imageWrapper.style.alignItems = 'center';
+		imageWrapper.style.justifyContent = 'center';
+		imageWrapper.style.cursor = 'pointer';
+		imageWrapper.style.overflow = 'hidden';
+
+		if (cardData.image) {
+			const img = document.createElement('img');
+			img.src = cardData.image;
+			img.style.width = '100%';
+			img.style.height = '100%';
+			img.style.objectFit = 'cover';
+			imageWrapper.appendChild(img);
+		} else {
+			const placeholder = document.createElement('div');
+			placeholder.innerHTML = '<i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
+			placeholder.style.textAlign = 'center';
+			imageWrapper.appendChild(placeholder);
+		}
+
+		return imageWrapper;
+	}
+
+	createButtonsContainer(cardData) {
+		const container = document.createElement('div');
+		container.classList.add('card-buttons-container');
+		container.style.border = '1px solid #dee2e6';
+		container.style.borderRadius = '4px';
+		container.style.padding = '10px';
+		container.style.backgroundColor = '#f8f9fa';
+
+		// 버튼 데이터 초기화
+		if (!cardData.buttons || !Array.isArray(cardData.buttons) || cardData.buttons.length === 0) {
+			cardData.buttons = [this.createEmptyButton()];
+		}
+
+		// 버튼 목록 렌더링
+		cardData.buttons.forEach((buttonData, index) => {
+			const buttonRow = this.createButtonRow(cardData, buttonData, index, container);
+			container.appendChild(buttonRow);
+		});
+
+		return container;
+	}
+
+	createButtonRow(cardData, buttonData, index, container) {
+		const row = document.createElement('div');
+		row.classList.add('button-row', 'mb-2');
+		row.style.display = 'flex';
+		row.style.gap = '5px';
+		row.style.alignItems = 'center';
+
+		// 버튼명 입력
+		const nameInput = document.createElement('input');
+		nameInput.type = 'text';
+		nameInput.classList.add('form-control', 'form-control-sm');
+		nameInput.placeholder = '버튼명';
+		nameInput.value = buttonData.name || '';
+		nameInput.style.flex = '1';
+		nameInput.onchange = () => {
+			buttonData.name = nameInput.value;
+		};
+
+		// URL 입력
+		const urlInput = document.createElement('input');
+		urlInput.type = 'text';
+		urlInput.classList.add('form-control', 'form-control-sm');
+		urlInput.placeholder = 'URL';
+		urlInput.value = buttonData.url || '';
+		urlInput.style.flex = '2';
+		urlInput.onchange = () => {
+			buttonData.url = urlInput.value;
+		};
+
+		// 추가 버튼 (+)
+		const addBtn = document.createElement('button');
+		addBtn.type = 'button';
+		addBtn.classList.add('btn', 'btn-sm', 'btn-outline-success');
+		addBtn.innerHTML = '<i class="bi bi-plus-lg"></i>';
+		addBtn.style.minWidth = '32px';
+		addBtn.onclick = () => this.addButton(cardData, container);
+
+		// 삭제 버튼 (-)
+		const deleteBtn = document.createElement('button');
+		deleteBtn.type = 'button';
+		deleteBtn.classList.add('btn', 'btn-sm', 'btn-outline-danger');
+		deleteBtn.innerHTML = '<i class="bi bi-dash"></i>';
+		deleteBtn.style.minWidth = '32px';
+
+		// 첫 번째 버튼은 삭제 버튼 숨김
+		if (index === 0 && cardData.buttons.length === 1) {
+			deleteBtn.style.display = 'none';
+		}
+
+		deleteBtn.onclick = () => this.deleteButton(cardData, index, row, container);
+
+		row.appendChild(nameInput);
+		row.appendChild(urlInput);
+		row.appendChild(addBtn);
+		row.appendChild(deleteBtn);
+
+		return row;
+	}
+
+	addButton(cardData, container) {
+		const newButton = this.createEmptyButton();
+		cardData.buttons.push(newButton);
+
+		// 컨테이너 재렌더링
+		this.rerenderButtons(cardData, container);
+	}
+
+	deleteButton(cardData, index, row, container) {
+		if (cardData.buttons.length <= 1) {
+			this.showToast('최소 1개의 버튼은 유지되어야 합니다.');
+			return;
+		}
+
+		cardData.buttons.splice(index, 1);
+
+		// 컨테이너 재렌더링
+		this.rerenderButtons(cardData, container);
+	}
+
+	rerenderButtons(cardData, container) {
+		// 기존 버튼 행 제거
+		container.innerHTML = '';
+
+		// 버튼 목록 재렌더링
+		cardData.buttons.forEach((buttonData, index) => {
+			const buttonRow = this.createButtonRow(cardData, buttonData, index, container);
+			container.appendChild(buttonRow);
+		});
 	}
 
 	addCard(container) {

@@ -162,9 +162,11 @@ async function loadMenu() {
 			console.log('메뉴가 없습니다.');
 			document.getElementById('mainMenu').innerHTML = '';
 		}
+		hidePageLoading();
 	} catch (error) {
 		console.error('메뉴 로드 실패:', error);
 		document.getElementById('mainMenu').innerHTML = '';
+		hidePageLoading();
 	}
 }
 
@@ -178,27 +180,25 @@ async function loadPageContent(menuId) {
 		const mainContent = document.getElementById('mainContent');
 
 		if (result.success && result.data) {
-			// page_content_html이 있으면 사용, 없으면 page_content 사용
 			if (result.data.page_content_html) {
 				mainContent.innerHTML = result.data.page_content_html;
 			} else if (result.data.page_content) {
-				// 구버전 호환성: page_content가 있으면 사용
 				mainContent.innerHTML = result.data.page_content;
 			} else {
 				mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
 			}
 
-			mainContent.classList.remove('loading');
 			mainContent.classList.add('fade-in');
+			hidePageLoading();
 		} else {
 			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
-			mainContent.classList.remove('loading');
+			hidePageLoading();
 		}
 	} catch (error) {
 		console.error('페이지 로드 실패:', error);
 		const mainContent = document.getElementById('mainContent');
 		mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">페이지를 불러오는 중 오류가 발생했습니다.</p></div>';
-		mainContent.classList.remove('loading');
+		hidePageLoading();
 	}
 }
 
@@ -214,9 +214,11 @@ async function loadLinkContent(menuId) {
 		} else {
 			alert('링크 정보를 찾을 수 없습니다.');
 		}
+		hidePageLoading();
 	} catch (error) {
 		console.error('링크 로드 실패:', error);
 		alert('링크를 불러오는 중 오류가 발생했습니다.');
+		hidePageLoading();
 	}
 }
 
@@ -288,9 +290,11 @@ async function loadBoardList(menuId, page = 1) {
 		} else {
 			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">게시판을 찾을 수 없습니다.</p></div>';
 		}
+		hidePageLoading();
 	} catch (error) {
 		console.error('게시판 로드 실패:', error);
 		document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">게시판을 불러오는 중 오류가 발생했습니다.</p></div>';
+		hidePageLoading();
 	}
 }
 
@@ -470,3 +474,15 @@ window.addEventListener('popstate', function(e) {
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', initializePage);
+
+
+// 페이지 로딩 숨기기 함수
+function hidePageLoading() {
+	const pageLoading = document.getElementById('pageLoading');
+	if (pageLoading) {
+		pageLoading.classList.add('fade-out');
+		setTimeout(() => {
+			pageLoading.style.display = 'none';
+		}, 500);
+	}
+}

@@ -333,7 +333,8 @@ class Homepage_api extends CI_Controller
 
 
 				/**
-				 * 역할: convert_editorjs_to_html 함수에 waniCoverSlide 케이스 추가
+				 * 파일 위치: application/controllers/api/Homepage_api.php
+				 * 역할: convert_editorjs_to_html 함수 내 waniCoverSlide 케이스 - 버튼 렌더링 추가
 				 */
 
 				case 'waniCoverSlide':
@@ -344,37 +345,53 @@ class Homepage_api extends CI_Controller
 						$slider_id = 'wani-card-slider-' . uniqid();
 
 						$html .= '<div class="wani-cover-slide-block">';
-							$html .= '<div id="' . $slider_id . '" class="wani-card-slider '.$slider_id.'">';
+						$html .= '<div id="' . $slider_id . '" class="wani-card-slider '.$slider_id.'">';
 
-								foreach ($cards as $card) {
-									$image = $card['image'] ?? '';
-									$title = $card['title'] ?? '';
-									$subtitle = $card['subtitle'] ?? '';
+						foreach ($cards as $card) {
+							$image = $card['image'] ?? '';
+							$title = $card['title'] ?? '';
+							$subtitle = $card['subtitle'] ?? '';
+							$buttons = $card['buttons'] ?? [];
 
-									$html .= '<div class="slide-item">';
+							$html .= '<div class="slide-item">';
 
+							if (!empty($image)) {
+								$html .= '<div style="background:url(' . htmlspecialchars($image) . ') center center/cover" class="cover-slide-img" alt="' . htmlspecialchars($title) . '">';
+							} else {
+								$html .= '<div class="cover-slide-img bg-light d-flex align-items-center justify-content-center"><i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
+							}
+							$html .= '<div class="cover-overlay"></div>';
+							$html .= '<div class="cover-text">';
 
-										if (!empty($image)) {
-											$html .= '<div style="background:url(' . htmlspecialchars($image) . ') center center/cover" class="cover-slide-img" alt="' . htmlspecialchars($title) . '">';
-										} else {
-											$html .= '<div class="cover-slide-img bg-light d-flex align-items-center justify-content-center" style=""><i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
-										}
-											$html .= '<div class="cover-overlay"></div>';
-											$html .= '<div class="cover-text">';
+							if (!empty($title)) {
+								$html .= '<h2 class="card-title">' . htmlspecialchars($title) . '</h2>';
+							}
 
-												if (!empty($title)) {
-													$html .= '<h2 class="card-title">' . htmlspecialchars($title) . '</h2>';
-												}
+							if (!empty($subtitle)) {
+								$html .= '<h4 class="card-text">' . htmlspecialchars($subtitle) . '</h4>';
+							}
 
-												if (!empty($subtitle)) {
-													$html .= '<h4 class="card-text">' . htmlspecialchars($subtitle) . '</h4>';
-												}
-											$html .= '</div>';
-										$html .= '</div>';
-									$html .= '</div>';
+							// 버튼 렌더링
+							if (!empty($buttons)) {
+								$html .= '<div class="card-buttons mt-3">';
+								foreach ($buttons as $button) {
+									$btn_name = $button['name'] ?? '';
+									$btn_url = $button['url'] ?? '';
+
+									// 버튼명과 URL이 모두 있는 경우만 렌더링
+									if (!empty($btn_name) && !empty($btn_url)) {
+										$html .= '<a href="' . htmlspecialchars($btn_url) . '" class="btn btn-outline-warning btn-lg mx-1 fw-semibold" style="border-radius:30px;">' . htmlspecialchars($btn_name) . '</a>';
+									}
 								}
+								$html .= '</div>';
+							}
 
 							$html .= '</div>';
+							$html .= '</div>';
+							$html .= '</div>';
+						}
+
+						$html .= '</div>';
 						$html .= '</div>';
 					}
 					break;
