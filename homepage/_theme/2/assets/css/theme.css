@@ -22,7 +22,7 @@
 body {font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;min-height: 100vh;display: flex;flex-direction: column;}
 
 /* Header 스타일 */
-header {box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: absolute; top: 0; left: 0; width: 100%; z-index: 5}
+header {box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: absolute; top: 0; left: 0; width: 100%; z-index: 5; border-bottom: 1px solid rgba(221, 221, 221, 0.5)}
 .navbar-brand {font-weight: 700;font-size: 1.5rem;color: white !important;}
 .logo-container {display: flex;align-items: center;gap: 1rem;}
 .logo-container img {max-height: 50px;max-width: 150px;object-fit: contain;background: rgba(255, 255, 255, 0.9);padding: 0.5rem;border-radius: 8px;}
@@ -36,7 +36,20 @@ header {box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: absolute; top: 0; le
 main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 .loading {text-align: center;padding: 3rem;}
 .spinner-border {width: 3rem;height: 3rem;}
-
+.slide-item .cover-slide-img{width: 100%;}
+.slide-item .cover-overlay{position: absolute;top: 0;left: 0;width: 100%; background: #000; opacity: 0.5; z-index: 1}
+.slide-item .cover-text{width: 100%;display: flex;justify-content: center;align-items: center;  position: relative; z-index: 2; flex-direction: column;}
+.slide-item .cover-text .card-title{    font-size: 80px;color: #fff;font-weight: 600;letter-spacing: -5px;}
+.slide-item .cover-text .card-text{font-size: 40px; color: #fff; font-weight: 600;letter-spacing: -2px;}
+.slick-dots{bottom: 30px;}
+.slick-dots li{margin: 0}
+.slick-dots li button:before{font-size: 14px;color: #fff; opacity: 0.7;}
+.slick-dots li.slick-active button:before{color: #ffaf00}
+.slick-prev, .slick-next {z-index: 2; width: 50px;}
+.slick-prev {left: 25px;}
+.slick-next {right: 25px;}
+.slick-prev i, .slick-next i{font-size: 50px;color: #fff;}
+.slick-prev:before, .slick-next:before{content:''}
 /* 게시판 스타일 */
 .board-container {background: white;padding: 2rem;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);}
 .board-container h4 {color: #333;font-weight: 700;padding-bottom: 1rem;border-bottom: 2px solid #667eea;}
@@ -63,17 +76,13 @@ footer a {color: rgba(255, 255, 255, 0.8);text-decoration: none;transition: colo
 footer a:hover {color: white;}
 
 /* 반응형 디자인 */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
 	.navbar-brand {font-size: 1.2rem;}
 	.logo-container {flex-direction: column;gap: 0.5rem;}
 	.logo-container img {max-width: 100px;max-height: 40px;}
-	main {padding: 2rem 0;}
+	main {}
 	.board-container, .board-detail {padding: 1rem;}
 	.table {font-size: 0.9rem;}
 	.table thead th, .table tbody td {padding: 0.5rem;}
-}
-
-@media (max-width: 576px) {
-	.table {font-size: 0.85rem;}
-	.board-container h4, .board-detail h4 {font-size: 1.2rem;}
+	.slick-prev, .slick-next {display: none!important;}
 }

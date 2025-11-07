@@ -343,44 +343,38 @@ class Homepage_api extends CI_Controller
 						// 고유 ID 생성
 						$slider_id = 'wani-card-slider-' . uniqid();
 
-						$html .= '<div class="wani-cover-slide-block mb-4">';
-						$html .= '<div id="' . $slider_id . '" class="wani-card-slider '.$slider_id.'">';
+						$html .= '<div class="wani-cover-slide-block">';
+							$html .= '<div id="' . $slider_id . '" class="wani-card-slider '.$slider_id.'">';
 
-						foreach ($cards as $card) {
-							$image = $card['image'] ?? '';
-							$title = $card['title'] ?? '';
-							$subtitle = $card['subtitle'] ?? '';
+								foreach ($cards as $card) {
+									$image = $card['image'] ?? '';
+									$title = $card['title'] ?? '';
+									$subtitle = $card['subtitle'] ?? '';
 
-							$html .= '<div class="slide-item">';
-							$html .= '<div class="card h-100 mx-2">';
+									$html .= '<div class="slide-item">';
 
-							if (!empty($image)) {
-								$html .= '<img src="' . htmlspecialchars($image) . '" class="card-img-top" alt="' . htmlspecialchars($title) . '" style="height: 250px; object-fit: cover;">';
-							} else {
-								$html .= '<div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">';
-								$html .= '<i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
-								$html .= '</div>';
-							}
 
-							$html .= '<div class="card-body">';
+										if (!empty($image)) {
+											$html .= '<div style="background:url(' . htmlspecialchars($image) . ') center center/cover" class="cover-slide-img" alt="' . htmlspecialchars($title) . '">';
+										} else {
+											$html .= '<div class="cover-slide-img bg-light d-flex align-items-center justify-content-center" style=""><i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
+										}
+											$html .= '<div class="cover-overlay"></div>';
+											$html .= '<div class="cover-text">';
 
-							if (!empty($title)) {
-								$html .= '<h5 class="card-title">' . htmlspecialchars($title) . '</h5>';
-							}
+												if (!empty($title)) {
+													$html .= '<h2 class="card-title">' . htmlspecialchars($title) . '</h2>';
+												}
 
-							if (!empty($subtitle)) {
-								$html .= '<p class="card-text text-muted">' . htmlspecialchars($subtitle) . '</p>';
-							}
+												if (!empty($subtitle)) {
+													$html .= '<h4 class="card-text">' . htmlspecialchars($subtitle) . '</h4>';
+												}
+											$html .= '</div>';
+										$html .= '</div>';
+									$html .= '</div>';
+								}
 
 							$html .= '</div>';
-							$html .= '</div>';
-							$html .= '</div>';
-						}
-
-						$html .= '</div>';
-
-
-
 						$html .= '</div>';
 					}
 					break;
