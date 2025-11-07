@@ -187,9 +187,9 @@
 
 
 <!-- 게시판 블록 커스텀 플러그인 -->
-<script src="/assets/js/wani-preach.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/wani-latest-list.js?<?php echo WB_VERSION; ?>"></script>
 
 <!-- 카드 그리드 커스텀 플러그인 (새로 추가) -->
-<script src="/assets/js/wani-card-grid.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/wani-cover-slide.js?<?php echo WB_VERSION; ?>"></script>
 
 <script src="/assets/js/homepage_menu.js?<?php echo WB_VERSION; ?>"></script>

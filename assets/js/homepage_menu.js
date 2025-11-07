@@ -1116,17 +1116,17 @@ function initPageContentEditor(content) {
 		availableTools.raw = window.RawTool;
 	}
 
-	// WaniPreach - 게시판 블록
-	if (typeof window.WaniPreach !== 'undefined') {
-		availableTools.waniPreach = {
-			class: window.WaniPreach
+	// WaniLatestList - 게시판 블록
+	if (typeof window.WaniLatestList !== 'undefined') {
+		availableTools.WaniLatestList = {
+			class: window.WaniLatestList
 		};
 	}
 
-	// WaniCardGrid - 카드 그리드 블록 (기존 WaniPreach 다음에 추가)
-	if (typeof window.WaniCardGrid !== 'undefined') {
-		availableTools.waniCardGrid = {
-			class: window.WaniCardGrid,
+	// waniCoverSlide - 카드 그리드 블록 (기존 WaniLatestList 다음에 추가)
+	if (typeof window.WaniCoverSlide !== 'undefined') {
+		availableTools.waniCoverSlide = {
+			class: window.WaniCoverSlide,
 			config: {
 				org_id: $('#current_org_id').val()
 			}

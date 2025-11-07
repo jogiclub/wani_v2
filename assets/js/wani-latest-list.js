@@ -1,4 +1,4 @@
-class WaniPreach {
+class WaniLatestList {
 	static get toolbox() {
 		return {
 			title: '게시판',
@@ -22,10 +22,10 @@ class WaniPreach {
 
 	render() {
 		this.wrapper = document.createElement('div');
-		this.wrapper.classList.add('wani-preach-wrapper');
+		this.wrapper.classList.add('wani-latest-list-wrapper');
 
 		const container = document.createElement('div');
-		container.classList.add('wani-preach-config');
+		container.classList.add('wani-latest-list-config');
 
 		// 2개의 게시판 선택 영역
 		container.innerHTML = `
@@ -37,12 +37,12 @@ class WaniPreach {
                         </div>
                         <div class="card-body">
                             <div class="mb-2">
-                                <select class="form-select form-select-sm wani-preach-menu" data-index="0">
+                                <select class="form-select form-select-sm wani-latest-list-menu" data-index="0">
                                     <option value="">게시판 선택</option>
                                 </select>
                             </div>
                             <div>
-                                <select class="form-select form-select-sm wani-preach-limit" data-index="0">
+                                <select class="form-select form-select-sm wani-latest-list-limit" data-index="0">
                                     <option value="3">3개</option>
                                     <option value="5">5개</option>
                                     <option value="10">10개</option>
@@ -58,12 +58,12 @@ class WaniPreach {
                         </div>
                         <div class="card-body">
                             <div class="mb-2">
-                                <select class="form-select form-select-sm wani-preach-menu" data-index="1">
+                                <select class="form-select form-select-sm wani-latest-list-menu" data-index="1">
                                     <option value="">게시판 선택</option>
                                 </select>
                             </div>
                             <div>
-                                <select class="form-select form-select-sm wani-preach-limit" data-index="1">
+                                <select class="form-select form-select-sm wani-latest-list-limit" data-index="1">
                                     <option value="3">3개</option>
                                     <option value="5">5개</option>
                                     <option value="10">10개</option>
@@ -83,8 +83,8 @@ class WaniPreach {
 		this.wrapper.appendChild(container);
 
 		// 게시판 메뉴 목록 로드
-		const menuSelects = container.querySelectorAll('.wani-preach-menu');
-		const limitSelects = container.querySelectorAll('.wani-preach-limit');
+		const menuSelects = container.querySelectorAll('.wani-latest-list-menu');
+		const limitSelects = container.querySelectorAll('.wani-latest-list-limit');
 
 		this.loadBoardMenus().then(() => {
 			// 게시판 메뉴 옵션 추가
@@ -172,5 +172,5 @@ class WaniPreach {
 	}
 }
 if (typeof window !== 'undefined') {
-	window.WaniPreach = WaniPreach;
+	window.WaniLatestList = WaniLatestList;
 }

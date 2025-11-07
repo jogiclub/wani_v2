@@ -281,11 +281,11 @@ class Homepage_api extends CI_Controller
 					break;
 
 
-				case 'waniPreach':
+				case 'WaniLatestList':
 					$boards = $data_content['boards'] ?? [];
 
 					if (!empty($boards) && !empty($org_code)) {
-						$html .= '<div class="wani-preach-block mb-4">';
+						$html .= '<div class="wani-latest-list-block mb-4">';
 						$html .= '<div class="row g-3">';
 
 						foreach ($boards as $board_config) {
@@ -333,17 +333,17 @@ class Homepage_api extends CI_Controller
 
 
 				/**
-				 * 역할: convert_editorjs_to_html 함수에 waniCardGrid 케이스 추가
+				 * 역할: convert_editorjs_to_html 함수에 waniCoverSlide 케이스 추가
 				 */
 
-				case 'waniCardGrid':
+				case 'waniCoverSlide':
 					$cards = $data_content['cards'] ?? [];
 
 					if (!empty($cards)) {
 						// 고유 ID 생성
 						$slider_id = 'wani-card-slider-' . uniqid();
 
-						$html .= '<div class="wani-card-grid-block mb-4">';
+						$html .= '<div class="wani-cover-slide-block mb-4">';
 						$html .= '<div id="' . $slider_id . '" class="wani-card-slider '.$slider_id.'">';
 
 						foreach ($cards as $card) {

@@ -1,9 +1,9 @@
 /**
- * 파일 위치: assets/js/wani-card-grid.js
+ * 파일 위치: assets/js/wani-cover-slide.js
  * 역할: EditorJS용 카드 그리드 커스텀 플러그인
  */
 
-class WaniCardGrid {
+class WaniCoverSlide {
 	static get toolbox() {
 		return {
 			title: '카드 그리드',
@@ -34,7 +34,7 @@ class WaniCardGrid {
 
 	render() {
 		this.wrapper = document.createElement('div');
-		this.wrapper.classList.add('wani-card-grid-wrapper');
+		this.wrapper.classList.add('wani-cover-slide-wrapper');
 
 		// 카드 컨테이너
 		const cardsContainer = document.createElement('div');
@@ -265,4 +265,4 @@ class WaniCardGrid {
 	}
 }
 
-window.WaniCardGrid = WaniCardGrid;
+window.WaniCoverSlide = WaniCoverSlide;
