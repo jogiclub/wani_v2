@@ -333,7 +333,6 @@ class Homepage_api extends CI_Controller
 
 
 				/**
-				 * 파일 위치: application/controllers/api/Homepage_api.php
 				 * 역할: convert_editorjs_to_html 함수 내 waniCoverSlide 케이스 - 버튼 렌더링 추가
 				 */
 
@@ -344,8 +343,9 @@ class Homepage_api extends CI_Controller
 						// 고유 ID 생성
 						$slider_id = 'wani-card-slider-' . uniqid();
 
+						$html .= '<section>';
 						$html .= '<div class="wani-cover-slide-block">';
-						$html .= '<div id="' . $slider_id . '" class="wani-card-slider '.$slider_id.'">';
+						$html .= '<div id="' . $slider_id . '" class="wani-card-slider mb-0 '.$slider_id.'">';
 
 						foreach ($cards as $card) {
 							$image = $card['image'] ?? '';
@@ -368,7 +368,7 @@ class Homepage_api extends CI_Controller
 							}
 
 							if (!empty($subtitle)) {
-								$html .= '<h4 class="card-text">' . htmlspecialchars($subtitle) . '</h4>';
+								$html .= '<h4 class="card-text">' . nl2br(htmlspecialchars($subtitle)) . '</h4>';
 							}
 
 							// 버튼 렌더링
@@ -380,7 +380,7 @@ class Homepage_api extends CI_Controller
 
 									// 버튼명과 URL이 모두 있는 경우만 렌더링
 									if (!empty($btn_name) && !empty($btn_url)) {
-										$html .= '<a href="' . htmlspecialchars($btn_url) . '" class="btn btn-outline-warning btn-lg mx-1 fw-semibold" style="border-radius:30px;">' . htmlspecialchars($btn_name) . '</a>';
+										$html .= '<a href="' . $btn_url . '" class="btn btn-outline-warning btn-lg mx-1 fw-semibold" style="border-radius:30px;">' . htmlspecialchars($btn_name) . '</a>';
 									}
 								}
 								$html .= '</div>';
@@ -393,10 +393,61 @@ class Homepage_api extends CI_Controller
 
 						$html .= '</div>';
 						$html .= '</div>';
+						$html .= '</section>';
 					}
 					break;
 
+				case 'waniLinkList':
+					$title = $data_content['title'] ?? '';
+					$subtitle = $data_content['subtitle'] ?? '';
+					$links = $data_content['links'] ?? '';
 
+					if (!empty($links)) {
+						$html .= '<section>';
+						$html .= '<div class="wani-link-list-block">';
+						$html .= '<div class="container">';
+
+						if (!empty($title)) {
+							$html .= '<h4 class="text-center mb-2">' . htmlspecialchars($title) . '</h4>';
+						}
+
+						if (!empty($subtitle)) {
+							$html .= '<h6 class="text-center text-muted mt-3 mb-5">' . nl2br(htmlspecialchars($subtitle)) . '</h6>';
+						}
+
+						$html .= '<div class="box-list">';
+
+						foreach ($links as $link) {
+							$link_name = $link['name'] ?? '';
+							$link_url = $link['url'] ?? '';
+							$link_image = $link['image'] ?? '';
+
+							if (!empty($link_name)) {
+								$display_url = !empty($link_url) ? htmlspecialchars($link_url) : '#';
+
+
+								$html .= '<a href="' . $display_url . '" class="text-decoration-none">';
+								$html .= '<div class="box" style="transition: all 0.3s;">';
+
+								if (!empty($link_image)) {
+									$html .= '<img src="' . htmlspecialchars($link_image) . '" class="card-img-top" alt="' . htmlspecialchars($link_name) . '" style="height: 40px; object-fit: contain;">';
+								}
+								$html .= '</div>';
+
+								$html .= '<div class="mt-2 mb-0 text-center text-dark fw-semibold">' . htmlspecialchars($link_name) . '</div>';
+
+
+								$html .= '</a>';
+
+							}
+						}
+
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</section>';
+					}
+					break;
 
 				default:
 					log_message('debug', 'Unknown Editor.js block type: ' . $type);

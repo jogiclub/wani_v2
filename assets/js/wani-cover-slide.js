@@ -108,14 +108,13 @@ class WaniCoverSlide {
 			cardData.title = titleInput.value;
 		};
 
-		// 서브타이틀 입력
-		const subtitleInput = document.createElement('input');
-		subtitleInput.type = 'text';
-		subtitleInput.classList.add('form-control', 'form-control-sm', 'mb-3');
-		subtitleInput.placeholder = '서브타이틀 입력';
-		subtitleInput.value = cardData.subtitle || '';
-		subtitleInput.onchange = () => {
-			cardData.subtitle = subtitleInput.value;
+		const subtitleInput = document.createElement('textarea');
+		subtitleInput.classList.add('form-control', 'mb-3');
+		subtitleInput.placeholder = '서브타이틀 입력 (Enter로 줄바꿈 가능)';
+		subtitleInput.value = this.data.subtitle || '';
+		subtitleInput.rows = 2;
+		subtitleInput.oninput = () => {
+			this.data.subtitle = subtitleInput.value;
 		};
 
 		// 버튼 목록 영역

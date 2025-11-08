@@ -1132,7 +1132,15 @@ function initPageContentEditor(content) {
 			}
 		};
 	}
-
+	// waniLinkList - 바로가기 섹션 블록 (waniCoverSlide 다음에 추가)
+	if (typeof window.WaniLinkList !== 'undefined') {
+		availableTools.waniLinkList = {
+			class: window.WaniLinkList,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
+		};
+	}
 
 
 

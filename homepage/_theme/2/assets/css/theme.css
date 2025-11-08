@@ -52,8 +52,8 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 .slide-item .cover-slide-img{width: 100%;}
 .slide-item .cover-overlay{position: absolute;top: 0;left: 0;width: 100%; background: #000; opacity: 0.5; z-index: 1}
 .slide-item .cover-text{width: 100%;display: flex;justify-content: center;align-items: center;  position: relative; z-index: 2; flex-direction: column; padding: 0 10%}
-.slide-item .cover-text .card-title{font-size: 100px;color: #fff;font-weight: 800;letter-spacing: -5px; margin-bottom: 20px; text-align: center;word-break: keep-all;}
-.slide-item .cover-text .card-text{font-size: 50px; color: #fff; font-weight: 600;letter-spacing: -2px; opacity: 0.7; text-align: center;word-break: keep-all;}
+.slide-item .cover-text .card-title{font-size: 100px;color: #fff;font-weight: 800;letter-spacing: -5px; margin-bottom: 20px; text-align: center;word-break: keep-all; opacity: 0.7; }
+.slide-item .cover-text .card-text{font-size: 50px; color: #fff; font-weight: 600;letter-spacing: -2px; text-align: center;word-break: keep-all;}
 .slick-dots{bottom: 30px;}
 .slick-dots li{margin: 0}
 .slick-dots li button:before{font-size: 14px;color: #fff; opacity: 0.7;}
@@ -63,6 +63,26 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 .slick-next {right: 25px;}
 .slick-prev i, .slick-next i{font-size: 50px;color: #fff;}
 .slick-prev:before, .slick-next:before{content:''}
+
+
+.wani-link-list-block{padding: 100px 0; background: #efefef;}
+.wani-link-list-block h4{font-size: 30px; font-weight: bold}
+.wani-link-list-block h6{font-size: 20px;}
+.wani-link-list-block .box-list{display: flex;justify-content: space-around;}
+.wani-link-list-block .box-list .box{    display: flex;width: 80px;height: 80px;box-shadow: 0 0 9px 0 #ddd;border-radius: 15px;align-items: center;background: #fff;}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* 게시판 스타일 */
 .board-container {background: white;padding: 2rem;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);}
