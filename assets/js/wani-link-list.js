@@ -176,7 +176,7 @@ class WaniLinkList {
 			img.src = linkData.image;
 			img.style.width = '100%';
 			img.style.height = '100%';
-			img.style.objectFit = 'cover';
+			img.style.objectFit = 'contain';
 			imageWrapper.appendChild(img);
 		} else {
 			const placeholder = document.createElement('div');

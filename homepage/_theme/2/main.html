@@ -24,31 +24,29 @@
 
 <header>
 	<nav class="navbar navbar-expand-lg navbar-dark">
-
-			<div class="logo-container">
-				<div id="logoArea"></div>
-				<a class="navbar-brand" href="/" id="homepageName">{{homepage_name}}</a>
-			</div>
-			<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-				<span class="navbar-toggler-icon"></span>
-			</button>
-			<div class="collapse navbar-collapse justify-content-center" id="navbarNav">
-				<ul class="navbar-nav " id="mainMenu">
-					<li class="nav-item">
-						<div class="spinner-border spinner-border-sm text-light" role="status">
-							<span class="visually-hidden">Loading...</span>
-						</div>
-					</li>
-				</ul>
-			</div>
-			<div class="link-list d-none d-lg-block">
-				<ul>
-					<li><i class="bi bi-youtube"></i></li>
-					<li><i class="bi bi-instagram"></i></li>
-					<li><i class="bi bi-facebook"></i></li>
-				</ul>
-			</div>
-
+		<div class="logo-container">
+			<div id="logoArea"></div>
+			<a class="navbar-brand" href="/" id="homepageName">{{homepage_name}}</a>
+		</div>
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+			<ul class="navbar-nav " id="mainMenu">
+				<li class="nav-item">
+					<div class="spinner-border spinner-border-sm text-light" role="status">
+						<span class="visually-hidden">Loading...</span>
+					</div>
+				</li>
+			</ul>
+		</div>
+		<div class="link-list d-none d-lg-block">
+			<ul>
+				<li><i class="bi bi-youtube"></i></li>
+				<li><i class="bi bi-instagram"></i></li>
+				<li><i class="bi bi-facebook"></i></li>
+			</ul>
+		</div>
 	</nav>
 </header>
 
@@ -78,11 +76,11 @@
 <script src="https://wani.im/homepage/_theme/{{theme}}/assets/js/theme.js?v={{timestamp}}"></script>
 <script>
 	$(document).ready(function () {
-		// 슬라이더 초기화 함수 정의
-		function initializeSlider() {
+		// 커버 슬라이드 초기화 함수
+		function initializeCoverSlider() {
 			const $slider = $(".wani-card-slider");
 
-			if ($slider.length > 0) {
+			if ($slider.length > 0 && !$slider.hasClass('slick-initialized')) {
 				const viewportHeight = $(window).height();
 
 				$slider.find('.cover-slide-img').css('height', viewportHeight + 'px');
@@ -102,13 +100,76 @@
 					nextArrow: '<button type="button" class="slick-next"><i class="bi bi-chevron-right"></i></button>',
 					arrows: true
 				});
-			} else {
-				setTimeout(initializeSlider, 100);
 			}
 		}
 
-		initializeSlider();
+		// 유튜브 슬라이드 초기화 함수
+		function initializeYoutubeSliders() {
+			$(".youtube-slide-container").each(function() {
+				const $youtubeSlider = $(this);
 
+				// 이미 초기화되었는지 확인
+				if ($youtubeSlider.length > 0 && !$youtubeSlider.hasClass('slick-initialized')) {
+					// data 속성에서 설정 가져오기 (없으면 기본값 3)
+					const slidesToShow = parseInt($youtubeSlider.data('slides-to-show')) || 3;
+
+					$youtubeSlider.slick({
+						dots: true,
+						infinite: true,
+						speed: 500,
+						slidesToShow: slidesToShow,
+						slidesToScroll: 1,
+						autoplay: true,
+						centerMode: true,
+						centerPadding: '60px',
+						autoplaySpeed: 3000,
+						arrows: false,
+						responsive: [
+							{
+								breakpoint: 992,
+								settings: {
+									slidesToShow: Math.min(2, slidesToShow)
+								}
+							},
+							{
+								breakpoint: 576,
+								settings: {
+									slidesToShow: 1
+								}
+							}
+						]
+					});
+				}
+			});
+		}
+
+		// MutationObserver로 DOM 변경 감지
+		const observer = new MutationObserver(function(mutations) {
+			mutations.forEach(function(mutation) {
+				if (mutation.addedNodes.length) {
+					// 커버 슬라이드 초기화
+					initializeCoverSlider();
+
+					// 유튜브 슬라이드 초기화
+					initializeYoutubeSliders();
+				}
+			});
+		});
+
+		// mainContent 영역 감시 시작
+		const mainContent = document.getElementById('mainContent');
+		if (mainContent) {
+			observer.observe(mainContent, {
+				childList: true,
+				subtree: true
+			});
+		}
+
+		// 초기 실행
+		initializeCoverSlider();
+		initializeYoutubeSliders();
+
+		// 윈도우 리사이즈 시 커버 슬라이드 높이 조정
 		$(window).on('resize', function() {
 			const $slider = $(".wani-card-slider");
 			if ($slider.length > 0) {

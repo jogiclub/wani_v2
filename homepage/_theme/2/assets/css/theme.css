@@ -56,7 +56,7 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 .slide-item .cover-text .card-text{font-size: 50px; color: #fff; font-weight: 600;letter-spacing: -2px; text-align: center;word-break: keep-all;}
 .slick-dots{bottom: 30px;}
 .slick-dots li{margin: 0}
-.slick-dots li button:before{font-size: 14px;color: #fff; opacity: 0.7;}
+.slick-dots li button:before{font-size: 14px;color: #ccc; opacity: 0.7;}
 .slick-dots li.slick-active button:before{color: #ffaf00}
 .slick-prev, .slick-next {z-index: 2; width: 50px;}
 .slick-prev {left: 25px;}
@@ -74,8 +74,30 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 
 
 
+/*유튜브슬라이더*/
+.wani-youtube-slide-block{padding: 100px 0; background: #fff;}
+.wani-youtube-slide-block h4{font-size: 30px; font-weight: bold}
+.wani-youtube-slide-block h6{font-size: 20px;}
+.youtube-slide-container {position: relative;}
+.youtube-slide-item {padding: 0 10px;}
+.youtube-slide-link {display: block;text-decoration: none;color: inherit;}
+.youtube-thumbnail-wrapper {position: relative;width: 100%;padding-top: 56.25%;overflow: hidden;}
+.youtube-thumbnail {position: absolute;top: 0;left: 0;width: 100%;height: 100%;object-fit: cover;transition: transform 0.3s ease;}
+.youtube-slide-item:hover .youtube-thumbnail {transform: scale(1.05);}
+.youtube-play-overlay {position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 64px;color: rgba(255, 0, 0, 0.5);transition: all 0.3s ease;pointer-events: none;}
+.youtube-slide-item:hover .youtube-play-overlay {color: #ff0000;font-size: 72px;}
+.youtube-slide-info {padding: 12px 0;}
+.youtube-board-name {margin-bottom: 4px;padding-top: 5px;font-size: 14px;}
+.youtube-post-title {font-weight: 500;overflow: hidden;text-overflow: ellipsis;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;}
+.youtube-slide-container .slick-dots{bottom:-30px}
 
-
+/* 반응형 */
+@media (max-width: 992px) {
+	.youtube-slide-container .slick-prev {left: 10px;}
+	.youtube-slide-container .slick-next {right: 10px;}
+	.youtube-play-overlay {font-size: 48px;}
+	.youtube-slide-item:hover .youtube-play-overlay {font-size: 56px;}
+}
 
 
 

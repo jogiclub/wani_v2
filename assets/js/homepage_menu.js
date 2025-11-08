@@ -923,6 +923,8 @@ function initPageContentEditor(content) {
 		pageContentEditor = null;
 	}
 
+
+
 	// 저장된 데이터 파싱
 	let parsedData = null;
 	if (content) {
@@ -1154,7 +1156,28 @@ function initPageContentEditor(content) {
 	try {
 		pageContentEditor = new EditorJS({
 			holder: 'page_content_editor',
-			tools: availableTools,
+			tools: {
+				waniLatestList: {
+					class: WaniLatestList,
+					config: {
+						org_id: $('#current_org_id').val()
+					}
+				},
+				waniCoverSlide: WaniCoverSlide,
+				waniLinkList: {
+					class: WaniLinkList,
+					config: {
+						org_id: $('#current_org_id').val()
+					}
+				},
+				waniLatestYoutubeSlide: {
+					class: WaniLatestYoutubeSlide,
+					config: {
+						org_id: $('#current_org_id').val()
+					}
+				}
+			},
+
 			data: parsedData || {},
 			placeholder: '내용을 입력하세요...',
 			minHeight: 300,
@@ -2324,3 +2347,5 @@ function handleSearchBoard() {
 	console.log('[검색] 검색어:', searchKeyword);
 	loadBoardContent(currentMenuId, 1, searchKeyword);
 }
+
+

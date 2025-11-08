@@ -249,4 +249,31 @@ class Homepage_api_model extends CI_Model
 		return null;
 	}
 
+
+	/**
+	 * 유튜브 URL이 있는 게시판 게시물 조회 (게시판 블록용)
+	 */
+	public function get_youtube_board_list($org_code, $menu_id, $limit = 10)
+	{
+		$this->db->select('hb.idx, hb.board_title, hb.youtube_url, hb.reg_date');
+		$this->db->from('wb_homepage_board hb');
+		$this->db->join('wb_org org', 'org.org_id = hb.org_id');
+		$this->db->where('org.org_code', $org_code);
+		$this->db->where('hb.menu_id', $menu_id);
+		$this->db->where('hb.del_yn', 'N');
+		$this->db->where('hb.youtube_url IS NOT NULL');
+		$this->db->where('hb.youtube_url !=', '');
+		$this->db->order_by('hb.reg_date', 'DESC');
+		$this->db->limit($limit);
+
+		$query = $this->db->get();
+
+		if ($query === false) {
+			log_message('error', 'get_youtube_board_list 쿼리 실행 실패: ' . $this->db->error()['message']);
+			return [];
+		}
+
+		return $query->result_array();
+	}
+
 }

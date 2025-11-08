@@ -397,6 +397,116 @@ class Homepage_api extends CI_Controller
 					}
 					break;
 
+
+
+
+				case 'waniLatestYoutubeSlide':
+					$title = $data_content['title'] ?? '';
+					$subtitle = $data_content['subtitle'] ?? '';
+					$board_menu_ids = $data_content['board_menu_ids'] ?? [];
+					$display_count = $data_content['display_count'] ?? '3';
+					$show_board_name = $data_content['show_board_name'] ?? true;
+					$show_title = $data_content['show_title'] ?? true;
+
+
+
+					if (!empty($board_menu_ids) && is_array($board_menu_ids) && !empty($org_code)) {
+						$all_posts = [];
+
+						// 여러 게시판에서 유튜브 게시물 수집
+						foreach ($board_menu_ids as $board_menu_id) {
+							$posts = $this->Homepage_api_model->get_youtube_board_list($org_code, $board_menu_id, 10);
+
+							// 게시판 정보 추가
+							foreach ($posts as &$post) {
+								$menu_info = $this->Homepage_api_model->get_menu_info($org_code, $board_menu_id);
+								$post['board_name'] = $menu_info ? $menu_info['menu_name'] : '';
+								$post['menu_id'] = $board_menu_id;
+							}
+
+							$all_posts = array_merge($all_posts, $posts);
+						}
+
+						// 날짜순 정렬 (최신순)
+						usort($all_posts, function($a, $b) {
+							return strtotime($b['reg_date']) - strtotime($a['reg_date']);
+						});
+
+						// 최대 10개로 제한
+						$all_posts = array_slice($all_posts, 0, 10);
+
+						if (!empty($all_posts)) {
+							$slider_id = 'youtube-slider-' . uniqid();
+
+							$html .= '<section>';
+							$html .= '<div class="wani-youtube-slide-block mb-4">';
+							// 타이틀과 서브타이틀 렌더링
+							if (!empty($title) || !empty($subtitle)) {
+								$html .= '<div class="youtube-slide-header text-center mb-4">';
+
+								if (!empty($title)) {
+									$html .= '<h4 class="youtube-slide-main-title mb-2">' . htmlspecialchars($title) . '</h4>';
+								}
+
+								if (!empty($subtitle)) {
+									$html .= '<h6 class="youtube-slide-subtitle text-muted mt-3 mb-5">' . nl2br(htmlspecialchars($subtitle)) . '</h6>';
+								}
+
+								$html .= '</div>';
+							}
+							$html .= '<div id="' . $slider_id . '" class="youtube-slide-container" data-slides-to-show="' . $display_count . '">';
+
+							foreach ($all_posts as $post) {
+								$thumbnail_url = $this->get_youtube_thumbnail($post['youtube_url']);
+								$board_title = htmlspecialchars($post['board_title']);
+								$board_name = htmlspecialchars($post['board_name']);
+								$post_link = '/board/' . $post['menu_id'] . '/' . $post['idx'];
+
+								// 게시판 ID 기반 색상 생성
+								$badge_color = $this->get_board_badge_color($post['menu_id']);
+
+								$html .= '<div class="youtube-slide-item">';
+								$html .= '<a href="' . $post_link . '" class="youtube-slide-link">';
+
+								if (!empty($thumbnail_url)) {
+									$html .= '<div class="youtube-thumbnail-wrapper">';
+									$html .= '<img src="' . $thumbnail_url . '" alt="' . $board_title . '" class="youtube-thumbnail">';
+									$html .= '<div class="youtube-play-overlay">';
+									$html .= '<i class="bi bi-play-circle-fill"></i>';
+									$html .= '</div>';
+									$html .= '</div>';
+								}
+
+								if ($show_board_name || $show_title) {
+									$html .= '<div class="youtube-slide-info">';
+
+									if ($show_board_name && !empty($board_name)) {
+										$html .= '<span class="youtube-board-name badge" style="background-color: ' . $badge_color . '; color: #fff;">' . $board_name . '</span>';
+									}
+
+									if ($show_title) {
+										$html .= '<div class="youtube-post-title">' . $board_title . '</div>';
+									}
+
+									$html .= '</div>';
+								}
+
+								$html .= '</a>';
+								$html .= '</div>';
+							}
+
+							$html .= '</div>';
+							$html .= '</div>';
+							$html .= '</section>';
+						}
+					}
+					break;
+
+
+
+
+
+
 				case 'waniLinkList':
 					$title = $data_content['title'] ?? '';
 					$subtitle = $data_content['subtitle'] ?? '';
@@ -449,6 +559,9 @@ class Homepage_api extends CI_Controller
 					}
 					break;
 
+
+
+
 				default:
 					log_message('debug', 'Unknown Editor.js block type: ' . $type);
 					break;
@@ -456,6 +569,53 @@ class Homepage_api extends CI_Controller
 		}
 
 		return $html;
+	}
+
+	/**
+	 * 게시판 ID 기반으로 일관된 배지 색상 생성
+	 */
+	private function get_board_badge_color($menu_id)
+	{
+		// 미리 정의된 색상 팔레트 (보기 좋은 색상들)
+		$color_palette = [
+			'#FF6B6B', // 빨강
+			'#4ECDC4', // 청록
+			'#FFA07A', // 연어
+			'#98D8C8', // 민트
+			'#F7DC6F', // 노랑
+			'#BB8FCE', // 보라
+			'#85C1E2', // 파랑
+			'#F8B739', // 주황
+			'#52C41A', // 초록
+			'#FA8C16', // 진한 주황
+			'#13C2C2', // 시안
+			'#EB2F96', // 핑크
+			'#45B7D1', // 하늘
+			'#722ED1', // 진한 보라
+			'#52C5A5'  // 에메랄드
+		];
+
+		// 메뉴 ID를 숫자로 변환하여 색상 인덱스 결정
+		$hash = crc32($menu_id);
+		$index = abs($hash) % count($color_palette);
+
+		return $color_palette[$index];
+	}
+
+
+	/**
+	 * 메뉴 이름 조회
+	 */
+	private function get_menu_name($org_id, $menu_id)
+	{
+		$this->db->select('name');
+		$this->db->from('tb_homepage_menu');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('id', $menu_id);
+		$query = $this->db->get();
+
+		$row = $query->row_array();
+		return $row ? $row['name'] : '';
 	}
 
 	private function render_nested_list($items, $style = 'unordered')
@@ -499,7 +659,7 @@ class Homepage_api extends CI_Controller
 	private function get_board_posts($org_code, $menu_id, $limit)
 	{
 		$this->load->model('Homepage_api_model');
-		return $this->Homepage_api_model->get_board_list($org_code, $menu_id, $limit);
+		return $this->Homepage_api_model->get_board_list_for_block($org_code, $menu_id, $limit);
 	}
 
 	/**
@@ -643,4 +803,40 @@ class Homepage_api extends CI_Controller
 			]);
 		}
 	}
+
+
+
+
+	/**
+	 * YouTube URL에서 비디오 ID 추출
+	 */
+	private function extract_youtube_id($url)
+	{
+		if (empty($url)) {
+			return null;
+		}
+
+		$pattern = '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/i';
+
+		if (preg_match($pattern, $url, $matches)) {
+			return $matches[1];
+		}
+
+		return null;
+	}
+
+	/**
+	 * YouTube 썸네일 URL 생성
+	 */
+	private function get_youtube_thumbnail($youtube_url)
+	{
+		$video_id = $this->extract_youtube_id($youtube_url);
+
+		if ($video_id) {
+			return "https://img.youtube.com/vi/{$video_id}/maxresdefault.jpg";
+		}
+
+		return '';
+	}
+
 }
