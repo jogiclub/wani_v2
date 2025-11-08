@@ -276,4 +276,50 @@ class Homepage_api_model extends CI_Model
 		return $query->result_array();
 	}
 
+
+	/**
+	 * 파일 위치: application/models/Homepage_api_model.php
+	 * 역할: 이미지가 첨부된 게시판 목록 조회
+	 */
+
+	public function get_image_board_list($org_code, $menu_id, $limit = 10)
+	{
+		$this->db->select('hb.idx, hb.board_title, hb.reg_date, hb.file_path');
+		$this->db->from('wb_homepage_board hb');
+		$this->db->join('wb_org org', 'org.org_id = hb.org_id');
+		$this->db->where('org.org_code', $org_code);
+		$this->db->where('hb.menu_id', $menu_id);
+		$this->db->where('hb.del_yn', 'N');
+		$this->db->where('hb.file_path IS NOT NULL');
+		$this->db->where('hb.file_path !=', '');
+		$this->db->order_by('hb.idx', 'DESC');
+		$this->db->limit($limit);
+
+		$query = $this->db->get();
+
+		if ($query === false) {
+			log_message('error', 'get_image_board_list 쿼리 실행 실패: ' . $this->db->error()['message']);
+			return [];
+		}
+
+		$results = $query->result_array();
+
+		// 이미지 파일이 실제로 있는 게시물만 필터링
+		$filtered_results = [];
+		foreach ($results as $post) {
+			if (!empty($post['file_path'])) {
+				$files = json_decode($post['file_path'], true);
+				if (is_array($files)) {
+					foreach ($files as $file) {
+						if (isset($file['type']) && strpos($file['type'], 'image/') === 0) {
+							$filtered_results[] = $post;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return $filtered_results;
+	}
 }

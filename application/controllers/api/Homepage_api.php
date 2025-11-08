@@ -439,7 +439,7 @@ class Homepage_api extends CI_Controller
 							$slider_id = 'youtube-slider-' . uniqid();
 
 							$html .= '<section>';
-							$html .= '<div class="wani-youtube-slide-block mb-4">';
+							$html .= '<div class="wani-youtube-slide-block">';
 							// 타이틀과 서브타이틀 렌더링
 							if (!empty($title) || !empty($subtitle)) {
 								$html .= '<div class="youtube-slide-header text-center mb-4">';
@@ -560,11 +560,222 @@ class Homepage_api extends CI_Controller
 					break;
 
 
+				/**
+				 * 파일 위치: application/controllers/api/Homepage_api.php
+				 * 역할: convert_editorjs_to_html 함수 내 waniIntroLink 케이스 추가
+				 */
+
+				case 'waniIntroLink':
+					$title = $data_content['title'] ?? '';
+					$subtitle = $data_content['subtitle'] ?? '';
+					$cards = $data_content['cards'] ?? [];
+
+					if (!empty($cards)) {
+						$html .= '<section>';
+						$html .= '<div class="wani-intro-link-block">';
+						$html .= '<div class="container">';
+
+						// 상단 타이틀 섹션
+						if (!empty($title) || !empty($subtitle)) {
+							$html .= '<div class="text-center mb-5">';
+							if (!empty($title)) {
+								$html .= '<h4 class="fw-bold mb-3">' . htmlspecialchars($title) . '</h4>';
+							}
+							if (!empty($subtitle)) {
+								$html .= '<h6 class="text-muted">' . nl2br(htmlspecialchars($subtitle)) . '</h6>';
+							}
+							$html .= '</div>';
+						}
+
+						// 카드 그리드
+						$html .= '<div class="row g-4">';
+
+						foreach ($cards as $card) {
+							$image = $card['image'] ?? '';
+							$imageTitle = $card['imageTitle'] ?? '';
+							$cardTitle = $card['title'] ?? '';
+							$cardSubtitle = $card['subtitle'] ?? '';
+							$buttons = $card['buttons'] ?? [];
+
+							$html .= '<div class="col-12 col-md-6 col-lg-4">';
+							$html .= '<div class="card h-100 border-0 shadow-sm">';
+
+							// 이미지 영역
+							if (!empty($image)) {
+								$html .= '<div class="position-relative">';
+								$html .= '<img src="' . htmlspecialchars($image) . '" class="card-img-top" alt="' . htmlspecialchars($cardTitle) . '" style="height: 250px; object-fit: cover;">';
+
+								// 이미지 제목 오버레이
+								if (!empty($imageTitle)) {
+									$html .= '<div class="overlay position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-50 text-white p-2">';
+									$html .= '<p class="img-title mb-0 small fw-semibold">' . htmlspecialchars($imageTitle) . '</p>';
+									$html .= '</div>';
+								}
+
+								$html .= '</div>';
+							} else {
+								$html .= '<div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">';
+								$html .= '<i class="bi bi-image" style="font-size: 48px; color: #adb5bd;"></i>';
+								$html .= '</div>';
+							}
+
+							// 카드 본문
+							$html .= '<div class="card-body">';
+
+							if (!empty($cardTitle)) {
+								$html .= '<h5 class="card-title fw-bold">' . htmlspecialchars($cardTitle) . '</h5>';
+							}
+
+							if (!empty($cardSubtitle)) {
+								$html .= '<p class="card-text text-muted">' . nl2br(htmlspecialchars($cardSubtitle)) . '</p>';
+							}
+
+							// 버튼 렌더링
+							if (!empty($buttons)) {
+								$html .= '<div class="btn-group w-100">';
+								foreach ($buttons as $button) {
+									$btnName = $button['name'] ?? '';
+									$btnUrl = $button['url'] ?? '';
+
+
+									if (!empty($btnName)) {
+										$html .= '<a href="' . htmlspecialchars($btnUrl) . '" class="btn btn-outline-dark">' . htmlspecialchars($btnName) . '</a>';
+									}
+								}
+								$html .= '</div>';
+							}
+
+							$html .= '</div>'; // card-body
+							$html .= '</div>'; // card
+							$html .= '</div>'; // col
+						}
+
+						$html .= '</div>'; // row
+						$html .= '</div>'; // container
+						$html .= '</div>'; //
+						$html .= '</section>';
+					}
+					break;
+
+
+
+				/**
+				 * 파일 위치: application/controllers/api/Homepage_api.php
+				 * 역할: convert_editorjs_to_html 함수 내 waniLatestImageSlide 케이스 추가
+				 */
+
+				case 'waniLatestImageSlide':
+					$title = $data_content['title'] ?? '';
+					$subtitle = $data_content['subtitle'] ?? '';
+					$board_menu_ids = $data_content['board_menu_ids'] ?? [];
+					$display_count = $data_content['display_count'] ?? '3';
+					$show_board_name = $data_content['show_board_name'] ?? true;
+					$show_title = $data_content['show_title'] ?? true;
+
+					if (!empty($board_menu_ids) && is_array($board_menu_ids) && !empty($org_code)) {
+						$all_posts = [];
+
+						// 여러 게시판에서 이미지가 있는 게시물 수집
+						foreach ($board_menu_ids as $board_menu_id) {
+							$posts = $this->Homepage_api_model->get_image_board_list($org_code, $board_menu_id, 10);
+
+							// 게시판 정보 추가
+							foreach ($posts as &$post) {
+								$menu_info = $this->Homepage_api_model->get_menu_info($org_code, $board_menu_id);
+								$post['board_name'] = $menu_info ? $menu_info['menu_name'] : '';
+								$post['menu_id'] = $board_menu_id;
+							}
+
+							$all_posts = array_merge($all_posts, $posts);
+						}
+
+						// 날짜순 정렬 (최신순)
+						usort($all_posts, function($a, $b) {
+							return strtotime($b['reg_date']) - strtotime($a['reg_date']);
+						});
+
+						// 최대 10개로 제한
+						$all_posts = array_slice($all_posts, 0, 10);
+
+						if (!empty($all_posts)) {
+							$slider_id = 'image-slider-' . uniqid();
+
+							$html .= '<section>';
+							$html .= '<div class="wani-image-slide-block mb-4">';
+
+							// 타이틀과 서브타이틀 렌더링
+							if (!empty($title) || !empty($subtitle)) {
+								$html .= '<div class="image-slide-header text-center mb-4">';
+
+								if (!empty($title)) {
+									$html .= '<h4 class="image-slide-main-title mb-2">' . htmlspecialchars($title) . '</h4>';
+								}
+
+								if (!empty($subtitle)) {
+									$html .= '<h6 class="image-slide-subtitle text-muted mt-3 mb-5">' . nl2br(htmlspecialchars($subtitle)) . '</h6>';
+								}
+
+								$html .= '</div>';
+							}
+
+							$html .= '<div id="' . $slider_id . '" class="image-slide-container" data-slides-to-show="' . $display_count . '">';
+
+							foreach ($all_posts as $post) {
+								$thumbnail_url = $this->get_first_image_thumbnail($post['file_path']);
+								$board_title = htmlspecialchars($post['board_title']);
+								$board_name = htmlspecialchars($post['board_name']);
+								$post_link = '/board/' . $post['menu_id'] . '/' . $post['idx'];
+
+								// 게시판 ID 기반 색상 생성
+								$badge_color = $this->get_board_badge_color($post['menu_id']);
+
+								$html .= '<div class="image-slide-item">';
+								$html .= '<a href="' . $post_link . '" class="image-slide-link">';
+
+								if (!empty($thumbnail_url)) {
+									$html .= '<div class="image-thumbnail-wrapper">';
+									$html .= '<img src="' . $thumbnail_url . '" alt="' . $board_title . '" class="image-thumbnail">';
+									$html .= '<div class="image-overlay">';
+									$html .= '<i class="bi bi-image-fill"></i>';
+									$html .= '</div>';
+									$html .= '</div>';
+								}
+
+								if ($show_board_name || $show_title) {
+									$html .= '<div class="image-slide-info">';
+
+									if ($show_board_name && !empty($board_name)) {
+										$html .= '<span class="image-board-name badge" style="background-color: ' . $badge_color . '; color: #fff;">' . $board_name . '</span>';
+									}
+
+									if ($show_title) {
+										$html .= '<div class="image-post-title">' . $board_title . '</div>';
+									}
+
+									$html .= '</div>';
+								}
+
+								$html .= '</a>';
+								$html .= '</div>';
+							}
+
+							$html .= '</div>';
+							$html .= '</div>';
+							$html .= '</section>';
+						}
+					}
+					break;
+
 
 
 				default:
 					log_message('debug', 'Unknown Editor.js block type: ' . $type);
 					break;
+
+
+
+
+
 			}
 		}
 
@@ -837,6 +1048,44 @@ class Homepage_api extends CI_Controller
 		}
 
 		return '';
+	}
+
+
+	/**
+	 * 파일 위치: application/controllers/api/Homepage_api.php
+	 * 역할: 게시판 파일에서 첫 번째 이미지의 썸네일 URL 추출
+	 */
+
+	private function get_first_image_thumbnail($file_path)
+	{
+		if (empty($file_path)) {
+			return '';
+		}
+
+		try {
+			$files = json_decode($file_path, true);
+
+			if (!is_array($files) || count($files) === 0) {
+				return '';
+			}
+
+			// 첫 번째 이미지 파일 찾기
+			foreach ($files as $file) {
+				if (isset($file['type']) && strpos($file['type'], 'image/') === 0) {
+					// 썸네일이 있으면 썸네일 반환, 없으면 원본 반환
+					if (!empty($file['thumb_path'])) {
+						return $file['thumb_path'];
+					} else if (!empty($file['path'])) {
+						return $file['path'];
+					}
+				}
+			}
+
+			return '';
+		} catch (Exception $e) {
+			log_message('error', '이미지 썸네일 추출 실패: ' . $e->getMessage());
+			return '';
+		}
 	}
 
 }

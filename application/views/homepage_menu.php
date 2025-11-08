@@ -192,4 +192,10 @@
 <script src="/assets/js/wani-link-list.js?<?php echo WB_VERSION; ?>"></script>
 <!-- 유튜브 슬라이드 커스텀 플러그인 -->
 <script src="/assets/js/wani-latest-youtube-slide.js?<?php echo WB_VERSION; ?>"></script>
+<!-- 소개 링크 커스텀 플러그인 -->
+<script src="/assets/js/wani-intro-link.js?<?php echo WB_VERSION; ?>"></script>
+<!-- 이미지 슬라이드 커스텀 플러그인 -->
+<script src="/assets/js/wani-latest-image-slide.js?<?php echo WB_VERSION; ?>"></script>
+
+
 <script src="/assets/js/homepage_menu.js?<?php echo WB_VERSION; ?>"></script>

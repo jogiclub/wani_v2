@@ -1150,7 +1150,7 @@ function initPageContentEditor(content) {
 
 
 
-	console.log('사용 가능한 도구:', Object.keys(availableTools));
+
 
 	// Editor.js 생성
 	try {
@@ -1175,7 +1175,23 @@ function initPageContentEditor(content) {
 					config: {
 						org_id: $('#current_org_id').val()
 					}
+				},
+				// EditorJS tools 객체에 추가
+				waniIntroLink: {
+					class: WaniIntroLink,
+					config: {
+						org_id: $('#current_org_id').val()
+					}
+				},
+
+				// EditorJS tools 객체에 추가
+				waniLatestImageSlide: {
+					class: WaniLatestImageSlide,
+					config: {
+						org_id: $('#current_org_id').val()
+					}
 				}
+
 			},
 
 			data: parsedData || {},
@@ -1195,6 +1211,9 @@ function initPageContentEditor(content) {
 		console.error('Editor.js 초기화 실패:', error);
 		showToast('에디터 초기화에 실패했습니다: ' + error.message);
 	}
+
+
+	console.log('사용 가능한 도구:', Object.keys(availableTools));
 }
 
 
