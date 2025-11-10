@@ -196,6 +196,7 @@
 <script src="/assets/js/wani-intro-link.js?<?php echo WB_VERSION; ?>"></script>
 <!-- 이미지 슬라이드 커스텀 플러그인 -->
 <script src="/assets/js/wani-latest-image-slide.js?<?php echo WB_VERSION; ?>"></script>
-
+<!-- 백그라운드링크 커스텀 플러그인 -->
+<script src="/assets/js/wani-link-list-bg.js?<?php echo WB_VERSION; ?>"></script>
 
 <script src="/assets/js/homepage_menu.js?<?php echo WB_VERSION; ?>"></script>

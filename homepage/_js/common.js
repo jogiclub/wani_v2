@@ -124,6 +124,9 @@ function generateMenuHtml(menus) {
 
 // 메뉴 타입에 따른 URL 생성
 function getMenuUrl(menuType, menuId) {
+
+
+
 	if (menuType === 'page') {
 		return `/page/${menuId}`;
 	} else if (menuType === 'board') {
@@ -225,15 +228,21 @@ async function loadLinkContent(menuId) {
 // 게시판 목록 로드
 async function loadBoardList(menuId, page = 1) {
 	try {
+
+
 		const response = await fetch(`${API_BASE_URL}/board/${ORG_CODE}/${menuId}?page=${page}&limit=20`);
 		const result = await response.json();
 
 		const mainContent = document.getElementById('mainContent');
 		mainContent.classList.remove('loading');
 
+
+
 		if (result.success) {
 			let html = '<div class="board-container fade-in">';
-			html += '<div class="d-flex justify-content-between align-items-center mb-3">';
+			html += '<div class="container">';
+			html += '<nav aria-label="breadcrumb" class="mt-5"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="#"><i class="bi bi-house-door-fill"></i></a></li><li class="breadcrumb-item"><a href="#">Library</a></li><li class="breadcrumb-item active" aria-current="page">Data</li></ol></nav>';
+			html += '<div class="d-flex justify-content-between align-items-center mt-2">';
 			html += '<h4 class="mb-0">게시판</h4>';
 			html += `<a href="/board/${menuId}/write" class="btn btn-primary">글쓰기</a>`;
 			html += '</div>';
@@ -285,7 +294,7 @@ async function loadBoardList(menuId, page = 1) {
 				html += '<div class="text-center py-5"><p class="text-muted">등록된 게시글이 없습니다.</p></div>';
 			}
 
-			html += '</div>';
+			html += '</div></div>';
 			mainContent.innerHTML = html;
 		} else {
 			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">게시판을 찾을 수 없습니다.</p></div>';
@@ -409,10 +418,12 @@ function handleRouting() {
 		// 홈 - 메인 페이지 로드
 		loadPageContent('main');
 	} else if (path.startsWith('/page/')) {
+		$('header').addClass('fixed');
 		// 페이지 컨텐츠
 		const menuId = path.replace('/page/', '').replace(/\/$/, '');
 		loadPageContent(menuId);
 	} else if (path.startsWith('/board/')) {
+		$('header').addClass('fixed');
 		// 게시판 관련 라우팅
 		const pathParts = path.replace('/board/', '').replace(/\/$/, '').split('/');
 		const menuId = pathParts[0];

@@ -75,6 +75,19 @@
 <script src="https://wani.im/homepage/_js/common.js?v={{timestamp}}"></script>
 <script src="https://wani.im/homepage/_theme/{{theme}}/assets/js/theme.js?v={{timestamp}}"></script>
 <script>
+
+
+	$(window).scroll(function() {
+		if ($(this).scrollTop() > 500) {
+			// 스크롤 위치가 500px을 초과할 경우
+			$('header').addClass('fixed');
+		} else {
+			// 스크롤 위치가 500px 이하일 경우
+			$('header').removeClass('fixed');
+		}
+	});
+
+
 	$(document).ready(function () {
 		// 커버 슬라이드 초기화 함수
 		function initializeCoverSlider() {
@@ -143,6 +156,45 @@
 			});
 		}
 
+		function initializeImageSliders() {
+			$(".image-slide-container").each(function() {
+				const $youtubeSlider = $(this);
+
+				// 이미 초기화되었는지 확인
+				if ($youtubeSlider.length > 0 && !$youtubeSlider.hasClass('slick-initialized')) {
+					// data 속성에서 설정 가져오기 (없으면 기본값 3)
+					const slidesToShow = parseInt($youtubeSlider.data('slides-to-show')) || 3;
+
+					$youtubeSlider.slick({
+						dots: true,
+						infinite: true,
+						speed: 500,
+						slidesToShow: slidesToShow,
+						slidesToScroll: 1,
+						autoplay: true,
+						centerMode: true,
+						centerPadding: '60px',
+						autoplaySpeed: 3000,
+						arrows: false,
+						responsive: [
+							{
+								breakpoint: 992,
+								settings: {
+									slidesToShow: Math.min(2, slidesToShow)
+								}
+							},
+							{
+								breakpoint: 576,
+								settings: {
+									slidesToShow: 1
+								}
+							}
+						]
+					});
+				}
+			});
+		}
+
 		// MutationObserver로 DOM 변경 감지
 		const observer = new MutationObserver(function(mutations) {
 			mutations.forEach(function(mutation) {
@@ -152,6 +204,9 @@
 
 					// 유튜브 슬라이드 초기화
 					initializeYoutubeSliders();
+
+					// 이미지 슬라이드 초기화
+					initializeImageSliders();
 				}
 			});
 		});

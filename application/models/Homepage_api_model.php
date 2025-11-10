@@ -277,23 +277,30 @@ class Homepage_api_model extends CI_Model
 	}
 
 
+
 	/**
 	 * 파일 위치: application/models/Homepage_api_model.php
-	 * 역할: 이미지가 첨부된 게시판 목록 조회
+	 * 역할: get_image_board_list 함수 디버깅 강화
 	 */
 
 	public function get_image_board_list($org_code, $menu_id, $limit = 10)
 	{
+		$org_id = $this->get_org_id_by_code($org_code);
+
+		if ($org_id === false) {
+			return [];
+		}
+
 		$this->db->select('hb.idx, hb.board_title, hb.reg_date, hb.file_path');
 		$this->db->from('wb_homepage_board hb');
-		$this->db->join('wb_org org', 'org.org_id = hb.org_id');
-		$this->db->where('org.org_code', $org_code);
+		$this->db->where('hb.org_id', $org_id);
 		$this->db->where('hb.menu_id', $menu_id);
 		$this->db->where('hb.del_yn', 'N');
 		$this->db->where('hb.file_path IS NOT NULL');
 		$this->db->where('hb.file_path !=', '');
+		$this->db->where('hb.file_path !=', '[]');
 		$this->db->order_by('hb.idx', 'DESC');
-		$this->db->limit($limit);
+		$this->db->limit($limit * 2);
 
 		$query = $this->db->get();
 
@@ -304,22 +311,67 @@ class Homepage_api_model extends CI_Model
 
 		$results = $query->result_array();
 
-		// 이미지 파일이 실제로 있는 게시물만 필터링
+		// 쿼리 결과 전체 로그
+		log_message('debug', '[get_image_board_list] === 쿼리 결과 시작 ===');
+		foreach ($results as $idx => $post) {
+			log_message('debug', '[get_image_board_list] Query Result #' . $idx . ' - idx=' . $post['idx'] . ', title=' . $post['board_title']);
+		}
+		log_message('debug', '[get_image_board_list] === 쿼리 결과 끝 ===');
+
 		$filtered_results = [];
+		$added_idx = [];
+
 		foreach ($results as $post) {
+			log_message('debug', '[get_image_board_list] 처리 중 - idx=' . $post['idx'] . ', 이미 추가됨=' . (in_array($post['idx'], $added_idx) ? 'YES' : 'NO'));
+
+			// 이미 추가된 게시물은 스킵
+			if (in_array($post['idx'], $added_idx)) {
+				log_message('debug', '[get_image_board_list] !!! 중복 스킵 !!! - idx=' . $post['idx']);
+				continue;
+			}
+
 			if (!empty($post['file_path'])) {
 				$files = json_decode($post['file_path'], true);
-				if (is_array($files)) {
+
+				if (is_array($files) && !empty($files)) {
+					$has_image = false;
 					foreach ($files as $file) {
-						if (isset($file['type']) && strpos($file['type'], 'image/') === 0) {
-							$filtered_results[] = $post;
+						// type이 "image" 또는 "image/"로 시작하는지 체크
+						if (isset($file['type']) && ($file['type'] === 'image' || strpos($file['type'], 'image/') === 0)) {
+							$has_image = true;
+							log_message('debug', '[get_image_board_list] 이미지 발견 - idx=' . $post['idx'] . ', type=' . $file['type']);
 							break;
 						}
 					}
+
+					if ($has_image) {
+						$filtered_results[] = $post;
+						$added_idx[] = $post['idx'];
+						log_message('debug', '[get_image_board_list] >>> 추가 완료 <<< - idx=' . $post['idx'] . ', 현재 개수=' . count($filtered_results));
+					}
 				}
+			}
+
+			if (count($filtered_results) >= $limit) {
+				log_message('debug', '[get_image_board_list] 목표 개수 도달, 중단');
+				break;
 			}
 		}
 
-		return $filtered_results;
+		log_message('debug', '[get_image_board_list] === 최종 결과 ===');
+		log_message('debug', '[get_image_board_list] 필터링 후 게시물 수: ' . count($filtered_results));
+		log_message('debug', '[get_image_board_list] 추가된 idx 목록: ' . json_encode($added_idx));
+
+		foreach ($filtered_results as $idx => $post) {
+			log_message('debug', '[get_image_board_list] Final #' . $idx . ' - idx=' . $post['idx'] . ', title=' . $post['board_title']);
+		}
+
+		return array_slice($filtered_results, 0, $limit);
 	}
+
+
+
+
+
+
 }

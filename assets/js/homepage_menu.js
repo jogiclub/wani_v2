@@ -1143,7 +1143,15 @@ function initPageContentEditor(content) {
 			}
 		};
 	}
-
+// waniLinkListBg - 백그라운드링크 블록 (waniLinkList 다음에 추가)
+	if (typeof window.WaniLinkListBg !== 'undefined') {
+		availableTools.waniLinkListBg = {
+			class: window.WaniLinkListBg,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
+		};
+	}
 
 
 
@@ -1166,6 +1174,12 @@ function initPageContentEditor(content) {
 				waniCoverSlide: WaniCoverSlide,
 				waniLinkList: {
 					class: WaniLinkList,
+					config: {
+						org_id: $('#current_org_id').val()
+					}
+				},
+				waniLinkListBg: {
+					class: WaniLinkListBg,
 					config: {
 						org_id: $('#current_org_id').val()
 					}

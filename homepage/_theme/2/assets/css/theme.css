@@ -31,6 +31,11 @@ body {font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sys
 
 /* Header 스타일 */
 header {box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: absolute; top: 0; left: 0; width: 100%; z-index: 5; border-bottom: 1px solid rgba(221, 221, 221, 0.4); }
+header.fixed {position: fixed; background: #fff; }
+header.fixed .navbar-nav li .nav-link{color:#333!important;}
+header.fixed .link-list ul li{color:#333!important;}
+header.fixed .logo-container .navbar-brand{color:#333!important;}
+
 .navbar{display: flex;align-items: center;justify-content: space-between;width: 100%;height: 80px;}
 
 .logo-container {display: flex;align-items: center; padding: 0 20px;}
@@ -45,6 +50,9 @@ header {box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: absolute; top: 0; le
 .dropdown-item:hover {background-color: #f8f9fa;}
 .link-list ul {display: flex; margin: 0; padding: 0; padding: 0 20px}
 .link-list ul li{list-style: none; margin: 0 10px; padding: 0; font-size: 20px;color: #fff;}
+
+
+
 
 /* Main 스타일 */
 main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
@@ -100,6 +108,26 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 }
 
 
+/*이미지슬라이더*/
+.wani-image-slide-block{padding: 100px 0; background: #fff;}
+.wani-image-slide-block h4{font-size: 30px; font-weight: bold}
+.wani-image-slide-block h6{font-size: 20px;}
+.image-slide-container {position: relative;}
+.image-slide-item {padding: 0 10px;}
+.image-slide-link {display: block;text-decoration: none;color: inherit;}
+.image-thumbnail-wrapper {position: relative;width: 100%;padding-top: 56.25%;overflow: hidden;}
+.image-thumbnail {position: absolute;top: 0;left: 0;width: 100%;height: 100%;object-fit: cover;transition: transform 0.3s ease;}
+.image-slide-item:hover .image-thumbnail {transform: scale(1.05);}
+.image-play-overlay {position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 64px;color: rgba(255, 0, 0, 0.5);transition: all 0.3s ease;pointer-events: none;}
+
+.image-slide-info {padding: 12px 0;}
+.image-board-name {margin-bottom: 4px;padding-top: 5px;font-size: 14px;}
+.image-post-title {font-weight: 500;overflow: hidden;text-overflow: ellipsis;display: -webkit-box;-webkit-line-clamp: 2;-webkit-box-orient: vertical;}
+.image-slide-container .slick-dots{bottom:-30px}
+
+
+
+
 /*소개링크*/
 .wani-intro-link-block{padding: 100px 0; background: #efefef;}
 .wani-intro-link-block h4{font-size: 30px; font-weight: bold}
@@ -108,10 +136,26 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 .wani-intro-link-block .img-title{letter-spacing: 7px}
 
 
+.wani-link-list-bg-block{}
+.wani-link-list-bg-block .bg-wrapper{padding: 100px 0; position: relative;}
+.wani-link-list-bg-block h4{font-size: 30px; font-weight: bold; color: #fff}
+.wani-link-list-bg-block h6{font-size: 20px; color: #fff}
+.wani-link-list-bg-block .overlay{position: absolute;width: 100%;height: 100%;background: #000;top: 0;opacity: 0.5;}
+.wani-link-list-bg-block .container{z-index: 3;position: relative;}
+.wani-link-list-bg-block .button-list {width: 100%; display: flex; column-gap: 20px;}
+.wani-link-list-bg-block .button-list a{background: #fff5;border-radius: 0;border: 1px solid #fff;color: #fff; justify-content: space-between; display: flex}
+
+
+@media (max-width: 992px) {
+	.wani-link-list-bg-block .button-list{flex-direction: column;}
+	.wani-link-list-bg-block .button-list a{margin-top: 15px}
+}
+
+
 
 
 /* 게시판 스타일 */
-.board-container {background: white;padding: 2rem;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);}
+.board-container {padding: 2rem; padding-top: 80px}
 .board-container h4 {color: #333;font-weight: 700;padding-bottom: 1rem;border-bottom: 2px solid #667eea;}
 .table {margin-top: 1.5rem;}
 .table thead {background-color: #f8f9fa;}

@@ -285,6 +285,7 @@ class Homepage_api extends CI_Controller
 					$boards = $data_content['boards'] ?? [];
 
 					if (!empty($boards) && !empty($org_code)) {
+						$html .= '<section>';
 						$html .= '<div class="wani-latest-list-block mb-4">';
 						$html .= '<div class="row g-3">';
 
@@ -327,7 +328,7 @@ class Homepage_api extends CI_Controller
 							}
 						}
 
-						$html .= '</div></div>';
+						$html .= '</div></div></section>';
 					}
 					break;
 
@@ -656,12 +657,66 @@ class Homepage_api extends CI_Controller
 						$html .= '</section>';
 					}
 					break;
+				case 'waniLinkListBg':
+					$title = $data_content['title'] ?? '';
+					$subtitle = $data_content['subtitle'] ?? '';
+					$backgroundImage = $data_content['backgroundImage'] ?? '';
+					$buttons = $data_content['buttons'] ?? [];
 
+					if (!empty($buttons)) {
+						$html .= '<section>';
+						$html .= '<div class="wani-link-list-bg-block">';
+
+						// 백그라운드 이미지가 있는 경우
+						$bg_style = '';
+						if (!empty($backgroundImage)) {
+							$bg_style = 'background-image: url(' . htmlspecialchars($backgroundImage) . '); background-size: cover; background-position: center; background-repeat: no-repeat;';
+						}
+
+						$html .= '<div class="bg-wrapper" style="' . $bg_style . '">';
+						$html .= '<div class="overlay"></div>';
+						$html .= '<div class="container">';
+
+						// 타이틀 및 서브타이틀
+						if (!empty($title) || !empty($subtitle)) {
+							$html .= '<div class="text-center mb-4">';
+
+							if (!empty($title)) {
+								$html .= '<h4 class="mb-2">' . htmlspecialchars($title) . '</h4>';
+							}
+
+							if (!empty($subtitle)) {
+								$html .= '<h6 class="mt-3 mb-5">' . nl2br(htmlspecialchars($subtitle)) . '</h6>';
+							}
+
+							$html .= '</div>';
+						}
+
+						// 버튼 리스트
+						$html .= '<div class="btn-group button-list">';
+
+						foreach ($buttons as $button) {
+							$btn_name = $button['name'] ?? '';
+							$btn_url = $button['url'] ?? '';
+
+							if (!empty($btn_name)) {
+								$display_url = !empty($btn_url) ? htmlspecialchars($btn_url) : '#';
+								$html .= '<a href="' . $display_url . '" class="btn btn-lg fw-semibold px-4 py-2"><span>' . htmlspecialchars($btn_name) . '</span><i class="bi bi-chevron-right"></i></a>';
+							}
+						}
+
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</section>';
+					}
+					break;
 
 
 				/**
 				 * 파일 위치: application/controllers/api/Homepage_api.php
-				 * 역할: convert_editorjs_to_html 함수 내 waniLatestImageSlide 케이스 추가
+				 * 역할: waniLatestImageSlide 케이스 수정 - 참조 변수 정리
 				 */
 
 				case 'waniLatestImageSlide':
@@ -675,7 +730,6 @@ class Homepage_api extends CI_Controller
 					if (!empty($board_menu_ids) && is_array($board_menu_ids) && !empty($org_code)) {
 						$all_posts = [];
 
-						// 여러 게시판에서 이미지가 있는 게시물 수집
 						foreach ($board_menu_ids as $board_menu_id) {
 							$posts = $this->Homepage_api_model->get_image_board_list($org_code, $board_menu_id, 10);
 
@@ -685,6 +739,7 @@ class Homepage_api extends CI_Controller
 								$post['board_name'] = $menu_info ? $menu_info['menu_name'] : '';
 								$post['menu_id'] = $board_menu_id;
 							}
+							unset($post); // ← 참조 변수 정리 (중요!)
 
 							$all_posts = array_merge($all_posts, $posts);
 						}
@@ -701,7 +756,7 @@ class Homepage_api extends CI_Controller
 							$slider_id = 'image-slider-' . uniqid();
 
 							$html .= '<section>';
-							$html .= '<div class="wani-image-slide-block mb-4">';
+							$html .= '<div class="wani-image-slide-block">';
 
 							// 타이틀과 서브타이틀 렌더링
 							if (!empty($title) || !empty($subtitle)) {
@@ -720,7 +775,7 @@ class Homepage_api extends CI_Controller
 
 							$html .= '<div id="' . $slider_id . '" class="image-slide-container" data-slides-to-show="' . $display_count . '">';
 
-							foreach ($all_posts as $post) {
+							foreach ($all_posts as $post) {  // ← $index => $post가 아닌 $post만 사용
 								$thumbnail_url = $this->get_first_image_thumbnail($post['file_path']);
 								$board_title = htmlspecialchars($post['board_title']);
 								$board_name = htmlspecialchars($post['board_name']);
@@ -736,7 +791,6 @@ class Homepage_api extends CI_Controller
 									$html .= '<div class="image-thumbnail-wrapper">';
 									$html .= '<img src="' . $thumbnail_url . '" alt="' . $board_title . '" class="image-thumbnail">';
 									$html .= '<div class="image-overlay">';
-									$html .= '<i class="bi bi-image-fill"></i>';
 									$html .= '</div>';
 									$html .= '</div>';
 								}
@@ -765,7 +819,6 @@ class Homepage_api extends CI_Controller
 						}
 					}
 					break;
-
 
 
 				default:
@@ -1053,7 +1106,7 @@ class Homepage_api extends CI_Controller
 
 	/**
 	 * 파일 위치: application/controllers/api/Homepage_api.php
-	 * 역할: 게시판 파일에서 첫 번째 이미지의 썸네일 URL 추출
+	 * 역할: get_first_image_thumbnail 함수 수정 - 전체 URL 반환
 	 */
 
 	private function get_first_image_thumbnail($file_path)
@@ -1071,12 +1124,15 @@ class Homepage_api extends CI_Controller
 
 			// 첫 번째 이미지 파일 찾기
 			foreach ($files as $file) {
-				if (isset($file['type']) && strpos($file['type'], 'image/') === 0) {
+				// type이 "image" 또는 "image/"로 시작하는지 체크
+				if (isset($file['type']) && ($file['type'] === 'image' || strpos($file['type'], 'image/') === 0)) {
 					// 썸네일이 있으면 썸네일 반환, 없으면 원본 반환
 					if (!empty($file['thumb_path'])) {
-						return $file['thumb_path'];
+						// 상대 경로를 전체 URL로 변환
+						return base_url(ltrim($file['thumb_path'], '/'));
 					} else if (!empty($file['path'])) {
-						return $file['path'];
+						// 상대 경로를 전체 URL로 변환
+						return base_url(ltrim($file['path'], '/'));
 					}
 				}
 			}
