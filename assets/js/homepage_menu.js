@@ -1125,7 +1125,7 @@ function initPageContentEditor(content) {
 		};
 	}
 
-	// waniCoverSlide - 카드 그리드 블록 (기존 WaniLatestList 다음에 추가)
+	// waniCoverSlide - 커버 슬라이드 블록 (기존 WaniLatestList 다음에 추가)
 	if (typeof window.WaniCoverSlide !== 'undefined') {
 		availableTools.waniCoverSlide = {
 			class: window.WaniCoverSlide,

@@ -1161,7 +1161,7 @@ class Homepage_menu extends My_Controller
 	 */
 
 	/**
-	 * 카드 그리드 이미지 업로드
+	 * 커버 슬라이드 이미지 업로드
 	 */
 	public function upload_card_image()
 	{
@@ -1224,7 +1224,7 @@ class Homepage_menu extends My_Controller
 	}
 
 	/**
-	 * 카드 그리드 이미지 삭제
+	 * 커버 슬라이드 이미지 삭제
 	 */
 	public function delete_card_image()
 	{

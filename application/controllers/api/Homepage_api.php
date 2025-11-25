@@ -588,7 +588,7 @@ class Homepage_api extends CI_Controller
 							$html .= '</div>';
 						}
 
-						// 카드 그리드
+						// 커버 슬라이드
 						$html .= '<div class="row g-4">';
 
 						foreach ($cards as $card) {

@@ -1,6 +1,6 @@
 /**
  * 파일 위치: assets/js/wani-intro-link.js
- * 역할: EditorJS용 소개 링크 커스텀 플러그인 - 상단 타이틀/서브타이틀과 카드 그리드
+ * 역할: EditorJS용 소개 링크 커스텀 플러그인 - 상단 타이틀/서브타이틀과 커버 슬라이드
  */
 
 class WaniIntroLink {

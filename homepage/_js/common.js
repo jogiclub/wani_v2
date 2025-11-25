@@ -20,6 +20,48 @@ function escapeHtml(text) {
 	return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
+// 로컬스토리지에서 뷰 타입 설정 가져오기
+function getBoardViewType(menuId) {
+	try {
+		const storageKey = `board_view_types_${ORG_CODE}`;
+		const viewTypes = localStorage.getItem(storageKey);
+
+		if (viewTypes) {
+			const parsed = JSON.parse(viewTypes);
+			return parsed[menuId] || 'list'; // 기본값은 list
+		}
+
+		return 'list'; // 기본값
+	} catch (error) {
+		console.error('뷰 타입 로드 실패:', error);
+		return 'list';
+	}
+}
+
+// 로컬스토리지에 뷰 타입 설정 저장하기
+function saveBoardViewType(menuId, viewType) {
+	try {
+		const storageKey = `board_view_types_${ORG_CODE}`;
+		let viewTypes = {};
+
+		// 기존 설정 불러오기
+		const existing = localStorage.getItem(storageKey);
+		if (existing) {
+			viewTypes = JSON.parse(existing);
+		}
+
+		// 현재 메뉴의 뷰 타입 저장
+		viewTypes[menuId] = viewType;
+
+		// 로컬스토리지에 저장
+		localStorage.setItem(storageKey, JSON.stringify(viewTypes));
+
+		console.log(`[뷰 타입 저장] 메뉴: ${menuId}, 타입: ${viewType}`);
+	} catch (error) {
+		console.error('뷰 타입 저장 실패:', error);
+	}
+}
+
 // 에러 표시 함수
 function showError(message) {
 	const mainContent = document.getElementById('mainContent');
@@ -227,8 +269,13 @@ async function loadLinkContent(menuId) {
 
 
 // 게시판 목록 로드
-async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = 'list') {
+async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = null) {
 	try {
+		// viewType이 지정되지 않았으면 로컬스토리지에서 불러오기
+		if (viewType === null) {
+			viewType = getBoardViewType(menuId);
+		}
+
 		// 레이아웃에 따라 limit 설정
 		let limit = 10; // list, article 기본값
 		if (viewType === 'gallery') {
@@ -326,6 +373,10 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = 'l
 				btn.addEventListener('click', (e) => {
 					const newViewType = e.currentTarget.dataset.view;
 					const currentKeyword = document.getElementById('boardSearchInput')?.value.trim() || '';
+
+					// 로컬스토리지에 뷰 타입 저장
+					saveBoardViewType(menuId, newViewType);
+
 					loadBoardList(menuId, 1, currentKeyword, newViewType);
 				});
 			});
@@ -920,6 +971,21 @@ function handleRouting() {
 	if (path === '/' || path === '') {
 		// 홈 - 메인 페이지 로드
 		loadPageContent('main');
+
+
+
+		$(window).scroll(function() {
+			if ($(this).scrollTop() > 500) {
+				// 스크롤 위치가 500px을 초과할 경우
+				$('header').addClass('fixed');
+			} else {
+				// 스크롤 위치가 500px 이하일 경우
+				$('header').removeClass('fixed');
+			}
+		});
+
+
+
 	} else if (path.startsWith('/page/')) {
 		$('header').addClass('fixed');
 		// 페이지 컨텐츠
