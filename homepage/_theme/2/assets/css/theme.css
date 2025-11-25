@@ -173,7 +173,7 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 /* 게시글 상세 스타일 */
 .board-detail {background: white;padding: 2rem;border-radius: 12px;box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);}
 .board-detail h4 {color: #333;font-weight: 700;margin-bottom: 1rem;}
-.board-content {line-height: 1.8;color: #333;min-height: 200px;}
+.board-content {line-height: 1.8;color: #333;min-height: 200px; background: #fff}
 
 /* 페이지네이션 스타일 */
 .pagination {margin-top: 2rem;}

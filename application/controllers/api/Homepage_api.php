@@ -1022,6 +1022,16 @@ class Homepage_api extends CI_Controller
 		$board_detail = $this->Homepage_api_model->get_board_detail_by_org_code($org_code, $idx);
 
 		if ($board_detail !== false) {
+			// 메뉴 정보 추가
+			if (isset($board_detail['menu_id'])) {
+				$menu_info = $this->Homepage_api_model->get_menu_info_by_id($org_code, $board_detail['menu_id']);
+				if ($menu_info) {
+					$board_detail['menu_name'] = $menu_info['menu_name'] ?? '';
+					$board_detail['category_name'] = $menu_info['category_name'] ?? '';
+					$board_detail['parent_menu_name'] = $menu_info['parent_menu_name'] ?? '';
+				}
+			}
+
 			echo json_encode([
 				'success' => true,
 				'message' => '게시글 조회 성공',
@@ -1035,6 +1045,13 @@ class Homepage_api extends CI_Controller
 			]);
 		}
 	}
+
+
+
+
+
+
+
 
 	/**
 	 * 조직 기본 정보 조회 (홈페이지 설정 포함)

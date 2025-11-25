@@ -271,18 +271,18 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = 'l
 
 			// 타이틀과 검색, 레이아웃 전환, 글쓰기 버튼
 			html += '<div class="d-flex justify-content-between align-items-center py-3">';
-				html += '<div class="input-group" style="width: 300px;">';
-					html += `<input type="text" class="form-control" id="boardSearchInput" placeholder="제목 또는 작성자 검색" value="${escapeHtml(searchKeyword)}">`;
-					html += '<button class="btn btn-outline-secondary" type="button" id="boardSearchBtn">검색</button>';
-				html += '</div>';
-				html += '<div class="d-flex gap-2">';
-				html += `<a href="/board/${menuId}/write" class="btn btn-primary">글쓰기</a>`;
-				html += '<div class="btn-group" role="group">';
-					html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'list' ? 'active' : ''}" data-view="list" title="리스트"><i class="bi bi-list-ul"></i></button>`;
-					html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'gallery' ? 'active' : ''}" data-view="gallery" title="갤러리"><i class="bi bi-grid-3x3-gap"></i></button>`;
-					html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'article' ? 'active' : ''}" data-view="article" title="아티클"><i class="bi bi-card-text"></i></button>`;
-				html += '</div>';
-				html += '</div>';
+			html += '<div class="input-group" style="width: 300px;">';
+			html += `<input type="text" class="form-control" id="boardSearchInput" placeholder="제목 또는 작성자 검색" value="${escapeHtml(searchKeyword)}">`;
+			html += '<button class="btn btn-outline-secondary" type="button" id="boardSearchBtn">검색</button>';
+			html += '</div>';
+			html += '<div class="d-flex gap-2">';
+			html += `<a href="/board/${menuId}/write" class="btn btn-primary">글쓰기</a>`;
+			html += '<div class="btn-group" role="group">';
+			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'list' ? 'active' : ''}" data-view="list" title="리스트"><i class="bi bi-list-ul"></i></button>`;
+			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'gallery' ? 'active' : ''}" data-view="gallery" title="갤러리"><i class="bi bi-grid-3x3-gap"></i></button>`;
+			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'article' ? 'active' : ''}" data-view="article" title="아티클"><i class="bi bi-card-text"></i></button>`;
+			html += '</div>';
+			html += '</div>';
 
 			html += '</div>';
 
@@ -690,7 +690,15 @@ function parseEditorJSToHTML(editorData) {
 				case 'image':
 					html += `<figure class="figure w-100">`;
 					if (block.data.file && block.data.file.url) {
-						html += `<img src="${escapeHtml(block.data.file.url)}" class="figure-img img-fluid rounded" alt="${escapeHtml(block.data.caption || '')}">`;
+						// URL이 상대경로인 경우 절대경로로 변환
+						let imageUrl = block.data.file.url;
+						if (!imageUrl.startsWith('http')) {
+							if (!imageUrl.startsWith('/')) {
+								imageUrl = '/' + imageUrl;
+							}
+							imageUrl = 'https://wani.im' + imageUrl;
+						}
+						html += `<img src="${escapeHtml(imageUrl)}" class="figure-img img-fluid rounded editor-image" alt="${escapeHtml(block.data.caption || '')}" style="cursor: pointer;" onclick="openImageModal('${escapeHtml(imageUrl)}')">`;
 					}
 					if (block.data.caption) {
 						html += `<figcaption class="figure-caption">${escapeHtml(block.data.caption)}</figcaption>`;
@@ -746,6 +754,11 @@ function parseEditorJSToHTML(editorData) {
 	}
 }
 
+/**
+ * 파일 위치: homepage/_js/common.js
+ * 역할: 게시글 상세 로드 함수 수정 (메뉴명, 카테고리명 표시)
+ */
+
 // 게시글 상세 로드
 async function loadBoardDetail(menuId, idx) {
 	try {
@@ -763,30 +776,71 @@ async function loadBoardDetail(menuId, idx) {
 			// EditorJS JSON을 HTML로 변환
 			const contentHTML = parseEditorJSToHTML(item.board_content);
 
+			// 첨부파일 Grid 렌더링
+			const attachmentHTML = renderAttachmentGrid(item.file_path);
+
+			// 메뉴명과 카테고리명 가져오기
+			const menuName = item.menu_name || '';
+			const categoryName = item.category_name || '';
+			const parentMenuName = item.parent_menu_name || '';
 
 			let html = '<div class="board-container fade-in">';
-			html += '<div class="container">';
-			html += `<a href="/board/${menuId}/" class="btn btn-secondary">목록으로</a>`;
+			html += '<div class="container py-5">';
+// 제목
+			html += `<h4 class="mb-0">${escapeHtml(item.board_title)}</h4>`;
+			// Breadcrumb
+			html += '<nav aria-label="breadcrumb">';
+			html += '<ol class="breadcrumb">';
+			html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
 
-			html += '<div class="board-detail">';
-			html += `<h4>${escapeHtml(item.board_title)}</h4>`;
-			html += `<div class="mb-3 text-muted d-flex gap-3 flex-wrap">
-                <small>작성자: ${escapeHtml(item.writer_name || '')}</small>
-                <small>작성일: ${date}</small>
-                <small>조회수: ${item.view_count}</small>`;
+			// 카테고리가 있으면 표시
+			if (categoryName) {
+				html += `<li class="breadcrumb-item"><a href="#">${escapeHtml(categoryName)}</a></li>`;
+			}
+
+			// 부모 메뉴가 있으면 표시 (카테고리와 다른 경우에만)
+			if (parentMenuName && parentMenuName !== categoryName) {
+				html += `<li class="breadcrumb-item"><a href="#">${escapeHtml(parentMenuName)}</a></li>`;
+			}
+
+			// 현재 메뉴
+			if (menuName) {
+				html += `<li class="breadcrumb-item active" aria-current="page">${escapeHtml(menuName)}</li>`;
+			}
+
+			html += '</ol>';
+			html += '</nav>';
+
+
+
+			// 정보 및 버튼
+			html += '<div class="d-flex justify-content-between align-items-center py-3">';
+			html += `<div class="text-muted d-flex gap-3 flex-wrap">
+                <small><i class="bi bi-person"></i> ${escapeHtml(item.writer_name || '')}</small>
+                <small><i class="bi bi-calendar"></i> ${date}</small>
+                <small><i class="bi bi-eye"></i> ${item.view_count}</small>`;
 
 			if (modDate && item.modifier_name) {
-				html += `<small>수정: ${modDate} (${escapeHtml(item.modifier_name)})</small>`;
+				html += `<small><i class="bi bi-pencil"></i> ${modDate} (${escapeHtml(item.modifier_name)})</small>`;
 			}
 
 			html += `</div>`;
-			html += '<hr>';
-			html += `<div class="board-content py-4">${contentHTML}</div>`;
-			html += '<hr>';
-			html += '<div class="d-flex gap-2">';
+			html += `<a href="/board/${menuId}/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list"></i> 목록으로</a>`;
+			html += `</div>`;
 
+			// 본문
+			html += `<div class="board-content py-4">${contentHTML}</div>`;
+
+			// 첨부파일이 있으면 표시
+			if (attachmentHTML) {
+				html += attachmentHTML;
+			}
+
+			// 하단 버튼
+			html += '<div class="d-flex gap-2 justify-content-center py-4 border-top">';
+			html += `<a href="/board/${menuId}/" class="btn btn-primary"><i class="bi bi-list"></i> 목록으로</a>`;
 			html += '</div>';
-			html += '</div>';
+
 			html += '</div>';
 			html += '</div>';
 
@@ -947,6 +1001,183 @@ function hidePageLoading() {
 	}
 }
 
+// 첨부파일 Grid 렌더링
+function renderAttachmentGrid(filePath) {
+	if (!filePath) {
+		console.log('[첨부파일] filePath 없음');
+		return '';
+	}
 
+	try {
+		let files;
+		if (typeof filePath === 'string') {
+			files = JSON.parse(filePath);
+		} else {
+			files = filePath;
+		}
 
+		if (!Array.isArray(files) || files.length === 0) {
+			console.log('[첨부파일] 파일 배열 비어있음');
+			return '';
+		}
 
+		console.log('[첨부파일] 전체 파일 목록:', files);
+
+		// 이미지와 문서 분리 (확장자 기반으로도 체크)
+		const images = files.filter(file => {
+			// type 필드로 먼저 체크
+			if (file.type && file.type.startsWith('image/')) {
+				return true;
+			}
+			// type이 없으면 확장자로 체크
+			if (file.name) {
+				const ext = file.name.split('.').pop().toLowerCase();
+				return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+			}
+			return false;
+		});
+
+		const documents = files.filter(file => {
+			// type 필드로 먼저 체크
+			if (file.type && file.type.startsWith('image/')) {
+				return false;
+			}
+			// type이 없으면 확장자로 체크
+			if (file.name) {
+				const ext = file.name.split('.').pop().toLowerCase();
+				return !['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+			}
+			return true;
+		});
+
+		console.log('[첨부파일] 이미지:', images.length, '문서:', documents.length);
+
+		let html = '';
+
+		// 이미지 Grid
+		if (images.length > 0) {
+			html += '<div class="attachment-section mt-4">';
+			html += '<h5 class="mb-3"><i class="bi bi-images"></i> 첨부 이미지 (' + images.length + ')</h5>';
+			html += '<div class="row g-3">';
+
+			images.forEach(file => {
+				// 썸네일이 있으면 썸네일 사용, 없으면 원본 사용
+				let imageUrl = file.thumb_path || file.path;
+				let fullImageUrl = file.path;
+
+				console.log('[이미지 렌더링]', file.name, '썸네일:', imageUrl, '원본:', fullImageUrl);
+
+				// 상대경로를 절대경로로 변환
+				if (!imageUrl.startsWith('http')) {
+					if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
+					imageUrl = 'https://wani.im' + imageUrl;
+				}
+				if (!fullImageUrl.startsWith('http')) {
+					if (!fullImageUrl.startsWith('/')) fullImageUrl = '/' + fullImageUrl;
+					fullImageUrl = 'https://wani.im' + fullImageUrl;
+				}
+
+				html += '<div class="col-6 col-md-4 col-lg-3">';
+				html += '<div class="card shadow-sm h-100" style="transition: transform 0.2s;">';
+				html += '<div class="card-img-wrapper" style="height: 200px; overflow: hidden; cursor: pointer; background: #f8f9fa;" onclick="openImageModal(\'' + fullImageUrl.replace(/'/g, "\\'") + '\')">';
+				html += '<img src="' + escapeHtml(imageUrl) + '" class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" alt="' + escapeHtml(file.name) + '" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div class=\\\'d-flex align-items-center justify-content-center h-100\\\'><i class=\\\'bi bi-image text-muted fs-1\\\'></i></div>\';">';
+				html += '</div>';
+				html += '<div class="card-body p-2">';
+				html += '<small class="text-muted d-block text-truncate" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</small>';
+				html += '<a href="' + fullImageUrl + '" download="' + escapeHtml(file.name) + '" class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="event.stopPropagation();"><i class="bi bi-download"></i> 다운로드</a>';
+				html += '</div>';
+				html += '</div>';
+				html += '</div>';
+			});
+
+			html += '</div>';
+			html += '</div>';
+		}
+
+		// 문서 목록
+		if (documents.length > 0) {
+			html += '<div class="attachment-section mt-4">';
+			html += '<h5 class="mb-3"><i class="bi bi-file-earmark-text"></i> 첨부 문서 (' + documents.length + ')</h5>';
+			html += '<div class="list-group">';
+
+			documents.forEach(file => {
+				let fileUrl = file.path;
+				if (!fileUrl.startsWith('http')) {
+					if (!fileUrl.startsWith('/')) fileUrl = '/' + fileUrl;
+					fileUrl = 'https://wani.im' + fileUrl;
+				}
+
+				// 파일 확장자 추출
+				const ext = file.name.split('.').pop().toUpperCase();
+				const fileSize = formatFileSize(file.size);
+
+				html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+				html += '<div class="d-flex align-items-center flex-grow-1">';
+				html += '<span class="badge bg-secondary me-2">' + ext + '</span>';
+				html += '<span class="text-truncate me-2">' + escapeHtml(file.name) + '</span>';
+				html += '<small class="text-muted">(' + fileSize + ')</small>';
+				html += '</div>';
+				html += '<a href="' + fileUrl + '" download="' + escapeHtml(file.name) + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> 다운로드</a>';
+				html += '</div>';
+			});
+
+			html += '</div>';
+			html += '</div>';
+		}
+
+		return html;
+	} catch (error) {
+		console.error('첨부파일 렌더링 오류:', error);
+		return '';
+	}
+}
+
+// 파일 크기 포맷팅
+function formatFileSize(bytes) {
+	if (!bytes || bytes === 0) return '0 Bytes';
+	const k = 1024;
+	const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+	return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// 이미지 모달 열기
+function openImageModal(imageUrl) {
+	console.log('[이미지 모달] 열기:', imageUrl);
+
+	// 기존 모달이 있으면 제거
+	const existingModal = document.getElementById('imageModal');
+	if (existingModal) {
+		existingModal.remove();
+	}
+
+	// 모달 HTML 생성
+	const modalHtml = `
+		<div class="modal fade" id="imageModal" tabindex="-1">
+			<div class="modal-dialog modal-xl modal-dialog-centered">
+				<div class="modal-content bg-transparent border-0">
+					<div class="modal-body p-0 position-relative">
+						<button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" style="z-index: 1050;"></button>
+						<img src="${imageUrl}" class="img-fluid w-100" alt="이미지" style="max-height: 90vh; object-fit: contain;" onerror="alert('이미지를 불러올 수 없습니다.');">
+					</div>
+				</div>
+			</div>
+		</div>
+	`;
+
+	// 모달을 body에 추가
+	document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+	// Bootstrap 모달 인스턴스 생성 및 표시
+	const modalElement = document.getElementById('imageModal');
+	const modal = new bootstrap.Modal(modalElement);
+	modal.show();
+
+	console.log('[이미지 모달] 표시 완료');
+
+	// 모달이 닫힐 때 DOM에서 제거
+	modalElement.addEventListener('hidden.bs.modal', function() {
+		console.log('[이미지 모달] 닫힘');
+		this.remove();
+	});
+}

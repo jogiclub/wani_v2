@@ -369,8 +369,70 @@ class Homepage_api_model extends CI_Model
 	}
 
 
+	/**
+	 * 메뉴 ID로 메뉴 정보 조회 (이름, 카테고리, 부모 메뉴)
+	 */
+	public function get_menu_info_by_id($org_code, $menu_id)
+	{
+		$this->db->select('homepage_menu');
+		$this->db->from('wb_org');
+		$this->db->where('org_code', $org_code);
+		$this->db->where('del_yn', 'N');
+
+		$query = $this->db->get();
+
+		if ($query === false || $query->num_rows() === 0) {
+			log_message('error', 'get_menu_info_by_id 조회 실패: org_code=' . $org_code);
+			return null;
+		}
+
+		$row = $query->row_array();
+		$menu_json = json_decode($row['homepage_menu'], true);
+
+		if (!$menu_json || !is_array($menu_json)) {
+			log_message('error', 'get_menu_info_by_id JSON 파싱 실패: org_code=' . $org_code);
+			return null;
+		}
+
+		// 메뉴 트리에서 해당 menu_id 찾기
+		return $this->find_menu_with_category($menu_json, $menu_id);
+	}
 
 
+	/**
+	 * 메뉴 트리에서 특정 메뉴 찾기 (카테고리 정보 포함) - 재귀
+	 */
+	private function find_menu_with_category($menus, $menu_id, $parent_name = '', $category_name = '')
+	{
+		if (!is_array($menus)) {
+			return null;
+		}
+
+		foreach ($menus as $menu) {
+			// 현재 메뉴가 대상인지 확인
+			if (isset($menu['id']) && $menu['id'] == $menu_id) {
+				return [
+					'menu_name' => $menu['name'] ?? '',
+					'category_name' => $category_name,
+					'parent_menu_name' => $parent_name
+				];
+			}
+
+			// 자식 메뉴가 있으면 재귀 탐색
+			if (isset($menu['children']) && is_array($menu['children']) && !empty($menu['children'])) {
+				// 부모가 없으면 현재 메뉴가 카테고리
+				$next_category = empty($parent_name) ? ($menu['name'] ?? '') : $category_name;
+				$next_parent = $menu['name'] ?? '';
+
+				$found = $this->find_menu_with_category($menu['children'], $menu_id, $next_parent, $next_category);
+				if ($found) {
+					return $found;
+				}
+			}
+		}
+
+		return null;
+	}
 
 
 }
