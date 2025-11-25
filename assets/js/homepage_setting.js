@@ -1,6 +1,6 @@
 /**
  * 파일 위치: assets/js/homepage_setting.js
- * 역할: 홈페이지 기본설정 페이지 JavaScript
+ * 역할: 홈페이지 설정 페이지 JavaScript
  */
 
 $(document).ready(function() {

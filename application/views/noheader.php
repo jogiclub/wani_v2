@@ -36,7 +36,7 @@
 	<header class="py-3 border-bottom d-flex justify-content-center">
 		<div class="logo"><img src="/assets/images/logo.png?4"></div>
 		<div style="position: absolute; right: 10px; top: 10px;">
-		<div id="navbarKakao" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-warning" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="카카오채널">
+		<div id="navbarKakao" class="d-flex justify-content-center align-items-center position-relative border border-warning" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="카카오채널">
 			<a class="" type="button"><i class="bi bi-chat-fill fs-5 text-warning"></i></a>
 		</div>
 		</div>
