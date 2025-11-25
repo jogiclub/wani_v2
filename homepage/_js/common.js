@@ -253,10 +253,13 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = 'l
 			const categoryName = menuInfo ? menuInfo.category : '';
 
 			let html = '<div class="board-container fade-in">';
-			html += '<div class="container">';
+			html += '<div class="container py-5">';
 
+
+
+			html += `<h4 class="mb-0">${escapeHtml(menuName)}</h4>`;
 			// Breadcrumb 생성
-			html += '<nav aria-label="breadcrumb" class="mt-5">';
+			html += '<nav aria-label="breadcrumb">';
 			html += '<ol class="breadcrumb">';
 			html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
 			if (categoryName) {
@@ -267,20 +270,20 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = 'l
 			html += '</nav>';
 
 			// 타이틀과 검색, 레이아웃 전환, 글쓰기 버튼
-			html += '<div class="d-flex justify-content-between align-items-center mt-2 mb-3">';
-			html += `<h4 class="mb-0">${escapeHtml(menuName)}</h4>`;
-			html += '<div class="d-flex gap-2">';
-			html += '<div class="input-group" style="width: 300px;">';
-			html += `<input type="text" class="form-control" id="boardSearchInput" placeholder="제목 또는 작성자 검색" value="${escapeHtml(searchKeyword)}">`;
-			html += '<button class="btn btn-outline-secondary" type="button" id="boardSearchBtn">검색</button>';
-			html += '</div>';
-			html += '<div class="btn-group" role="group">';
-			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'list' ? 'active' : ''}" data-view="list" title="리스트"><i class="bi bi-list-ul"></i></button>`;
-			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'gallery' ? 'active' : ''}" data-view="gallery" title="갤러리"><i class="bi bi-grid-3x3-gap"></i></button>`;
-			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'article' ? 'active' : ''}" data-view="article" title="아티클"><i class="bi bi-card-text"></i></button>`;
-			html += '</div>';
-			html += `<a href="/board/${menuId}/write" class="btn btn-primary">글쓰기</a>`;
-			html += '</div>';
+			html += '<div class="d-flex justify-content-between align-items-center py-3">';
+				html += '<div class="input-group" style="width: 300px;">';
+					html += `<input type="text" class="form-control" id="boardSearchInput" placeholder="제목 또는 작성자 검색" value="${escapeHtml(searchKeyword)}">`;
+					html += '<button class="btn btn-outline-secondary" type="button" id="boardSearchBtn">검색</button>';
+				html += '</div>';
+				html += '<div class="d-flex gap-2">';
+				html += `<a href="/board/${menuId}/write" class="btn btn-primary">글쓰기</a>`;
+				html += '<div class="btn-group" role="group">';
+					html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'list' ? 'active' : ''}" data-view="list" title="리스트"><i class="bi bi-list-ul"></i></button>`;
+					html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'gallery' ? 'active' : ''}" data-view="gallery" title="갤러리"><i class="bi bi-grid-3x3-gap"></i></button>`;
+					html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'article' ? 'active' : ''}" data-view="article" title="아티클"><i class="bi bi-card-text"></i></button>`;
+				html += '</div>';
+				html += '</div>';
+
 			html += '</div>';
 
 			if (result.data && result.data.length > 0) {
@@ -763,6 +766,8 @@ async function loadBoardDetail(menuId, idx) {
 
 			let html = '<div class="board-container fade-in">';
 			html += '<div class="container">';
+			html += `<a href="/board/${menuId}/" class="btn btn-secondary">목록으로</a>`;
+
 			html += '<div class="board-detail">';
 			html += `<h4>${escapeHtml(item.board_title)}</h4>`;
 			html += `<div class="mb-3 text-muted d-flex gap-3 flex-wrap">
@@ -779,7 +784,7 @@ async function loadBoardDetail(menuId, idx) {
 			html += `<div class="board-content py-4">${contentHTML}</div>`;
 			html += '<hr>';
 			html += '<div class="d-flex gap-2">';
-			html += `<a href="/board/${menuId}/" class="btn btn-secondary">목록으로</a>`;
+
 			html += '</div>';
 			html += '</div>';
 			html += '</div>';
