@@ -1,7 +1,7 @@
 <?php
 /**
  * 파일 위치: application/controllers/Homepage_setting.php
- * 역할: 홈페이지 설정 관리 컨트롤러
+ * 역할: 홈페이지 기본설정 관리 컨트롤러
  */
 defined('BASEPATH') or exit('No direct script access allowed');
 

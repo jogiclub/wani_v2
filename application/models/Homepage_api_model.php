@@ -86,7 +86,7 @@ class Homepage_api_model extends CI_Model
 	}
 
 	/**
-	 * 조직 코드와 메뉴 ID로 게시판 목록 조회
+	 * 조직 코드와 메뉴 ID로 게시판 목록 조회 (검색 포함)
 	 */
 	public function get_board_list_by_org_code_and_menu_id($org_code, $menu_id, $search_keyword = '', $page = 1, $limit = 20)
 	{
@@ -112,7 +112,8 @@ class Homepage_api_model extends CI_Model
 		$total_query = clone $this->db;
 		$total = $total_query->count_all_results('wb_homepage_board');
 
-		$this->db->select('idx, board_title, view_count, writer_name, reg_date, modi_date');
+		// file_path 필드 추가
+		$this->db->select('idx, board_title, view_count, writer_name, reg_date, modi_date, file_path');
 		$this->db->order_by('reg_date', 'DESC');
 		$this->db->limit($limit, $offset);
 		$query = $this->db->get('wb_homepage_board');
@@ -169,9 +170,7 @@ class Homepage_api_model extends CI_Model
 		return $result;
 	}
 
-	/**
-	 * 게시판 블록용 게시물 목록 조회
-	 */
+
 	/**
 	 * 게시판 블록용 게시물 목록 조회
 	 */

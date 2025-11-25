@@ -471,21 +471,16 @@ class Message_model extends CI_Model
 	}
 
 	/**
-	 * 역할: 메시지 생성 (member_idx_list 필드 지원)
+	 * 메시지 생성
 	 */
 	public function create_message($message_data)
 	{
-		$message_data['message_date'] = isset($message_data['message_date']) ?
-			$message_data['message_date'] : date('Y-m-d H:i:s');
+		$message_data['regi_date'] = date('Y-m-d H:i:s');
+		$message_data['message_date'] = isset($message_data['message_date']) ? $message_data['message_date'] : date('Y-m-d H:i:s');
 
 		// user_json이 배열로 전달된 경우 JSON으로 변환
 		if (isset($message_data['user_json']) && is_array($message_data['user_json'])) {
 			$message_data['user_json'] = json_encode($message_data['user_json'], JSON_UNESCAPED_UNICODE);
-		}
-
-		// member_idx_list가 배열로 전달된 경우 JSON으로 변환
-		if (isset($message_data['member_idx_list']) && is_array($message_data['member_idx_list'])) {
-			$message_data['member_idx_list'] = json_encode($message_data['member_idx_list'], JSON_UNESCAPED_UNICODE);
 		}
 
 		return $this->db->insert('wb_message', $message_data);

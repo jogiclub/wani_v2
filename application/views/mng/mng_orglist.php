@@ -372,4 +372,4 @@ $this->load->view('mng/footer');
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="/assets/js/mng_master.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/mng_orglist.js?<?php echo WB_VERSION; ?>"></script>

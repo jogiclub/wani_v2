@@ -5,13 +5,13 @@
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">HOMEPAGE</a></li>
-			<li class="breadcrumb-item active">홈페이지 설정</li>
+			<li class="breadcrumb-item active">홈페이지 기본설정</li>
 		</ol>
 	</nav>
 
 	<form id="homepageSettingForm">
 		<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
-			<h3 class="page-title mb-0">홈페이지 설정</h3>
+			<h3 class="page-title mb-0">홈페이지 기본설정</h3>
 			<div class="col-6 my-1">
 				<div class="text-end">
 					<button type="submit" class="btn btn-primary">

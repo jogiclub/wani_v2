@@ -1,0 +1,97 @@
+
+<!-- preach-->
+<section class="module" id="preach">
+	<div class="container">
+		<div class="row">
+			<div class="col-12 col-lg-4 mb-3">
+				<h3>생명의 말씀</h3>
+				<p class="h3-description">남상권 담임목사의 설교모음입니다.</p>
+				<div class="nav flex-column nav-pills me-3" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+					<button class="nav-link d-flex justify-content-between align-items-center active" id="v-pills-01-tab" data-bs-toggle="pill" data-bs-target="#v-pills-01" type="button" role="tab" aria-controls="v-pills-home" aria-selected="true">주일예배 <i class="bi bi-chevron-right"></i></button>
+					<button class="nav-link d-flex justify-content-between align-items-center" id="v-pills-02-tab" data-bs-toggle="pill" data-bs-target="#v-pills-02" type="button" role="tab" aria-controls="v-pills-profile" aria-selected="false">1분 말씀 <i class="bi bi-chevron-right"></i></button>
+					<button class="nav-link d-flex justify-content-between align-items-center" id="v-pills-03-tab" data-bs-toggle="pill" data-bs-target="#v-pills-03" type="button" role="tab" aria-controls="v-pills-messages" aria-selected="false">따라하는 기도 <i class="bi bi-chevron-right"></i></button>
+					<button class="nav-link d-flex justify-content-between align-items-center" id="v-pills-04-tab" data-bs-toggle="pill" data-bs-target="#v-pills-04" type="button" role="tab" aria-controls="v-pills-settings" aria-selected="false">따라하는 찬양 <i class="bi bi-chevron-right"></i></button>
+					<div class="d-grid gap-3 mt-3">
+						<a class="btn btn-lg btn-outline-secondary" href="/bulletin"><i class="bi bi-bookmark"></i> 주보</a>
+						<a class="btn btn-lg btn-outline-secondary" href="/content/worship"><i class="bi bi-stopwatch"></i> 예배안내</a>
+					</div>
+				</div>
+			</div>
+			<div class="col-12 col-lg-8">
+				<div class="tab-content" id="v-pills-tabContent">
+					<div class="tab-pane fade show active" id="v-pills-01" role="tabpanel" aria-labelledby="v-pills-01-tab" tabindex="0">
+						{latest_board('menu_1760691391761')}
+					</div>
+					<div class="tab-pane fade" id="v-pills-02" role="tabpanel" aria-labelledby="v-pills-02-tab" tabindex="0">
+						{latest_board('menu_1760691391761')}
+					</div>
+					<div class="tab-pane fade" id="v-pills-03" role="tabpanel" aria-labelledby="v-pills-03-tab" tabindex="0">
+						{latest_board('menu_1760691391761')}
+					</div>
+
+					<div class="tab-pane fade" id="v-pills-04" role="tabpanel" aria-labelledby="v-pills-04-tab" tabindex="0">
+						{latest_board('menu_1760691391761')}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+<!-- preach end-->
+
+<!-- gallery -->
+<section class="" id="gallery">
+	<div class="container-fluid">
+		<div class="row">
+			<ul class="gallery-list">
+				<li class="bg-danger p-3 d-flex justify-content-center flex-column align-items-center">
+					<a href="/gallery" class="text-center">
+						<i class="bi bi-arrow-right-square text-white fs-1"></i>
+						<h3 class="text-white">어노인팅 갤러리</h3>
+						<p class="h3-description text-white">어노인팅교회에 다양한 활동 안내</p>
+					</a>
+				</li>
+				<?php echo latest('theme/anointing_gallery', 'gallery', 7, 100); ?>
+			</ul>
+		</div>
+	</div>
+</section>
+<!-- gallery end-->
+
+<!-- community-->
+<section class="module" id="community">
+	<div class="container">
+		<div class="row">
+			<div class="col-md-6 mb-5">
+				<div class="d-flex justify-content-between">
+					<h3>교회소식</h3>
+					<a href="/news"><i class="bi bi-plus-square"></i></a>
+				</div>
+				<p class="h3-description">어노인팅교회의 소식을 전합니다.</p>
+				<ul class="list-group list-group-flush">
+					<?php echo latest('theme/anointing_list', 'news', 5, 100); ?>
+				</ul>
+			</div>
+
+			<div class="col-md-6">
+				<div class="d-flex justify-content-between align-items-center">
+					<h3>어노인팅교회 동영상</h3>
+					<a href="/questions"><i class="bi bi-plus-square"></i></a>
+				</div>
+				<p class="h3-description">어노인팅교회 소식을 동영상으로 전합니다.</p>
+				<ul class="list-group list-group-flush">
+					<?php echo latest('theme/anointing_list', 'videos', 5, 100); ?>
+				</ul>
+			</div>
+		</div>
+	</div>
+</section>
+<!-- community end-->
+
+<section class="" id="map" style="height: 500px">
+	<div class="container-fluid">
+		<div class="row">
+			<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3315.3604990575777!2d-118.29247712383074!3d33.80300883084862!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x80dd3584e5235dc5%3A0xa1f9a73069c90620!2s24404%20S%20Vermont%20Ave%20%23%20201%2C%20Harbor%20City%2C%20CA%2090710%20%EB%AF%B8%EA%B5%AD!5e0!3m2!1sko!2skr!4v1756961246304!5m2!1sko!2skr"  style="width:100%; height:500px; border:0; margin: 0; padding: 0" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+		</div>
+	</div>
+</section>

@@ -1,0 +1,114 @@
+{
+	"time": 1762575786248,
+	"blocks": [
+		{
+			"id": "-j8rgQFKXw",
+			"type": "waniCoverSlide",
+			"data": {
+				"cards": [
+					{
+						"id": "card_1762521475685_wsckihrrb",
+						"image": "https://wani.im/uploads/homepage/3/2025/11/07/731c085a63e85a355175c36fb2cb188d.jpg",
+						"title": "한 영혼을 귀하게 여기는 교회",
+						"subtitle": "예수그리스도의 사랑으로 모든 사람을 따뜻하게 품고 섬기는 공동체입니다",
+						"buttons": [
+							{
+								"id": "btn_1762521475685_in06h9emf",
+								"name": "교회소개",
+								"url": "."
+							},
+							{
+								"id": "btn_1762521564760_vf3zne63l",
+								"name": "오시는길",
+								"url": "."
+							}
+						]
+					},
+					{
+						"id": "card_1762521512359_1t3onr04y",
+						"image": "https://wani.im/uploads/homepage/3/2025/11/07/281af0b94dc9df6503937cda39e49de6.jpg",
+						"title": "South Bay에 빛과 소금이 되는 교회",
+						"subtitle": "지역사회와 열방을 품고 세상을 변화시키는 하나님 나라의 통로입니다",
+						"buttons": [
+							{
+								"id": "btn_1762521512359_zb26xma1j",
+								"name": "예배안내",
+								"url": "."
+							},
+							{
+								"id": "btn_1762521576227_s3u8cmvg5",
+								"name": "새가족등록",
+								"url": "."
+							}
+						]
+					},
+					{
+						"id": "card_1762521516664_3r4sokxwg",
+						"image": "https://wani.im/uploads/homepage/3/2025/11/07/41dc97f89bacb20aa530cd6c75483db2.jpg",
+						"title": "삶의 행복과 소망을 주는 교회",
+						"subtitle": "말씀과 찬양과 기도가 살아있어 진정한 기쁨과 희망을 경험하는 공간입니다   ",
+						"buttons": [
+							{
+								"id": "btn_1762521516664_yrmwlllvw",
+								"name": "인사말",
+								"url": "."
+							},
+							{
+								"id": "btn_1762521582123_annntvl7h",
+								"name": "오시는길",
+								"url": "."
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "JneMIb_V-_",
+			"type": "waniLinkList",
+			"data": {
+				"title": "복음의 생명으로 세상을 아름답게 하는 성령의 교회",
+				"subtitle": "복음전파와 이웃 사랑으로 죽어가는 생명을 살리고 세상을 아름답게 변화시킵니다.이러한 교회를 살아있는 생명의 유기체로 만드는 분이 바로 성령이십니다.",
+				"links": [
+					{
+						"id": "link_1762573275147_vguvufekw",
+						"name": "주보",
+						"url": ".",
+						"icon": "\n  \n  \n"
+					},
+					{
+						"id": "link_1762573366021_lnyfpejnl",
+						"name": "교회 소식",
+						"url": "..",
+						"icon": "\n  \n  \n\n  \n  \n"
+					},
+					{
+						"id": "link_1762573401600_viyf6kddf",
+						"name": "예배 안내",
+						"url": "",
+						"icon": "\n  \n  \n  \n\n  \n"
+					},
+					{
+						"id": "link_1762573409040_d2v5bg7t3",
+						"name": "헌금 안내",
+						"url": "",
+						"icon": ""
+					},
+					{
+						"id": "link_1762573410533_m5a2j5u7e",
+						"name": "행정 서비스",
+						"url": "..",
+						"icon": "\n  \n  \n  \n\n  \n"
+					},
+					{
+						"id": "link_1762573419997_0jxue2026",
+						"name": "오시는 길",
+						"url": "....",
+						"icon": "\n  \n  \n\n  \n  \n"
+					}
+				]
+			}
+		}
+	],
+	"version": "2.31.0"
+}
