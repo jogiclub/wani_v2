@@ -880,7 +880,7 @@ async function loadBoardDetail(menuId, idx) {
 			html += `</div>`;
 
 			// 본문
-			html += `<div class="board-content py-4">${contentHTML}</div>`;
+			html += `<div class="board-content p-4" style="min-height: 500px">${contentHTML}</div>`;
 
 			// 첨부파일이 있으면 표시
 			if (attachmentHTML) {

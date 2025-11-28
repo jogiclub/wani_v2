@@ -923,8 +923,6 @@ function initPageContentEditor(content) {
 		pageContentEditor = null;
 	}
 
-
-
 	// 저장된 데이터 파싱
 	let parsedData = null;
 	if (content) {
@@ -1120,12 +1118,15 @@ function initPageContentEditor(content) {
 
 	// WaniLatestList - 게시판 블록
 	if (typeof window.WaniLatestList !== 'undefined') {
-		availableTools.WaniLatestList = {
-			class: window.WaniLatestList
+		availableTools.waniLatestList = {
+			class: window.WaniLatestList,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
 		};
 	}
 
-	// waniCoverSlide - 커버 슬라이드 블록 (기존 WaniLatestList 다음에 추가)
+	// waniCoverSlide - 커버 슬라이드 블록
 	if (typeof window.WaniCoverSlide !== 'undefined') {
 		availableTools.waniCoverSlide = {
 			class: window.WaniCoverSlide,
@@ -1134,7 +1135,8 @@ function initPageContentEditor(content) {
 			}
 		};
 	}
-	// waniLinkList - 바로가기 섹션 블록 (waniCoverSlide 다음에 추가)
+
+	// waniLinkList - 바로가기 섹션 블록
 	if (typeof window.WaniLinkList !== 'undefined') {
 		availableTools.waniLinkList = {
 			class: window.WaniLinkList,
@@ -1143,7 +1145,8 @@ function initPageContentEditor(content) {
 			}
 		};
 	}
-// waniLinkListBg - 백그라운드링크 블록 (waniLinkList 다음에 추가)
+
+	// waniLinkListBg - 백그라운드링크 블록
 	if (typeof window.WaniLinkListBg !== 'undefined') {
 		availableTools.waniLinkListBg = {
 			class: window.WaniLinkListBg,
@@ -1153,67 +1156,49 @@ function initPageContentEditor(content) {
 		};
 	}
 
+	// waniLatestYoutubeSlide - 유튜브 슬라이드 블록
+	if (typeof window.WaniLatestYoutubeSlide !== 'undefined') {
+		availableTools.waniLatestYoutubeSlide = {
+			class: window.WaniLatestYoutubeSlide,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
+		};
+	}
 
+	// waniIntroLink - 소개 링크 블록
+	if (typeof window.WaniIntroLink !== 'undefined') {
+		availableTools.waniIntroLink = {
+			class: window.WaniIntroLink,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
+		};
+	}
 
+	// waniLatestImageSlide - 이미지 슬라이드 블록
+	if (typeof window.WaniLatestImageSlide !== 'undefined') {
+		availableTools.waniLatestImageSlide = {
+			class: window.WaniLatestImageSlide,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
+		};
+	}
 
-
-
-
+	console.log('[페이지 에디터] 사용 가능한 도구:', Object.keys(availableTools));
 
 	// Editor.js 생성
 	try {
 		pageContentEditor = new EditorJS({
 			holder: 'page_content_editor',
-			tools: {
-				waniLatestList: {
-					class: WaniLatestList,
-					config: {
-						org_id: $('#current_org_id').val()
-					}
-				},
-				waniCoverSlide: WaniCoverSlide,
-				waniLinkList: {
-					class: WaniLinkList,
-					config: {
-						org_id: $('#current_org_id').val()
-					}
-				},
-				waniLinkListBg: {
-					class: WaniLinkListBg,
-					config: {
-						org_id: $('#current_org_id').val()
-					}
-				},
-				waniLatestYoutubeSlide: {
-					class: WaniLatestYoutubeSlide,
-					config: {
-						org_id: $('#current_org_id').val()
-					}
-				},
-				// EditorJS tools 객체에 추가
-				waniIntroLink: {
-					class: WaniIntroLink,
-					config: {
-						org_id: $('#current_org_id').val()
-					}
-				},
-
-				// EditorJS tools 객체에 추가
-				waniLatestImageSlide: {
-					class: WaniLatestImageSlide,
-					config: {
-						org_id: $('#current_org_id').val()
-					}
-				}
-
-			},
-
+			tools: availableTools,  // 여기가 핵심! availableTools 사용
 			data: parsedData || {},
 			placeholder: '내용을 입력하세요...',
 			minHeight: 300,
 
 			onReady: function() {
-				console.log('Editor.js 초기화 완료');
+				console.log('[페이지 에디터] 초기화 완료');
 			},
 
 			onChange: function(api, event) {
@@ -1222,12 +1207,9 @@ function initPageContentEditor(content) {
 		});
 
 	} catch (error) {
-		console.error('Editor.js 초기화 실패:', error);
+		console.error('[페이지 에디터] 초기화 실패:', error);
 		showToast('에디터 초기화에 실패했습니다: ' + error.message);
 	}
-
-
-	console.log('사용 가능한 도구:', Object.keys(availableTools));
 }
 
 
