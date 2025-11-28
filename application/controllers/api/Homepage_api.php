@@ -39,6 +39,103 @@ class Homepage_api extends CI_Controller
 	}
 
 	/**
+	 * 파일 다운로드 프록시
+	 */
+	public function download_file()
+	{
+		$file_path = $this->input->get('file');
+		$file_name = $this->input->get('name');
+
+		if (!$file_path) {
+			log_message('error', '[파일 다운로드] 파일 경로 없음');
+			show_404();
+			return;
+		}
+
+		// 보안: 상대 경로 공격 방지
+		if (strpos($file_path, '..') !== false) {
+			log_message('error', '[파일 다운로드] 잘못된 경로(..포함): ' . $file_path);
+			show_404();
+			return;
+		}
+
+		// http:// 또는 https:// 로 시작하는 경로 차단
+		if (strpos($file_path, 'http://') === 0 || strpos($file_path, 'https://') === 0) {
+			log_message('error', '[파일 다운로드] 잘못된 경로(URL): ' . $file_path);
+			show_404();
+			return;
+		}
+
+		// 파일 경로 정리 (앞의 / 제거)
+		$file_path = ltrim($file_path, '/');
+
+		// 실제 파일 전체 경로
+		// FCPATH = /var/www/wani/public/
+		$full_path = FCPATH . $file_path;
+
+		log_message('info', '[파일 다운로드] 요청 경로: ' . $file_path);
+		log_message('info', '[파일 다운로드] FCPATH: ' . FCPATH);
+		log_message('info', '[파일 다운로드] 전체 경로: ' . $full_path);
+
+		// 파일 존재 확인
+		if (!file_exists($full_path)) {
+			log_message('error', '[파일 다운로드] 파일 없음: ' . $full_path);
+			show_404();
+			return;
+		}
+
+		if (!is_file($full_path)) {
+			log_message('error', '[파일 다운로드] 디렉토리임: ' . $full_path);
+			show_404();
+			return;
+		}
+
+		// 파일명이 없으면 원본 파일명 사용
+		if (!$file_name) {
+			$file_name = basename($full_path);
+		}
+
+		// 파일명 인코딩 처리 (한글 파일명 지원)
+		$encoded_filename = rawurlencode($file_name);
+
+		// MIME 타입 설정
+		$mime_type = 'application/octet-stream';
+		if (function_exists('finfo_open')) {
+			$finfo = finfo_open(FILEINFO_MIME_TYPE);
+			if ($finfo) {
+				$detected_mime = finfo_file($finfo, $full_path);
+				if ($detected_mime) {
+					$mime_type = $detected_mime;
+				}
+				finfo_close($finfo);
+			}
+		}
+
+		log_message('info', '[파일 다운로드] 다운로드 시작: ' . $file_name . ' (' . $mime_type . ')');
+
+		// 출력 버퍼 비우기
+		if (ob_get_level()) {
+			ob_end_clean();
+		}
+
+		// 다운로드 헤더 설정
+		header('Content-Type: ' . $mime_type);
+		header('Content-Disposition: attachment; filename="' . $encoded_filename . '"');
+		header('Content-Length: ' . filesize($full_path));
+		header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+		header('Pragma: public');
+		header('Expires: 0');
+		header('Content-Transfer-Encoding: binary');
+
+		// 파일 출력
+		readfile($full_path);
+		exit;
+	}
+
+
+
+
+	/**
 	 * 페이지 내용 조회
 	 * GET /api/homepage_api/get_page/{org_code}/{menu_id}
 	 */

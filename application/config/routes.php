@@ -132,7 +132,8 @@ if (defined('STDIN')) {
 	$route['cron/process_scheduled_messages'] = 'cron/process_scheduled_messages';
 }
 
-
+// 파일 다운로드 라우트 추가
+$route['api/download'] = 'homepage_api/download_file';
 
 // 홈페이지 API 라우팅
 $route['api/homepage/menu/(:any)'] = 'api/homepage_api/get_menu/$1';
