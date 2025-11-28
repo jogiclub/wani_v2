@@ -1302,48 +1302,17 @@ function handleEditBoardItem() {
 	$.ajax({
 		url: '/homepage_menu/get_board_detail',
 		type: 'POST',
-		dataType: 'json',
 		data: { idx: idx },
 		success: function(response) {
-			if (response.success && response.data) {
-				$('#boardOffcanvasLabel').text('게시글 수정');
-				$('#board_idx').val(response.data.idx);
-				$('#board_title').val(response.data.board_title);
-				$('#youtube_url').val(response.data.youtube_url || '');
-				$('#btnDeleteBoard').show();
+			if (response.success) {
+				// 게시판 상세 렌더링
+				renderBoardDetail(response.data);
 
-				const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
-				boardOffcanvas.show();
-
-				$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
-					setTimeout(function() {
-						// Editor.js 초기화 (기존 내용 로드)
-						initBoardContentEditor(response.data.board_content || '');
-
-						// Dropzone 초기화
-						initializeBoardDropzone();
-
-						// 기존 첨부파일 복원
-						if (response.data.file_path) {
-							try {
-								const files = JSON.parse(response.data.file_path);
-								if (Array.isArray(files) && files.length > 0) {
-									setTimeout(function() {
-										restoreUploadedFiles(files);
-									}, 300);
-								}
-							} catch (e) {
-								console.error('[게시글 수정] 파일 복원 실패:', e);
-							}
-						}
-					}, 200);
-				});
-			} else {
-				showToast('게시글 정보를 불러오는데 실패했습니다.');
+				// GLightbox 초기화
+				setTimeout(function() {
+					initGLightbox();
+				}, 100);
 			}
-		},
-		error: function() {
-			showToast('게시글 정보를 불러오는데 실패했습니다.');
 		}
 	});
 }

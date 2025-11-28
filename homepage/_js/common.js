@@ -749,7 +749,9 @@ function parseEditorJSToHTML(editorData) {
 							}
 							imageUrl = 'https://wani.im' + imageUrl;
 						}
-						html += `<img src="${escapeHtml(imageUrl)}" class="figure-img img-fluid rounded editor-image" alt="${escapeHtml(block.data.caption || '')}" style="cursor: pointer;" onclick="openImageModal('${escapeHtml(imageUrl)}')">`;
+						html += `<a href="${escapeHtml(imageUrl)}" class="glightbox" data-gallery="editor-images" data-title="${escapeHtml(block.data.caption || '')}">`;
+						html += `<img src="${escapeHtml(imageUrl)}" class="figure-img img-fluid rounded editor-image" alt="${escapeHtml(block.data.caption || '')}" style="cursor: pointer;">`;
+						html += `</a>`;
 					}
 					if (block.data.caption) {
 						html += `<figcaption class="figure-caption">${escapeHtml(block.data.caption)}</figcaption>`;
@@ -876,7 +878,7 @@ async function loadBoardDetail(menuId, idx) {
 			}
 
 			html += `</div>`;
-			html += `<a href="/board/${menuId}/" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list"></i> 목록으로</a>`;
+			html += `<a href="/board/${menuId}/" class="btn btn-primary"><i class="bi bi-list"></i> 목록으로</a>`;
 			html += `</div>`;
 
 			// 본문
@@ -887,10 +889,8 @@ async function loadBoardDetail(menuId, idx) {
 				html += attachmentHTML;
 			}
 
-			// 하단 버튼
-			html += '<div class="d-flex gap-2 justify-content-center py-4 border-top">';
-			html += `<a href="/board/${menuId}/" class="btn btn-primary"><i class="bi bi-list"></i> 목록으로</a>`;
-			html += '</div>';
+
+
 
 			html += '</div>';
 			html += '</div>';
@@ -1145,9 +1145,12 @@ function renderAttachmentGrid(filePath) {
 
 				html += '<div class="col-6 col-md-4 col-lg-3">';
 				html += '<div class="card shadow-sm h-100" style="transition: transform 0.2s;">';
-				html += '<div class="card-img-wrapper" style="height: 200px; overflow: hidden; cursor: pointer; background: #f8f9fa;" onclick="openImageModal(\'' + fullImageUrl.replace(/'/g, "\\'") + '\')">';
+// GLightbox용 링크 추가
+				html += '<a href="' + escapeHtml(fullImageUrl) + '" class="glightbox" data-gallery="board-attachments" data-title="' + escapeHtml(file.name) + '">';
+				html += '<div class="card-img-wrapper" style="height: 200px; overflow: hidden; cursor: pointer; background: #f8f9fa;">';
 				html += '<img src="' + escapeHtml(imageUrl) + '" class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" alt="' + escapeHtml(file.name) + '" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div class=\\\'d-flex align-items-center justify-content-center h-100\\\'><i class=\\\'bi bi-image text-muted fs-1\\\'></i></div>\';">';
 				html += '</div>';
+				html += '</a>';
 				html += '<div class="card-body p-2">';
 				html += '<small class="text-muted d-block text-truncate" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</small>';
 				html += '<a href="' + fullImageUrl + '" download="' + escapeHtml(file.name) + '" class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="event.stopPropagation();"><i class="bi bi-download"></i> 다운로드</a>';
@@ -1198,6 +1201,153 @@ function renderAttachmentGrid(filePath) {
 	}
 }
 
+/**
+ * 첨부파일 렌더링 (이미지와 문서 구분)
+ */
+function renderAttachments(files) {
+	try {
+		// 이미지와 문서 분리
+		const images = files.filter(file => {
+			// type 필드로 먼저 체크
+			if (file.type && file.type.startsWith('image/')) {
+				return true;
+			}
+			// type이 없으면 확장자로 체크
+			if (file.name) {
+				const ext = file.name.split('.').pop().toLowerCase();
+				return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+			}
+			return false;
+		});
+
+		const documents = files.filter(file => {
+			// type 필드로 먼저 체크
+			if (file.type && file.type.startsWith('image/')) {
+				return false;
+			}
+			// type이 없으면 확장자로 체크
+			if (file.name) {
+				const ext = file.name.split('.').pop().toLowerCase();
+				return !['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+			}
+			return true;
+		});
+
+		console.log('[첨부파일] 이미지:', images.length, '문서:', documents.length);
+
+		let html = '';
+
+		// 이미지 Grid
+		if (images.length > 0) {
+			html += '<div class="attachment-section mt-4">';
+			html += '<h5 class="mb-3"><i class="bi bi-images"></i> 첨부 이미지 (' + images.length + ')</h5>';
+			html += '<div class="row g-3">';
+
+			images.forEach((file, index) => {
+				// 썸네일이 있으면 썸네일 사용, 없으면 원본 사용
+				let imageUrl = file.thumb_path || file.path;
+				let fullImageUrl = file.path;
+
+				console.log('[이미지 렌더링]', file.name, '썸네일:', imageUrl, '원본:', fullImageUrl);
+
+				// 상대경로를 절대경로로 변환
+				if (!imageUrl.startsWith('http')) {
+					if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
+					imageUrl = 'https://wani.im' + imageUrl;
+				}
+				if (!fullImageUrl.startsWith('http')) {
+					if (!fullImageUrl.startsWith('/')) fullImageUrl = '/' + fullImageUrl;
+					fullImageUrl = 'https://wani.im' + fullImageUrl;
+				}
+
+				html += '<div class="col-6 col-md-4 col-lg-3">';
+				html += '<div class="card shadow-sm h-100" style="transition: transform 0.2s;">';
+				// GLightbox용 링크로 변경 (onclick 제거)
+				html += '<a href="' + escapeHtml(fullImageUrl) + '" class="glightbox" data-gallery="board-attachments" data-title="' + escapeHtml(file.name) + '">';
+				html += '<div class="card-img-wrapper" style="height: 200px; overflow: hidden; cursor: pointer; background: #f8f9fa;">';
+				html += '<img src="' + escapeHtml(imageUrl) + '" class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" alt="' + escapeHtml(file.name) + '" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div class=\\\'d-flex align-items-center justify-content-center h-100\\\'><i class=\\\'bi bi-image text-muted fs-1\\\'></i></div>\';">';
+				html += '</div>';
+				html += '</a>';
+				html += '<div class="card-body p-2">';
+				html += '<small class="text-muted d-block text-truncate" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</small>';
+				html += '<a href="' + fullImageUrl + '" download="' + escapeHtml(file.name) + '" class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="event.stopPropagation();"><i class="bi bi-download"></i> 다운로드</a>';
+				html += '</div>';
+				html += '</div>';
+				html += '</div>';
+			});
+
+			html += '</div>';
+			html += '</div>';
+		}
+
+		// 문서 목록
+		if (documents.length > 0) {
+			html += '<div class="attachment-section mt-4">';
+			html += '<h5 class="mb-3"><i class="bi bi-file-earmark-text"></i> 첨부 문서 (' + documents.length + ')</h5>';
+			html += '<div class="list-group">';
+
+			documents.forEach(file => {
+				let fileUrl = file.path;
+				if (!fileUrl.startsWith('http')) {
+					if (!fileUrl.startsWith('/')) fileUrl = '/' + fileUrl;
+					fileUrl = 'https://wani.im' + fileUrl;
+				}
+
+				// 파일 확장자 추출
+				const ext = file.name.split('.').pop().toUpperCase();
+				const fileSize = formatFileSize(file.size);
+
+				html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+				html += '<div class="d-flex align-items-center flex-grow-1">';
+				html += '<span class="badge bg-secondary me-2">' + ext + '</span>';
+				html += '<span class="text-truncate me-2">' + escapeHtml(file.name) + '</span>';
+				html += '<small class="text-muted">(' + fileSize + ')</small>';
+				html += '</div>';
+				html += '<a href="' + fileUrl + '" download="' + escapeHtml(file.name) + '" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> 다운로드</a>';
+				html += '</div>';
+			});
+
+			html += '</div>';
+			html += '</div>';
+		}
+
+		return html;
+	} catch (error) {
+		console.error('첨부파일 렌더링 오류:', error);
+		return '';
+	}
+}
+
+
+/**
+ * GLightbox 초기화
+ */
+function initGLightbox() {
+	if (typeof GLightbox !== 'undefined') {
+		const lightbox = GLightbox({
+			touchNavigation: true,
+			loop: true,
+			autoplayVideos: true,
+			closeButton: true,
+			closeOnOutsideClick: true,
+			skin: 'clean',
+			openEffect: 'fade',
+			closeEffect: 'fade',
+			slideEffect: 'slide',
+			moreLength: 0
+		});
+		console.log('[GLightbox] 초기화 완료');
+		return lightbox;
+	} else {
+		console.warn('[GLightbox] 라이브러리가 로드되지 않았습니다.');
+		return null;
+	}
+}
+
+
+
+
+
 // 파일 크기 포맷팅
 function formatFileSize(bytes) {
 	if (!bytes || bytes === 0) return '0 Bytes';
@@ -1207,43 +1357,3 @@ function formatFileSize(bytes) {
 	return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
 
-// 이미지 모달 열기
-function openImageModal(imageUrl) {
-	console.log('[이미지 모달] 열기:', imageUrl);
-
-	// 기존 모달이 있으면 제거
-	const existingModal = document.getElementById('imageModal');
-	if (existingModal) {
-		existingModal.remove();
-	}
-
-	// 모달 HTML 생성
-	const modalHtml = `
-		<div class="modal fade" id="imageModal" tabindex="-1">
-			<div class="modal-dialog modal-xl modal-dialog-centered">
-				<div class="modal-content bg-transparent border-0">
-					<div class="modal-body p-0 position-relative">
-						<button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" style="z-index: 1050;"></button>
-						<img src="${imageUrl}" class="img-fluid w-100" alt="이미지" style="max-height: 90vh; object-fit: contain;" onerror="alert('이미지를 불러올 수 없습니다.');">
-					</div>
-				</div>
-			</div>
-		</div>
-	`;
-
-	// 모달을 body에 추가
-	document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-	// Bootstrap 모달 인스턴스 생성 및 표시
-	const modalElement = document.getElementById('imageModal');
-	const modal = new bootstrap.Modal(modalElement);
-	modal.show();
-
-	console.log('[이미지 모달] 표시 완료');
-
-	// 모달이 닫힐 때 DOM에서 제거
-	modalElement.addEventListener('hidden.bs.modal', function() {
-		console.log('[이미지 모달] 닫힘');
-		this.remove();
-	});
-}
