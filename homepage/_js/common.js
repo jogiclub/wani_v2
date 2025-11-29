@@ -1470,8 +1470,7 @@ let boardWriteDropzone = null;
 
 
 /**
- * 파일 위치: /var/www/wani/public/homepage/_js/common.js
- * 역할: 게시글 작성 페이지 Dropzone 초기화 - 현재 호스트의 API 서버 사용
+ * 역할: 게시글 작성 페이지 Dropzone 초기화 - API 서버 사용
  */
 function initBoardWriteDropzone() {
 	if (boardWriteDropzone) {
@@ -1485,14 +1484,8 @@ function initBoardWriteDropzone() {
 		return;
 	}
 
-	// 현재 호스트 가져오기
-	const currentHost = window.location.host; // 예: 52ch_area0101.wani.im
-	const uploadUrl = `https://${currentHost}/api/homepage_api/upload_file`;
-
-	console.log('파일 업로드 URL:', uploadUrl);
-
 	boardWriteDropzone = new Dropzone('#boardFileDropzone', {
-		url: uploadUrl,  // 현재 호스트의 API 사용
+		url: 'https://wani.im/api/homepage_api/upload_file',  // API 서버 경로로 변경
 		paramName: 'file',
 		maxFilesize: 50,
 		maxFiles: 20,
