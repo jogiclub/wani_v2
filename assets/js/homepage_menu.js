@@ -1296,24 +1296,108 @@ function handleAddBoardItem() {
 /**
  * 게시글 수정 핸들러
  */
-function handleEditBoardItem() {
+
+function handleEditBoardItem(e) {
+	console.log('=== [handleEditBoardItem] 시작 ===');
+	console.log('[handleEditBoardItem] 이벤트:', e);
+	console.log('[handleEditBoardItem] this:', this);
+	console.log('[handleEditBoardItem] $(this):', $(this));
+
 	const idx = $(this).data('idx');
+	console.log('[handleEditBoardItem] idx:', idx);
+
+	if (!idx) {
+		console.error('[handleEditBoardItem] idx가 없습니다!');
+		showToast('게시글 정보를 찾을 수 없습니다.');
+		return;
+	}
+
+	console.log('[handleEditBoardItem] AJAX 요청 시작');
 
 	$.ajax({
 		url: '/homepage_menu/get_board_detail',
 		type: 'POST',
+		dataType: 'json',
 		data: { idx: idx },
+		beforeSend: function() {
+			console.log('[handleEditBoardItem] AJAX 요청 전송 중...');
+		},
 		success: function(response) {
-			if (response.success) {
-				// 게시판 상세 렌더링
-				renderBoardDetail(response.data);
+			console.log('[handleEditBoardItem] AJAX 응답 받음:', response);
 
-				// GLightbox 초기화
-				setTimeout(function() {
-					initGLightbox();
-				}, 100);
+			if (response.success) {
+				console.log('[handleEditBoardItem] 게시글 데이터:', response.data);
+
+				// renderBoardDetail 함수 존재 여부 확인
+				if (typeof renderBoardDetail === 'function') {
+					console.log('[handleEditBoardItem] renderBoardDetail 함수 호출');
+					renderBoardDetail(response.data);
+				} else {
+					console.error('[handleEditBoardItem] renderBoardDetail 함수가 정의되지 않았습니다!');
+					showToast('페이지 오류가 발생했습니다.');
+				}
+			} else {
+				console.error('[handleEditBoardItem] 응답 실패:', response.message);
+				showToast(response.message || '게시글 정보를 불러올 수 없습니다.');
 			}
+		},
+		error: function(xhr, status, error) {
+			console.error('[handleEditBoardItem] AJAX 오류 발생');
+			console.error('[handleEditBoardItem] xhr:', xhr);
+			console.error('[handleEditBoardItem] status:', status);
+			console.error('[handleEditBoardItem] error:', error);
+			console.error('[handleEditBoardItem] responseText:', xhr.responseText);
+			showToast('게시글 정보를 불러오는 중 오류가 발생했습니다.');
+		},
+		complete: function() {
+			console.log('[handleEditBoardItem] AJAX 완료');
 		}
+	});
+}
+
+/**
+ * 게시글 상세 렌더링 (Offcanvas)
+ */
+function renderBoardDetail(boardData) {
+	console.log('[renderBoardDetail] 게시글 데이터:', boardData);
+
+	// Offcanvas 타이틀 변경
+	$('#boardOffcanvasLabel').text('게시글 수정');
+
+	// 필드 값 설정
+	$('#board_idx').val(boardData.idx);
+	$('#board_title').val(boardData.board_title);
+	$('#youtube_url').val(boardData.youtube_url || '');
+
+	// 삭제 버튼 표시
+	$('#btnDeleteBoard').show();
+
+	// Offcanvas 표시
+	const boardOffcanvas = new bootstrap.Offcanvas(document.getElementById('boardOffcanvas'));
+	boardOffcanvas.show();
+
+	// Offcanvas가 완전히 표시된 후 초기화
+	$('#boardOffcanvas').one('shown.bs.offcanvas', function() {
+		setTimeout(function() {
+			// Editor.js 초기화 (기존 content 전달)
+			initBoardContentEditor(boardData.board_content || '');
+
+			// Dropzone 초기화
+			initializeBoardDropzone();
+
+			// 기존 파일 복원
+			if (boardData.file_path) {
+				try {
+					const files = JSON.parse(boardData.file_path);
+					if (Array.isArray(files) && files.length > 0) {
+						console.log('[renderBoardDetail] 기존 파일 복원:', files);
+						restoreUploadedFiles(files);
+					}
+				} catch (e) {
+					console.error('[renderBoardDetail] 파일 정보 파싱 실패:', e);
+				}
+			}
+		}, 200);
 	});
 }
 
@@ -1608,22 +1692,19 @@ function initializeBoardDropzone() {
 							const preview = file.previewElement;
 							if (!preview) return;
 
-							// 기존 삭제 버튼 찾기 (Dropzone이 자동 생성)
 							const removeBtn = preview.querySelector('[data-dz-remove]');
 
 							if (removeBtn) {
-								// 삭제 버튼 스타일 변경
 								removeBtn.className = 'btn btn-xs btn-outline-danger';
 								removeBtn.textContent = '삭제';
 
-								// 다운로드 버튼이 이미 있는지 확인
 								let downloadBtn = preview.querySelector('.dz-download');
 
 								if (!downloadBtn) {
-									// 다운로드 버튼 생성
 									downloadBtn = document.createElement('a');
-									downloadBtn.href = file.serverPath;
-									downloadBtn.download = file.serverFileName || file.name;
+									// 원본 파일명으로 다운로드
+									const downloadName = file.originalFileName || file.name;
+									downloadBtn.href = '/api/download?file=' + encodeURIComponent(file.serverPath) + '&name=' + encodeURIComponent(downloadName);
 									downloadBtn.className = 'btn btn-xs btn-outline-primary dz-download';
 									downloadBtn.textContent = '다운로드';
 									downloadBtn.style.marginRight = '5px';
@@ -1631,7 +1712,6 @@ function initializeBoardDropzone() {
 										e.stopPropagation();
 									};
 
-									// 삭제 버튼 앞에 다운로드 버튼 삽입
 									removeBtn.parentNode.insertBefore(downloadBtn, removeBtn);
 								}
 							}
@@ -1669,10 +1749,12 @@ function initializeBoardDropzone() {
 					if (response && response.success) {
 						file.serverPath = response.file_path;
 						file.serverFileName = response.file_name;
+						file.originalFileName = response.original_name; // 원본 파일명 추가
 						file.thumbPath = response.thumb_path || null;
 
 						const fileInfo = {
 							name: response.file_name,
+							original_name: response.original_name, // 원본 파일명 추가
 							path: response.file_path,
 							thumb_path: response.thumb_path || null,
 							size: file.size,
@@ -1683,10 +1765,23 @@ function initializeBoardDropzone() {
 						updateUploadedFilesInput();
 
 						console.log('[Dropzone] 파일 업로드 성공:', response.file_name);
+						console.log('[Dropzone] 원본 파일명:', response.original_name); // 로그 추가
 						console.log('[Dropzone] 저장 경로:', response.file_path);
 						if (response.thumb_path) {
 							console.log('[Dropzone] 썸네일 경로:', response.thumb_path);
 						}
+
+						// 파일명 표시를 원본 파일명으로 변경
+						setTimeout(function() {
+							const preview = file.previewElement;
+							if (preview) {
+								const filenameSpan = preview.querySelector('.dz-filename span');
+								if (filenameSpan) {
+									filenameSpan.textContent = response.original_name;
+									filenameSpan.title = response.original_name;
+								}
+							}
+						}, 50);
 					} else {
 						console.error('[Dropzone] 업로드 실패:', response);
 						showToast(response.message || '파일 업로드 실패');
@@ -1713,6 +1808,7 @@ function initializeBoardDropzone() {
 
 								const fileInfo = {
 									name: response.file_name,
+									original_name: response.original_name, // 원본 파일명 추가
 									path: response.file_path,
 									thumb_path: response.thumb_path || null,
 									size: file.size,
@@ -1951,11 +2047,12 @@ function restoreUploadedFiles(files) {
 	if (boardDropzone) {
 		files.forEach(function(fileData) {
 			const mockFile = {
-				name: fileData.name,
+				name: fileData.original_name || fileData.name, // 원본 파일명 우선 사용
 				size: fileData.size,
 				type: fileData.type,
 				serverPath: fileData.path,
 				serverFileName: fileData.name,
+				originalFileName: fileData.original_name, // 원본 파일명 추가
 				thumbPath: fileData.thumb_path,
 				status: Dropzone.SUCCESS,
 				accepted: true
@@ -1965,11 +2062,8 @@ function restoreUploadedFiles(files) {
 
 			// 이미지 파일인 경우 썸네일 표시
 			if (fileData.type && fileData.type.match(/image.*/)) {
-				// 썸네일이 있으면 썸네일 사용, 없으면 원본 사용
 				const thumbnailUrl = fileData.thumb_path ? fileData.thumb_path : fileData.path;
-
 				console.log('[restoreUploadedFiles] 썸네일 URL:', thumbnailUrl);
-
 				boardDropzone.emit("thumbnail", mockFile, thumbnailUrl);
 
 				setTimeout(function() {
@@ -1980,6 +2074,14 @@ function restoreUploadedFiles(files) {
 							img.style.width = '100%';
 							img.style.height = '100%';
 							img.style.objectFit = 'contain';
+						}
+
+						// 파일명 표시를 원본 파일명으로 변경
+						const filenameSpan = preview.querySelector('.dz-filename span');
+						if (filenameSpan) {
+							const displayName = fileData.original_name || fileData.name;
+							filenameSpan.textContent = displayName;
+							filenameSpan.title = displayName;
 						}
 					}
 				}, 100);
@@ -1992,13 +2094,22 @@ function restoreUploadedFiles(files) {
 					if (preview) {
 						const imgElement = preview.querySelector('.dz-image img');
 						if (imgElement) {
-							const ext = getFileExtension(fileData.name).toUpperCase();
+							const originalName = fileData.original_name || fileData.name;
+							const ext = getFileExtension(originalName).toUpperCase();
 
 							imgElement.style.display = 'none';
 							const dzImage = preview.querySelector('.dz-image');
 							if (dzImage) {
 								dzImage.innerHTML = `<div class="dz-file-icon">${ext}</div>`;
 							}
+						}
+
+						// 파일명 표시를 원본 파일명으로 변경
+						const filenameSpan = preview.querySelector('.dz-filename span');
+						if (filenameSpan) {
+							const displayName = fileData.original_name || fileData.name;
+							filenameSpan.textContent = displayName;
+							filenameSpan.title = displayName;
 						}
 					}
 				}, 100);
@@ -2008,21 +2119,19 @@ function restoreUploadedFiles(files) {
 			boardDropzone.files.push(mockFile);
 
 			// 다운로드 버튼 추가
-
 			setTimeout(function() {
 				const preview = mockFile.previewElement;
 				if (preview) {
 					const removeBtn = preview.querySelector('[data-dz-remove]');
 					if (removeBtn && fileData.path) {
-						// 삭제 버튼 스타일 변경
 						removeBtn.className = 'btn btn-xs btn-outline-danger';
 						removeBtn.textContent = '삭제';
 
-						// 이미 다운로드 버튼이 있는지 확인
 						if (!preview.querySelector('.dz-download')) {
 							const downloadBtn = document.createElement('a');
-							downloadBtn.href = fileData.path;
-							downloadBtn.download = fileData.name;
+							// 원본 파일명으로 다운로드
+							const downloadName = fileData.original_name || fileData.name;
+							downloadBtn.href = '/api/download?file=' + encodeURIComponent(fileData.path) + '&name=' + encodeURIComponent(downloadName);
 							downloadBtn.className = 'btn btn-xs btn-outline-primary dz-download';
 							downloadBtn.textContent = '다운로드';
 							downloadBtn.style.marginRight = '5px';
@@ -2035,7 +2144,7 @@ function restoreUploadedFiles(files) {
 				}
 			}, 150);
 
-			console.log('[restoreUploadedFiles] 파일 복원됨:', fileData.name);
+			console.log('[restoreUploadedFiles] 파일 복원됨:', fileData.original_name || fileData.name);
 		});
 
 		console.log('[restoreUploadedFiles] 복원 완료, 전체 파일 수:', boardDropzone.files.length);

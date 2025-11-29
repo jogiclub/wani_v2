@@ -113,8 +113,8 @@ class Homepage_api extends CI_Controller
 
 		log_message('info', '[파일 다운로드] 다운로드 시작: ' . $file_name . ' (' . $mime_type . ')');
 
-		// 출력 버퍼 비우기
-		if (ob_get_level()) {
+		// 모든 출력 버퍼 비우기
+		while (ob_get_level()) {
 			ob_end_clean();
 		}
 
@@ -126,12 +126,22 @@ class Homepage_api extends CI_Controller
 		header('Pragma: public');
 		header('Expires: 0');
 		header('Content-Transfer-Encoding: binary');
+		header('Accept-Ranges: bytes');
 
-		// 파일 출력
-		readfile($full_path);
+		// 파일 출력 (대용량 파일 지원)
+		$file = fopen($full_path, 'rb');
+		if ($file) {
+			while (!feof($file)) {
+				echo fread($file, 8192);
+				flush();
+			}
+			fclose($file);
+		} else {
+			readfile($full_path);
+		}
+
 		exit;
 	}
-
 
 
 

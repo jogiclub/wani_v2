@@ -751,6 +751,7 @@ class Homepage_menu extends My_Controller
 		if ($this->upload->do_upload('file')) {
 			$upload_data = $this->upload->data();
 			$file_name = $upload_data['file_name'];
+			$original_name = $upload_data['orig_name']; // 원본 파일명 추가
 			$file_ext = strtolower($upload_data['file_ext']);
 
 			// 파일 타입 결정
@@ -780,6 +781,7 @@ class Homepage_menu extends My_Controller
 			echo json_encode([
 				'success' => true,
 				'file_name' => $file_name,
+				'original_name' => $original_name, // 원본 파일명 추가
 				'file_path' => $file_path,
 				'thumb_path' => $thumb_file_path,
 				'file_type' => $file_type,

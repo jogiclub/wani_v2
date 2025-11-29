@@ -1111,8 +1111,9 @@ function renderAttachmentGrid(filePath) {
 				return true;
 			}
 			// type이 없으면 확장자로 체크
-			if (file.name) {
-				const ext = file.name.split('.').pop().toLowerCase();
+			const fileName = file.original_name || file.name; // 원본 파일명 우선 사용
+			if (fileName) {
+				const ext = fileName.split('.').pop().toLowerCase();
 				return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
 			}
 			return false;
@@ -1124,8 +1125,9 @@ function renderAttachmentGrid(filePath) {
 				return false;
 			}
 			// type이 없으면 확장자로 체크
-			if (file.name) {
-				const ext = file.name.split('.').pop().toLowerCase();
+			const fileName = file.original_name || file.name; // 원본 파일명 우선 사용
+			if (fileName) {
+				const ext = fileName.split('.').pop().toLowerCase();
 				return !['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
 			}
 			return true;
@@ -1145,8 +1147,9 @@ function renderAttachmentGrid(filePath) {
 				// 썸네일이 있으면 썸네일 사용, 없으면 원본 사용
 				let imageUrl = file.thumb_path || file.path;
 				let fullImageUrl = file.path;
+				const displayName = file.original_name || file.name; // 원본 파일명 우선 사용
 
-				console.log('[이미지 렌더링]', file.name, '썸네일:', imageUrl, '원본:', fullImageUrl);
+				console.log('[이미지 렌더링]', displayName, '썸네일:', imageUrl, '원본:', fullImageUrl);
 
 				// 상대경로를 절대경로로 변환
 				if (!imageUrl.startsWith('http')) {
@@ -1160,15 +1163,17 @@ function renderAttachmentGrid(filePath) {
 
 				html += '<div class="col-6 col-md-4 col-lg-3">';
 				html += '<div class="card shadow-sm h-100" style="transition: transform 0.2s;">';
-// GLightbox용 링크 추가
-				html += '<a href="' + escapeHtml(fullImageUrl) + '" class="glightbox" data-gallery="board-attachments" data-title="' + escapeHtml(file.name) + '">';
+				// GLightbox용 링크 추가 - 원본 파일명 사용
+				html += '<a href="' + escapeHtml(fullImageUrl) + '" class="glightbox" data-gallery="board-attachments" data-title="' + escapeHtml(displayName) + '">';
 				html += '<div class="card-img-wrapper" style="height: 200px; overflow: hidden; cursor: pointer; background: #f8f9fa;">';
-				html += '<img src="' + escapeHtml(imageUrl) + '" class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" alt="' + escapeHtml(file.name) + '" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div class=\\\'d-flex align-items-center justify-content-center h-100\\\'><i class=\\\'bi bi-image text-muted fs-1\\\'></i></div>\';">';
+				html += '<img src="' + escapeHtml(imageUrl) + '" class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div class=\\\'d-flex align-items-center justify-content-center h-100\\\'><i class=\\\'bi bi-image text-muted fs-1\\\'></i></div>\';">';
 				html += '</div>';
 				html += '</a>';
 				html += '<div class="card-body p-2">';
-				html += '<small class="text-muted d-block text-truncate" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</small>';
-				html += '<button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="event.stopPropagation(); downloadFile(\'' + fullImageUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(file.name).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i> 다운로드</button>';
+				// 원본 파일명 표시
+				html += '<small class="text-muted d-block text-truncate" title="' + escapeHtml(displayName) + '">' + escapeHtml(displayName) + '</small>';
+				// 다운로드 버튼 - 원본 파일명으로 다운로드
+				html += '<button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="event.stopPropagation(); downloadFile(\'' + fullImageUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i> 다운로드</button>';
 				html += '</div>';
 				html += '</div>';
 				html += '</div>';
@@ -1186,22 +1191,26 @@ function renderAttachmentGrid(filePath) {
 
 			documents.forEach(file => {
 				let fileUrl = file.path;
+				const displayName = file.original_name || file.name; // 원본 파일명 우선 사용
+
 				if (!fileUrl.startsWith('http')) {
 					if (!fileUrl.startsWith('/')) fileUrl = '/' + fileUrl;
 					fileUrl = 'https://wani.im' + fileUrl;
 				}
 
-				// 파일 확장자 추출
-				const ext = file.name.split('.').pop().toUpperCase();
+				// 파일 확장자 추출 (원본 파일명에서)
+				const ext = displayName.split('.').pop().toUpperCase();
 				const fileSize = formatFileSize(file.size);
 
 				html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
 				html += '<div class="d-flex align-items-center flex-grow-1">';
 				html += '<span class="badge bg-secondary me-2">' + ext + '</span>';
-				html += '<span class="text-truncate me-2">' + escapeHtml(file.name) + '</span>';
+				// 원본 파일명 표시
+				html += '<span class="text-truncate me-2">' + escapeHtml(displayName) + '</span>';
 				html += '<small class="text-muted">(' + fileSize + ')</small>';
 				html += '</div>';
-				html += '<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadFile(\'' + fileUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(file.name).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i> 다운로드</button>';
+				// 다운로드 버튼 - 원본 파일명으로 다운로드
+				html += '<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadFile(\'' + fileUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i> 다운로드</button>';
 				html += '</div>';
 			});
 
@@ -1371,75 +1380,46 @@ function formatFileSize(bytes) {
 	const i = Math.floor(Math.log(bytes) / Math.log(k));
 	return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
 }
-/**
- * 파일 다운로드 처리 (URL 치환 방식)
- */
-async function downloadFile(url, filename) {
-	console.log('[파일 다운로드] 시작:', url);
 
-	// 로딩 표시
-	const downloadBtn = event.currentTarget;
-	const originalHtml = downloadBtn.innerHTML;
-	downloadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> 다운로드 중...';
-	downloadBtn.disabled = true;
+/**
+ * 파일 다운로드 (메인 도메인 API 사용)
+ */
+function downloadFile(url, filename) {
+	console.log('[파일 다운로드] 시작:', url, filename);
 
 	try {
-		// wani.im을 현재 도메인으로 변경 (CORS 우회)
-		let downloadUrl = url;
-		if (downloadUrl.includes('wani.im')) {
-			downloadUrl = downloadUrl.replace(/https?:\/\/wani\.im/, '');
-			if (!downloadUrl.startsWith('/')) {
-				downloadUrl = '/' + downloadUrl;
-			}
+		// URL에서 wani.im 제거 (상대 경로로 변환)
+		let filePath = url;
+		if (filePath.includes('wani.im')) {
+			filePath = filePath.replace(/https?:\/\/[^/]+\.wani\.im/, ''); // 서브도메인 제거
+			filePath = filePath.replace(/https?:\/\/wani\.im/, ''); // 메인 도메인 제거
+		}
+		if (!filePath.startsWith('/')) {
+			filePath = '/' + filePath;
 		}
 
-		console.log('[파일 다운로드] 변환된 URL:', downloadUrl);
+		console.log('[파일 다운로드] 파일 경로:', filePath);
+		console.log('[파일 다운로드] 파일명:', filename);
 
-		// fetch로 파일 가져오기
-		const response = await fetch(downloadUrl, {
-			method: 'GET',
-			headers: {
-				'Accept': 'image/*, application/octet-stream'
-			}
-		});
+		// 메인 도메인의 API 사용 (중요!)
+		const downloadUrl = 'https://wani.im/api/download?file=' + encodeURIComponent(filePath) + '&name=' + encodeURIComponent(filename);
 
-		if (!response.ok) {
-			throw new Error('파일 다운로드 실패: ' + response.status);
-		}
+		console.log('[파일 다운로드] 다운로드 URL:', downloadUrl);
 
-		// Blob으로 변환
-		const blob = await response.blob();
+		// iframe을 사용한 다운로드 (페이지 이동 없이)
+		const iframe = document.createElement('iframe');
+		iframe.style.display = 'none';
+		iframe.src = downloadUrl;
+		document.body.appendChild(iframe);
 
-		console.log('[파일 다운로드] Blob 생성:', blob.size, 'bytes, 타입:', blob.type);
-
-		// Blob URL 생성
-		const blobUrl = window.URL.createObjectURL(blob);
-
-		// a 태그로 다운로드
-		const a = document.createElement('a');
-		a.style.display = 'none';
-		a.href = blobUrl;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-
-		// 정리
+		// iframe 정리 (3초 후)
 		setTimeout(() => {
-			window.URL.revokeObjectURL(blobUrl);
-			document.body.removeChild(a);
+			document.body.removeChild(iframe);
 			console.log('[파일 다운로드] 완료:', filename);
-		}, 100);
-
-		// 버튼 복원
-		downloadBtn.innerHTML = originalHtml;
-		downloadBtn.disabled = false;
+		}, 3000);
 
 	} catch (error) {
 		console.error('[파일 다운로드] 오류:', error);
 		alert('파일 다운로드에 실패했습니다: ' + error.message);
-
-		// 버튼 복원
-		downloadBtn.innerHTML = originalHtml;
-		downloadBtn.disabled = false;
 	}
 }
