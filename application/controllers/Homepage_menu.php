@@ -1405,4 +1405,114 @@ class Homepage_menu extends My_Controller
 			]);
 		}
 	}
+
+
+
+	/**
+	 * 파일 위치: application/controllers/Homepage_menu.php
+	 * 역할: 홈페이지 프론트엔드용 파일 업로드 API (CORS 지원)
+	 */
+	public function upload_homepage_file()
+	{
+		// CORS 헤더 추가
+		header('Access-Control-Allow-Origin: *');
+		header('Access-Control-Allow-Methods: POST, OPTIONS');
+		header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+		header('Content-Type: application/json; charset=utf-8');
+
+		// OPTIONS 요청 처리 (Preflight)
+		if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+			exit(0);
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode([
+				'success' => false,
+				'message' => '조직 정보가 누락되었습니다.'
+			]);
+			return;
+		}
+
+		// 업로드 경로 설정
+		$year = date('Y');
+		$month = date('m');
+		$day = date('d');
+		$upload_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/";
+		$thumb_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/thumb/";
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		if (!is_dir($thumb_path)) {
+			mkdir($thumb_path, 0755, true);
+		}
+
+		// 원본 파일 업로드
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'gif|jpg|jpeg|png|pdf|doc|docx|ppt|pptx|xls|xlsx|hwp|hwpx|zip';
+		$config['max_size'] = 51200; // 50MB
+		$config['encrypt_name'] = TRUE;
+
+		$this->load->library('upload', $config);
+
+		if ($this->upload->do_upload('file')) {
+			$upload_data = $this->upload->data();
+			$file_name = $upload_data['file_name'];
+			$original_name = $upload_data['orig_name'];
+			$file_ext = strtolower($upload_data['file_ext']);
+
+			// 파일 타입 결정
+			$image_extensions = ['.jpg', '.jpeg', '.png', '.gif'];
+			$is_image = in_array($file_ext, $image_extensions);
+			$file_type = $is_image ? 'image' : 'document';
+
+			// wani.im 도메인을 사용한 전체 URL
+			$file_path = "/uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/{$file_name}";
+			$file_url = "https://wani.im" . $file_path;
+			$thumb_file_path = null;
+			$thumb_file_url = null;
+
+			// 이미지인 경우 썸네일 생성
+			if ($is_image) {
+				$source_path = $upload_path . $file_name;
+				$thumb_file = $thumb_path . $file_name;
+
+				if ($this->create_thumbnail($source_path, $thumb_file, 400, 400)) {
+					$thumb_file_path = "/uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/thumb/{$file_name}";
+					$thumb_file_url = "https://wani.im" . $thumb_file_path;
+				}
+			}
+
+			echo json_encode([
+				'success' => true,
+				'file_info' => [
+					'name' => $file_name,
+					'original_name' => $original_name,
+					'path' => $file_path,
+					'url' => $file_url,
+					'thumb_path' => $thumb_file_path,
+					'thumb_url' => $thumb_file_url,
+					'size' => $upload_data['file_size'] * 1024,
+					'type' => $file_type
+				]
+			]);
+		} else {
+			$error = $this->upload->display_errors('', '');
+			echo json_encode([
+				'success' => false,
+				'message' => '파일 업로드 실패: ' . $error
+			]);
+		}
+	}
+
+
+
+
+
+
+
 }

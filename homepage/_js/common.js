@@ -1,5 +1,5 @@
 /**
- * 파일 위치: /var/www/wani/public/homepage/_js/common.js
+ 
  * 역할: 게시판 URL 라우팅 및 기능 개선
  */
 
@@ -1030,6 +1030,21 @@ async function showBoardWriteForm(menuId) {
 			return;
 		}
 
+		// EditorJS 형식으로 변환
+		const editorJsContent = {
+			time: Date.now(),
+			blocks: [
+				{
+					id: generateRandomId(),
+					type: "paragraph",
+					data: {
+						text: content
+					}
+				}
+			],
+			version: "2.31.0"
+		};
+
 		// 게시글 저장 API 호출
 		try {
 			const response = await fetch(`${API_BASE_URL}/board/save`, {
@@ -1041,7 +1056,7 @@ async function showBoardWriteForm(menuId) {
 					org_code: ORG_CODE,
 					menu_id: menuId,
 					board_title: title,
-					board_content: content,
+					board_content: JSON.stringify(editorJsContent), // EditorJS 형식으로 저장
 					writer_name: writerName,
 					writer_phone: writerPhone,
 					youtube_url: youtubeUrl,
@@ -1062,6 +1077,11 @@ async function showBoardWriteForm(menuId) {
 			showToast('게시글 저장 중 오류가 발생했습니다.');
 		}
 	});
+}
+
+// EditorJS ID 생성 헬퍼 함수
+function generateRandomId() {
+	return Math.random().toString(36).substr(2, 10);
 }
 
 // URL 라우팅 처리
@@ -1446,7 +1466,13 @@ async function verifyWriter() {
 // Dropzone 인스턴스 변수
 let boardWriteDropzone = null;
 
-// 게시글 작성 페이지 Dropzone 초기화
+
+
+
+/**
+ * 파일 위치: /var/www/wani/public/homepage/_js/common.js
+ * 역할: 게시글 작성 페이지 Dropzone 초기화 - 현재 호스트의 API 서버 사용
+ */
 function initBoardWriteDropzone() {
 	if (boardWriteDropzone) {
 		boardWriteDropzone.destroy();
@@ -1459,53 +1485,102 @@ function initBoardWriteDropzone() {
 		return;
 	}
 
+	// 현재 호스트 가져오기
+	const currentHost = window.location.host; // 예: 52ch_area0101.wani.im
+	const uploadUrl = `https://${currentHost}/api/homepage_api/upload_file`;
+
+	console.log('파일 업로드 URL:', uploadUrl);
+
 	boardWriteDropzone = new Dropzone('#boardFileDropzone', {
-		url: 'https://wani.im/homepage_menu/upload_homepage_file',
+		url: uploadUrl,  // 현재 호스트의 API 사용
 		paramName: 'file',
-		maxFilesize: 10,
-		maxFiles: 5,
+		maxFilesize: 50,
+		maxFiles: 20,
 		addRemoveLinks: true,
 		dictDefaultMessage: '파일을 드래그하거나 클릭하여 업로드하세요',
 		dictRemoveFile: '삭제',
 		dictCancelUpload: '취소',
-		dictMaxFilesExceeded: '최대 5개까지 업로드 가능합니다',
-		acceptedFiles: 'image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp',
+		dictMaxFilesExceeded: '최대 20개까지 업로드 가능합니다',
+		acceptedFiles: 'image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.hwpx,.zip',
 		autoProcessQueue: true,
+		headers: {
+			'X-Requested-With': 'XMLHttpRequest'
+		},
 		params: {
-			org_id: orgInfo ? orgInfo.org_id : 0
+			org_code: ORG_CODE  // org_id 대신 org_code 사용
 		},
 		init: function() {
 			this.on('success', function(file, response) {
 				console.log('파일 업로드 성공:', response);
 
 				if (response.success && response.file_info) {
-					file.serverFileName = response.file_info;
+					// 서버에서 반환된 파일 정보 저장
+					file.serverFileName = response.file_info.name;
+					file.serverFilePath = response.file_info.path;
+					file.serverFileUrl = response.file_info.url;
+					file.serverThumbPath = response.file_info.thumb_path;
+					file.serverThumbUrl = response.file_info.thumb_url;
+					file.originalFileName = response.file_info.original_name;
+					file.fileType = response.file_info.type;
+
 					updateUploadedFilesList();
 				}
 			});
 
 			this.on('error', function(file, errorMessage) {
 				console.error('파일 업로드 실패:', errorMessage);
-				showToast('파일 업로드에 실패했습니다.');
+
+				// 에러 메시지 파싱
+				let message = '파일 업로드에 실패했습니다.';
+				if (typeof errorMessage === 'object' && errorMessage.message) {
+					message = errorMessage.message;
+				} else if (typeof errorMessage === 'string') {
+					message = errorMessage;
+				}
+
+				showToast(message);
 			});
 
 			this.on('removedfile', function(file) {
 				console.log('파일 제거됨:', file);
 				updateUploadedFilesList();
 			});
+
+			// 이미지 파일 썸네일 생성
+			this.on('thumbnail', function(file, dataUrl) {
+				if (file.type.match(/image.*/)) {
+					console.log('이미지 썸네일 생성됨:', file.name);
+				}
+			});
 		}
 	});
 }
 
-// 업로드된 파일 목록 업데이트
+/**
+ * 역할: 업로드된 파일 목록 업데이트 - JSON 배열로 저장
+ */
+
 function updateUploadedFilesList() {
 	if (!boardWriteDropzone) return;
 
 	const files = boardWriteDropzone.files.filter(f => f.status === 'success' && f.serverFileName);
-	const fileList = files.map(f => f.serverFileName);
 
-	document.getElementById('uploadedFiles').value = JSON.stringify(fileList);
-	console.log('업로드된 파일 목록:', fileList);
+	// 파일 정보 배열 생성
+	const fileBlocks = files.map(f => {
+		return {
+			name: f.serverFileName,
+			original_name: f.originalFileName || f.name,
+			path: f.serverFilePath,
+			url: f.serverFileUrl,
+			thumb_path: f.serverThumbPath,
+			thumb_url: f.serverThumbUrl,
+			size: f.size,
+			type: f.fileType || (f.type.startsWith('image/') ? 'image' : 'document')
+		};
+	});
+
+	document.getElementById('uploadedFiles').value = JSON.stringify(fileBlocks);
+	console.log('업로드된 파일 목록:', fileBlocks);
 }
 
 // Toast 메시지 표시 함수 (없을 경우 대비)
@@ -1514,3 +1589,4 @@ if (typeof showToast === 'undefined') {
 		alert(message);
 	}
 }
+

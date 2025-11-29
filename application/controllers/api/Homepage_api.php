@@ -13,6 +13,10 @@ class Homepage_api extends CI_Controller
 		header('Access-Control-Allow-Origin: *');
 		header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 		header('Access-Control-Allow-Headers: Content-Type');
+		// OPTIONS 요청 처리 (Preflight)
+		if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+			exit(0);
+		}
 	}
 
 	/**
@@ -1367,4 +1371,156 @@ class Homepage_api extends CI_Controller
 			]);
 		}
 	}
+
+
+	/**
+	 * 파일 위치: application/controllers/api/Homepage_api.php
+	 * 역할: 프론트엔드용 파일 업로드 API (CORS 지원)
+	 * POST /api/homepage_api/upload_file
+	 */
+	public function upload_file()
+	{
+		// OPTIONS 요청 처리 (Preflight)
+		if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+			exit(0);
+		}
+
+		$org_code = $this->input->post('org_code');
+
+		if (!$org_code) {
+			echo json_encode([
+				'success' => false,
+				'message' => '조직 코드가 누락되었습니다.'
+			]);
+			return;
+		}
+
+		// org_code로 org_id 조회
+		$org_id = $this->Homepage_api_model->get_org_id_by_code($org_code);
+
+		if ($org_id === false) {
+			echo json_encode([
+				'success' => false,
+				'message' => '조직 정보를 찾을 수 없습니다.'
+			]);
+			return;
+		}
+
+		// 업로드 경로 설정
+		$year = date('Y');
+		$month = date('m');
+		$day = date('d');
+		$upload_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/";
+		$thumb_path = "./uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/thumb/";
+
+		// 디렉토리 생성
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		if (!is_dir($thumb_path)) {
+			mkdir($thumb_path, 0755, true);
+		}
+
+		// 원본 파일 업로드
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'gif|jpg|jpeg|png|pdf|doc|docx|ppt|pptx|xls|xlsx|hwp|hwpx|zip';
+		$config['max_size'] = 51200; // 50MB
+		$config['encrypt_name'] = TRUE;
+
+		$this->load->library('upload', $config);
+
+		if ($this->upload->do_upload('file')) {
+			$upload_data = $this->upload->data();
+			$file_name = $upload_data['file_name'];
+			$original_name = $upload_data['orig_name'];
+			$file_ext = strtolower($upload_data['file_ext']);
+
+			// 파일 타입 결정
+			$image_extensions = ['.jpg', '.jpeg', '.png', '.gif'];
+			$is_image = in_array($file_ext, $image_extensions);
+			$file_type = $is_image ? 'image' : 'document';
+
+			// 상대 경로
+			$file_path = "/uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/{$file_name}";
+			$file_url = "https://wani.im" . $file_path;
+			$thumb_file_path = null;
+			$thumb_file_url = null;
+
+			// 이미지인 경우 썸네일 생성
+			if ($is_image) {
+				$source_path = $upload_path . $file_name;
+				$thumb_file = $thumb_path . $file_name;
+
+				if ($this->create_thumbnail($source_path, $thumb_file, 400, 400)) {
+					$thumb_file_path = "/uploads/homepage/{$org_id}/{$year}/{$month}/{$day}/thumb/{$file_name}";
+					$thumb_file_url = "https://wani.im" . $thumb_file_path;
+				}
+			}
+
+			echo json_encode([
+				'success' => true,
+				'file_info' => [
+					'name' => $file_name,
+					'original_name' => $original_name,
+					'path' => $file_path,
+					'url' => $file_url,
+					'thumb_path' => $thumb_file_path,
+					'thumb_url' => $thumb_file_url,
+					'size' => $upload_data['file_size'] * 1024,
+					'type' => $file_type
+				]
+			]);
+		} else {
+			$error = $this->upload->display_errors('', '');
+			echo json_encode([
+				'success' => false,
+				'message' => '파일 업로드 실패: ' . $error
+			]);
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/api/Homepage_api.php
+	 * 역할: 썸네일 생성 함수
+	 */
+	private function create_thumbnail($source_path, $thumb_path, $width = 400, $height = 400)
+	{
+		try {
+			$this->load->library('image_lib');
+
+			// 이미지 정보 확인
+			$image_info = @getimagesize($source_path);
+			if (!$image_info) {
+				log_message('error', '이미지 정보를 가져올 수 없습니다: ' . $source_path);
+				return false;
+			}
+
+			// 썸네일 설정
+			$config = [
+				'image_library' => 'gd2',
+				'source_image' => $source_path,
+				'new_image' => $thumb_path,
+				'maintain_ratio' => TRUE,
+				'width' => $width,
+				'height' => $height,
+				'quality' => 90
+			];
+
+			$this->image_lib->clear();
+			$this->image_lib->initialize($config);
+
+			if (!$this->image_lib->resize()) {
+				$error = $this->image_lib->display_errors('', '');
+				log_message('error', '썸네일 생성 실패: ' . $error);
+				return false;
+			}
+
+			return true;
+		} catch (Exception $e) {
+			log_message('error', '썸네일 생성 중 오류 발생: ' . $e->getMessage());
+			return false;
+		}
+	}
+
 }

@@ -146,3 +146,8 @@ $route['api/homepage/org/(:any)'] = 'api/homepage_api/get_org_info/$1';
 // 아래 라우트를 routes.php 파일의 홈페이지 API 라우팅 섹션에 추가하세요
 $route['api/homepage/board/verify_writer'] = 'api/homepage_api/verify_writer';
 $route['api/homepage/board/save'] = 'api/homepage_api/save_board';
+
+// 파일 업로드 API 라우트 추가 (이 부분을 추가!)
+// 파일 업로드 API 라우트 추가
+$route['api/homepage_api/upload_file'] = 'api/homepage_api/upload_file';
+$route['api/homepage/upload'] = 'api/homepage_api/upload_file';  // 대체 경로 (선택사항)
