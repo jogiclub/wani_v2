@@ -1701,15 +1701,18 @@ function initializeBoardDropzone() {
 								let downloadBtn = preview.querySelector('.dz-download');
 
 								if (!downloadBtn) {
-									downloadBtn = document.createElement('a');
-									// 원본 파일명으로 다운로드
+									downloadBtn = document.createElement('button');
+									downloadBtn.type = 'button';
 									const downloadName = file.originalFileName || file.name;
-									downloadBtn.href = '/api/download?file=' + encodeURIComponent(file.serverPath) + '&name=' + encodeURIComponent(downloadName);
+									const filePath = file.serverPath;
+
 									downloadBtn.className = 'btn btn-xs btn-outline-primary dz-download';
 									downloadBtn.textContent = '다운로드';
 									downloadBtn.style.marginRight = '5px';
 									downloadBtn.onclick = function(e) {
 										e.stopPropagation();
+										e.preventDefault();
+										downloadFileFromDropzone(filePath, downloadName);
 									};
 
 									removeBtn.parentNode.insertBefore(downloadBtn, removeBtn);
@@ -2127,17 +2130,21 @@ function restoreUploadedFiles(files) {
 						removeBtn.className = 'btn btn-xs btn-outline-danger';
 						removeBtn.textContent = '삭제';
 
-						if (!preview.querySelector('.dz-download')) {
-							const downloadBtn = document.createElement('a');
-							// 원본 파일명으로 다운로드
+						if (!downloadBtn) {
+							downloadBtn = document.createElement('button');
+							downloadBtn.type = 'button';
 							const downloadName = fileData.original_name || fileData.name;
-							downloadBtn.href = '/api/download?file=' + encodeURIComponent(fileData.path) + '&name=' + encodeURIComponent(downloadName);
+							const filePath = fileData.path;
+
 							downloadBtn.className = 'btn btn-xs btn-outline-primary dz-download';
 							downloadBtn.textContent = '다운로드';
 							downloadBtn.style.marginRight = '5px';
 							downloadBtn.onclick = function(e) {
 								e.stopPropagation();
+								e.preventDefault();
+								downloadFileFromDropzone(filePath, downloadName);
 							};
+
 							removeBtn.parentNode.insertBefore(downloadBtn, removeBtn);
 						}
 					}
@@ -2152,7 +2159,31 @@ function restoreUploadedFiles(files) {
 }
 
 
+/**
+ * Dropzone에서 파일 다운로드 (iframe 방식)
+ */
+function downloadFileFromDropzone(filePath, fileName) {
+	console.log('[파일 다운로드] 시작:', filePath, fileName);
 
+	try {
+		const downloadUrl = '/api/download?file=' + encodeURIComponent(filePath) + '&name=' + encodeURIComponent(fileName);
+		console.log('[파일 다운로드] 다운로드 URL:', downloadUrl);
+
+		const iframe = document.createElement('iframe');
+		iframe.style.display = 'none';
+		iframe.src = downloadUrl;
+		document.body.appendChild(iframe);
+
+		setTimeout(() => {
+			document.body.removeChild(iframe);
+			console.log('[파일 다운로드] 완료:', fileName);
+		}, 3000);
+
+	} catch (error) {
+		console.error('[파일 다운로드] 오류:', error);
+		showToast('파일 다운로드에 실패했습니다.');
+	}
+}
 
 
 /**

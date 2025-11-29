@@ -406,7 +406,7 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = nu
 // 리스트 뷰 렌더링
 function renderListView(data, total, page, menuId, limit) {
 	let html = '<div class="table-responsive"><table class="table table-hover">';
-	html += '<thead><tr><th style="width: 80px;">번호</th><th>제목</th><th style="width: 100px;">작성자</th><th style="width: 80px;">조회수</th><th style="width: 120px;">작성일</th></tr></thead>';
+	html += '<thead><tr><th style="width: 80px;">번호</th><th>제목</th><th style="width: 100px;">작성자</th><th style="width: 80px;">조회수</th><th style="width: 140px;">작성일</th></tr></thead>';
 	html += '<tbody>';
 
 	data.forEach((item, index) => {
@@ -1162,19 +1162,20 @@ function renderAttachmentGrid(filePath) {
 				}
 
 				html += '<div class="col-6 col-md-4 col-lg-3">';
-				html += '<div class="card shadow-sm h-100" style="transition: transform 0.2s;">';
+				html += '<div class="card shadow-sm h-100 position-relative" style="transition: transform 0.2s;">';
 				// GLightbox용 링크 추가 - 원본 파일명 사용
 				html += '<a href="' + escapeHtml(fullImageUrl) + '" class="glightbox" data-gallery="board-attachments" data-title="' + escapeHtml(displayName) + '">';
 				html += '<div class="card-img-wrapper" style="height: 200px; overflow: hidden; cursor: pointer; background: #f8f9fa;">';
 				html += '<img src="' + escapeHtml(imageUrl) + '" class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" alt="' + escapeHtml(displayName) + '" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div class=\\\'d-flex align-items-center justify-content-center h-100\\\'><i class=\\\'bi bi-image text-muted fs-1\\\'></i></div>\';">';
 				html += '</div>';
 				html += '</a>';
-				html += '<div class="card-body p-2">';
+
 				// 원본 파일명 표시
-				html += '<small class="text-muted d-block text-truncate" title="' + escapeHtml(displayName) + '">' + escapeHtml(displayName) + '</small>';
+				html += '<div class="overlay" style="position: absolute; bottom: 0; width: 100%;background: linear-gradient(#00000000 30%, #666); height: 90px;"></div>';
+				html += '<small class="d-block text-truncate text-white w-100 px-3" style="position: absolute; bottom:10px;" title="' + escapeHtml(displayName) + '">' + escapeHtml(displayName) + '</small>';
 				// 다운로드 버튼 - 원본 파일명으로 다운로드
-				html += '<button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="event.stopPropagation(); downloadFile(\'' + fullImageUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i> 다운로드</button>';
-				html += '</div>';
+				html += '<button type="button" class="btn btn-sm btn-outline-primary bg-white" style="position: absolute; top: 10px; right: 10px;" onclick="event.stopPropagation(); downloadFile(\'' + fullImageUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i></button>';
+
 				html += '</div>';
 				html += '</div>';
 			});
@@ -1225,122 +1226,6 @@ function renderAttachmentGrid(filePath) {
 	}
 }
 
-/**
- * 첨부파일 렌더링 (이미지와 문서 구분)
- */
-function renderAttachments(files) {
-	try {
-		// 이미지와 문서 분리
-		const images = files.filter(file => {
-			// type 필드로 먼저 체크
-			if (file.type && file.type.startsWith('image/')) {
-				return true;
-			}
-			// type이 없으면 확장자로 체크
-			if (file.name) {
-				const ext = file.name.split('.').pop().toLowerCase();
-				return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
-			}
-			return false;
-		});
-
-		const documents = files.filter(file => {
-			// type 필드로 먼저 체크
-			if (file.type && file.type.startsWith('image/')) {
-				return false;
-			}
-			// type이 없으면 확장자로 체크
-			if (file.name) {
-				const ext = file.name.split('.').pop().toLowerCase();
-				return !['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
-			}
-			return true;
-		});
-
-		console.log('[첨부파일] 이미지:', images.length, '문서:', documents.length);
-
-		let html = '';
-
-		// 이미지 Grid
-		if (images.length > 0) {
-			html += '<div class="attachment-section mt-4">';
-			html += '<h5 class="mb-3"><i class="bi bi-images"></i> 첨부 이미지 (' + images.length + ')</h5>';
-			html += '<div class="row g-3">';
-
-			images.forEach((file, index) => {
-				// 썸네일이 있으면 썸네일 사용, 없으면 원본 사용
-				let imageUrl = file.thumb_path || file.path;
-				let fullImageUrl = file.path;
-
-				console.log('[이미지 렌더링]', file.name, '썸네일:', imageUrl, '원본:', fullImageUrl);
-
-				// 상대경로를 절대경로로 변환
-				if (!imageUrl.startsWith('http')) {
-					if (!imageUrl.startsWith('/')) imageUrl = '/' + imageUrl;
-					imageUrl = 'https://wani.im' + imageUrl;
-				}
-				if (!fullImageUrl.startsWith('http')) {
-					if (!fullImageUrl.startsWith('/')) fullImageUrl = '/' + fullImageUrl;
-					fullImageUrl = 'https://wani.im' + fullImageUrl;
-				}
-
-				html += '<div class="col-6 col-md-4 col-lg-3">';
-				html += '<div class="card shadow-sm h-100" style="transition: transform 0.2s;">';
-				// GLightbox용 링크로 변경 (onclick 제거)
-				html += '<a href="' + escapeHtml(fullImageUrl) + '" class="glightbox" data-gallery="board-attachments" data-title="' + escapeHtml(file.name) + '">';
-				html += '<div class="card-img-wrapper" style="height: 200px; overflow: hidden; cursor: pointer; background: #f8f9fa;">';
-				html += '<img src="' + escapeHtml(imageUrl) + '" class="card-img-top" style="width: 100%; height: 100%; object-fit: cover;" alt="' + escapeHtml(file.name) + '" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div class=\\\'d-flex align-items-center justify-content-center h-100\\\'><i class=\\\'bi bi-image text-muted fs-1\\\'></i></div>\';">';
-				html += '</div>';
-				html += '</a>';
-				html += '<div class="card-body p-2">';
-				html += '<small class="text-muted d-block text-truncate" title="' + escapeHtml(file.name) + '">' + escapeHtml(file.name) + '</small>';
-				html += '<button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2" onclick="event.stopPropagation(); downloadFile(\'' + fullImageUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(file.name).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i> 다운로드</button>';
-				html += '</div>';
-				html += '</div>';
-				html += '</div>';
-			});
-
-			html += '</div>';
-			html += '</div>';
-		}
-
-		// 문서 목록
-		if (documents.length > 0) {
-			html += '<div class="attachment-section mt-4">';
-			html += '<h5 class="mb-3"><i class="bi bi-file-earmark-text"></i> 첨부 문서 (' + documents.length + ')</h5>';
-			html += '<div class="list-group">';
-
-			documents.forEach(file => {
-				let fileUrl = file.path;
-				if (!fileUrl.startsWith('http')) {
-					if (!fileUrl.startsWith('/')) fileUrl = '/' + fileUrl;
-					fileUrl = 'https://wani.im' + fileUrl;
-				}
-
-				// 파일 확장자 추출
-				const ext = file.name.split('.').pop().toUpperCase();
-				const fileSize = formatFileSize(file.size);
-
-				html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
-				html += '<div class="d-flex align-items-center flex-grow-1">';
-				html += '<span class="badge bg-secondary me-2">' + ext + '</span>';
-				html += '<span class="text-truncate me-2">' + escapeHtml(file.name) + '</span>';
-				html += '<small class="text-muted">(' + fileSize + ')</small>';
-				html += '</div>';
-				html += '<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadFile(\'' + fileUrl.replace(/'/g, "\\'") + '\', \'' + escapeHtml(file.name).replace(/'/g, "\\'") + '\');"><i class="bi bi-download"></i> 다운로드</button>';
-				html += '</div>';
-			});
-
-			html += '</div>';
-			html += '</div>';
-		}
-
-		return html;
-	} catch (error) {
-		console.error('첨부파일 렌더링 오류:', error);
-		return '';
-	}
-}
 
 
 /**
