@@ -142,3 +142,7 @@ $route['api/homepage/link/(:any)/(:any)'] = 'api/homepage_api/get_link/$1/$2';
 $route['api/homepage/board/(:any)/(:any)'] = 'api/homepage_api/get_board_list/$1/$2';
 $route['api/homepage/board/detail/(:any)/(:num)'] = 'api/homepage_api/get_board_detail/$1/$2';
 $route['api/homepage/org/(:any)'] = 'api/homepage_api/get_org_info/$1';
+
+// 아래 라우트를 routes.php 파일의 홈페이지 API 라우팅 섹션에 추가하세요
+$route['api/homepage/board/verify_writer'] = 'api/homepage_api/verify_writer';
+$route['api/homepage/board/save'] = 'api/homepage_api/save_board';

@@ -9,20 +9,6 @@ class Homepage_api_model extends CI_Model
 		$this->load->database();
 	}
 
-	/**
-	 * 조직 코드로 조직 ID 조회
-	 */
-	private function get_org_id_by_code($org_code)
-	{
-		$this->db->select('org_id');
-		$this->db->from('wb_org');
-		$this->db->where('org_code', $org_code);
-		$this->db->where('del_yn', 'N');
-		$query = $this->db->get();
-
-		$result = $query->row_array();
-		return $result ? $result['org_id'] : false;
-	}
 
 	/**
 	 * 조직 코드로 메뉴 데이터 조회
@@ -433,6 +419,90 @@ class Homepage_api_model extends CI_Model
 
 		return null;
 	}
+	/**
+	 * 파일 위치: application/models/Homepage_api_model.php
+	 * 역할: 회원 확인 함수 (이름과 휴대폰번호로 조직 회원인지 확인)
+	 */
+	public function verify_member($org_code, $member_name, $member_phone)
+	{
+		$org_id = $this->get_org_id_by_code($org_code);
 
+		if ($org_id === false) {
+			return [
+				'success' => false,
+				'message' => '조직 정보를 찾을 수 없습니다.',
+				'data' => ['is_member' => false]
+			];
+		}
 
+		// 휴대폰번호 정규화 (하이픈 제거)
+		$member_phone = preg_replace('/[^0-9]/', '', $member_phone);
+
+		$this->db->select('member_idx, member_name, member_phone');
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('member_name', $member_name);
+		$this->db->where('del_yn', 'N');
+
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			$members = $query->result_array();
+
+			// 휴대폰번호 일치 확인
+			foreach ($members as $member) {
+				$db_phone = preg_replace('/[^0-9]/', '', $member['member_phone']);
+				if ($db_phone === $member_phone) {
+					return [
+						'success' => true,
+						'message' => '회원 확인 완료',
+						'data' => [
+							'is_member' => true,
+							'member_idx' => $member['member_idx']
+						]
+					];
+				}
+			}
+		}
+
+		return [
+			'success' => true,
+			'message' => '회원이 아닙니다',
+			'data' => ['is_member' => false]
+		];
+	}
+
+	/**
+	 * 파일 위치: application/models/Homepage_api_model.php
+	 * 역할: 게시글 저장 함수 (프론트엔드용)
+	 */
+	public function save_board($data)
+	{
+		if (isset($data['idx']) && !empty($data['idx'])) {
+			// 수정
+			$idx = $data['idx'];
+			unset($data['idx']);
+			$this->db->where('idx', $idx);
+			return $this->db->update('wb_homepage_board', $data);
+		} else {
+			// 신규 등록
+			return $this->db->insert('wb_homepage_board', $data);
+		}
+	}
+
+	/**
+	 * 파일 위치: application/models/Homepage_api_model.php
+	 * 역할: org_code로 org_id 조회 (public으로 변경)
+	 */
+	public function get_org_id_by_code($org_code)
+	{
+		$this->db->select('org_id');
+		$this->db->from('wb_org');
+		$this->db->where('org_code', $org_code);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+
+		$result = $query->row_array();
+		return $result ? $result['org_id'] : false;
+	}
 }

@@ -921,26 +921,75 @@ async function loadBoardDetail(menuId, idx) {
 }
 
 // 게시글 작성 폼 표시
-function showBoardWriteForm(menuId) {
+async function showBoardWriteForm(menuId) {
 	const mainContent = document.getElementById('mainContent');
 	mainContent.classList.remove('loading');
 
+	// 메뉴 정보 조회
+	const menuInfo = menuData.find(item => item.id === menuId);
+	const menuName = menuInfo ? menuInfo.name : '게시판';
+	const categoryName = menuInfo ? menuInfo.category : '';
+
 	let html = '<div class="board-container fade-in">';
 	html += '<div class="container py-5">';
-	html += '<h4 class="mb-0">게시글 작성</h4>';
+	html += `<h4 class="mb-0">${escapeHtml(menuName)}</h4>`;
 
-	html += '<form id="boardWriteForm">';
+	// Breadcrumb 추가
+	html += '<nav aria-label="breadcrumb">';
+	html += '<ol class="breadcrumb">';
+	html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
+	if (categoryName) {
+		html += `<li class="breadcrumb-item"><a href="#">${escapeHtml(categoryName)}</a></li>`;
+	}
+	html += `<li class="breadcrumb-item"><a href="/board/${menuId}/">${escapeHtml(menuName)}</a></li>`;
+	html += `<li class="breadcrumb-item active" aria-current="page">게시글 작성</li>`;
+	html += '</ol>';
+	html += '</nav>';
+
+	html += '<form id="boardWriteForm" class="mt-4">';
+
+	// 작성자 확인 필드
+	html += '<div class="mb-3">';
+	html += '<label class="form-label">작성자 확인</label>';
+	html += '<div class="row g-2">';
+	html += '<div class="col-md-4">';
+	html += '<input type="text" class="form-control" id="writerName" placeholder="이름" required>';
+	html += '</div>';
+	html += '<div class="col-md-4">';
+	html += '<input type="text" class="form-control" id="writerPhone" placeholder="휴대폰번호" required>';
+	html += '</div>';
+	html += '<div class="col-md-4">';
+	html += '<button type="button" class="btn btn-outline-secondary w-100" id="btnVerifyWriter">확인</button>';
+	html += '</div>';
+	html += '</div>';
+	html += '<div id="verifyResult" class="mt-2"></div>';
+	html += '<input type="hidden" id="isVerified" value="0">';
+	html += '</div>';
+
+	// 제목
 	html += '<div class="mb-3">';
 	html += '<label for="boardTitle" class="form-label">제목</label>';
 	html += '<input type="text" class="form-control" id="boardTitle" required>';
 	html += '</div>';
+
+	// 내용
 	html += '<div class="mb-3">';
 	html += '<label for="boardContent" class="form-label">내용</label>';
 	html += '<textarea class="form-control" id="boardContent" rows="10" required></textarea>';
 	html += '</div>';
+
+	// YouTube URL
 	html += '<div class="mb-3">';
-	html += '<label for="writerName" class="form-label">작성자</label>';
-	html += '<input type="text" class="form-control" id="writerName" required>';
+	html += '<label for="youtubeUrl" class="form-label">YouTube URL (선택)</label>';
+	html += '<input type="url" class="form-control" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">';
+	html += '<small class="text-muted">YouTube 동영상 URL을 입력하면 게시글에 표시됩니다.</small>';
+	html += '</div>';
+
+	// 파일 첨부
+	html += '<div class="mb-3">';
+	html += '<label class="form-label">파일 첨부 (선택)</label>';
+	html += '<div id="boardFileDropzone" class="dropzone"></div>';
+	html += '<input type="hidden" id="uploadedFiles" value="">';
 	html += '</div>';
 
 	html += '<div class="d-flex gap-2">';
@@ -953,23 +1002,65 @@ function showBoardWriteForm(menuId) {
 
 	mainContent.innerHTML = html;
 
+	// Dropzone 초기화
+	initBoardWriteDropzone();
+
+	// 작성자 확인 버튼 이벤트
+	document.getElementById('btnVerifyWriter').addEventListener('click', verifyWriter);
+
 	// 폼 제출 이벤트
 	document.getElementById('boardWriteForm').addEventListener('submit', async (e) => {
 		e.preventDefault();
 
-		const title = document.getElementById('boardTitle').value.trim();
-		const content = document.getElementById('boardContent').value.trim();
-		const writerName = document.getElementById('writerName').value.trim();
-
-		if (!title || !content || !writerName) {
-			alert('모든 항목을 입력해주세요.');
+		const isVerified = document.getElementById('isVerified').value;
+		if (isVerified !== '1') {
+			showToast('작성자 확인을 먼저 진행해주세요.');
 			return;
 		}
 
-		// TODO: 실제 저장 API 구현 필요
-		alert('게시글 작성 기능은 준비 중입니다.');
-		// 임시로 목록으로 이동
-		window.location.href = `/board/${menuId}/`;
+		const title = document.getElementById('boardTitle').value.trim();
+		const content = document.getElementById('boardContent').value.trim();
+		const writerName = document.getElementById('writerName').value.trim();
+		const writerPhone = document.getElementById('writerPhone').value.trim();
+		const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
+		const uploadedFiles = document.getElementById('uploadedFiles').value;
+
+		if (!title || !content) {
+			showToast('제목과 내용을 입력해주세요.');
+			return;
+		}
+
+		// 게시글 저장 API 호출
+		try {
+			const response = await fetch(`${API_BASE_URL}/board/save`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					org_code: ORG_CODE,
+					menu_id: menuId,
+					board_title: title,
+					board_content: content,
+					writer_name: writerName,
+					writer_phone: writerPhone,
+					youtube_url: youtubeUrl,
+					file_path: uploadedFiles
+				})
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				showToast('게시글이 등록되었습니다.');
+				window.location.href = `/board/${menuId}/`;
+			} else {
+				showToast(result.message || '게시글 등록에 실패했습니다.');
+			}
+		} catch (error) {
+			console.error('게시글 저장 실패:', error);
+			showToast('게시글 저장 중 오류가 발생했습니다.');
+		}
 	});
 }
 
@@ -1308,5 +1399,118 @@ function downloadFile(url, filename) {
 	} catch (error) {
 		console.error('[파일 다운로드] 오류:', error);
 		alert('파일 다운로드에 실패했습니다: ' + error.message);
+	}
+}
+
+// 작성자 확인 함수
+async function verifyWriter() {
+	const writerName = document.getElementById('writerName').value.trim();
+	const writerPhone = document.getElementById('writerPhone').value.trim();
+	const resultDiv = document.getElementById('verifyResult');
+
+	if (!writerName || !writerPhone) {
+		resultDiv.innerHTML = '<span class="text-danger">이름과 휴대폰번호를 모두 입력해주세요.</span>';
+		document.getElementById('isVerified').value = '0';
+		return;
+	}
+
+	try {
+		const response = await fetch(`${API_BASE_URL}/board/verify_writer`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				org_code: ORG_CODE,
+				member_name: writerName,
+				member_phone: writerPhone
+			})
+		});
+
+		const result = await response.json();
+
+		if (result.success && result.data && result.data.is_member) {
+			resultDiv.innerHTML = '<span class="text-success">확인 OK</span>';
+			document.getElementById('isVerified').value = '1';
+		} else {
+			resultDiv.innerHTML = '<span class="text-danger">조직의 회원이 아닙니다.</span>';
+			document.getElementById('isVerified').value = '0';
+		}
+	} catch (error) {
+		console.error('작성자 확인 실패:', error);
+		resultDiv.innerHTML = '<span class="text-danger">확인 중 오류가 발생했습니다.</span>';
+		document.getElementById('isVerified').value = '0';
+	}
+}
+
+// Dropzone 인스턴스 변수
+let boardWriteDropzone = null;
+
+// 게시글 작성 페이지 Dropzone 초기화
+function initBoardWriteDropzone() {
+	if (boardWriteDropzone) {
+		boardWriteDropzone.destroy();
+		boardWriteDropzone = null;
+	}
+
+	const dropzoneElement = document.getElementById('boardFileDropzone');
+	if (!dropzoneElement) {
+		console.error('Dropzone 요소를 찾을 수 없습니다.');
+		return;
+	}
+
+	boardWriteDropzone = new Dropzone('#boardFileDropzone', {
+		url: 'https://wani.im/homepage_menu/upload_homepage_file',
+		paramName: 'file',
+		maxFilesize: 10,
+		maxFiles: 5,
+		addRemoveLinks: true,
+		dictDefaultMessage: '파일을 드래그하거나 클릭하여 업로드하세요',
+		dictRemoveFile: '삭제',
+		dictCancelUpload: '취소',
+		dictMaxFilesExceeded: '최대 5개까지 업로드 가능합니다',
+		acceptedFiles: 'image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp',
+		autoProcessQueue: true,
+		params: {
+			org_id: orgInfo ? orgInfo.org_id : 0
+		},
+		init: function() {
+			this.on('success', function(file, response) {
+				console.log('파일 업로드 성공:', response);
+
+				if (response.success && response.file_info) {
+					file.serverFileName = response.file_info;
+					updateUploadedFilesList();
+				}
+			});
+
+			this.on('error', function(file, errorMessage) {
+				console.error('파일 업로드 실패:', errorMessage);
+				showToast('파일 업로드에 실패했습니다.');
+			});
+
+			this.on('removedfile', function(file) {
+				console.log('파일 제거됨:', file);
+				updateUploadedFilesList();
+			});
+		}
+	});
+}
+
+// 업로드된 파일 목록 업데이트
+function updateUploadedFilesList() {
+	if (!boardWriteDropzone) return;
+
+	const files = boardWriteDropzone.files.filter(f => f.status === 'success' && f.serverFileName);
+	const fileList = files.map(f => f.serverFileName);
+
+	document.getElementById('uploadedFiles').value = JSON.stringify(fileList);
+	console.log('업로드된 파일 목록:', fileList);
+}
+
+// Toast 메시지 표시 함수 (없을 경우 대비)
+if (typeof showToast === 'undefined') {
+	function showToast(message) {
+		alert(message);
 	}
 }

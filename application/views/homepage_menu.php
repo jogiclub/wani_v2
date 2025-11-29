@@ -135,12 +135,8 @@
 	</div>
 </div>
 
-<!-- Dropzone JS - autoDiscover 비활성화 스크립트 추가 -->
-<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-<script>
-	// Dropzone 자동 초기화 방지 (전역 설정)
-	Dropzone.autoDiscover = false;
-</script>
+
+
 
 
 <?php $this->load->view('footer'); ?>
@@ -151,7 +147,10 @@
 
 <!-- Dropzone JS -->
 <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-
+<script>
+	// Dropzone 자동 초기화 방지 (전역 설정)
+	Dropzone.autoDiscover = false;
+</script>
 <!-- Editor.js Core -->
 <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest"></script>
 

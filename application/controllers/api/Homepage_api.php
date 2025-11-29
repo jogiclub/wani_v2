@@ -37,7 +37,9 @@ class Homepage_api extends CI_Controller
 			));
 		}
 	}
-
+	/**
+	 * 파일 다운로드 프록시
+	 */
 	/**
 	 * 파일 다운로드 프록시
 	 */
@@ -1268,4 +1270,101 @@ class Homepage_api extends CI_Controller
 		}
 	}
 
+
+
+
+
+
+	/**
+	 * 파일 위치: application/controllers/api/Homepage_api.php
+	 * 역할: 작성자 회원 확인 API
+	 * POST /api/homepage_api/verify_writer
+	 */
+	public function verify_writer()
+	{
+		$input = json_decode(file_get_contents('php://input'), true);
+
+		$org_code = isset($input['org_code']) ? $input['org_code'] : '';
+		$member_name = isset($input['member_name']) ? trim($input['member_name']) : '';
+		$member_phone = isset($input['member_phone']) ? trim($input['member_phone']) : '';
+
+		if (empty($org_code) || empty($member_name) || empty($member_phone)) {
+			echo json_encode([
+				'success' => false,
+				'message' => '필수 정보가 누락되었습니다.',
+				'data' => null
+			]);
+			return;
+		}
+
+		$result = $this->Homepage_api_model->verify_member($org_code, $member_name, $member_phone);
+
+		echo json_encode($result);
+	}
+
+	/**
+	 * 파일 위치: application/controllers/api/Homepage_api.php
+	 * 역할: 게시글 저장 API (프론트엔드용)
+	 * POST /api/homepage_api/save_board
+	 */
+	public function save_board()
+	{
+		$input = json_decode(file_get_contents('php://input'), true);
+
+		$org_code = isset($input['org_code']) ? $input['org_code'] : '';
+		$menu_id = isset($input['menu_id']) ? $input['menu_id'] : '';
+		$board_title = isset($input['board_title']) ? trim($input['board_title']) : '';
+		$board_content = isset($input['board_content']) ? trim($input['board_content']) : '';
+		$writer_name = isset($input['writer_name']) ? trim($input['writer_name']) : '';
+		$writer_phone = isset($input['writer_phone']) ? trim($input['writer_phone']) : '';
+		$youtube_url = isset($input['youtube_url']) ? trim($input['youtube_url']) : '';
+		$file_path = isset($input['file_path']) ? $input['file_path'] : '';
+
+		if (empty($org_code) || empty($menu_id) || empty($board_title) || empty($board_content) || empty($writer_name)) {
+			echo json_encode([
+				'success' => false,
+				'message' => '필수 정보가 누락되었습니다.',
+				'data' => null
+			]);
+			return;
+		}
+
+		// 조직 ID 조회
+		$org_id = $this->Homepage_api_model->get_org_id_by_code($org_code);
+		if ($org_id === false) {
+			echo json_encode([
+				'success' => false,
+				'message' => '조직 정보를 찾을 수 없습니다.',
+				'data' => null
+			]);
+			return;
+		}
+
+		// 게시글 데이터
+		$data = [
+			'org_id' => $org_id,
+			'menu_id' => $menu_id,
+			'board_title' => $board_title,
+			'board_content' => $board_content,
+			'writer_name' => $writer_name,
+			'youtube_url' => $youtube_url ? $youtube_url : null,
+			'file_path' => $file_path ? $file_path : null
+		];
+
+		$result = $this->Homepage_api_model->save_board($data);
+
+		if ($result) {
+			echo json_encode([
+				'success' => true,
+				'message' => '게시글이 등록되었습니다.',
+				'data' => null
+			]);
+		} else {
+			echo json_encode([
+				'success' => false,
+				'message' => '게시글 저장에 실패했습니다.',
+				'data' => null
+			]);
+		}
+	}
 }
