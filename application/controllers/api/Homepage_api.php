@@ -9,13 +9,17 @@ class Homepage_api extends CI_Controller
 		$this->load->model('Homepage_api_model');
 		$this->load->helper('url');
 
-		header('Content-Type: application/json; charset=utf-8');
-		header('Access-Control-Allow-Origin: *');
-		header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-		header('Access-Control-Allow-Headers: Content-Type');
+		// CORS 헤더를 CodeIgniter 방식으로 설정 (모든 헤더 허용)
+		$this->output->set_header('Access-Control-Allow-Origin: *');
+		$this->output->set_header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+		$this->output->set_header('Access-Control-Allow-Headers: *');
+		$this->output->set_header('Access-Control-Max-Age: 86400');
+
 		// OPTIONS 요청 처리 (Preflight)
 		if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-			exit(0);
+			$this->output->set_status_header(204);
+			$this->output->_display();
+			exit;
 		}
 	}
 
@@ -28,17 +32,20 @@ class Homepage_api extends CI_Controller
 		$menu_data = $this->Homepage_api_model->get_menu_by_org_code($org_code);
 
 		if ($menu_data !== false) {
-			// 메뉴 데이터에 menu_category 정보 포함 (이미 있으면 그대로 전달)
-			echo json_encode(array(
-				'success' => true,
-				'message' => '메뉴 조회 성공',
-				'data' => $menu_data
-			));
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => true,
+					'message' => '메뉴 조회 성공',
+					'data' => $menu_data
+				]));
 		} else {
-			echo json_encode(array(
-				'success' => false,
-				'message' => '메뉴 조회 실패'
-			));
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => false,
+					'message' => '메뉴 조회 실패'
+				]));
 		}
 	}
 	/**
@@ -1079,11 +1086,13 @@ class Homepage_api extends CI_Controller
 	public function get_board_list($org_code = null, $menu_id = null)
 	{
 		if (empty($org_code) || empty($menu_id)) {
-			echo json_encode([
-				'success' => false,
-				'message' => '조직 코드와 메뉴 ID가 필요합니다.',
-				'data' => null
-			]);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => false,
+					'message' => '조직 코드와 메뉴 ID가 필요합니다.',
+					'data' => null
+				]));
 			return;
 		}
 
@@ -1100,20 +1109,24 @@ class Homepage_api extends CI_Controller
 		);
 
 		if ($board_data !== false) {
-			echo json_encode([
-				'success' => true,
-				'message' => '게시판 목록 조회 성공',
-				'data' => $board_data['list'],
-				'total' => $board_data['total'],
-				'page' => $page,
-				'limit' => $limit
-			]);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => true,
+					'message' => '게시판 목록 조회 성공',
+					'data' => $board_data['list'],
+					'total' => $board_data['total'],
+					'page' => $page,
+					'limit' => $limit
+				]));
 		} else {
-			echo json_encode([
-				'success' => false,
-				'message' => '게시판 목록을 찾을 수 없습니다.',
-				'data' => []
-			]);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => false,
+					'message' => '게시판 목록을 찾을 수 없습니다.',
+					'data' => []
+				]));
 		}
 	}
 
@@ -1280,7 +1293,6 @@ class Homepage_api extends CI_Controller
 
 
 	/**
-	 * 파일 위치: application/controllers/api/Homepage_api.php
 	 * 역할: 작성자 회원 확인 API
 	 * POST /api/homepage_api/verify_writer
 	 */
@@ -1373,25 +1385,19 @@ class Homepage_api extends CI_Controller
 	}
 
 
-	/**
-	 * 파일 위치: application/controllers/api/Homepage_api.php
-	 * 역할: 프론트엔드용 파일 업로드 API (CORS 지원)
-	 * POST /api/homepage_api/upload_file
-	 */
 	public function upload_file()
 	{
-		// OPTIONS 요청 처리 (Preflight)
-		if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-			exit(0);
-		}
+		// CORS 헤더는 __construct에서 이미 설정되었으므로 생략
 
 		$org_code = $this->input->post('org_code');
 
 		if (!$org_code) {
-			echo json_encode([
-				'success' => false,
-				'message' => '조직 코드가 누락되었습니다.'
-			]);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => false,
+					'message' => '조직 코드가 누락되었습니다.'
+				]));
 			return;
 		}
 
@@ -1399,10 +1405,12 @@ class Homepage_api extends CI_Controller
 		$org_id = $this->Homepage_api_model->get_org_id_by_code($org_code);
 
 		if ($org_id === false) {
-			echo json_encode([
-				'success' => false,
-				'message' => '조직 정보를 찾을 수 없습니다.'
-			]);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => false,
+					'message' => '조직 정보를 찾을 수 없습니다.'
+				]));
 			return;
 		}
 
@@ -1458,25 +1466,29 @@ class Homepage_api extends CI_Controller
 				}
 			}
 
-			echo json_encode([
-				'success' => true,
-				'file_info' => [
-					'name' => $file_name,
-					'original_name' => $original_name,
-					'path' => $file_path,
-					'url' => $file_url,
-					'thumb_path' => $thumb_file_path,
-					'thumb_url' => $thumb_file_url,
-					'size' => $upload_data['file_size'] * 1024,
-					'type' => $file_type
-				]
-			]);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => true,
+					'file_info' => [
+						'name' => $file_name,
+						'original_name' => $original_name,
+						'path' => $file_path,
+						'url' => $file_url,
+						'thumb_path' => $thumb_file_path,
+						'thumb_url' => $thumb_file_url,
+						'size' => $upload_data['file_size'] * 1024,
+						'type' => $file_type
+					]
+				]));
 		} else {
 			$error = $this->upload->display_errors('', '');
-			echo json_encode([
-				'success' => false,
-				'message' => '파일 업로드 실패: ' . $error
-			]);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'success' => false,
+					'message' => '파일 업로드 실패: ' . $error
+				]));
 		}
 	}
 
