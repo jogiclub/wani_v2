@@ -925,9 +925,10 @@ function showBoardWriteForm(menuId) {
 	const mainContent = document.getElementById('mainContent');
 	mainContent.classList.remove('loading');
 
-	let html = '<div class="board-write fade-in">';
-	html += '<h4>게시글 작성</h4>';
-	html += '<hr>';
+	let html = '<div class="board-container fade-in">';
+	html += '<div class="container py-5">';
+	html += '<h4 class="mb-0">게시글 작성</h4>';
+
 	html += '<form id="boardWriteForm">';
 	html += '<div class="mb-3">';
 	html += '<label for="boardTitle" class="form-label">제목</label>';
@@ -941,12 +942,13 @@ function showBoardWriteForm(menuId) {
 	html += '<label for="writerName" class="form-label">작성자</label>';
 	html += '<input type="text" class="form-control" id="writerName" required>';
 	html += '</div>';
-	html += '<hr>';
+
 	html += '<div class="d-flex gap-2">';
 	html += `<a href="/board/${menuId}/" class="btn btn-secondary">취소</a>`;
 	html += '<button type="submit" class="btn btn-primary">등록</button>';
 	html += '</div>';
 	html += '</form>';
+	html += '</div>';
 	html += '</div>';
 
 	mainContent.innerHTML = html;
