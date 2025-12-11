@@ -533,10 +533,311 @@ $(document).ready(function() {
 			$('#historyMonth').val(month);
 			searchTimelines();
 		});
+
+
+		// 수료증 인쇄 버튼
+		$('#btnCertificate').on('click', handleCertificateClick);
+		$('#btnCertificatePreview').on('click', handleCertificatePreview);
+		$('#btnCertificatePrint').on('click', handleCertificatePrint);
+
 	}
 
 	/**
-	 
+	 * 수료증 인쇄 버튼 클릭 처리
+	 */
+	function handleCertificateClick() {
+		const selectedCheckboxes = $('.timeline-checkbox:checked');
+
+		if (selectedCheckboxes.length === 0) {
+			showToast('수료증을 인쇄할 항목을 선택해주세요.', 'warning');
+			return;
+		}
+
+		// 선택된 모든 idx 가져오기
+		const selectedIdxs = [];
+		selectedCheckboxes.each(function() {
+			selectedIdxs.push($(this).data('idx'));
+		});
+
+		console.log('선택된 idxs:', selectedIdxs);
+		console.log('선택된 idxs 타입:', selectedIdxs.map(id => typeof id));
+
+		// PQGrid에서 데이터 가져오기
+		const allData = timelineGrid.getData();
+		console.log('전체 데이터 개수:', allData.length);
+
+		if (allData.length > 0) {
+			console.log('첫 번째 행 idx:', allData[0].idx, '타입:', typeof allData[0].idx);
+		}
+
+		// 타입 불일치 해결: == 비교 사용
+		const selectedRows = allData.filter(row => {
+			const isIncluded = selectedIdxs.some(selectedIdx => selectedIdx == row.idx);
+			return isIncluded;
+		});
+
+		console.log('찾은 데이터 개수:', selectedRows.length);
+
+		if (selectedRows.length > 0) {
+			openCertificateOffcanvas(selectedRows);
+		} else {
+			showToast('선택한 타임라인 정보를 찾을 수 없습니다.', 'error');
+		}
+	}
+
+	/**
+	 * 수료증 Offcanvas 열기
+	 */
+	function openCertificateOffcanvas(selectedRows) {
+		// 첫 번째 항목을 예시로 표시
+		const firstRow = selectedRows[0];
+
+		// 선택된 항목 개수 표시
+		const selectedCount = selectedRows.length;
+		if (selectedCount > 1) {
+			$('#certificateOffcanvasLabel').text(`수료증 인쇄 (${selectedCount}개 선택)`);
+		} else {
+			$('#certificateOffcanvasLabel').text('수료증 인쇄');
+		}
+
+		// 성명
+		$('#cert_member_name').text(firstRow.member_name || '');
+
+		// 과목
+		$('#cert_timeline_type').text(firstRow.timeline_type || '');
+
+		// 기간 (시작일과 종료일 동일하게 설정)
+		const timelineDate = firstRow.timeline_date || '';
+		$('#cert_period_start').val(timelineDate);
+		$('#cert_period_end').val(timelineDate);
+
+		// 수료일
+		$('#cert_date').val(timelineDate);
+
+		// 조직명
+		const orgName = window.timelinePageData.currentOrgName || '';
+		$('#cert_org_name').text(orgName);
+
+		// 수료 내용
+		const defaultContent = `위 사람은 ${orgName}에서 진행한 ${firstRow.timeline_type || ''} 과정을\n성실히 수료하였기에 이 증서를 드립니다.`;
+		$('#cert_content').val(defaultContent);
+
+		// 선택된 데이터를 전역 변수에 저장 (미리보기/인쇄 시 사용)
+		window.selectedCertificateData = selectedRows;
+
+		// Offcanvas 열기
+		const certificateOffcanvas = new bootstrap.Offcanvas(document.getElementById('certificateOffcanvas'));
+		certificateOffcanvas.show();
+	}
+
+	/**
+	 * 수료증 미리보기
+	 */
+	function handleCertificatePreview() {
+		const printWindow = window.open('', '_blank', 'width=800,height=600');
+		const certificateHtml = generateCertificateHtml();
+
+		printWindow.document.write(certificateHtml);
+		printWindow.document.close();
+	}
+
+	/**
+	 * 수료증 인쇄
+	 */
+	function handleCertificatePrint() {
+		const printWindow = window.open('', '_blank', 'width=800,height=600');
+		const certificateHtml = generateCertificateHtml();
+
+		printWindow.document.write(certificateHtml);
+		printWindow.document.close();
+
+		setTimeout(() => {
+			printWindow.print();
+		}, 250);
+	}
+
+	/**
+	 * 수료증 HTML 생성 (선택된 모든 항목)
+	 */
+	function generateCertificateHtml() {
+		const selectedData = window.selectedCertificateData || [];
+		const periodStart = $('#cert_period_start').val();
+		const periodEnd = $('#cert_period_end').val();
+		const period = `[${periodStart}] ~ [${periodEnd}]`;
+		const contentTemplate = $('#cert_content').val();
+		const certDate = $('#cert_date').val();
+		const orgName = $('#cert_org_name').text();
+
+		let certificatesHtml = '';
+
+		selectedData.forEach((row, index) => {
+			const memberName = row.member_name || '';
+			const timelineType = row.timeline_type || '';
+
+			// 수료 내용에서 성명과 과목명을 동적으로 치환
+			const content = contentTemplate
+				.replace(/\{성명\}/g, memberName)
+				.replace(/\{항목명\}/g, timelineType)
+				.replace(/\{과목\}/g, timelineType)
+				.replace(/\{조직명\}/g, orgName)
+				.replace(/\n/g, '<br>');
+
+			// 페이지 구분을 위한 클래스 추가 (첫 번째 제외하고 페이지 브레이크)
+			const pageBreakClass = index > 0 ? ' page-break' : '';
+
+			certificatesHtml += `
+        <div class="certificate${pageBreakClass}">
+            <div class="certificate-header">
+                <div class="certificate-title">수료증</div>
+                <div class="certificate-subtitle">Certificate of Completion</div>
+            </div>
+            
+            <div class="certificate-body">
+                <div class="certificate-row">
+                    <div class="certificate-label">성명</div>
+                    <div class="certificate-value">${memberName}</div>
+                </div>
+                <div class="certificate-row">
+                    <div class="certificate-label">과목</div>
+                    <div class="certificate-value">${timelineType}</div>
+                </div>
+                <div class="certificate-row">
+                    <div class="certificate-label">기간</div>
+                    <div class="certificate-value">${period}</div>
+                </div>
+            </div>
+            
+            <div class="certificate-content">
+                ${content}
+            </div>
+            
+            <div class="certificate-footer">
+                <div class="certificate-date">${certDate}</div>
+                <div class="certificate-org">${orgName}</div>
+            </div>
+        </div>
+        `;
+		});
+
+		return `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수료증</title>
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 20mm;
+            }
+            
+            .page-break {
+                page-break-before: always;
+            }
+        }
+        
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            margin: 0;
+            padding: 40px;
+        }
+        
+        .certificate {
+            width: 100%;
+            max-width: 700px;
+            padding: 60px;
+            border: 3px double #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 0 auto 40px auto;
+            background: white;
+            min-height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .certificate-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .certificate-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            letter-spacing: 10px;
+        }
+        
+        .certificate-subtitle {
+            font-size: 20px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .certificate-body {
+            margin-bottom: 50px;
+        }
+        
+        .certificate-row {
+            display: flex;
+            margin-bottom: 25px;
+            font-size: 18px;
+        }
+        
+        .certificate-label {
+            font-weight: bold;
+            width: 100px;
+            text-align: right;
+            margin-right: 20px;
+        }
+        
+        .certificate-value {
+            flex: 1;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        
+        .certificate-content {
+            margin: 40px 0;
+            padding: 30px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #333;
+            line-height: 2;
+            font-size: 16px;
+        }
+        
+        .certificate-footer {
+            text-align: right;
+            margin-top: 60px;
+        }
+        
+        .certificate-date {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .certificate-org {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        @media screen {
+            .page-break {
+                margin-top: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    ${certificatesHtml}
+</body>
+</html>
+    `;
+	}
+
+	/**
 	 * 역할: 타임라인 검색 - 검색 후 버튼 상태 초기화
 	 */
 	function searchTimelines() {

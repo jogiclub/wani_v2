@@ -89,8 +89,11 @@ $this->load->view('header');
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnSearch"><i class="bi bi-search"></i> 검색</button>
 							</div>
 
+
 							<div class="btn-group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd"><i class="bi bi-plus-lg"></i> 일괄추가</button>
+
+								<button type="button" class="btn btn-sm btn-outline-info" id="btnCertificate"><i class="bi bi-printer"></i> 수료증 인쇄</button>
 
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDelete"><i class="bi bi-trash"></i> 선택삭제</button>
 							</div>
@@ -131,8 +134,65 @@ $this->load->view('header');
 	</div>
 </div>
 
+<!-- 수료증 인쇄 Offcanvas -->
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" id="certificateOffcanvas" aria-labelledby="certificateOffcanvasLabel" style="width: 600px;">
+	<div class="offcanvas-header text-start">
+		<h5 class="offcanvas-title" id="certificateOffcanvasLabel">수료증 인쇄</h5>
+		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div class="alert alert-info mb-3">
+			<small>여러 time을 선택한 경우 첫 번째 항목의 정보가 표시됩니다.<br/>미리보기/인쇄 시 선택한 모든 항목이 출력됩니다.</small>
+		</div>
 
+		<div id="certificatePreview" class="border rounded p-4 bg-white" style="min-height: 500px;">
+			<div class="text-center mb-5">
+				<h2 class="mb-2">수료증</h2>
+				<h5 class="text-muted">Certificate of Completion</h5>
+			</div>
 
+			<div class="mb-4">
+				<div class="row mb-3">
+					<div class="col-3 text-end fw-bold">성명</div>
+					<div class="col-9" id="cert_member_name"></div>
+				</div>
+				<div class="row mb-3">
+					<div class="col-3 text-end fw-bold">과목</div>
+					<div class="col-9" id="cert_timeline_type"></div>
+				</div>
+				<div class="row mb-3">
+					<div class="col-3 text-end fw-bold">기간</div>
+					<div class="col-9">
+						<div class="input-group input-group-sm">
+							<input type="date" class="form-control" id="cert_period_start" style="width: auto;">
+							<span class="input-group-text">~</span>
+							<input type="date" class="form-control" id="cert_period_end" style="width: auto;">
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="mb-4">
+				<textarea class="form-control" id="cert_content" rows="4"></textarea>
+			</div>
+
+			<div class="text-end mt-5">
+				<div class="mb-2">
+					<input type="date" class="form-control form-control-sm d-inline-block text-center" id="cert_date" style="width: 180px;">
+				</div>
+				<div class="fw-bold" id="cert_org_name"></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="offcanvas-footer">
+		<div class="d-flex gap-2 p-3 border-top bg-light">
+			<button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="offcanvas">취소</button>
+			<button type="button" class="btn btn-info flex-fill" id="btnCertificatePreview">미리보기</button>
+			<button type="button" class="btn btn-primary flex-fill" id="btnCertificatePrint">인쇄</button>
+		</div>
+	</div>
+</div>
 <!-- 타임라인 일괄추가/수정 Offcanvas -->
 <div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="true" tabindex="-1" id="timelineOffcanvas" aria-labelledby="timelineOffcanvasLabel" style="width: 500px;">
 	<div class="offcanvas-header text-start">
@@ -244,7 +304,8 @@ $this->load->view('header');
 <script>
 	window.timelinePageData = {
 		baseUrl: '<?php echo base_url(); ?>',
-		currentOrgId: '<?php echo isset($current_org['org_id']) ? $current_org['org_id'] : ''; ?>'
+		currentOrgId: '<?php echo isset($current_org['org_id']) ? $current_org['org_id'] : ''; ?>',
+		currentOrgName: '<?php echo isset($current_org['org_name']) ? $current_org['org_name'] : ''; ?>'
 	};
 
 	$('.menu-24').addClass('active');
