@@ -93,9 +93,21 @@ $this->load->view('header');
 							<div class="btn-group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAdd"><i class="bi bi-plus-lg"></i> 일괄추가</button>
 
-								<button type="button" class="btn btn-sm btn-outline-info" id="btnCertificate"><i class="bi bi-printer"></i> 수료증 인쇄</button>
+
 
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDelete"><i class="bi bi-trash"></i> 선택삭제</button>
+
+
+								<div class="btn-group" role="group">
+									<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+										더보기
+									</button>
+									<ul class="dropdown-menu">
+										<li><a class="dropdown-item" href="#" id="btnCertificate"><i class="bi bi-printer"></i> 수료증 인쇄</a></li>
+									</ul>
+								</div>
+
+
 							</div>
 						</div>
 					</div>
@@ -142,7 +154,10 @@ $this->load->view('header');
 	</div>
 	<div class="offcanvas-body">
 		<div class="alert alert-info mb-3">
-			<small>여러 time을 선택한 경우 첫 번째 항목의 정보가 표시됩니다.<br/>미리보기/인쇄 시 선택한 모든 항목이 출력됩니다.</small>
+			<small>여러 time을 선택한 경우 첫 번째 항목의 정보가 표시됩니다.<br/>
+				미리보기/인쇄 시 선택한 모든 항목이 출력됩니다.<br/>
+				조직설정에서 조직 로고, 조직 직인, 조직명, 조직장 등의 정보 수정이 가능합니다.
+			</small>
 		</div>
 
 		<div id="certificatePreview" class="border rounded p-4 bg-white" style="min-height: 500px;">
@@ -180,7 +195,10 @@ $this->load->view('header');
 				<div class="mb-2">
 					<input type="date" class="form-control form-control-sm d-inline-block text-center" id="cert_date" style="width: 180px;">
 				</div>
-				<div class="fw-bold" id="cert_org_name"></div>
+				<div class="d-flex justify-content-end align-items-center gap-3">
+					<div class="fw-bold" id="cert_org_name"></div>
+					<div class="fw-bold" id="cert_org_rep"></div>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -305,7 +323,9 @@ $this->load->view('header');
 	window.timelinePageData = {
 		baseUrl: '<?php echo base_url(); ?>',
 		currentOrgId: '<?php echo isset($current_org['org_id']) ? $current_org['org_id'] : ''; ?>',
-		currentOrgName: '<?php echo isset($current_org['org_name']) ? $current_org['org_name'] : ''; ?>'
+		currentOrgName: '<?php echo isset($current_org['org_name']) ? $current_org['org_name'] : ''; ?>',
+		currentOrgRep: '<?php echo isset($current_org['org_rep']) ? $current_org['org_rep'] : ''; ?>',
+		currentOrgSeal: '<?php echo isset($current_org['org_seal']) ? $current_org['org_seal'] : ''; ?>'
 	};
 
 	$('.menu-24').addClass('active');

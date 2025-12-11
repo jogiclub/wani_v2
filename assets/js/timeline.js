@@ -614,9 +614,11 @@ $(document).ready(function() {
 		// 수료일
 		$('#cert_date').val(timelineDate);
 
-		// 조직명
+		// 조직명과 조직장
 		const orgName = window.timelinePageData.currentOrgName || '';
+		const orgRep = window.timelinePageData.currentOrgRep || '';
 		$('#cert_org_name').text(orgName);
+		$('#cert_org_rep').text(orgRep);
 
 		// 수료 내용
 		const defaultContent = `위 사람은 ${orgName}에서 진행한 ${firstRow.timeline_type || ''} 과정을\n성실히 수료하였기에 이 증서를 드립니다.`;
@@ -663,10 +665,13 @@ $(document).ready(function() {
 		const selectedData = window.selectedCertificateData || [];
 		const periodStart = $('#cert_period_start').val();
 		const periodEnd = $('#cert_period_end').val();
-		const period = `[${periodStart}] ~ [${periodEnd}]`;
+		const period = `${periodStart} ~ ${periodEnd}`;
 		const contentTemplate = $('#cert_content').val();
 		const certDate = $('#cert_date').val();
 		const orgName = $('#cert_org_name').text();
+		const orgRep = $('#cert_org_rep').text();
+		const orgSeal = window.timelinePageData.currentOrgSeal || '';
+		const baseUrl = window.timelinePageData.baseUrl || '';
 
 		let certificatesHtml = '';
 
@@ -684,6 +689,12 @@ $(document).ready(function() {
 
 			// 페이지 구분을 위한 클래스 추가 (첫 번째 제외하고 페이지 브레이크)
 			const pageBreakClass = index > 0 ? ' page-break' : '';
+
+			// 직인 이미지 HTML (있는 경우에만)
+			let sealHtml = '';
+			if (orgSeal) {
+				sealHtml = `<img src="${baseUrl}${orgSeal}" alt="조직 직인" class="org-seal">`;
+			}
 
 			certificatesHtml += `
         <div class="certificate${pageBreakClass}">
@@ -713,7 +724,11 @@ $(document).ready(function() {
             
             <div class="certificate-footer">
                 <div class="certificate-date">${certDate}</div>
-                <div class="certificate-org">${orgName}</div>
+                <div class="certificate-signature">
+                    <span class="certificate-org">${orgName}</span>
+                    <span class="certificate-rep">${orgRep}</span>
+                    ${sealHtml}
+                </div>
             </div>
         </div>
         `;
@@ -726,6 +741,7 @@ $(document).ready(function() {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>수료증</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&family=Noto+Serif+KR:wght@200..900&display=swap" rel="stylesheet">
     <style>
         @media print {
             @page {
@@ -739,17 +755,15 @@ $(document).ready(function() {
         }
         
         body {
-            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            font-family: "Noto Sans KR", sans-serif;
             margin: 0;
-            padding: 40px;
+            padding: 0;
         }
         
         .certificate {
             width: 100%;
             max-width: 700px;
-            padding: 60px;
-            border: 3px double #333;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 0;                        
             margin: 0 auto 40px auto;
             background: white;
             min-height: calc(100vh - 80px);
@@ -764,16 +778,17 @@ $(document).ready(function() {
         }
         
         .certificate-title {
-            font-size: 48px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            letter-spacing: 10px;
+			font-size: 48px;
+			font-weight: bold;
+			margin-bottom: 20px;
+			letter-spacing: 40px;
+			font-family: "Noto Serif KR", serif;
+			margin-left: 40px;
         }
         
         .certificate-subtitle {
             font-size: 20px;
-            color: #666;
-            font-style: italic;
+            color: #666;            
         }
         
         .certificate-body {
@@ -783,29 +798,28 @@ $(document).ready(function() {
         .certificate-row {
             display: flex;
             margin-bottom: 25px;
-            font-size: 18px;
+            font-size: 20px;
         }
         
         .certificate-label {
             font-weight: bold;
             width: 100px;
-            text-align: right;
+            text-align: left;
             margin-right: 20px;
+            letter-spacing: 20px;
         }
         
         .certificate-value {
             flex: 1;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #999;
             padding-bottom: 5px;
         }
         
         .certificate-content {
-            margin: 40px 0;
-            padding: 30px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #333;
+            margin: 70px 0;
+            padding: 0;            
             line-height: 2;
-            font-size: 16px;
+            font-size: 20px;
         }
         
         .certificate-footer {
@@ -818,9 +832,39 @@ $(document).ready(function() {
             margin-bottom: 15px;
         }
         
+        .certificate-signature {
+            position: relative;
+            display: inline-block;
+            text-align: right;
+            
+        }
+        
         .certificate-org {
+        	position: relative;
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 500;
+            margin-right: 30px;
+            z-index: 10;
+        }
+        
+        .certificate-rep {
+			position: relative;
+			font-size: 32px;
+			font-weight: 500;
+			z-index: 10;
+			margin-right: 10px;
+			font-family: 'Noto Serif KR';
+			letter-spacing: 14px;
+        }
+        
+        .org-seal {
+            position: absolute;
+            right: -20px;
+            bottom: -40px;
+            width: 100px;
+            height: 100px;
+            opacity: 0.9;
+            z-index: 9;
         }
         
         @media screen {

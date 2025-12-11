@@ -22,6 +22,7 @@ class Timeline extends My_Controller
 
 	}
 
+
 	/**
 	 * 타임라인 관리 메인 페이지
 	 */
@@ -43,6 +44,16 @@ class Timeline extends My_Controller
 		if (!$this->check_org_access($currentOrgId)) {
 			$this->handle_access_denied('해당 조직의 타임라인을 관리할 권한이 없습니다.');
 			return;
+		}
+
+		// 조직 정보 상세 조회 (org_rep, org_seal 포함)
+		$this->db->select('org_id, org_name, org_rep, org_seal');
+		$this->db->from('wb_org');
+		$this->db->where('org_id', $currentOrgId);
+		$org_detail = $this->db->get()->row_array();
+
+		if ($org_detail) {
+			$data['current_org'] = array_merge($data['current_org'], $org_detail);
 		}
 
 		$data['orgs'] = array($data['current_org']);
