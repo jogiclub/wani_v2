@@ -54,7 +54,7 @@ class Org extends My_Controller
 
 	/**
 	 * 파일 위치: application/controllers/Org.php
-	 * 역할: 조직 정보 업데이트 (알림 메시지 설정 포함)
+	 * 역할: 조직 정보 업데이트 (조직장 필드 추가)
 	 */
 	public function update_org_info() {
 		if (!$this->input->is_ajax_request()) {
@@ -64,10 +64,11 @@ class Org extends My_Controller
 		$org_id = $this->input->post('org_id');
 		$org_name = $this->input->post('org_name');
 		$org_type = $this->input->post('org_type');
+		$org_rep = $this->input->post('org_rep');
 		$org_desc = $this->input->post('org_desc');
 		$leader_name = $this->input->post('leader_name');
 		$new_name = $this->input->post('new_name');
-		$auto_message = $this->input->post('auto_message'); // 추가
+		$auto_message = $this->input->post('auto_message');
 
 		// 직위/직분, 직책, 타임라인 데이터 처리
 		$position_names = $this->input->post('position_names');
@@ -92,6 +93,7 @@ class Org extends My_Controller
 		$update_data = array(
 			'org_name' => $org_name,
 			'org_type' => $org_type,
+			'org_rep' => $org_rep, // 추가
 			'org_desc' => $org_desc,
 			'leader_name' => $leader_name,
 			'new_name' => $new_name,
@@ -115,7 +117,7 @@ class Org extends My_Controller
 			$update_data['memo_name'] = $memo_names;
 		}
 
-		// 알림 메시지 설정 처리 (추가)
+		// 알림 메시지 설정 처리
 		if (!empty($auto_message)) {
 			$update_data['auto_message'] = $auto_message;
 		}
@@ -348,6 +350,74 @@ class Org extends My_Controller
 			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '초대 코드 갱신에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 조직 직인 업로드
+	 */
+	public function upload_org_seal() {
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
+			return;
+		}
+
+		// 권한 검증
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '조직 직인을 변경할 권한이 없습니다.'));
+			return;
+		}
+
+		// 업로드 디렉토리 설정
+		$upload_path = './uploads/org_seals/';
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		// 업로드 설정
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'jpg|jpeg|png';
+		$config['max_size'] = 2048; // 2MB
+		$config['file_name'] = 'org_seal_' . $org_id . '_' . time();
+		$config['overwrite'] = TRUE;
+
+		$this->upload->initialize($config);
+
+		if ($this->upload->do_upload('org_seal')) {
+			$upload_data = $this->upload->data();
+			$file_path = '/uploads/org_seals/' . $upload_data['file_name'];
+
+			// 기존 직인 파일 삭제
+			$current_org = $this->Org_model->get_org_detail_by_id($org_id);
+			if ($current_org && !empty($current_org['org_seal']) && file_exists('.' . $current_org['org_seal'])) {
+				unlink('.' . $current_org['org_seal']);
+			}
+
+			// DB에 파일 경로 저장
+			$update_data = array('org_seal' => $file_path);
+			$result = $this->Org_model->update_org_info($org_id, $update_data);
+
+			if ($result) {
+				echo json_encode(array(
+					'success' => true,
+					'message' => '조직 직인이 업로드되었습니다.',
+					'seal_url' => $file_path
+				));
+			} else {
+				echo json_encode(array('success' => false, 'message' => '직인 정보 저장에 실패했습니다.'));
+			}
+		} else {
+			$error = $this->upload->display_errors('', '');
+			echo json_encode(array('success' => false, 'message' => '파일 업로드 실패: ' . $error));
 		}
 	}
 

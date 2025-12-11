@@ -69,6 +69,36 @@
 								</div>
 							</div>
 
+							<!-- 조직 아이콘 섹션 다음에 추가 -->
+							<!-- 조직 직인 -->
+							<div class="row mb-4">
+								<div class="col-12">
+									<label class="form-label">조직 직인</label>
+									<div class="d-flex align-items-center gap-3">
+										<div class="row">
+											<div class="org-seal-preview col-md-12">
+												<?php if (!empty($selected_org_detail['org_seal'])): ?>
+													<img src="<?php echo $selected_org_detail['org_seal']; ?>" alt="조직 직인" class="circle" width="100" height="100" style="object-fit: cover; border: 1px solid #ddd;" id="sealPreview">
+												<?php else: ?>
+													<div class="bg-light border circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;" id="sealPreview">
+														<i class="bi bi-image text-muted fs-1"></i>
+													</div>
+												<?php endif; ?>
+											</div>
+											<div class="col-md-12 mt-3">
+												<div class="input-group">
+													<input type="file" class="form-control" id="orgSealFile" accept=".jpg,.jpeg,.png">
+													<button type="button" class="btn btn-primary btn-sm" id="uploadSealBtn"><i class="bi bi-upload"></i> 직인 업로드</button>
+												</div>
+												<div class="form-text d-block">
+													* JPG 또는 PNG 파일만 가능합니다.<br> * 100x100 픽셀 크기를 권장합니다.
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
 							<div class="row mb-3">
 								<div class="col-md-6">
 									<label for="org_name" class="form-label">조직명</label>
@@ -85,6 +115,11 @@
 										<option value="other" <?php echo ($selected_org_detail['org_type'] == 'other') ? 'selected' : ''; ?>>기타</option>
 									</select>
 								</div>
+							</div>
+
+							<div class="mb-3">
+								<label for="org_rep" class="form-label">조직장</label>
+								<input type="text" class="form-control" id="org_rep" name="org_rep" value="<?php echo htmlspecialchars($selected_org_detail['org_rep'] ?? ''); ?>" placeholder="조직장 이름을 입력하세요">
 							</div>
 
 							<div class="mb-3">

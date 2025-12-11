@@ -291,34 +291,11 @@ class Org_model extends CI_Model {
 	/**
 	 * 역할: 조직 상세 정보 조회 (auto_message 컬럼 추가)
 	 */
+	/**
+	 * 역할: 조직 상세 정보 조회 (auto_message, org_seal 컬럼 추가)
+	 */
 	public function get_org_detail_by_id($org_id)
 	{
-		$this->db->select('
-		org_id,
-		org_code,
-		org_name,
-		org_type,
-		org_desc,
-		org_rep,
-		org_manager,
-		org_phone,
-		org_address_postno,
-		org_address,
-		org_address_detail,
-		org_tag,
-		org_icon,
-		leader_name,
-		new_name,
-		invite_code,
-		position_name,
-		duty_name,
-		timeline_name,
-		memo_name,
-		auto_message,
-		category_idx,
-		regi_date,
-		modi_date
-	');
 		$this->db->from('wb_org');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');

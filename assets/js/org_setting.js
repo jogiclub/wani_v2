@@ -243,7 +243,7 @@ $(document).ready(function () {
 	$('#orgSettingForm').on('submit', function (e) {
 		e.preventDefault();
 
-		// 알림 메시지 설정 데이터 수집 (추가)
+		// 알림 메시지 설정 데이터 수집
 		const autoMessage = {
 			birth7: $('#switchCheck-birth7').is(':checked'),
 			birthToday: $('#switchCheck-birthToday').is(':checked'),
@@ -257,6 +257,7 @@ $(document).ready(function () {
 			org_id: $('#org_id').val(),
 			org_name: $('#org_name').val().trim(),
 			org_type: $('#org_type').val(),
+			org_rep: $('#org_rep').val().trim(), // 조직장 추가
 			org_desc: $('#org_desc').val().trim(),
 			leader_name: $('#leader_name').val().trim(),
 			new_name: $('#new_name').val().trim(),
@@ -264,10 +265,10 @@ $(document).ready(function () {
 			duty_names: $('#duty_names').val() || [],
 			timeline_names: $('#timeline_names').val() || [],
 			memo_names: $('#memos_names').val() || [],
-			auto_message: JSON.stringify(autoMessage) // 추가
+			auto_message: JSON.stringify(autoMessage)
 		};
 
-		// 필수 항목 검증 (기존 코드 유지)
+		// 필수 항목 검증
 		if (!formData.org_name) {
 			showToast('조직명을 입력해주세요.');
 			$('#org_name').focus();
@@ -286,7 +287,7 @@ $(document).ready(function () {
 			return;
 		}
 
-		// 저장 중 상태 표시 (기존 코드 유지)
+		// 저장 중 상태 표시
 		const submitBtn = $(this).find('button[type="submit"]');
 		const originalText = submitBtn.html();
 		submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 저장 중...');
@@ -314,6 +315,9 @@ $(document).ready(function () {
 			}
 		});
 	});
+
+
+
 	// 아이콘 업로드
 	$('#uploadIconBtn').on('click', function () {
 		const fileInput = $('#orgIconFile')[0];
@@ -403,6 +407,105 @@ $(document).ready(function () {
                               height="100" 
                               style="object-fit: cover; border: 1px solid #ddd;" 
                               id="iconPreview">`
+					);
+				}
+			};
+			reader.readAsDataURL(file);
+		}
+	});
+
+
+
+// 직인 업로드
+	$('#uploadSealBtn').on('click', function () {
+		const fileInput = $('#orgSealFile')[0];
+		const file = fileInput.files[0];
+
+		if (!file) {
+			showToast('직인 파일을 선택해주세요.');
+			return;
+		}
+
+		// 파일 형식 검증
+		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+		if (!allowedTypes.includes(file.type)) {
+			showToast('JPG 또는 PNG 파일만 업로드 가능합니다.');
+			return;
+		}
+
+		// 파일 크기 검증 (2MB)
+		if (file.size > 2 * 1024 * 1024) {
+			showToast('파일 크기는 2MB 이하여야 합니다.');
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append('org_seal', file);
+		formData.append('org_id', $('#org_id').val());
+
+		const uploadBtn = $(this);
+		const originalText = uploadBtn.html();
+		uploadBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 업로드 중...');
+
+		$.ajax({
+			url: '/org/upload_org_seal',
+			method: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			dataType: 'json',
+			success: function (response) {
+				if (response.success) {
+					showToast('직인이 업로드되었습니다.');
+					// 직인 미리보기 업데이트
+					if (response.seal_url) {
+						const preview = $('#sealPreview');
+						if (preview.is('img')) {
+							preview.attr('src', response.seal_url);
+						} else {
+							preview.replaceWith(
+								`<img src="${response.seal_url}" 
+                                  alt="조직 직인" 
+                                  class="circle" 
+                                  width="100" 
+                                  height="100" 
+                                  style="object-fit: cover; border: 1px solid #ddd;" 
+                                  id="sealPreview">`
+							);
+						}
+					}
+				} else {
+					showToast(response.message || '직인 업로드에 실패했습니다.');
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error('Error:', error);
+				showToast('직인 업로드 중 오류가 발생했습니다.');
+			},
+			complete: function () {
+				uploadBtn.prop('disabled', false).html(originalText);
+			}
+		});
+	});
+
+// 직인 파일 선택 시 미리보기
+	$('#orgSealFile').on('change', function () {
+		const file = this.files[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = function (e) {
+				const preview = $('#sealPreview');
+				if (preview.is('img')) {
+					preview.attr('src', e.target.result);
+				} else {
+					preview.replaceWith(
+						`<img src="${e.target.result}" 
+                              alt="조직 직인" 
+                              class="circle" 
+                              width="100" 
+                              height="100" 
+                              style="object-fit: cover; border: 1px solid #ddd;" 
+                              id="sealPreview">`
 					);
 				}
 			};
