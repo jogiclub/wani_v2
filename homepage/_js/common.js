@@ -7,7 +7,6 @@ const API_BASE_URL = 'https://wani.im/api/homepage';
 let orgInfo = null;
 let menuData = [];
 
-// HTML 이스케이프 함수
 function escapeHtml(text) {
 	if (!text) return '';
 	const map = {
@@ -19,6 +18,56 @@ function escapeHtml(text) {
 	};
 	return String(text).replace(/[&<>"']/g, m => map[m]);
 }
+function convertEditorJsToHtml(editorData) {
+	return parseEditorJSToHTML(editorData);
+}
+
+// YouTube URL에서 비디오 ID 추출
+function extractYoutubeId(url) {
+	if (!url) return null;
+
+	const patterns = [
+		/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/,
+		/youtube\.com\/embed\/([^&\s]+)/,
+		/youtube\.com\/v\/([^&\s]+)/
+	];
+
+	for (const pattern of patterns) {
+		const match = url.match(pattern);
+		if (match && match[1]) {
+			return match[1];
+		}
+	}
+
+	return null;
+}
+
+// 파일 크기를 읽기 쉬운 형식으로 변환
+function formatBytes(bytes) {
+	if (bytes === 0) return '0 Bytes';
+	if (!bytes) return '';
+
+	const k = 1024;
+	const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+	const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+	return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+
+// YouTube 비디오 ID로 썸네일 URL 생성
+function getYoutubeThumbnail(videoId) {
+	if (!videoId) return null;
+	return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+}
+
+// YouTube URL에서 썸네일 URL 가져오기
+function getYoutubeThumbnailFromUrl(youtubeUrl) {
+	if (!youtubeUrl) return null;
+	const videoId = extractYoutubeId(youtubeUrl);
+	return getYoutubeThumbnail(videoId);
+}
+
+
 
 // 로컬스토리지에서 뷰 타입 설정 가져오기
 function getBoardViewType(menuId) {
@@ -403,18 +452,59 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = nu
 	}
 }
 
+
 // 리스트 뷰 렌더링
 function renderListView(data, total, page, menuId, limit) {
 	let html = '<div class="table-responsive"><table class="table table-hover">';
 	html += '<thead><tr><th style="width: 80px;">번호</th><th>제목</th><th style="width: 100px;">작성자</th><th style="width: 80px;">조회수</th><th style="width: 140px;">작성일</th></tr></thead>';
 	html += '<tbody>';
 
+	const currentDate = new Date();
+
 	data.forEach((item, index) => {
 		const num = total - ((page - 1) * limit) - index;
 		const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
+
+		// 아이콘 생성
+		let icons = '';
+
+		// NEW 아이콘 (3일 이내 게시글)
+		const regDate = new Date(item.reg_date);
+		const diffTime = Math.abs(currentDate - regDate);
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		if (diffDays <= 3) {
+			icons += '<span class="badge bg-danger ms-1">NEW</span>';
+		}
+
+		// YouTube 아이콘
+		if (item.youtube_url) {
+			icons += '<i class="bi bi-youtube text-danger ms-1" title="YouTube 동영상"></i>';
+		}
+
+		// 첨부파일 아이콘 (이미지 / 일반 파일)
+		if (item.file_path) {
+			try {
+				const files = JSON.parse(item.file_path);
+				if (Array.isArray(files) && files.length > 0) {
+					const hasImage = files.some(file => file.type && file.type.includes('image'));
+					const hasDocument = files.some(file => file.type && !file.type.includes('image'));
+
+					if (hasImage) {
+						icons += '<i class="bi bi-image text-primary ms-1" title="이미지 첨부"></i>';
+					}
+
+					if (hasDocument) {
+						icons += '<i class="bi bi-file-earmark-text text-secondary ms-1" title="문서 첨부"></i>';
+					}
+				}
+			} catch (e) {
+				console.error('파일 정보 파싱 실패:', e);
+			}
+		}
+
 		html += `<tr style="cursor:pointer" onclick="window.location.href='/board/${menuId}/${item.idx}'">
 			<td>${num}</td>
-			<td class="text-start">${escapeHtml(item.board_title)}</td>
+			<td class="text-start">${escapeHtml(item.board_title)}${icons}</td>
 			<td>${escapeHtml(item.writer_name || '')}</td>
 			<td>${item.view_count}</td>
 			<td>${date}</td>
@@ -425,15 +515,63 @@ function renderListView(data, total, page, menuId, limit) {
 	return html;
 }
 
+
 // 갤러리 뷰 렌더링
 function renderGalleryView(data, menuId) {
 	let html = '<div class="row g-3">';
+	const currentDate = new Date();
 
 	data.forEach(item => {
 		console.log('이미지-->' + item.file_path);
-		const thumbnail = getFirstImageFromFiles(item.file_path);
-		console.log('썸네일 URL-->' + thumbnail);
+		console.log('YouTube URL-->' + item.youtube_url);
+
+		// 썸네일 우선순위: 첨부 이미지 > YouTube 썸네일
+		let thumbnail = getFirstImageFromFiles(item.file_path);
+
+		// 첨부 이미지가 없고 YouTube URL이 있으면 YouTube 썸네일 사용
+		if (!thumbnail && item.youtube_url) {
+			thumbnail = getYoutubeThumbnailFromUrl(item.youtube_url);
+			console.log('YouTube 썸네일-->' + thumbnail);
+		}
+
 		const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
+
+		// 아이콘 생성
+		let icons = '';
+
+		// NEW 아이콘 (3일 이내 게시글)
+		const regDate = new Date(item.reg_date);
+		const diffTime = Math.abs(currentDate - regDate);
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		if (diffDays <= 3) {
+			icons += '<span class="badge bg-danger ms-1">NEW</span>';
+		}
+
+		// YouTube 아이콘
+		if (item.youtube_url) {
+			icons += '<i class="bi bi-youtube text-danger ms-1" title="YouTube 동영상"></i>';
+		}
+
+		// 첨부파일 아이콘 (이미지 / 일반 파일)
+		if (item.file_path) {
+			try {
+				const files = JSON.parse(item.file_path);
+				if (Array.isArray(files) && files.length > 0) {
+					const hasImage = files.some(file => file.type && file.type.includes('image'));
+					const hasDocument = files.some(file => file.type && !file.type.includes('image'));
+
+					if (hasImage) {
+						icons += '<i class="bi bi-image text-primary ms-1" title="이미지 첨부"></i>';
+					}
+
+					if (hasDocument) {
+						icons += '<i class="bi bi-file-earmark-text text-secondary ms-1" title="문서 첨부"></i>';
+					}
+				}
+			} catch (e) {
+				console.error('파일 정보 파싱 실패:', e);
+			}
+		}
 
 		html += '<div class="col-6 col-md-4 col-lg-3">';
 		html += `<div class="card h-100 shadow-sm" style="cursor:pointer" onclick="window.location.href='/board/${menuId}/${item.idx}'">`;
@@ -447,7 +585,7 @@ function renderGalleryView(data, menuId) {
 		}
 
 		html += '<div class="card-body">';
-		html += `<h6 class="card-title text-truncate" title="${escapeHtml(item.board_title)}">${escapeHtml(item.board_title)}</h6>`;
+		html += `<h6 class="card-title" title="${escapeHtml(item.board_title)}">${escapeHtml(item.board_title)}${icons}</h6>`;
 		html += '<div class="d-flex justify-content-between align-items-center">';
 		html += `<small class="text-muted">${escapeHtml(item.writer_name || '')}</small>`;
 		html += `<small class="text-muted">${date}</small>`;
@@ -464,11 +602,87 @@ function renderGalleryView(data, menuId) {
 // 아티클 뷰 렌더링
 function renderArticleView(data, menuId) {
 	let html = '<div class="row g-3">';
+	const currentDate = new Date();
 
 	data.forEach(item => {
-		const thumbnail = getFirstImageFromFiles(item.file_path);
+		console.log('이미지-->' + item.file_path);
+		console.log('YouTube URL-->' + item.youtube_url);
+
+		// 썸네일 우선순위: 첨부 이미지 > YouTube 썸네일
+		let thumbnail = getFirstImageFromFiles(item.file_path);
+
+		// 첨부 이미지가 없고 YouTube URL이 있으면 YouTube 썸네일 사용
+		if (!thumbnail && item.youtube_url) {
+			thumbnail = getYoutubeThumbnailFromUrl(item.youtube_url);
+			console.log('YouTube 썸네일-->' + thumbnail);
+		}
+
 		const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
-		const content = item.board_content ? stripHtml(item.board_content).substring(0, 150) : '';
+
+		// 본문 내용 추출 (EditorJS 또는 일반 텍스트)
+		let content = '';
+		if (item.board_content) {
+			try {
+				// EditorJS 형식인 경우
+				const parsedContent = JSON.parse(item.board_content);
+				if (parsedContent.blocks && Array.isArray(parsedContent.blocks)) {
+					// 모든 블록의 텍스트 추출
+					const textBlocks = parsedContent.blocks
+						.filter(block => block.type === 'paragraph' || block.type === 'header')
+						.map(block => {
+							if (block.data && block.data.text) {
+								return stripHtml(block.data.text);
+							}
+							return '';
+						})
+						.filter(text => text.length > 0);
+
+					content = textBlocks.join(' ').substring(0, 150);
+				} else {
+					content = stripHtml(item.board_content).substring(0, 150);
+				}
+			} catch (e) {
+				// JSON 파싱 실패시 일반 텍스트로 처리
+				content = stripHtml(item.board_content).substring(0, 150);
+			}
+		}
+
+		// 아이콘 생성
+		let icons = '';
+
+		// NEW 아이콘 (3일 이내 게시글)
+		const regDate = new Date(item.reg_date);
+		const diffTime = Math.abs(currentDate - regDate);
+		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+		if (diffDays <= 3) {
+			icons += '<span class="badge bg-danger ms-1">NEW</span>';
+		}
+
+		// YouTube 아이콘
+		if (item.youtube_url) {
+			icons += '<i class="bi bi-youtube text-danger ms-1" title="YouTube 동영상"></i>';
+		}
+
+		// 첨부파일 아이콘 (이미지 / 일반 파일)
+		if (item.file_path) {
+			try {
+				const files = JSON.parse(item.file_path);
+				if (Array.isArray(files) && files.length > 0) {
+					const hasImage = files.some(file => file.type && file.type.includes('image'));
+					const hasDocument = files.some(file => file.type && !file.type.includes('image'));
+
+					if (hasImage) {
+						icons += '<i class="bi bi-image text-primary ms-1" title="이미지 첨부"></i>';
+					}
+
+					if (hasDocument) {
+						icons += '<i class="bi bi-file-earmark-text text-secondary ms-1" title="문서 첨부"></i>';
+					}
+				}
+			} catch (e) {
+				console.error('파일 정보 파싱 실패:', e);
+			}
+		}
 
 		html += '<div class="col-12">';
 		html += `<div class="card shadow-sm" style="cursor:pointer" onclick="window.location.href='/board/${menuId}/${item.idx}'">`;
@@ -484,10 +698,13 @@ function renderArticleView(data, menuId) {
 			html += '<div class="col-12">';
 		}
 
-		html += `<h5 class="card-title">${escapeHtml(item.board_title)}</h5>`;
+		html += `<h5 class="card-title mb-2">${escapeHtml(item.board_title)}${icons}</h5>`;
+
+		// 본문 내용 (2라인 정도 표시)
 		if (content) {
-			html += `<p class="card-text text-muted">${escapeHtml(content)}...</p>`;
+			html += `<p class="card-text text-muted mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.5;">${escapeHtml(content)}...</p>`;
 		}
+
 		html += '<div class="d-flex justify-content-between align-items-center mt-2">';
 		html += `<small class="text-muted">작성자: ${escapeHtml(item.writer_name || '')}</small>`;
 		html += `<small class="text-muted">조회수: ${item.view_count} | ${date}</small>`;
@@ -502,6 +719,8 @@ function renderArticleView(data, menuId) {
 	html += '</div>';
 	return html;
 }
+
+
 
 // 페이지네이션 렌더링
 function renderPagination(total, currentPage, limit) {
@@ -807,10 +1026,11 @@ function parseEditorJSToHTML(editorData) {
 	}
 }
 
-/**
- * 역할: 게시글 상세 로드 함수 수정 (메뉴명, 카테고리명 표시)
- */
 
+
+/**
+ * 역할: 게시글 상세 로드 함수 수정 (수정 버튼 추가)
+ */
 async function loadBoardDetail(menuId, idx) {
 	try {
 		const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
@@ -822,101 +1042,110 @@ async function loadBoardDetail(menuId, idx) {
 		if (result.success && result.data) {
 			const item = result.data;
 			const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
-			const modDate = item.modi_date ? new Date(item.modi_date).toLocaleDateString('ko-KR') : null;
+			const modDate = item.modi_date ?
+				'<br><small class="text-muted">(수정: ' + new Date(item.modi_date).toLocaleDateString('ko-KR') + ')</small>' : '';
 
-			// EditorJS JSON을 HTML로 변환
-			const contentHTML = parseEditorJSToHTML(item.board_content);
-
-			// 첨부파일 Grid 렌더링
-			const attachmentHTML = renderAttachmentGrid(item.file_path);
-
-			// 메뉴명과 카테고리명 가져오기
-			const menuName = item.menu_name || '';
-			const categoryName = item.category_name || '';
-			const parentMenuName = item.parent_menu_name || '';
+			const menuInfo = findMenuById(menuData, menuId);
+			const menuName = menuInfo ? menuInfo.name : '게시판';
+			const categoryName = menuInfo ? menuInfo.category : '';
 
 			let html = '<div class="board-container fade-in">';
 			html += '<div class="container py-5">';
-			// 제목
-			html += `<h4 class="mb-0">${escapeHtml(item.board_title)}</h4>`;
+
 			// Breadcrumb
+			html += '<h4 class="mb-0">' + escapeHtml(menuName) + '</h4>';
 			html += '<nav aria-label="breadcrumb">';
 			html += '<ol class="breadcrumb">';
 			html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
-
-			// 카테고리가 있으면 표시
 			if (categoryName) {
-				html += `<li class="breadcrumb-item"><a href="#">${escapeHtml(categoryName)}</a></li>`;
+				html += '<li class="breadcrumb-item"><a href="#">' + escapeHtml(categoryName) + '</a></li>';
 			}
-
-			// 부모 메뉴가 있으면 표시 (카테고리와 다른 경우에만)
-			if (parentMenuName && parentMenuName !== categoryName) {
-				html += `<li class="breadcrumb-item"><a href="#">${escapeHtml(parentMenuName)}</a></li>`;
-			}
-
-			// 현재 메뉴
-			if (menuName) {
-				html += `<li class="breadcrumb-item active" aria-current="page">${escapeHtml(menuName)}</li>`;
-			}
-
+			html += '<li class="breadcrumb-item"><a href="/board/' + menuId + '">' + escapeHtml(menuName) + '</a></li>';
+			html += '<li class="breadcrumb-item active" aria-current="page">게시글 상세</li>';
 			html += '</ol>';
 			html += '</nav>';
 
-			// 정보 및 버튼
-			html += '<div class="d-flex justify-content-between align-items-center py-3">';
-			html += `<div class="text-muted d-flex gap-3 flex-wrap">
-                <small><i class="bi bi-person"></i> ${escapeHtml(item.writer_name || '')}</small>
-                <small><i class="bi bi-calendar"></i> ${date}</small>
-                <small><i class="bi bi-eye"></i> ${item.view_count}</small>`;
+			// 게시글 제목
+			html += '<div class="card shadow-sm mt-4">';
+			html += '<div class="card-body">';
+			html += '<h3 class="card-title">' + escapeHtml(item.board_title) + '</h3>';
+			html += '<div class="d-flex justify-content-between align-items-center text-muted border-bottom pb-3">';
+			html += '<div>';
+			html += '<small>작성자: ' + escapeHtml(item.writer_name || '') + '</small> | ';
+			html += '<small>작성일: ' + date + modDate + '</small> | ';
+			html += '<small>조회수: ' + item.view_count + '</small>';
+			html += '</div>';
+			html += '</div>';
 
-			if (modDate && item.modifier_name) {
-				html += `<small><i class="bi bi-pencil"></i> ${modDate} (${escapeHtml(item.modifier_name)})</small>`;
+			// YouTube 동영상
+			if (item.youtube_url) {
+				const videoId = extractYoutubeId(item.youtube_url);
+				if (videoId) {
+					html += '<div class="ratio ratio-16x9 my-4">';
+					html += '<iframe src="https://www.youtube.com/embed/' + videoId + '" allowfullscreen></iframe>';
+					html += '</div>';
+				}
 			}
 
-			html += `</div>`;
-			html += `<a href="/board/${menuId}/" class="btn btn-primary"><i class="bi bi-list"></i> 목록으로</a>`;
-			html += `</div>`;
+			// 게시글 내용
+			html += '<div class="mt-4">';
+			html += convertEditorJsToHtml(item.board_content);
+			html += '</div>';
 
-			// 본문
-			html += `<div class="board-content p-4" style="min-height: 500px">${contentHTML}</div>`;
+			// 첨부파일
+			if (item.file_path) {
+				try {
+					const files = JSON.parse(item.file_path);
+					if (Array.isArray(files) && files.length > 0) {
+						html += '<div class="mt-4 pt-3 border-top">';
+						html += '<h6 class="mb-3">첨부파일</h6>';
+						html += '<div class="list-group">';
 
-			// 첨부파일이 있으면 표시
-			if (attachmentHTML) {
-				html += attachmentHTML;
+						files.forEach(file => {
+							const fileIcon = file.type && file.type.includes('image') ?
+								'<i class="bi bi-image text-primary me-2"></i>' :
+								'<i class="bi bi-file-earmark-text text-secondary me-2"></i>';
+							const fileSize = file.size ? ' (' + formatBytes(file.size) + ')' : '';
+
+							// /api/download 엔드포인트 사용
+							const downloadUrl = `/api/download?file=${encodeURIComponent(file.path)}&name=${encodeURIComponent(file.name)}`;
+
+							html += '<a href="' + downloadUrl + '" class="list-group-item list-group-item-action" download>';
+							html += fileIcon;
+							html += escapeHtml(file.name) + fileSize;
+							html += '</a>';
+						});
+
+						html += '</div>';
+						html += '</div>';
+					}
+				} catch (e) {
+					console.error('파일 정보 파싱 실패:', e);
+				}
 			}
+
+			html += '</div>';
+			html += '</div>';
+
+			// 버튼 영역 (목록으로 + 수정 버튼)
+			html += '<div class="mt-4 d-flex gap-2">';
+			html += '<a href="/board/' + menuId + '/" class="btn btn-secondary">목록으로</a>';
+			html += '<a href="/board/' + menuId + '/' + idx + '/edit" class="btn btn-primary">수정</a>';
+			html += '</div>';
 
 			html += '</div>';
 			html += '</div>';
 
 			mainContent.innerHTML = html;
 
-			// GLightbox 초기화 (DOM 렌더링 후 실행)
-			setTimeout(function() {
-				if (typeof GLightbox !== 'undefined') {
-					const lightbox = GLightbox({
-						touchNavigation: true,
-						loop: true,
-						autoplayVideos: true,
-						closeButton: true,
-						closeOnOutsideClick: true,
-						skin: 'clean',
-						openEffect: 'fade',
-						closeEffect: 'fade',
-						slideEffect: 'slide',
-						moreLength: 0
-					});
-					console.log('[GLightbox] 초기화 완료');
-				} else {
-					console.warn('[GLightbox] 라이브러리가 로드되지 않았습니다.');
-				}
-			}, 100);
-
 		} else {
 			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 찾을 수 없습니다.</p></div>';
 		}
+		hidePageLoading();
 	} catch (error) {
 		console.error('게시글 로드 실패:', error);
 		document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 불러오는 중 오류가 발생했습니다.</p></div>';
+		hidePageLoading();
 	}
 }
 
@@ -1100,28 +1329,20 @@ function handleRouting() {
 		// 홈 - 메인 페이지 로드
 		loadPageContent('main');
 
-
-
 		$(window).scroll(function() {
 			if ($(this).scrollTop() > 500) {
-				// 스크롤 위치가 500px을 초과할 경우
 				$('header').addClass('fixed');
 			} else {
-				// 스크롤 위치가 500px 이하일 경우
 				$('header').removeClass('fixed');
 			}
 		});
 
-
-
 	} else if (path.startsWith('/page/')) {
 		$('header').addClass('fixed');
-		// 페이지 컨텐츠
 		const menuId = path.replace('/page/', '').replace(/\/$/, '');
 		loadPageContent(menuId);
 	} else if (path.startsWith('/board/')) {
 		$('header').addClass('fixed');
-		// 게시판 관련 라우팅
 		const pathParts = path.replace('/board/', '').replace(/\/$/, '').split('/');
 		const menuId = pathParts[0];
 
@@ -1133,9 +1354,16 @@ function handleRouting() {
 			// 글쓰기
 			showBoardWriteForm(menuId);
 		} else if (/^\d+$/.test(pathParts[1])) {
-			// 게시글 상세 (숫자인 경우)
+			// 게시글 상세 또는 수정
 			const idx = parseInt(pathParts[1]);
-			loadBoardDetail(menuId, idx);
+
+			if (pathParts[2] === 'edit') {
+				// 수정 페이지
+				showBoardEditForm(menuId, idx);
+			} else {
+				// 상세 페이지
+				loadBoardDetail(menuId, idx);
+			}
 		} else {
 			// 잘못된 경로
 			if (mainContent) {
@@ -1171,7 +1399,230 @@ async function initializePage() {
 	console.log('=== 홈페이지 초기화 완료 ===');
 }
 
+/**
+ * 역할: 게시글 수정 폼 표시 (기존 데이터 로드)
+ */
+async function showBoardEditForm(menuId, idx) {
+	const mainContent = document.getElementById('mainContent');
 
+	try {
+		// 기존 게시글 데이터 조회
+		const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
+		const result = await response.json();
+
+		if (!result.success || !result.data) {
+			showToast('게시글을 찾을 수 없습니다.');
+			window.location.href = `/board/${menuId}/`;
+			return;
+		}
+
+		const boardData = result.data;
+
+		const menuInfo = findMenuById(menuData, menuId);
+		const menuName = menuInfo ? menuInfo.name : '게시판';
+		const categoryName = menuInfo ? menuInfo.category : '';
+
+		let html = '<div class="board-container fade-in">';
+		html += '<div class="container py-5">';
+
+		// Breadcrumb
+		html += '<h4 class="mb-0">' + escapeHtml(menuName) + '</h4>';
+		html += '<nav aria-label="breadcrumb">';
+		html += '<ol class="breadcrumb">';
+		html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
+		if (categoryName) {
+			html += '<li class="breadcrumb-item"><a href="#">' + escapeHtml(categoryName) + '</a></li>';
+		}
+		html += '<li class="breadcrumb-item"><a href="/board/' + menuId + '">' + escapeHtml(menuName) + '</a></li>';
+		html += '<li class="breadcrumb-item active" aria-current="page">게시글 수정</li>';
+		html += '</ol>';
+		html += '</nav>';
+
+		html += '<div class="card shadow-sm mt-4">';
+		html += '<div class="card-body">';
+		html += '<h5 class="card-title mb-4">게시글 수정</h5>';
+		html += '<form id="boardEditForm">';
+		html += '<input type="hidden" id="boardIdx" value="' + idx + '">';
+		html += '<input type="hidden" id="isVerified" value="0">';
+
+		// 제목
+		html += '<div class="mb-3">';
+		html += '<label for="boardTitle" class="form-label">제목 <span class="text-danger">*</span></label>';
+		html += '<input type="text" class="form-control" id="boardTitle" value="' + escapeHtml(boardData.board_title) + '" required>';
+		html += '</div>';
+
+		// 작성자 확인
+		html += '<div class="mb-3">';
+		html += '<label class="form-label">작성자 확인 <span class="text-danger">*</span></label>';
+		html += '<div class="input-group mb-2">';
+		html += '<input type="text" class="form-control" id="writerName" placeholder="작성자명" value="' + escapeHtml(boardData.writer_name || '') + '" readonly>';
+		html += '<input type="tel" class="form-control" id="writerPhone" placeholder="휴대폰번호 (- 없이)" maxlength="11">';
+		html += '<button class="btn btn-outline-secondary" type="button" id="btnVerifyWriter">확인</button>';
+		html += '</div>';
+		html += '<div id="verifyResult"></div>';
+		html += '<small class="text-muted">작성자 본인 확인을 위해 휴대폰 번호를 입력하고 확인 버튼을 클릭해주세요.</small>';
+		html += '</div>';
+
+		// 내용
+		html += '<div class="mb-3">';
+		html += '<label for="boardContent" class="form-label">내용 <span class="text-danger">*</span></label>';
+		html += '<textarea class="form-control" id="boardContent" rows="10" required></textarea>';
+		html += '</div>';
+
+		// YouTube URL
+		html += '<div class="mb-3">';
+		html += '<label for="youtubeUrl" class="form-label">YouTube 동영상 (선택)</label>';
+		html += '<input type="url" class="form-control" id="youtubeUrl" value="' + escapeHtml(boardData.youtube_url || '') + '" placeholder="예: https://www.youtube.com/watch?v=...">';
+		html += '<small class="text-muted">YouTube 동영상 URL을 입력하면 게시글에 표시됩니다.</small>';
+		html += '</div>';
+
+		// 파일 첨부
+		html += '<div class="mb-3">';
+		html += '<label class="form-label">파일 첨부 (선택)</label>';
+		html += '<div id="boardFileDropzone" class="dropzone"></div>';
+		html += '<input type="hidden" id="uploadedFiles" value="' + escapeHtml(boardData.file_path || '') + '">';
+		html += '</div>';
+
+		html += '<div class="d-flex gap-2">';
+		html += `<a href="/board/${menuId}/${idx}" class="btn btn-secondary">취소</a>`;
+		html += '<button type="submit" class="btn btn-primary">수정 완료</button>';
+		html += '</div>';
+		html += '</form>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+
+		mainContent.innerHTML = html;
+		mainContent.classList.remove('loading');
+
+		// Dropzone 초기화
+		initBoardWriteDropzone();
+
+		// 기존 파일 복원
+		if (boardData.file_path) {
+			try {
+				const files = JSON.parse(boardData.file_path);
+				if (Array.isArray(files) && files.length > 0) {
+					// Dropzone에 기존 파일 표시
+					const dropzone = Dropzone.forElement('#boardFileDropzone');
+					files.forEach(file => {
+						const mockFile = {
+							name: file.name,
+							size: file.size,
+							type: file.type,
+							path: file.path
+						};
+
+						dropzone.displayExistingFile(mockFile, file.path);
+					});
+				}
+			} catch (e) {
+				console.error('파일 정보 파싱 실패:', e);
+			}
+		}
+
+		// 기존 내용을 textarea에 표시 (EditorJS에서 텍스트만 추출)
+		try {
+			const content = JSON.parse(boardData.board_content);
+			if (content.blocks && Array.isArray(content.blocks)) {
+				const textContent = content.blocks.map(block => {
+					if (block.type === 'paragraph') {
+						return block.data.text;
+					}
+					return '';
+				}).join('\n\n');
+				document.getElementById('boardContent').value = textContent;
+			}
+		} catch (e) {
+			document.getElementById('boardContent').value = '';
+		}
+
+		// 작성자 확인 버튼 이벤트
+		document.getElementById('btnVerifyWriter').addEventListener('click', verifyWriter);
+
+		// 폼 제출 이벤트
+		document.getElementById('boardEditForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+
+			const isVerified = document.getElementById('isVerified').value;
+			if (isVerified !== '1') {
+				showToast('작성자 확인을 먼저 진행해주세요.');
+				return;
+			}
+
+			const title = document.getElementById('boardTitle').value.trim();
+			const content = document.getElementById('boardContent').value.trim();
+			const writerName = document.getElementById('writerName').value.trim();
+			const writerPhone = document.getElementById('writerPhone').value.trim();
+			const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
+			const uploadedFiles = document.getElementById('uploadedFiles').value;
+
+			if (!title || !content) {
+				showToast('제목과 내용을 입력해주세요.');
+				return;
+			}
+
+			// EditorJS 형식으로 변환
+			const editorJsContent = {
+				time: Date.now(),
+				blocks: [
+					{
+						id: generateRandomId(),
+						type: "paragraph",
+						data: {
+							text: content
+						}
+					}
+				],
+				version: "2.31.0"
+			};
+
+			// 게시글 수정 API 호출
+			try {
+				const response = await fetch(`${API_BASE_URL}/board/update`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						idx: idx,
+						org_code: ORG_CODE,
+						menu_id: menuId,
+						board_title: title,
+						board_content: JSON.stringify(editorJsContent),
+						writer_name: writerName,
+						writer_phone: writerPhone,
+						youtube_url: youtubeUrl,
+						file_path: uploadedFiles
+					})
+				});
+
+				const result = await response.json();
+
+				if (result.success) {
+					showToast('게시글이 수정되었습니다.');
+					window.location.href = `/board/${menuId}/${idx}`;
+				} else {
+					showToast(result.message || '게시글 수정에 실패했습니다.');
+				}
+			} catch (error) {
+				console.error('게시글 수정 실패:', error);
+				showToast('게시글 수정 중 오류가 발생했습니다.');
+			}
+		});
+
+	} catch (error) {
+		console.error('게시글 수정 폼 로드 실패:', error);
+		mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 불러오는 중 오류가 발생했습니다.</p></div>';
+		mainContent.classList.remove('loading');
+	}
+}
+
+
+function findMenuById(menus, menuId) {
+	return getMenuInfo(menuId);
+}
 
 
 // popstate 이벤트 처리

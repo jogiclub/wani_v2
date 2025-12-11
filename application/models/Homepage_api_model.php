@@ -98,8 +98,8 @@ class Homepage_api_model extends CI_Model
 		$total_query = clone $this->db;
 		$total = $total_query->count_all_results('wb_homepage_board');
 
-		// file_path 필드 추가
-		$this->db->select('idx, board_title, view_count, writer_name, reg_date, modi_date, file_path');
+		// youtube_url 필드 추가
+		$this->db->select('idx, board_title, view_count, writer_name, reg_date, modi_date, file_path, youtube_url');
 		$this->db->order_by('reg_date', 'DESC');
 		$this->db->limit($limit, $offset);
 		$query = $this->db->get('wb_homepage_board');
@@ -505,4 +505,19 @@ class Homepage_api_model extends CI_Model
 		$result = $query->row_array();
 		return $result ? $result['org_id'] : false;
 	}
+
+	/**
+	 * 파일 위치: application/models/Homepage_api_model.php
+	 * 역할: 게시글 수정
+	 */
+	public function update_board($idx, $org_id, $data)
+	{
+		$this->db->where('idx', $idx);
+		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_homepage_board', $data);
+	}
+
+
+
+
 }

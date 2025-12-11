@@ -151,3 +151,5 @@ $route['api/homepage/board/save'] = 'api/homepage_api/save_board';
 // 파일 업로드 API 라우트 추가
 $route['api/homepage_api/upload_file'] = 'api/homepage_api/upload_file';
 $route['api/homepage/upload'] = 'api/homepage_api/upload_file';  // 대체 경로 (선택사항)
+// 게시글 수정 API 라우트 추가
+$route['api/homepage/board/update'] = 'api/homepage_api/update_board';

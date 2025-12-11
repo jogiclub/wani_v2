@@ -329,12 +329,12 @@ $is_master = $this->session->userdata('master_yn');
 					</h6>
 					<ul class="nav flex-column mb-auto">
 						<li class="nav-item">
-							<a class="nav-link d-flex align-items-center gap-1 menu-41" href="<?php echo base_url('homepage_setting'); ?>">
+							<a class="nav-link d-flex align-items-center gap-1 menu-51" href="<?php echo base_url('homepage_setting'); ?>">
 								<i class="bi bi-house-gear"></i> 홈페이지 기본설정
 							</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link d-flex align-items-center gap-1 menu-42" href="<?php echo base_url('homepage_menu'); ?>">
+							<a class="nav-link d-flex align-items-center gap-1 menu-52" href="<?php echo base_url('homepage_menu'); ?>">
 								<i class="bi bi-view-stacked"></i> 홈페이지 메뉴설정
 							</a>
 						</li>
