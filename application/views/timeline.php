@@ -162,21 +162,31 @@ $this->load->view('header');
 
 		<div id="certificatePreview" class="border rounded p-4 bg-white" style="min-height: 500px;">
 			<div class="text-center mb-5">
-				<h2 class="mb-2">수료증</h2>
-				<h5 class="text-muted">Certificate of Completion</h5>
+				<div class="mb-3">
+					<input type="text" class="form-control form-control-lg text-center fw-bold" id="cert_title_main" value="수료증" style="font-size: 2rem;">
+				</div>
+				<div>
+					<input type="text" class="form-control text-center text-muted" id="cert_title_sub" value="Certificate of Completion" style="font-size: 1.25rem;">
+				</div>
 			</div>
 
 			<div class="mb-4">
 				<div class="row mb-3">
-					<div class="col-3 text-end fw-bold">성명</div>
+					<div class="col-3 text-end">
+						<input type="text" class="form-control form-control-sm text-end fw-bold" id="cert_label_name" value="성명" style="background: transparent;">
+					</div>
 					<div class="col-9" id="cert_member_name"></div>
 				</div>
 				<div class="row mb-3">
-					<div class="col-3 text-end fw-bold">과목</div>
+					<div class="col-3 text-end">
+						<input type="text" class="form-control form-control-sm text-end fw-bold" id="cert_label_subject" value="과목" style="background: transparent;">
+					</div>
 					<div class="col-9" id="cert_timeline_type"></div>
 				</div>
 				<div class="row mb-3">
-					<div class="col-3 text-end fw-bold">기간</div>
+					<div class="col-3 text-end">
+						<input type="text" class="form-control form-control-sm text-end fw-bold" id="cert_label_period" value="기간" style="background: transparent;">
+					</div>
 					<div class="col-9">
 						<div class="input-group input-group-sm">
 							<input type="date" class="form-control" id="cert_period_start" style="width: auto;">

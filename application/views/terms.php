@@ -1,4 +1,4 @@
-<?php $this->load->view('noheader'); ?>
+<?php $this->load->view('header_noframe'); ?>
 
 		<div class="policy_con" id="service" style="height: 100vh; overflow: auto; padding: 20px 0">
 	<div class="policy_tit">
@@ -238,4 +238,4 @@
 	</div>
 </div>
 
-<?php $this->load->view('nofooter'); ?>
+<?php $this->load->view('footer_noframe'); ?>

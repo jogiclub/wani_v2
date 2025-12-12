@@ -1,5 +1,5 @@
 <?php
-include APPPATH . 'views/noheader.php';
+include APPPATH . 'views/header_noframe.php';
 ?>
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
 <style>
@@ -51,7 +51,7 @@ include APPPATH . 'views/noheader.php';
 	</div>
 </div>
 
-<?php include APPPATH . 'views/nofooter.php'; ?>
+<?php include APPPATH . 'views/footer_noframe.php'; ?>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script>
 	// 카테고리 목록을 JavaScript 전역 변수로 전달

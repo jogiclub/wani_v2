@@ -600,6 +600,15 @@ $(document).ready(function() {
 			$('#certificateOffcanvasLabel').text('수료증 인쇄');
 		}
 
+		// 제목 초기화
+		$('#cert_title_main').val('수료증');
+		$('#cert_title_sub').val('Certificate of Completion');
+
+		// 라벨 초기화
+		$('#cert_label_name').val('성명');
+		$('#cert_label_subject').val('과목');
+		$('#cert_label_period').val('기간');
+
 		// 성명
 		$('#cert_member_name').text(firstRow.member_name || '');
 
@@ -663,6 +672,11 @@ $(document).ready(function() {
 	 */
 	function generateCertificateHtml() {
 		const selectedData = window.selectedCertificateData || [];
+		const titleMain = $('#cert_title_main').val() || '수료증';
+		const titleSub = $('#cert_title_sub').val() || 'Certificate of Completion';
+		const labelName = $('#cert_label_name').val() || '성명';
+		const labelSubject = $('#cert_label_subject').val() || '과목';
+		const labelPeriod = $('#cert_label_period').val() || '기간';
 		const periodStart = $('#cert_period_start').val();
 		const periodEnd = $('#cert_period_end').val();
 		const period = `${periodStart} ~ ${periodEnd}`;
@@ -699,21 +713,21 @@ $(document).ready(function() {
 			certificatesHtml += `
         <div class="certificate${pageBreakClass}">
             <div class="certificate-header">
-                <div class="certificate-title">수료증</div>
-                <div class="certificate-subtitle">Certificate of Completion</div>
+                <div class="certificate-title">${titleMain}</div>
+                <div class="certificate-subtitle">${titleSub}</div>
             </div>
             
             <div class="certificate-body">
                 <div class="certificate-row">
-                    <div class="certificate-label">성명</div>
+                    <div class="certificate-label">${labelName}</div>
                     <div class="certificate-value">${memberName}</div>
                 </div>
                 <div class="certificate-row">
-                    <div class="certificate-label">과목</div>
+                    <div class="certificate-label">${labelSubject}</div>
                     <div class="certificate-value">${timelineType}</div>
                 </div>
                 <div class="certificate-row">
-                    <div class="certificate-label">기간</div>
+                    <div class="certificate-label">${labelPeriod}</div>
                     <div class="certificate-value">${period}</div>
                 </div>
             </div>
@@ -803,7 +817,7 @@ $(document).ready(function() {
         
         .certificate-label {
             font-weight: bold;
-            width: 100px;
+            width: 160px;
             text-align: left;
             margin-right: 20px;
             letter-spacing: 20px;

@@ -268,10 +268,6 @@ footer .btn-add-org i{font-size:30px}
 .profile-area .profile-img{}
 .profile-area .profile-name{}
 
-@media screen and (max-width: 1200px){
-	 .sidebar{position: initial}
-	.card .card-body.card-height{height: auto!important;}
-}
 
 
 .btn-group .dropdown-toggle-split{flex: 0 0 auto;}
@@ -282,8 +278,14 @@ footer .btn-add-org i{font-size:30px}
 
 
 .card .card-body.card-height{overflow: auto; height: calc(100vh - 260px);}
+.noframe .card .card-body.card-height{overflow: auto; height: calc(100vh - 170px);}
 
 .page-title{font-weight: 700;letter-spacing: -1px;}
+@media screen and (max-width: 1200px){
+	.sidebar{position: initial}
+	.card .card-body.card-height{height: auto!important;}
+	.noframe .card .card-body.card-height{overflow: auto; height: calc(100vh - 270px);}
+}
 
 
 /*select2*/

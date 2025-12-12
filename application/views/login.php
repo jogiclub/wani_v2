@@ -1,4 +1,4 @@
-<?php $this->load->view('noheader'); ?>
+<?php $this->load->view('header_indexframe'); ?>
 
 <div class="col-12 col-sm-5 col-md-4 col-lg-3 mx-auto">
 	<h2 class="text-center">로그인</h2>
@@ -12,7 +12,7 @@
 
 
 
-<?php $this->load->view('nofooter'); ?>
+<?php $this->load->view('footer_indexframe'); ?>
 <script type="text/javascript" src="https://static.nid.naver.com/js/naveridlogin_js_sdk_2.0.0.js" charset="utf-8"></script>
 <script src="/assets/js/login.js?<?php echo WB_VERSION; ?>"></script>
 

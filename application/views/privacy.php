@@ -1,4 +1,4 @@
-<?php $this->load->view('noheader'); ?>
+<?php $this->load->view('header_noframe'); ?>
 <div class="policy_con" id="privacyInfo" style="height: 100vh; overflow: auto; padding: 20px 0">
 	<div class="policy_tit">
 		<h2>개인정보 수집 및 이용정책</h2>
@@ -307,4 +307,4 @@
 		<p>본 개인정보 수집 및 이용정책은 2025년 1월 1일부터 시행합니다.</p>
 	</div>
 </div>
-<?php $this->load->view('nofooter'); ?>
+<?php $this->load->view('footer_noframe'); ?>

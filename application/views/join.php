@@ -1,4 +1,4 @@
-<?php $this->load->view('noheader'); ?>
+<?php $this->load->view('header_noframe'); ?>
 
 <div class="col-12 col-sm-5 col-md-4 col-lg-3 mx-auto">
 	<h2 class="text-center">회원가입</h2>
@@ -84,6 +84,6 @@
 	</div>
 </div>
 
-<?php $this->load->view('nofooter'); ?>
+<?php $this->load->view('footer_noframe'); ?>
 
 <script src="/assets/js/login.js?<?php echo WB_VERSION; ?>"></script>
