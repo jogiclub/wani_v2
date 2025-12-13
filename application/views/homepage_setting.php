@@ -36,6 +36,7 @@
 								<label for="org_code_display" class="form-label">조직 코드</label>
 								<input type="text" class="form-control" id="org_code_display"
 									   value="<?php echo htmlspecialchars($selected_org_detail['org_code'] ?? ''); ?>" readonly>
+								<div class="form-text">조직코드가 없는 경우, <a href="#" class="kakao-channel">채널</a>을 통해 문의바랍니다.</div>
 							</div>
 
 							<!-- 홈페이지 이름 -->

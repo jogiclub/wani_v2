@@ -149,7 +149,7 @@
 			<a class="" type="button" id="buttonSend"><i class="bi bi-chat-text-fill fs-5 text-secondary"></i></a>
 		</div>
 
-		<div id="navbarKakao" class="d-none d-lg-flex justify-content-center align-items-center position-relative border border-warning" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="카카오채널">
+		<div id="navbarKakao" class="kakao-channel d-none d-lg-flex justify-content-center align-items-center position-relative border border-warning" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="카카오채널">
 			<a class="" type="button"><i class="bi bi-chat-fill fs-5 text-warning"></i></a>
 		</div>
 
@@ -350,7 +350,7 @@ $is_master = $this->session->userdata('master_yn');
 					?>
 
 
-			
+
 
 					<!-- SETTING 섹션 -->
 					<?php
