@@ -157,7 +157,8 @@ class Org_model extends CI_Model {
 	}
 
 	/**
-	 * 미분류를 제외한 모든 조직 조회 (전체 선택용)
+	 * 미분류 제외한 전체 조직 목록 조회
+	 * 수정 사항: user_count 컬럼 추가
 	 */
 	public function get_all_orgs_except_uncategorized()
 	{
@@ -179,12 +180,14 @@ class Org_model extends CI_Model {
         o.regi_date,
         o.modi_date,
         oc.category_name,
-        COUNT(m.member_idx) as member_count
+        COUNT(DISTINCT m.member_idx) as member_count,
+        COUNT(DISTINCT ou.user_id) as user_count
     ');
 
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
 		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
 		$this->db->where('o.del_yn', 'N');
 
 		// 미분류 제외 (category_idx가 null이 아닌 조직들만)
@@ -202,6 +205,7 @@ class Org_model extends CI_Model {
 
 	/**
 	 * 특정 카테고리와 모든 하위 카테고리의 조직 목록 조회
+	 * 수정 사항: user_count 컬럼 추가
 	 */
 	public function get_orgs_by_category_with_children($category_idx)
 	{
@@ -230,12 +234,14 @@ class Org_model extends CI_Model {
         o.regi_date,
         o.modi_date,
         oc.category_name,
-        COUNT(m.member_idx) as member_count
+        COUNT(DISTINCT m.member_idx) as member_count,
+        COUNT(DISTINCT ou.user_id) as user_count
     ');
 
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
 		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
 		$this->db->where('o.del_yn', 'N');
 		$this->db->where_in('o.category_idx', $category_ids);
 
@@ -249,42 +255,49 @@ class Org_model extends CI_Model {
 
 	/**
 	 * 카테고리별 조직 목록 조회 (상세 정보 포함)
+	 * 수정 사항: user_count 컬럼 추가
 	 */
 	public function get_orgs_by_category_detailed($category_idx = null)
 	{
 		$this->db->select('
-            o.org_id,
-            o.org_code,
-            o.org_name,
-            o.org_type,
-            o.org_desc,
-            o.org_rep,
-            o.org_manager,
-            o.org_phone,
-            o.org_address_postno,
-            o.org_address,
-            o.org_address_detail,
-            o.org_tag,
-            o.org_icon,
-            o.category_idx,
-            o.regi_date,
-            oc.category_name,
-            (SELECT COUNT(*) FROM wb_member m WHERE m.org_id = o.org_id AND m.del_yn = "N") as member_count
-        ');
+        o.org_id,
+        o.org_code,
+        o.org_name,
+        o.org_type,
+        o.org_desc,
+        o.org_rep,
+        o.org_manager,
+        o.org_phone,
+        o.org_address_postno,
+        o.org_address,
+        o.org_address_detail,
+        o.org_tag,
+        o.org_icon,
+        o.category_idx,
+        o.regi_date,
+        o.modi_date,
+        oc.category_name,
+        COUNT(DISTINCT m.member_idx) as member_count,
+        COUNT(DISTINCT ou.user_id) as user_count
+    ');
+
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
+		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
 		$this->db->where('o.del_yn', 'N');
 
-		// 카테고리 필터링
-		if ($category_idx === null || $category_idx === '' || $category_idx === 'uncategorized') {
+		if ($category_idx === null) {
+			// 미분류 조직 조회 (category_idx가 NULL이거나 0인 경우)
 			$this->db->where('(o.category_idx IS NULL OR o.category_idx = 0)', null, false);
 		} else {
 			$this->db->where('o.category_idx', $category_idx);
 		}
 
+		$this->db->group_by('o.org_id');
 		$this->db->order_by('o.regi_date', 'DESC');
-		$query = $this->db->get();
 
+		$query = $this->db->get();
 		return $query->result_array();
 	}
 
@@ -633,30 +646,34 @@ class Org_model extends CI_Model {
 
 	/**
 	 * 조직 검색
+	 * 수정 사항: user_count 컬럼 추가
 	 */
 	public function search_orgs($keyword, $category_idx = null)
 	{
 		$this->db->select('
-            o.org_id,
-            o.org_code,
-            o.org_name,
-            o.org_type,
-            o.org_desc,
-            o.org_rep,
-            o.org_manager,
-            o.org_phone,
-            o.org_address_postno,
-            o.org_address,
-            o.org_address_detail,
-            o.org_tag,
-            o.org_icon,
-            o.category_idx,
-            o.regi_date,
-            oc.category_name,
-            (SELECT COUNT(*) FROM wb_member m WHERE m.org_id = o.org_id AND m.del_yn = "N") as member_count
-        ');
+        o.org_id,
+        o.org_code,
+        o.org_name,
+        o.org_type,
+        o.org_desc,
+        o.org_rep,
+        o.org_manager,
+        o.org_phone,
+        o.org_address_postno,
+        o.org_address,
+        o.org_address_detail,
+        o.org_tag,
+        o.org_icon,
+        o.category_idx,
+        o.regi_date,
+        oc.category_name,
+        COUNT(DISTINCT m.member_idx) as member_count,
+        COUNT(DISTINCT ou.user_id) as user_count
+    ');
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
+		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
 
 		// 검색 조건
 		$this->db->group_start();
@@ -677,6 +694,7 @@ class Org_model extends CI_Model {
 		}
 
 		$this->db->where('o.del_yn', 'N');
+		$this->db->group_by('o.org_id');
 		$this->db->order_by('o.org_name', 'ASC');
 
 		$query = $this->db->get();
@@ -875,8 +893,8 @@ class Org_model extends CI_Model {
 	}
 
 	/**
-	 * 파일 위치: application/models/Org_model.php
-	 * 역할: 필터링된 카테고리들의 조직 목록 조회 (하위 카테고리 포함)
+	 * 필터링된 카테고리들의 조직 목록 조회 (하위 카테고리 포함)
+	 * 수정 사항: user_count 컬럼 추가
 	 */
 	public function get_orgs_by_filtered_categories($visible_categories)
 	{
@@ -893,29 +911,31 @@ class Org_model extends CI_Model {
 		}
 
 		$this->db->select('
-		o.org_id,
-		o.org_code,
-		o.org_name,
-		o.org_type,
-		o.org_desc,
-		o.org_rep,
-		o.org_manager,
-		o.org_phone,
-		o.org_address_postno,
-		o.org_address,
-		o.org_address_detail,
-		o.org_tag,
-		o.org_icon,
-		o.category_idx,
-		o.regi_date,
-		o.modi_date,
-		oc.category_name,
-		COUNT(m.member_idx) as member_count
-	');
+        o.org_id,
+        o.org_code,
+        o.org_name,
+        o.org_type,
+        o.org_desc,
+        o.org_rep,
+        o.org_manager,
+        o.org_phone,
+        o.org_address_postno,
+        o.org_address,
+        o.org_address_detail,
+        o.org_tag,
+        o.org_icon,
+        o.category_idx,
+        o.regi_date,
+        o.modi_date,
+        oc.category_name,
+        COUNT(DISTINCT m.member_idx) as member_count,
+        COUNT(DISTINCT ou.user_id) as user_count
+    ');
 
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
 		$this->db->join('wb_member m', 'o.org_id = m.org_id AND m.del_yn = "N"', 'left');
+		$this->db->join('wb_org_user ou', 'o.org_id = ou.org_id', 'left');
 		$this->db->where('o.del_yn', 'N');
 		$this->db->where_in('o.category_idx', $category_ids);
 

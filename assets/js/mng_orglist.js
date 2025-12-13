@@ -77,13 +77,20 @@
 	function initSplitJS() {
 		setTimeout(function() {
 			try {
+				// 저장된 크기 불러오기
+				const savedSizes = loadSplitSizes();
+				const initialSizes = savedSizes || [20, 80];
+
 				splitInstance = Split(['#left-pane', '#right-pane'], {
-					sizes: [20, 80],
+					sizes: initialSizes,
 					minSize: [200, 400],
 					gutterSize: 8,
 					cursor: 'col-resize',
 					direction: 'horizontal',
 					onDragEnd: function(sizes) {
+						// 크기 변경 시 저장
+						saveSplitSizes(sizes);
+
 						if (orgGrid) {
 							setTimeout(function() {
 								try {
@@ -95,11 +102,40 @@
 						}
 					}
 				});
-				console.log('Split.js 초기화 완료');
+				console.log('Split.js 초기화 완료', initialSizes);
 			} catch(error) {
 				console.error('Split.js 초기화 실패:', error);
 			}
 		}, 200);
+	}
+
+	/**
+	 * Split.js 크기를 localStorage에 저장
+	 */
+	function saveSplitSizes(sizes) {
+		try {
+			localStorage.setItem('orglist_split_sizes', JSON.stringify(sizes));
+			console.log('Split 크기 저장:', sizes);
+		} catch (error) {
+			console.error('Split 크기 저장 실패:', error);
+		}
+	}
+
+	/**
+	 * localStorage에서 Split.js 크기 불러오기
+	 */
+	function loadSplitSizes() {
+		try {
+			const savedSizes = localStorage.getItem('orglist_split_sizes');
+			if (savedSizes) {
+				const sizes = JSON.parse(savedSizes);
+				console.log('저장된 Split 크기 로드:', sizes);
+				return sizes;
+			}
+		} catch (error) {
+			console.error('Split 크기 로드 실패:', error);
+		}
+		return null;
 	}
 
 	/**
@@ -339,10 +375,18 @@
 
 				hideTreeSpinner();
 
+				// 저장된 트리 노드 복원 시도
+				const savedTreeState = loadSelectedTreeNode();
 				const tree = $.ui.fancytree.getTree('#categoryTree');
-				const firstNode = tree.getNodeByKey('all');
-				if (firstNode) {
-					firstNode.setActive();
+
+				if (savedTreeState && restoreSelectedTreeNode(savedTreeState)) {
+					console.log('저장된 트리 노드 복원 성공');
+				} else {
+					// 복원 실패 시 전체 노드 선택
+					const firstNode = tree.getNodeByKey('all');
+					if (firstNode) {
+						firstNode.setActive();
+					}
 				}
 
 				console.log('Fancytree 초기화 완료');
@@ -358,6 +402,84 @@
 		});
 	}
 
+
+	/**
+	 * 선택된 트리 노드 상태를 localStorage에 저장
+	 */
+	function saveSelectedTreeNode(nodeData) {
+		try {
+			const treeState = {
+				type: nodeData.type,
+				category_idx: nodeData.category_idx,
+				category_name: nodeData.category_name,
+				timestamp: Date.now()
+			};
+
+			localStorage.setItem('orglist_selected_tree_node', JSON.stringify(treeState));
+			console.log('트리 선택 상태 저장:', treeState);
+		} catch (error) {
+			console.error('트리 상태 저장 실패:', error);
+		}
+	}
+
+	/**
+	 * localStorage에서 트리 선택 상태 불러오기
+	 */
+	function loadSelectedTreeNode() {
+		try {
+			const savedState = localStorage.getItem('orglist_selected_tree_node');
+
+			if (savedState) {
+				const treeState = JSON.parse(savedState);
+
+				// 7일 이내의 데이터만 복원
+				const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+				if (treeState.timestamp < sevenDaysAgo) {
+					localStorage.removeItem('orglist_selected_tree_node');
+					return null;
+				}
+
+				console.log('저장된 트리 상태 로드:', treeState);
+				return treeState;
+			}
+		} catch (error) {
+			console.error('트리 상태 로드 실패:', error);
+		}
+
+		return null;
+	}
+
+	/**
+	 * 저장된 트리 노드 복원
+	 */
+	function restoreSelectedTreeNode(treeState) {
+		if (!treeState) {
+			return false;
+		}
+
+		const tree = $.ui.fancytree.getTree('#categoryTree');
+		if (!tree) {
+			return false;
+		}
+
+		let nodeToActivate = null;
+
+		if (treeState.type === 'uncategorized') {
+			nodeToActivate = tree.getNodeByKey('uncategorized');
+		} else if (treeState.type === 'all') {
+			nodeToActivate = tree.getNodeByKey('all');
+		} else if (treeState.type === 'category' && treeState.category_idx) {
+			nodeToActivate = tree.getNodeByKey('category_' + treeState.category_idx);
+		}
+
+		if (nodeToActivate) {
+			nodeToActivate.setActive();
+			console.log('트리 노드 복원:', nodeToActivate.title);
+			return true;
+		}
+
+		return false;
+	}
 
 	/**
 	 * 트리 노드 활성화 처리
@@ -376,6 +498,10 @@
 				selectedCategoryIdx = nodeData.category_idx;
 				selectedCategoryName = nodeData.category_name;
 			}
+
+			// 트리 선택 상태 저장
+			saveSelectedTreeNode(nodeData);
+
 			updateSelectedTitle();
 			loadOrgList();
 		}
@@ -388,7 +514,14 @@
 		showGridSpinner();
 
 		try {
-			const colModel = createColumnModel();
+			// 초기 컬럼 모델 생성
+			let colModel = createColumnModel();
+
+			// 저장된 컬럼 순서가 있으면 적용
+			const savedOrder = loadColumnOrder();
+			if (savedOrder) {
+				colModel = reorderColumnModel(colModel, savedOrder);
+			}
 
 			orgGrid = $("#orgGrid").pqGrid({
 				width: "100%",
@@ -411,6 +544,18 @@
 						bindCheckboxEvents();
 						updateCheckboxStates();
 					}, 100);
+				},
+				// 컬럼 순서 변경 이벤트
+				columnOrder: function(event, ui) {
+					console.log('컬럼 순서 변경됨');
+					const currentColModel = orgGrid.pqGrid('option', 'colModel');
+					saveColumnOrder(currentColModel);
+				},
+				// 컬럼 리사이즈 이벤트
+				columnResize: function(event, ui) {
+					console.log('컬럼 리사이즈됨');
+					const currentColModel = orgGrid.pqGrid('option', 'colModel');
+					saveColumnOrder(currentColModel);
 				}
 			});
 
@@ -422,6 +567,84 @@
 			console.error('Grid 초기화 실패:', error);
 			showToast('그리드 초기화에 실패했습니다', 'error');
 		}
+	}
+
+	/**
+	 * 컬럼 순서와 너비를 localStorage에 저장
+	 */
+	function saveColumnOrder(colModel) {
+		try {
+			// 컬럼의 dataIndx와 width를 순서대로 저장 (체크박스 컬럼 제외)
+			const columnData = colModel
+				.filter(col => col.dataIndx && col.dataIndx !== 'checkbox')
+				.map(col => ({
+					dataIndx: col.dataIndx,
+					width: col.width
+				}));
+
+			const storageKey = 'orglist_column_order';
+			localStorage.setItem(storageKey, JSON.stringify(columnData));
+
+			console.log('컬럼 순서 및 너비 저장:', columnData);
+		} catch (error) {
+			console.error('컬럼 순서 저장 실패:', error);
+		}
+	}
+
+	/**
+	 * localStorage에서 컬럼 순서 불러오기
+	 */
+	function loadColumnOrder() {
+		try {
+			const storageKey = 'orglist_column_order';
+			const savedOrder = localStorage.getItem(storageKey);
+
+			if (savedOrder) {
+				const columnOrder = JSON.parse(savedOrder);
+				console.log('저장된 컬럼 순서 로드:', columnOrder);
+				return columnOrder;
+			}
+		} catch (error) {
+			console.error('컬럼 순서 로드 실패:', error);
+		}
+
+		return null;
+	}
+
+	/**
+	 * 저장된 순서와 width에 따라 컬럼 모델 재정렬
+	 */
+	function reorderColumnModel(colModel, savedData) {
+		if (!savedData || savedData.length === 0) {
+			return colModel;
+		}
+
+		// 체크박스 컬럼은 항상 첫 번째에 고정
+		const checkboxCol = colModel.find(col => col.dataIndx === 'checkbox');
+		const otherCols = colModel.filter(col => col.dataIndx !== 'checkbox');
+
+		// 저장된 순서대로 재정렬
+		const reorderedCols = [];
+		const colMap = new Map(otherCols.map(col => [col.dataIndx, col]));
+
+		// 저장된 순서대로 먼저 추가하고 width 적용
+		savedData.forEach(savedCol => {
+			if (colMap.has(savedCol.dataIndx)) {
+				const col = colMap.get(savedCol.dataIndx);
+				// 저장된 width 적용
+				col.width = savedCol.width;
+				reorderedCols.push(col);
+				colMap.delete(savedCol.dataIndx);
+			}
+		});
+
+		// 저장된 순서에 없는 새로운 컬럼들은 뒤에 추가
+		colMap.forEach(col => {
+			reorderedCols.push(col);
+		});
+
+		// 체크박스 컬럼을 맨 앞에 추가
+		return checkboxCol ? [checkboxCol, ...reorderedCols] : reorderedCols;
 	}
 
 	/**
@@ -604,9 +827,22 @@
 				width: 80,
 				align: 'center',
 				editable: false,
+				dataType: 'integer',
 				render: function(ui) {
 					const count = ui.cellData || 0;
 					return `<span class="badge bg-info">${count}명</span>`;
+				}
+			},
+			{
+				dataIndx: 'user_count',
+				title: '사용자수',
+				width: 80,
+				align: 'center',
+				editable: false,
+				dataType: 'integer',
+				render: function(ui) {
+					const count = ui.cellData || 0;
+					return `<span class="badge bg-success">${count}명</span>`;
 				}
 			},
 			{
