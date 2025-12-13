@@ -52,7 +52,7 @@ if (!function_exists('get_system_menus')) {
 				'icon' => 'bi bi-journal-bookmark',
 				'level' => 1
 			),
-			'WEEKLY_STATISTICS' => array(
+			/*'WEEKLY_STATISTICS' => array(
 				'name' => '주별통계',
 				'key' => 'WEEKLY_STATISTICS',
 				'url' => 'statistics/weekly',
@@ -65,7 +65,7 @@ if (!function_exists('get_system_menus')) {
 				'url' => 'statistics/member',
 				'icon' => 'bi bi-clipboard-data',
 				'level' => 1
-			),
+			),*/
 			'ORG_SETTING' => array(
 				'name' => '조직설정',
 				'key' => 'ORG_SETTING',

@@ -152,16 +152,16 @@ $(document).ready(function() {
 		offcanvas.show();
 	});
 
-	// 결제하기 버튼 클릭 (기존 코드 - 155~177라인 대체)
+	// 결제하기 버튼 클릭 (155~222라인 대체)
 	$(document).on('click', '#btnCharge', function() {
 		if (!selectedPackage) {
 			showToast('충전할 패키지를 선택해주세요.', 'warning');
 			return;
 		}
 
-		const packageIdx = selectedPackage.package_idx;  // idx가 아닌 package_idx 사용
+		const packageIdx = selectedPackage.package_idx;
 		const chargeAmount = selectedPackage.amount;
-		const packageName = selectedPackage.package_name; // name이 아닌 package_name 사용
+		const packageName = selectedPackage.package_name;
 
 		// 결제 확인 모달 표시
 		showConfirmModal(
@@ -169,25 +169,40 @@ $(document).ready(function() {
 			`<strong>${packageName}</strong><br>${formatNumber(chargeAmount)}원을 결제하시겠습니까?`,
 			function() {
 				// 확인 버튼 클릭 시 결제 페이지 팝업
-				openPaymentPopup(packageIdx, chargeAmount);
+				openPaymentPopup(packageIdx);
 			}
 		);
 	});
 
-// 충전 패키지 선택 이벤트 (새로 추가)
+// 충전 패키지 선택 이벤트
 	$(document).on('change', 'input[name="charge_package"]', function() {
 		const $selected = $(this);
 		selectedPackage = {
-			idx: $selected.val(),
+			package_idx: $selected.val(),
 			amount: $selected.data('amount'),
-			name: $selected.data('name')
+			package_name: $selected.data('name')
 		};
 	});
 
 	/**
-	 * 결제 페이지 팝업 열기
+	 * 역할: 결제 페이지 팝업 열기
 	 */
-	function openPaymentPopup(packageIdx, chargeAmount) {
+	function openPaymentPopup(packageIdx) {
+		// 팝업 창 열기 (크기 축소)
+		const popupWidth = 800;
+		const popupHeight = 800;
+		const left = (screen.width - popupWidth) / 2;
+		const top = (screen.height - popupHeight) / 2;
+		const popupOptions = `width=${popupWidth},height=${popupHeight},left=${left},top=${top},scrollbars=yes,resizable=yes`;
+
+		const popup = window.open('', 'paymentPopup', popupOptions);
+
+		if (!popup) {
+			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
+			return;
+		}
+
+		// Form 생성 및 제출
 		const form = $('<form>', {
 			method: 'POST',
 			action: '/payment/request',
@@ -200,23 +215,7 @@ $(document).ready(function() {
 			value: packageIdx
 		}));
 
-		form.append($('<input>', {
-			type: 'hidden',
-			name: 'charge_amount',
-			value: chargeAmount
-		}));
-
 		$('body').append(form);
-
-		// 팝업 창 열기
-		const popup = window.open('', 'paymentPopup', 'width=600,height=800,scrollbars=yes');
-
-		if (!popup) {
-			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
-			form.remove();
-			return;
-		}
-
 		form.submit();
 		form.remove();
 	}

@@ -27,15 +27,20 @@ class Payment_model extends CI_Model
 		$edi_date = date('YmdHis');
 		$moid = 'CHARGE_' . $org_id . '_' . time();
 
-		// 암호화 데이터 생성
+		// 금액을 정수로 확실하게 변환
+		$charge_amount = intval($charge_amount);
+
+		// 암호화 데이터 생성 (Base64 인코딩 전에 먼저 계산)
 		$encrypt_data = $this->generate_encrypt_data($edi_date, $charge_amount);
 
 		// 예약 정보 (조직ID, 사용자ID, 패키지IDX)
-		$mall_reserved = json_encode(array(
+		// 주의: EncryptData 계산 후에 Base64 인코딩
+		$reserved_data = array(
 			'org_id' => $org_id,
 			'user_id' => $user_id,
 			'package_idx' => $package_idx
-		));
+		);
+		$mall_reserved = base64_encode(json_encode($reserved_data));
 
 		// 사용자 정보 안전하게 처리
 		$buyer_name = isset($user_info['user_name']) ? $user_info['user_name'] : '구매자';
@@ -63,23 +68,42 @@ class Payment_model extends CI_Model
 			'EncryptData' => $encrypt_data,
 			'EdiDate' => $edi_date,
 			'MallReserved' => $mall_reserved,
-			'TaxAmt' => '',
-			'TaxFreeAmt' => '',
-			'VatAmt' => '',
-			'sdk_url' => $this->pg_config['sdk_url']  // SDK URL 추가
+			'sdk_url' => $this->pg_config['sdk_url']
 		);
+
+		// 디버깅 로그
+		log_message('debug', '=== Payment Params ===');
+		log_message('debug', 'EdiDate: ' . $edi_date);
+		log_message('debug', 'Mid: ' . $this->pg_config['mid']);
+		log_message('debug', 'Amt: ' . $charge_amount);
+		log_message('debug', 'MerchantKey: ' . substr($this->pg_config['merchant_key'], 0, 10) . '...');
+		log_message('debug', 'EncryptData: ' . $encrypt_data);
 
 		return $params;
 	}
+
 	/**
 	 * 파일 위치: application/models/Payment_model.php
 	 * 역할: 암호화 데이터 생성 (SHA256)
 	 */
 	private function generate_encrypt_data($edi_date, $amt)
 	{
+		// EncryptData = SHA256(EdiDate + Mid + Amt + MerchantKey)
 		$string = $edi_date . $this->pg_config['mid'] . $amt . $this->pg_config['merchant_key'];
-		return base64_encode(hash('sha256', $string, true));
+
+		// 디버깅 로그
+		log_message('debug', '=== EncryptData Generation ===');
+		log_message('debug', 'String to hash: ' . $edi_date . ' + ' . $this->pg_config['mid'] . ' + ' . $amt . ' + [MerchantKey]');
+
+		$hash = base64_encode(hash('sha256', $string, true));
+
+		log_message('debug', 'Generated EncryptData: ' . $hash);
+
+		return $hash;
 	}
+
+
+
 
 	/**
 	 * 파일 위치: application/models/Payment_model.php
@@ -172,11 +196,28 @@ class Payment_model extends CI_Model
 		$this->db->trans_start();
 
 		try {
-			// 결제 정보에서 조직 정보 추출
-			$reserved_data = json_decode($payment_info['MallReserved'], true);
+			// MerchantReserved에서 조직 정보 추출 (스마트로페이는 MerchantReserved로 반환)
+			$merchant_reserved = isset($payment_info['MerchantReserved'])
+				? $payment_info['MerchantReserved']
+				: (isset($payment_info['MallReserved']) ? $payment_info['MallReserved'] : '');
+
+			// Base64 디코딩
+			$reserved_decoded = base64_decode($merchant_reserved);
+			$reserved_data = json_decode($reserved_decoded, true);
+
+			// 디버깅 로그
+			log_message('debug', 'MerchantReserved raw: ' . $merchant_reserved);
+			log_message('debug', 'MerchantReserved decoded: ' . $reserved_decoded);
+			log_message('debug', 'Reserved data parsed: ' . json_encode($reserved_data));
+
+			// 파싱 실패 시 기본값 설정 또는 에러 처리
+			if (!$reserved_data || !isset($reserved_data['org_id']) || !isset($reserved_data['user_id'])) {
+				log_message('error', 'MerchantReserved parsing failed in update_payment_status');
+				throw new Exception('결제 정보 파싱 실패');
+			}
 
 			$data = array(
-				'org_id' => $reserved_data['org_id'],
+				'org_id' => intval($reserved_data['org_id']),
 				'user_id' => $reserved_data['user_id'],
 				'tid' => $tid,
 				'moid' => $payment_info['Moid'],
@@ -185,8 +226,8 @@ class Payment_model extends CI_Model
 				'payment_status' => $status,
 				'auth_code' => $payment_info['AuthCode'] ?? '',
 				'auth_date' => $payment_info['AuthDate'] ?? '',
-				'card_name' => $payment_info['FnName'] ?? '',
-				'card_num' => $payment_info['FnNm'] ?? '',
+				'card_name' => $payment_info['AppCardName'] ?? '',
+				'card_num' => $payment_info['CardNum'] ?? '',
 				'payment_data' => json_encode($payment_info),
 				'created_at' => date('Y-m-d H:i:s')
 			);

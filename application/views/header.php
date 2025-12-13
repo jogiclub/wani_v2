@@ -348,28 +348,9 @@ $is_master = $this->session->userdata('master_yn');
 						can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master, $current_user_level) ||
 						can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master, $current_user_level);
 					?>
-					<?php if ($show_statics_section): ?>
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
-							STATICS
-						</h6>
-						<ul class="nav flex-column mb-auto">
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-<!--									<a class="nav-link d-flex align-items-center gap-1 menu-31" href="--><?php //echo base_url('weekly_statics'); ?><!--">-->
-									<a class="nav-link d-flex align-items-center gap-1 menu-31" href="#">
-										<i class="bi bi-graph-up-arrow"></i> 주별통계 <span class="badge badge-sm text-bg-warning">준비중</span>
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-32" href="#">
-										<i class="bi bi-clipboard-data"></i> 회원별통계 <span class="badge badge-sm text-bg-warning">준비중</span>
-									</a>
-								</li>
-							<?php endif; ?>
-						</ul>
-					<?php endif; ?>
+
+
+			
 
 					<!-- SETTING 섹션 -->
 					<?php

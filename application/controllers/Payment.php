@@ -22,6 +22,18 @@ class Payment extends MY_Controller
 	 */
 	public function request()
 	{
+		// 현재 PG 설정 확인
+		$this->load->config('payment');
+		$pg_config = $this->config->item('smartro_pg');
+
+		// 디버깅 (개발 시에만 사용)
+		if ($pg_config['environment'] === 'development') {
+			log_message('debug', '=== PG Environment Info ===');
+			log_message('debug', 'Host: ' . $pg_config['current_host']);
+			log_message('debug', 'Mode: ' . $pg_config['mode']);
+			log_message('debug', 'MID: ' . $pg_config['mid']);
+		}
+
 		$user_id = $this->session->userdata('user_id');
 		if (!$user_id) {
 			redirect('login');
@@ -36,9 +48,8 @@ class Payment extends MY_Controller
 		}
 
 		$package_idx = $this->input->post('package_idx');
-		$charge_amount = $this->input->post('charge_amount');
 
-		if (!$package_idx || !$charge_amount) {
+		if (!$package_idx) {
 			$this->session->set_flashdata('error', '결제 정보가 올바르지 않습니다.');
 			redirect('send/popup');
 			return;
@@ -52,9 +63,24 @@ class Payment extends MY_Controller
 			return;
 		}
 
+		// 패키지 정보에서 금액 가져오기 (올바른 필드명: package_amount)
+		$charge_amount = intval($package_info['package_amount']);
+
+		if ($charge_amount <= 0) {
+			$this->session->set_flashdata('error', '결제 금액 정보가 올바르지 않습니다.');
+			redirect('send/popup');
+			return;
+		}
+
 		// 사용자 정보 조회
-		$this->load->model('User_model');
+		$this->load->model('User_management_model');
 		$user_info = $this->User_management_model->get_user_info($user_id);
+
+		if (!$user_info) {
+			$this->session->set_flashdata('error', '사용자 정보를 찾을 수 없습니다.');
+			redirect('send/popup');
+			return;
+		}
 
 		// 결제 파라미터 생성
 		$payment_data = $this->Payment_model->generate_payment_params(
@@ -75,14 +101,13 @@ class Payment extends MY_Controller
 		$this->load->view('payment/request', $data);
 	}
 
-	/**
-	 * 파일 위치: application/controllers/Payment.php
-	 * 역할: 결제 승인 처리 (ReturnUrl)
-	 */
 	public function return_url()
 	{
 		$tid = $this->input->post('Tid');
 		$tr_auth_key = $this->input->post('TrAuthKey');
+
+		// 디버깅: 전체 POST 데이터 로그
+		log_message('debug', 'Return URL - POST data: ' . json_encode($this->input->post()));
 
 		if (!$tid || !$tr_auth_key) {
 			$this->session->set_flashdata('error', '결제 정보가 올바르지 않습니다.');
@@ -93,17 +118,58 @@ class Payment extends MY_Controller
 		// 승인 요청
 		$approval_result = $this->Payment_model->request_approval($tid, $tr_auth_key);
 
+		// 디버깅: 승인 결과 로그
+		log_message('debug', 'Approval result: ' . json_encode($approval_result));
+
 		if ($approval_result['success']) {
 			// 결제 성공 - 충전 처리
 			$payment_info = $approval_result['data'];
 
-			// MallReserved에서 조직ID, 사용자ID, 패키지IDX 추출
-			$reserved_data = json_decode($payment_info['MallReserved'], true);
+			// 디버깅: payment_info 전체 로그
+			log_message('debug', 'Payment info: ' . json_encode($payment_info));
 
-			$org_id = $reserved_data['org_id'];
+			// MerchantReserved에서 조직ID, 사용자ID, 패키지IDX 추출
+			// 스마트로페이는 MerchantReserved로 반환함
+			$merchant_reserved = isset($payment_info['MerchantReserved'])
+				? $payment_info['MerchantReserved']
+				: (isset($payment_info['MallReserved']) ? $payment_info['MallReserved'] : '');
+
+			// 디버깅: MerchantReserved 원본 로그
+			log_message('debug', 'MerchantReserved raw: ' . $merchant_reserved);
+
+			// Base64 디코딩 시도
+			$reserved_decoded = base64_decode($merchant_reserved);
+
+			// 디버깅: 디코딩된 데이터 로그
+			log_message('debug', 'MerchantReserved decoded: ' . $reserved_decoded);
+
+			// JSON 파싱
+			$reserved_data = json_decode($reserved_decoded, true);
+
+			// 디버깅: 파싱 결과 로그
+			log_message('debug', 'Reserved data: ' . json_encode($reserved_data));
+			log_message('debug', 'JSON last error: ' . json_last_error_msg());
+
+			// 파싱 실패 시 에러 처리
+			if (!$reserved_data || !isset($reserved_data['org_id']) || !isset($reserved_data['user_id']) || !isset($reserved_data['package_idx'])) {
+				log_message('error', 'MerchantReserved parsing failed. Raw: ' . $merchant_reserved . ', Decoded: ' . $reserved_decoded);
+
+				$data = array(
+					'success' => false,
+					'message' => '결제 정보 파싱에 실패했습니다. 고객센터에 문의해주세요. (TID: ' . $tid . ')',
+					'payment_info' => $payment_info
+				);
+				$this->load->view('payment/result', $data);
+				return;
+			}
+
+			$org_id = intval($reserved_data['org_id']);
 			$user_id = $reserved_data['user_id'];
-			$package_idx = $reserved_data['package_idx'];
+			$package_idx = intval($reserved_data['package_idx']);
 			$charge_amount = intval($payment_info['Amt']);
+
+			// 디버깅: 추출된 데이터 로그
+			log_message('debug', "Extracted - org_id: $org_id, user_id: $user_id, package_idx: $package_idx, amount: $charge_amount");
 
 			// 충전 처리
 			$charge_result = $this->Send_model->charge_sms($org_id, $user_id, $package_idx, $charge_amount);

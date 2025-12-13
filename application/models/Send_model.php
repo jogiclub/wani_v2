@@ -1126,8 +1126,7 @@ class Send_model extends CI_Model
 	public function update_send_log_status($send_idx, $status, $message = null)
 	{
 		$data = array(
-			'send_status' => $status,
-			'updated_date' => date('Y-m-d H:i:s')
+			'send_status' => $status
 		);
 
 		if ($message !== null) {
