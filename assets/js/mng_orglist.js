@@ -1232,6 +1232,9 @@
 		// 바로가기 버튼 이벤트
 		$('#orgDashboardBtn').on('click', handleDashboardButtonClick);
 
+		// 지도 버튼 이벤트 추가
+		$('#btnOrgMap').on('click', openOrgMapPopup);
+
 		// 엑셀편집 버튼 이벤트 추가
 		$('#btnExcelEdit').on('click', openExcelEditPopup);
 
@@ -1594,6 +1597,7 @@
 
 		// 모든 관련 버튼들의 상태 업데이트
 		const isDisabled = count === 0;
+		$('#btnOrgMap, #btnOrgMapMobile').prop('disabled', isDisabled);
 		$('#btnDeleteOrg, #btnDeleteOrgMobile').prop('disabled', isDisabled);
 		$('#btnMoveOrg, #btnMoveOrgMobile').prop('disabled', isDisabled);
 	}
@@ -1753,6 +1757,56 @@
 			clearTimeout(timeout);
 			timeout = setTimeout(later, wait);
 		};
+	}
+
+
+	/**
+	 * 조직 지도 팝업 열기
+	 */
+	function openOrgMapPopup() {
+		// 체크된 조직 개수 확인
+		if (checkedOrgIds.size === 0) {
+			showToast('지도에 표시할 조직을 선택해주세요', 'warning');
+			return;
+		}
+
+		// 선택된 조직 데이터 가져오기
+		const selectedOrgs = getSelectedOrgs();
+
+		if (selectedOrgs.length === 0) {
+			showToast('선택된 조직 데이터를 찾을 수 없습니다', 'error');
+			return;
+		}
+
+		// 주소가 있는 조직만 필터링
+		const orgsWithAddress = selectedOrgs.filter(org => {
+			return org.org_address && org.org_address.trim() !== '';
+		});
+
+		if (orgsWithAddress.length === 0) {
+			showToast('주소 정보가 있는 조직이 없습니다', 'warning');
+			return;
+		}
+
+		// 세션 스토리지에 데이터 저장
+		sessionStorage.setItem('orgMapData', JSON.stringify(orgsWithAddress));
+
+		// 팝업 열기
+		const popupWidth = 1200;
+		const popupHeight = 800;
+		const left = (screen.width - popupWidth) / 2;
+		const top = (screen.height - popupHeight) / 2;
+
+		const popup = window.open(
+			'/mng/mng_org/org_map_popup',
+			'orgMapPopup',
+			`width=${popupWidth},height=${popupHeight},left=${left},top=${top},resizable=yes,scrollbars=yes`
+		);
+
+		if (!popup) {
+			showToast('팝업 차단을 해제해주세요', 'error');
+			return;
+		}
 	}
 
 })(); // 즉시 실행 함수 종료

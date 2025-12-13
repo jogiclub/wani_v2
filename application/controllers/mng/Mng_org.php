@@ -980,4 +980,13 @@ class Mng_org extends CI_Controller
 	}
 
 
+	/**
+	 * 조직 지도 팝업 페이지
+	 */
+	public function org_map_popup()
+	{
+		$data['user'] = $this->User_model->get_user_by_id($this->session->userdata('user_id'));
+		$this->load->view('mng/org_map_popup', $data);
+	}
+
 }
