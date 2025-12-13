@@ -45,6 +45,9 @@ $(document).ready(function() {
 	});
 });
 
+
+
+
 /**
  * 그리드 초기화
  */
@@ -72,6 +75,20 @@ function initBulkEditOrgGrid(data, originalColumns) {
 			});
 		});
 	}
+
+	// 데이터 전처리: org_tag가 JSON 배열인 경우 쉼표로 구분된 문자열로 변환
+	data.forEach(function(row) {
+		if (row.org_tag) {
+			try {
+				const parsed = JSON.parse(row.org_tag);
+				if (Array.isArray(parsed)) {
+					row.org_tag = parsed.join(', ');
+				}
+			} catch(e) {
+				// 이미 문자열인 경우 그대로 유지
+			}
+		}
+	});
 
 	// 편집 가능한 컬럼 모델 생성
 	const colModel = originalColumns
@@ -119,24 +136,11 @@ function initBulkEditOrgGrid(data, originalColumns) {
 					return typeMap[ui.cellData] || ui.cellData || '';
 				};
 			}
-			// 태그는 텍스트로 편집
+			// 태그 컬럼 - 쉼표로 구분된 문자열로 편집
 			else if (col.dataIndx === 'org_tag') {
+				// 셀 표시는 쉼표로 구분
 				columnConfig.render = function(ui) {
-					if (ui.cellData) {
-						let tags = [];
-						try {
-							const parsed = JSON.parse(ui.cellData);
-							if (Array.isArray(parsed)) {
-								tags = parsed;
-							} else {
-								tags = ui.cellData.split(',').map(tag => tag.trim()).filter(tag => tag);
-							}
-						} catch(e) {
-							tags = ui.cellData.split(',').map(tag => tag.trim()).filter(tag => tag);
-						}
-						return tags.join(', ');
-					}
-					return '';
+					return ui.cellData || '';
 				};
 			} else {
 				columnConfig.render = col.render;
@@ -213,6 +217,134 @@ function initBulkEditOrgGrid(data, originalColumns) {
 		$grid.pqGrid('focus');
 	}, 100);
 }
+
+/**
+ * 빈 행 추가
+ */
+function addEmptyCells() {
+	const count = parseInt($('#addCellCount').val());
+
+	if (!count || count < 1) {
+		showToast('추가할 개수를 입력해주세요', 'warning');
+		$('#addCellCount').focus();
+		return;
+	}
+
+	if (count > 100) {
+		showToast('한 번에 최대 100개까지만 추가할 수 있습니다', 'warning');
+		return;
+	}
+
+	const $grid = $('#bulkEditOrgGrid');
+	const currentData = $grid.pqGrid('option', 'dataModel.data');
+	const colModel = $grid.pqGrid('option', 'colModel');
+
+	const newRows = [];
+	for (let i = 0; i < count; i++) {
+		const newRow = {};
+		colModel.forEach(col => {
+			newRow[col.dataIndx] = '';
+		});
+		newRow.category_idx = '';
+		newRow.org_type = 'church';
+		newRows.push(newRow);
+	}
+
+	const updatedData = currentData.concat(newRows);
+
+	$grid.pqGrid('option', 'dataModel.data', updatedData);
+	$grid.pqGrid('refreshDataAndView');
+
+	$('#addCellCount').val('1');
+
+	const newRowIndex = currentData.length;
+	$grid.pqGrid('scrollRow', {rowIndxPage: newRowIndex});
+
+	showToast(count + '개의 행이 추가되었습니다', 'success');
+}
+
+/**
+ * 수정된 데이터 저장
+ */
+function saveBulkEdit() {
+	if (!bulkEditOrgGridInstance) {
+		showToast('그리드가 초기화되지 않았습니다', 'error');
+		return;
+	}
+
+	try {
+		$('#bulkEditOrgGrid').pqGrid('saveEditCell');
+		const data = $('#bulkEditOrgGrid').pqGrid('option', 'dataModel.data');
+
+		if (!data || data.length === 0) {
+			showToast('저장할 데이터가 없습니다', 'warning');
+			return;
+		}
+
+		// 빈 행 제거 (조직명이 비어있는 행)
+		const filteredData = data.filter(function(row) {
+			const orgName = String(row.org_name || '').trim();
+			return orgName !== '';
+		});
+
+		if (filteredData.length === 0) {
+			showToast('저장할 수 있는 유효한 데이터가 없습니다. 조직명은 필수 항목입니다', 'warning');
+			return;
+		}
+
+		// 데이터 정규화
+		const normalizedData = filteredData.map(function(row) {
+			const normalizedRow = {};
+
+			Object.keys(row).forEach(key => {
+				normalizedRow[key] = String(row[key] || '').trim();
+			});
+
+			// category_idx 확인
+			if (!normalizedRow.category_idx && normalizedRow.category_name) {
+				const category = window.orgCategories.find(c => c.category_name === normalizedRow.category_name);
+				if (category) {
+					normalizedRow.category_idx = String(category.category_idx);
+				}
+			}
+
+			if (normalizedRow.category_idx && orgCategoriesMap[normalizedRow.category_idx]) {
+				normalizedRow.category_name = orgCategoriesMap[normalizedRow.category_idx];
+			}
+
+			// 태그 처리: 쉼표로 구분된 문자열을 JSON 배열로 변환
+			if (normalizedRow.org_tag) {
+				const tags = normalizedRow.org_tag.split(',').map(t => t.trim()).filter(t => t);
+				if (tags.length > 0) {
+					normalizedRow.org_tag = JSON.stringify(tags);
+				} else {
+					normalizedRow.org_tag = '';
+				}
+			}
+
+			return normalizedRow;
+		});
+
+		showConfirmModal(
+			'대량편집 저장',
+			'수정된 내용을 저장하시겠습니까?',
+			function() {
+				if (window.opener) {
+					window.opener.postMessage({
+						type: 'bulkEditOrgComplete',
+						data: normalizedData
+					}, '*');
+					window.close();
+				}
+			}
+		);
+	} catch(e) {
+		console.error('저장 중 오류:', e);
+		showToast('저장 중 오류가 발생했습니다', 'error');
+	}
+}
+
+
 
 /**
  * 빈 행 추가

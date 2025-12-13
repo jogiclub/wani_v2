@@ -623,34 +623,60 @@ class Mng_org extends CI_Controller
 		}
 
 		$org_id = $this->input->post('org_id');
+
 		if (!$org_id) {
 			header('Content-Type: application/json; charset=utf-8');
-			echo json_encode(array('success' => false, 'message' => '조직 ID가 누락되었습니다.'));
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 ID가 누락되었습니다.'
+			), JSON_UNESCAPED_UNICODE);
 			return;
 		}
 
-		// 폼 데이터 수집
-		$data = array(
-			'org_name' => trim($this->input->post('org_name')),
-			'org_type' => $this->input->post('org_type'),
-			'org_desc' => trim($this->input->post('org_desc')),
-			'org_rep' => trim($this->input->post('org_rep')),
-			'org_manager' => trim($this->input->post('org_manager')),
-			'org_phone' => trim($this->input->post('org_phone')),
-			'org_address_postno' => trim($this->input->post('org_address_postno')),
-			'org_address' => trim($this->input->post('org_address')),
-			'org_address_detail' => trim($this->input->post('org_address_detail')),
-			'category_idx' => $this->input->post('category_idx') ?: null
-		);
+		// 업데이트할 데이터 수집
+		$data = array();
 
-		// 태그 처리
+		if ($this->input->post('org_name') !== null) {
+			$data['org_name'] = trim($this->input->post('org_name'));
+		}
+		if ($this->input->post('org_type') !== null) {
+			$data['org_type'] = $this->input->post('org_type');
+		}
+		if ($this->input->post('org_desc') !== null) {
+			$data['org_desc'] = $this->input->post('org_desc');
+		}
+		if ($this->input->post('org_rep') !== null) {
+			$data['org_rep'] = $this->input->post('org_rep');
+		}
+		if ($this->input->post('org_manager') !== null) {
+			$data['org_manager'] = $this->input->post('org_manager');
+		}
+		if ($this->input->post('org_phone') !== null) {
+			$data['org_phone'] = $this->input->post('org_phone');
+		}
+		if ($this->input->post('org_address_postno') !== null) {
+			$data['org_address_postno'] = $this->input->post('org_address_postno');
+		}
+		if ($this->input->post('org_address') !== null) {
+			$data['org_address'] = $this->input->post('org_address');
+		}
+		if ($this->input->post('org_address_detail') !== null) {
+			$data['org_address_detail'] = $this->input->post('org_address_detail');
+		}
+		if ($this->input->post('category_idx') !== null) {
+			$category_idx = $this->input->post('category_idx');
+			$data['category_idx'] = ($category_idx === '' || $category_idx === 'uncategorized') ? null : $category_idx;
+		}
+
+		// 태그 처리 - JSON_UNESCAPED_UNICODE 옵션 사용
 		$org_tag = $this->input->post('org_tag');
 		if (!empty($org_tag)) {
 			if (is_string($org_tag)) {
 				$org_tag = json_decode($org_tag, true);
 			}
 			if (is_array($org_tag) && count($org_tag) > 0) {
-				$data['org_tag'] = $org_tag; // Org_model에서 JSON으로 인코딩됨
+				// JSON_UNESCAPED_UNICODE 옵션으로 한글 유지
+				$data['org_tag'] = json_encode($org_tag, JSON_UNESCAPED_UNICODE);
 			} else {
 				$data['org_tag'] = null;
 			}
@@ -671,13 +697,13 @@ class Mng_org extends CI_Controller
 				echo json_encode(array(
 					'success' => true,
 					'message' => '조직 정보가 성공적으로 업데이트되었습니다.'
-				));
+				), JSON_UNESCAPED_UNICODE);
 			} else {
 				header('Content-Type: application/json; charset=utf-8');
 				echo json_encode(array(
 					'success' => false,
 					'message' => '조직 정보 업데이트에 실패했습니다.'
-				));
+				), JSON_UNESCAPED_UNICODE);
 			}
 		} catch (Exception $e) {
 			log_message('error', '조직 업데이트 오류: ' . $e->getMessage());
@@ -685,7 +711,7 @@ class Mng_org extends CI_Controller
 			echo json_encode(array(
 				'success' => false,
 				'message' => '조직 정보 업데이트 중 오류가 발생했습니다.'
-			));
+			), JSON_UNESCAPED_UNICODE);
 		}
 	}
 
@@ -798,7 +824,7 @@ class Mng_org extends CI_Controller
 			echo json_encode(array(
 				'success' => false,
 				'message' => '유효하지 않은 데이터 형식입니다'
-			));
+			), JSON_UNESCAPED_UNICODE);
 			return;
 		}
 
@@ -809,7 +835,7 @@ class Mng_org extends CI_Controller
 			echo json_encode(array(
 				'success' => false,
 				'message' => '저장할 데이터가 없습니다'
-			));
+			), JSON_UNESCAPED_UNICODE);
 			return;
 		}
 
@@ -841,14 +867,15 @@ class Mng_org extends CI_Controller
 					'category_idx' => !empty($org_data['category_idx']) ? $org_data['category_idx'] : null
 				);
 
-				// 태그 처리
+				// 태그 처리 - JSON_UNESCAPED_UNICODE 옵션 추가
 				if (!empty($org_data['org_tag'])) {
 					$tags = $org_data['org_tag'];
 					if (is_string($tags)) {
 						$tags = json_decode($tags, true);
 					}
 					if (is_array($tags) && count($tags) > 0) {
-						$data['org_tag'] = json_encode($tags);
+						// JSON_UNESCAPED_UNICODE 옵션으로 한글이 정상적으로 저장되도록 수정
+						$data['org_tag'] = json_encode($tags, JSON_UNESCAPED_UNICODE);
 					} else {
 						$data['org_tag'] = null;
 					}
@@ -905,7 +932,7 @@ class Mng_org extends CI_Controller
 				'update_count' => $update_count,
 				'insert_count' => $insert_count,
 				'error_count' => $error_count
-			));
+			), JSON_UNESCAPED_UNICODE);
 
 		} catch (Exception $e) {
 			log_message('error', '조직 대량 업데이트 오류: ' . $e->getMessage());
@@ -913,7 +940,7 @@ class Mng_org extends CI_Controller
 			echo json_encode(array(
 				'success' => false,
 				'message' => '저장 중 오류가 발생했습니다: ' . $e->getMessage()
-			));
+			), JSON_UNESCAPED_UNICODE);
 		}
 	}
 
