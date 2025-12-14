@@ -91,8 +91,8 @@ function can_access_master_menu($menu_key, $master_managed_menus) {
 			</h6>
 			<ul class="nav flex-column">
 				<li class="nav-item">
-					<a class="nav-link" href="#" onclick="showToast('준비 중입니다.', 'info')">
-						<i class="bi bi-file-earmark-ruled"></i> 대시보드 <span class="badge badge-sm text-bg-warning">준비중</span>
+					<a class="nav-link <?php echo (uri_string() == 'mng/mng_dashboard' || strpos(uri_string(), 'mng/mng_dashboard') === 0) ? 'active' : ''; ?>" href="/mng/mng_dashboard">
+						<i class="bi bi-file-earmark-ruled"></i> 대시보드
 					</a>
 				</li>
 			</ul>

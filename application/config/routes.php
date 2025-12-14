@@ -55,10 +55,13 @@ $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
 // 관리자 페이지 라우팅
-$route['mng'] = 'mng/mng_org';
+$route['mng'] = 'mng/mng_dashboard';
+$route['mng/mng_dashboard'] = 'mng/mng_dashboard';
+$route['mng/mng_dashboard/(:any)'] = 'mng/mng_dashboard/$1';
 $route['mng/mng_org'] = 'mng/mng_org';
 $route['mng/mng_org/(:any)'] = 'mng/mng_org/$1';
-
+$route['mng/mng_master'] = 'mng/mng_master';
+$route['mng/mng_master/(:any)'] = 'mng/mng_master/$1';
 
 // 회원 정보 조회 라우트 (최상단에 배치 - 중요!)
 $route['member_info/add_settlement_memo'] = 'member_info/add_settlement_memo';

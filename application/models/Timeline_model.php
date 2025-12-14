@@ -372,4 +372,80 @@ class Timeline_model extends CI_Model {
 			'timeline_types' => $timeline_types
 		);
 	}
+
+	/**
+	 * 월별 주차별 조직별 타입별 타임라인 통계 조회
+	 */
+	public function get_monthly_timeline_by_orgs_and_types($orgs, $year, $month)
+	{
+		if (empty($orgs)) {
+			return array(
+				'orgs' => array(),
+				'weekly_data' => array(),
+				'timeline_types' => array()
+			);
+		}
+
+		$org_ids = array_column($orgs, 'org_id');
+
+		$this->load->model('Org_model');
+		$timeline_types = $this->Org_model->get_all_timeline_types_by_orgs($org_ids);
+
+		$this->load->model('Member_model');
+		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
+
+		$weekly_data = array();
+
+		foreach ($sundays as $sunday_info) {
+			$start_date = $sunday_info['start_date'];
+			$end_date = $sunday_info['end_date'];
+
+			$this->db->select("
+			m.org_id,
+			mt.timeline_type,
+			COUNT(*) as count
+		");
+			$this->db->from('wb_member_timeline mt');
+			$this->db->join('wb_member m', 'mt.member_idx = m.member_idx', 'inner');
+			$this->db->where_in('m.org_id', $org_ids);
+			$this->db->where('mt.timeline_date >=', $start_date);
+			$this->db->where('mt.timeline_date <=', $end_date);
+			$this->db->where('m.del_yn', 'N');
+			$this->db->group_by('m.org_id, mt.timeline_type');
+
+			$query = $this->db->get();
+			$results = $query->result_array();
+
+			$org_type_data_map = array();
+			foreach ($results as $row) {
+				$key = $row['org_id'] . '_' . $row['timeline_type'];
+				$org_type_data_map[$key] = (int)$row['count'];
+			}
+
+			$week_data = array(
+				'week_label' => $sunday_info['label'],
+				'orgs' => array()
+			);
+
+			foreach ($orgs as $org) {
+				$week_data['orgs'][$org['org_id']] = array();
+
+				foreach ($timeline_types as $timeline_type) {
+					$key = $org['org_id'] . '_' . $timeline_type;
+					$week_data['orgs'][$org['org_id']][$timeline_type] =
+						isset($org_type_data_map[$key]) ? $org_type_data_map[$key] : 0;
+				}
+			}
+
+			$weekly_data[] = $week_data;
+		}
+
+		return array(
+			'orgs' => $orgs,
+			'weekly_data' => $weekly_data,
+			'timeline_types' => $timeline_types
+		);
+	}
+
+
 }

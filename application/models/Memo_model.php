@@ -582,4 +582,81 @@ class Memo_model extends CI_Model {
 		);
 	}
 
+
+
+
+	/**
+	 * 월별 주차별 조직별 타입별 메모 통계 조회
+	 */
+	public function get_monthly_memo_by_orgs_and_types($orgs, $year, $month)
+	{
+		if (empty($orgs)) {
+			return array(
+				'orgs' => array(),
+				'weekly_data' => array(),
+				'memo_types' => array()
+			);
+		}
+
+		$org_ids = array_column($orgs, 'org_id');
+
+		$this->load->model('Org_model');
+		$memo_types = $this->Org_model->get_all_memo_types_by_orgs($org_ids);
+
+		$this->load->model('Member_model');
+		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
+
+		$weekly_data = array();
+
+		foreach ($sundays as $sunday_info) {
+			$start_date = $sunday_info['start_date'];
+			$end_date = $sunday_info['end_date'];
+
+			$this->db->select("
+			m.org_id,
+			memo.memo_type,
+			COUNT(*) as count
+		");
+			$this->db->from('wb_memo memo');
+			$this->db->join('wb_member m', 'memo.member_idx = m.member_idx', 'inner');
+			$this->db->where_in('m.org_id', $org_ids);
+			$this->db->where('memo.regi_date >=', $start_date);
+			$this->db->where('memo.regi_date <=', $end_date);
+			$this->db->where('memo.del_yn', 'N');
+			$this->db->where('m.del_yn', 'N');
+			$this->db->group_by('m.org_id, memo.memo_type');
+
+			$query = $this->db->get();
+			$results = $query->result_array();
+
+			$org_type_data_map = array();
+			foreach ($results as $row) {
+				$key = $row['org_id'] . '_' . $row['memo_type'];
+				$org_type_data_map[$key] = (int)$row['count'];
+			}
+
+			$week_data = array(
+				'week_label' => $sunday_info['label'],
+				'orgs' => array()
+			);
+
+			foreach ($orgs as $org) {
+				$week_data['orgs'][$org['org_id']] = array();
+
+				foreach ($memo_types as $memo_type) {
+					$key = $org['org_id'] . '_' . $memo_type;
+					$week_data['orgs'][$org['org_id']][$memo_type] =
+						isset($org_type_data_map[$key]) ? $org_type_data_map[$key] : 0;
+				}
+			}
+
+			$weekly_data[] = $week_data;
+		}
+
+		return array(
+			'orgs' => $orgs,
+			'weekly_data' => $weekly_data,
+			'memo_types' => $memo_types
+		);
+	}
 }

@@ -24,7 +24,7 @@ class Attendance_model extends CI_Model {
 
 
 
-	// Attendance_model에 save_batch_attendance 메소드 추가 (기존 클래스 끝에 추가)
+
 
 	/**
 	 * 일괄 출석 정보 저장
@@ -1350,5 +1350,87 @@ class Attendance_model extends CI_Model {
 			'att_types' => $att_types
 		);
 	}
+
+
+
+
+	/**
+	 * 월별 주차별 조직별 타입별 출석 통계 조회
+	 */
+	public function get_monthly_attendance_by_orgs_and_types($orgs, $year, $month)
+	{
+		if (empty($orgs)) {
+			return array(
+				'orgs' => array(),
+				'weekly_data' => array(),
+				'att_types' => array()
+			);
+		}
+
+		$org_ids = array_column($orgs, 'org_id');
+
+		$this->load->model('Org_model');
+		$att_types = $this->Org_model->get_all_attendance_types_by_orgs($org_ids);
+
+		// 해당 월의 모든 일요일 찾기
+		$this->load->model('Member_model');
+		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
+
+		$weekly_data = array();
+
+		foreach ($sundays as $sunday_info) {
+			$start_date = $sunday_info['start_date'];
+			$end_date = $sunday_info['end_date'];
+
+			$this->db->select("
+			org_id,
+			att_type_idx,
+			COUNT(*) as count
+		");
+			$this->db->from('wb_member_att');
+			$this->db->where_in('org_id', $org_ids);
+			$this->db->where('att_date >=', $start_date);
+			$this->db->where('att_date <=', $end_date);
+			$this->db->where('att_year', $year);
+			$this->db->group_by('org_id, att_type_idx');
+
+			$query = $this->db->get();
+			$results = $query->result_array();
+
+			$org_type_data_map = array();
+			foreach ($results as $row) {
+				$key = $row['org_id'] . '_' . $row['att_type_idx'];
+				$org_type_data_map[$key] = (int)$row['count'];
+			}
+
+			$week_data = array(
+				'week_label' => $sunday_info['label'],
+				'orgs' => array()
+			);
+
+			foreach ($orgs as $org) {
+				$week_data['orgs'][$org['org_id']] = array();
+
+				foreach ($att_types as $att_type) {
+					$key = $org['org_id'] . '_' . $att_type['att_type_idx'];
+					$week_data['orgs'][$org['org_id']][$att_type['att_type_idx']] =
+						isset($org_type_data_map[$key]) ? $org_type_data_map[$key] : 0;
+				}
+			}
+
+			$weekly_data[] = $week_data;
+		}
+
+		return array(
+			'orgs' => $orgs,
+			'weekly_data' => $weekly_data,
+			'att_types' => $att_types
+		);
+	}
+
+
+
+
+
 
 }

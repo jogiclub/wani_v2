@@ -147,14 +147,6 @@ class Org_model extends CI_Model {
 	}
 
 
-	public function get_all_orgs()
-	{
-		$this->db->select('org_id, org_name, auto_message');
-		$this->db->from('wb_org');
-		$this->db->where('del_yn', 'N');
-		$query = $this->db->get();
-		return $query->result_array();
-	}
 
 	/**
 	 * 미분류 제외한 전체 조직 목록 조회
@@ -944,6 +936,100 @@ class Org_model extends CI_Model {
 
 		$query = $this->db->get();
 		return $query->result_array();
+	}
+
+
+
+
+	/**
+	 * 여러 카테고리에 속한 조직 목록 조회
+	 */
+	public function get_orgs_by_categories($category_idxs)
+	{
+		if (empty($category_idxs) || !is_array($category_idxs)) {
+			return array();
+		}
+
+		$this->db->select('*');
+		$this->db->from('wb_org');
+		$this->db->where_in('org_category', $category_idxs);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('org_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 전체 조직 목록 조회
+	 */
+	public function get_all_orgs()
+	{
+		$this->db->select('*');
+		$this->db->from('wb_org');
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('org_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 여러 조직의 출석 타입 목록 조회 (중복 제거)
+	 */
+	public function get_all_attendance_types_by_orgs($org_ids)
+	{
+		if (empty($org_ids) || !is_array($org_ids)) {
+			return array();
+		}
+
+		$this->db->select('att_type_idx, att_type_name, att_type_nickname, att_type_color, att_type_order');
+		$this->db->from('wb_att_type');
+		$this->db->where_in('org_id', $org_ids);
+//		$this->db->where('del_yn', 'N');
+		$this->db->group_by('att_type_nickname');
+		$this->db->order_by('att_type_order', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 여러 조직의 타임라인 타입 목록 조회 (중복 제거)
+	 */
+	public function get_all_timeline_types_by_orgs($org_ids)
+	{
+		if (empty($org_ids) || !is_array($org_ids)) {
+			return array();
+		}
+
+		$types = array();
+
+		foreach ($org_ids as $org_id) {
+			$org_types = $this->get_timeline_types($org_id);
+			$types = array_merge($types, $org_types);
+		}
+
+		return array_values(array_unique($types));
+	}
+
+	/**
+	 * 여러 조직의 메모 타입 목록 조회 (중복 제거)
+	 */
+	public function get_all_memo_types_by_orgs($org_ids)
+	{
+		if (empty($org_ids) || !is_array($org_ids)) {
+			return array();
+		}
+
+		$types = array();
+
+		foreach ($org_ids as $org_id) {
+			$org_types = $this->get_memo_types($org_id);
+			$types = array_merge($types, $org_types);
+		}
+
+		return array_values(array_unique($types));
 	}
 
 }

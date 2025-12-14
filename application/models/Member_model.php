@@ -942,4 +942,104 @@ class Member_model extends CI_Model
 	}
 
 
+
+
+	/**
+	 * 월별 주차별 조직별 신규 회원 통계 조회
+	 */
+	public function get_monthly_new_members_by_orgs($orgs, $year, $month)
+	{
+		if (empty($orgs)) {
+			return array();
+		}
+
+		$org_ids = array_column($orgs, 'org_id');
+
+		// 해당 월의 모든 일요일 찾기
+		$sundays = $this->get_sundays_in_month($year, $month);
+
+		$weekly_data = array();
+
+		foreach ($sundays as $sunday_info) {
+			$start_date = $sunday_info['start_date'];
+			$end_date = $sunday_info['end_date'];
+
+			$this->db->select("
+			org_id,
+			COUNT(*) as count
+		");
+			$this->db->from('wb_member');
+			$this->db->where_in('org_id', $org_ids);
+			$this->db->where('regi_date >=', $start_date);
+			$this->db->where('regi_date <=', $end_date);
+			$this->db->where('del_yn', 'N');
+			$this->db->group_by('org_id');
+
+			$query = $this->db->get();
+			$results = $query->result_array();
+
+			$org_data_map = array();
+			foreach ($results as $row) {
+				$org_data_map[$row['org_id']] = (int)$row['count'];
+			}
+
+			$week_data = array(
+				'week_label' => $sunday_info['label'],
+				'orgs' => array()
+			);
+
+			foreach ($orgs as $org) {
+				$week_data['orgs'][$org['org_id']] = isset($org_data_map[$org['org_id']])
+					? $org_data_map[$org['org_id']]
+					: 0;
+			}
+
+			$weekly_data[] = $week_data;
+		}
+
+		return $weekly_data;
+	}
+
+	/**
+	 * 해당 월의 모든 일요일과 주차 정보 반환
+	 */
+	public function get_sundays_in_month($year, $month)
+	{
+		$sundays = array();
+		$first_day = new DateTime(sprintf('%04d-%02d-01', $year, $month));
+		$last_day = new DateTime(sprintf('%04d-%02d-%02d', $year, $month, cal_days_in_month(CAL_GREGORIAN, $month, $year)));
+
+		// 첫 번째 일요일 찾기
+		$current = clone $first_day;
+		$day_of_week = (int)$current->format('w');
+
+		if ($day_of_week != 0) {
+			$current->modify('next Sunday');
+		}
+
+		// 월의 모든 일요일 찾기
+		while ($current <= $last_day) {
+			$sunday_date = $current->format('Y-m-d');
+			$week_start = clone $current;
+			$week_end = clone $current;
+			$week_end->modify('+6 days');
+
+			// 다음 달로 넘어가는 경우 처리
+			$end_date_str = $week_end->format('Y-m-d') . ' 23:59:59';
+
+			$label = (int)$current->format('d') . '일';
+
+			$sundays[] = array(
+				'sunday' => $sunday_date,
+				'start_date' => $week_start->format('Y-m-d') . ' 00:00:00',
+				'end_date' => $end_date_str,
+				'label' => $label
+			);
+
+			$current->modify('+7 days');
+		}
+
+		return $sundays;
+	}
+
 }
