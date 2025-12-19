@@ -28,7 +28,7 @@ class Mng_Dashboard extends CI_Controller
 	}
 
 	/**
-	 * 마스터가 권한을 가진 조직 목록 조회 (ID와 이름 포함)
+	 * 마스터가 권한을 가진 조직 목록 조회 (ID와 이름만)
 	 */
 	private function get_accessible_orgs()
 	{
@@ -40,9 +40,22 @@ class Mng_Dashboard extends CI_Controller
 			: array();
 
 		if (empty($master_managed_category)) {
-			return $this->Org_model->get_all_orgs();
+			// 전체 조직의 ID와 이름만 조회
+			$this->db->select('org_id, org_name');
+			$this->db->from('wb_org');
+			$this->db->where('del_yn', 'N');
+			$this->db->order_by('org_name', 'ASC');
+			$query = $this->db->get();
+			return $query->result_array();
 		} else {
-			return $this->Org_model->get_orgs_by_categories($master_managed_category);
+			// 특정 카테고리의 조직 ID와 이름만 조회
+			$this->db->select('org_id, org_name');
+			$this->db->from('wb_org');
+			$this->db->where_in('category_idx', $master_managed_category);
+			$this->db->where('del_yn', 'N');
+			$this->db->order_by('org_name', 'ASC');
+			$query = $this->db->get();
+			return $query->result_array();
 		}
 	}
 
@@ -74,7 +87,7 @@ class Mng_Dashboard extends CI_Controller
 					'success' => true,
 					'data' => array(
 						'orgs' => array(),
-						'daily_data' => array()
+						'weekly_data' => array()
 					)
 				));
 				return;
@@ -82,13 +95,11 @@ class Mng_Dashboard extends CI_Controller
 
 			$daily_data = $this->Member_model->get_monthly_new_members_by_orgs($orgs, $year, $month);
 
+			// 응답 데이터 크기 줄이기 - 조직 정보 간소화
 			echo json_encode(array(
 				'success' => true,
-				'data' => array(
-					'orgs' => $orgs,
-					'daily_data' => $daily_data
-				)
-			));
+				'data' => $daily_data
+			), JSON_UNESCAPED_UNICODE);
 		} catch (Exception $e) {
 			log_message('error', 'Master dashboard member stats error: ' . $e->getMessage());
 			echo json_encode(array(
@@ -237,7 +248,7 @@ class Mng_Dashboard extends CI_Controller
 					'success' => true,
 					'data' => array(
 						'orgs' => array(),
-						'daily_data' => array(),
+						'weekly_data' => array(),
 						'att_types' => array()
 					)
 				));
@@ -249,7 +260,7 @@ class Mng_Dashboard extends CI_Controller
 			echo json_encode(array(
 				'success' => true,
 				'data' => $daily_data
-			));
+			), JSON_UNESCAPED_UNICODE);
 		} catch (Exception $e) {
 			log_message('error', 'Master dashboard attendance stats error: ' . $e->getMessage());
 			echo json_encode(array(
@@ -287,7 +298,7 @@ class Mng_Dashboard extends CI_Controller
 					'success' => true,
 					'data' => array(
 						'orgs' => array(),
-						'daily_data' => array(),
+						'weekly_data' => array(),
 						'timeline_types' => array()
 					)
 				));
@@ -299,7 +310,7 @@ class Mng_Dashboard extends CI_Controller
 			echo json_encode(array(
 				'success' => true,
 				'data' => $daily_data
-			));
+			), JSON_UNESCAPED_UNICODE);
 		} catch (Exception $e) {
 			log_message('error', 'Master dashboard timeline stats error: ' . $e->getMessage());
 			echo json_encode(array(
@@ -337,7 +348,7 @@ class Mng_Dashboard extends CI_Controller
 					'success' => true,
 					'data' => array(
 						'orgs' => array(),
-						'daily_data' => array(),
+						'weekly_data' => array(),
 						'memo_types' => array()
 					)
 				));
@@ -349,7 +360,7 @@ class Mng_Dashboard extends CI_Controller
 			echo json_encode(array(
 				'success' => true,
 				'data' => $daily_data
-			));
+			), JSON_UNESCAPED_UNICODE);
 		} catch (Exception $e) {
 			log_message('error', 'Master dashboard memo stats error: ' . $e->getMessage());
 			echo json_encode(array(
@@ -358,4 +369,308 @@ class Mng_Dashboard extends CI_Controller
 			));
 		}
 	}
+
+	/**
+	 * 통계 데이터 갱신
+	 */
+	public function refresh_stats()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$type = $this->input->post('type');
+		$year = $this->input->post('year');
+		$month = $this->input->post('month');
+
+		if (!$type || !$year || !$month) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '필수 파라미터가 누락되었습니다.'
+			));
+			return;
+		}
+
+		try {
+			$orgs = $this->get_accessible_orgs();
+
+			if (empty($orgs)) {
+				echo json_encode(array(
+					'success' => false,
+					'message' => '권한이 있는 조직이 없습니다.'
+				));
+				return;
+			}
+
+			switch ($type) {
+				case 'member':
+					$result = $this->rebuild_member_stats($orgs, $year, $month);
+					break;
+				case 'attendance':
+					$result = $this->rebuild_attendance_stats($orgs, $year, $month);
+					break;
+				case 'timeline':
+					$result = $this->rebuild_timeline_stats($orgs, $year, $month);
+					break;
+				case 'memo':
+					$result = $this->rebuild_memo_stats($orgs, $year, $month);
+					break;
+				default:
+					echo json_encode(array(
+						'success' => false,
+						'message' => '잘못된 통계 타입입니다.'
+					));
+					return;
+			}
+
+			if ($result) {
+				echo json_encode(array(
+					'success' => true,
+					'message' => '통계가 성공적으로 갱신되었습니다.'
+				));
+			} else {
+				echo json_encode(array(
+					'success' => false,
+					'message' => '통계 갱신 중 오류가 발생했습니다.'
+				));
+			}
+		} catch (Exception $e) {
+			log_message('error', 'Stats refresh error: ' . $e->getMessage());
+			echo json_encode(array(
+				'success' => false,
+				'message' => '통계 갱신 중 오류가 발생했습니다.'
+			));
+		}
+	}
+
+	/**
+	 * 회원 통계 재구성
+	 */
+	private function rebuild_member_stats($orgs, $year, $month)
+	{
+		$this->load->model('Member_model');
+		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
+
+		$this->db->trans_start();
+
+		try {
+			foreach ($orgs as $org) {
+				$org_id = $org['org_id'];
+
+				foreach ($sundays as $sunday_info) {
+					$sunday_date = $sunday_info['sunday_date'];
+					$week_end = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
+
+					$this->db->select('COUNT(*) as count');
+					$this->db->from('wb_member');
+					$this->db->where('org_id', $org_id);
+					$this->db->where('regi_date >=', $sunday_date . ' 00:00:00');
+					$this->db->where('regi_date <=', $week_end . ' 23:59:59');
+					$this->db->where('del_yn', 'N');
+
+					$query = $this->db->get();
+					$result = $query->row_array();
+					$new_member_count = (int)$result['count'];
+
+					$data = array(
+						'org_id' => $org_id,
+						'att_year' => $year,
+						'sunday_date' => $sunday_date,
+						'new_member_count' => $new_member_count
+					);
+
+					$this->db->replace('wb_member_weekly_stats', $data);
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return false;
+			}
+
+			return true;
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Rebuild member stats error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 출석 통계 재구성
+	 */
+	private function rebuild_attendance_stats($orgs, $year, $month)
+	{
+		$this->load->model('Member_model');
+		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
+
+		$this->db->trans_start();
+
+		try {
+			foreach ($orgs as $org) {
+				$org_id = $org['org_id'];
+
+				foreach ($sundays as $sunday_info) {
+					$sunday_date = $sunday_info['sunday_date'];
+					$week_end = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
+
+					$this->db->select("att.att_type_idx, t.att_type_name, COUNT(*) as count");
+					$this->db->from('wb_member_att att');
+					$this->db->join('wb_att_type t', 'att.att_type_idx = t.att_type_idx', 'inner');
+					$this->db->where('att.org_id', $org_id);
+					$this->db->where('att.att_date >=', $sunday_date);
+					$this->db->where('att.att_date <=', $week_end);
+					$this->db->where('att.att_year', $year);
+					$this->db->group_by('att.att_type_idx, t.att_type_name');
+
+					$query = $this->db->get();
+					$results = $query->result_array();
+
+					foreach ($results as $row) {
+						$data = array(
+							'org_id' => $org_id,
+							'att_year' => $year,
+							'sunday_date' => $sunday_date,
+							'att_type_name' => $row['att_type_name'],
+							'attendance_count' => (int)$row['count']
+						);
+
+						$this->db->replace('wb_attendance_weekly_type_stats', $data);
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return false;
+			}
+
+			return true;
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Rebuild attendance stats error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 타임라인 통계 재구성
+	 */
+	private function rebuild_timeline_stats($orgs, $year, $month)
+	{
+		$this->load->model('Member_model');
+		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
+
+		$this->db->trans_start();
+
+		try {
+			foreach ($orgs as $org) {
+				$org_id = $org['org_id'];
+
+				foreach ($sundays as $sunday_info) {
+					$sunday_date = $sunday_info['sunday_date'];
+					$week_end = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
+
+					$this->db->select("t.timeline_type, COUNT(*) as count");
+					$this->db->from('wb_member_timeline t');
+					$this->db->join('wb_member m', 't.member_idx = m.member_idx', 'inner');
+					$this->db->where('m.org_id', $org_id);
+					$this->db->where('m.del_yn', 'N');
+					$this->db->where('t.timeline_date >=', $sunday_date);
+					$this->db->where('t.timeline_date <=', $week_end);
+					$this->db->group_by('t.timeline_type');
+
+					$query = $this->db->get();
+					$results = $query->result_array();
+
+					foreach ($results as $row) {
+						$data = array(
+							'org_id' => $org_id,
+							'att_year' => $year,
+							'sunday_date' => $sunday_date,
+							'timeline_type' => $row['timeline_type'],
+							'timeline_count' => (int)$row['count']
+						);
+
+						$this->db->replace('wb_timeline_weekly_type_stats', $data);
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return false;
+			}
+
+			return true;
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Rebuild timeline stats error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+	/**
+	 * 메모 통계 재구성
+	 */
+	private function rebuild_memo_stats($orgs, $year, $month)
+	{
+		$this->load->model('Member_model');
+		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
+
+		$this->db->trans_start();
+
+		try {
+			foreach ($orgs as $org) {
+				$org_id = $org['org_id'];
+
+				foreach ($sundays as $sunday_info) {
+					$sunday_date = $sunday_info['sunday_date'];
+					$week_end = date('Y-m-d', strtotime($sunday_date . ' +6 days'));
+
+					$this->db->select("memo.memo_type, COUNT(*) as count");
+					$this->db->from('wb_memo memo');
+					$this->db->join('wb_member m', 'memo.member_idx = m.member_idx', 'inner');
+					$this->db->where('m.org_id', $org_id);
+					$this->db->where('m.del_yn', 'N');
+					$this->db->where('memo.del_yn', 'N');
+					$this->db->where('memo.regi_date >=', $sunday_date . ' 00:00:00');
+					$this->db->where('memo.regi_date <=', $week_end . ' 23:59:59');
+					$this->db->group_by('memo.memo_type');
+
+					$query = $this->db->get();
+					$results = $query->result_array();
+
+					foreach ($results as $row) {
+						$data = array(
+							'org_id' => $org_id,
+							'att_year' => $year,
+							'sunday_date' => $sunday_date,
+							'memo_type' => $row['memo_type'],
+							'memo_count' => (int)$row['count']
+						);
+
+						$this->db->replace('wb_memo_weekly_type_stats', $data);
+					}
+				}
+			}
+
+			$this->db->trans_complete();
+
+			if ($this->db->trans_status() === FALSE) {
+				return false;
+			}
+
+			return true;
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'Rebuild memo stats error: ' . $e->getMessage());
+			return false;
+		}
+	}
+
+
 }

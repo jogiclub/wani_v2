@@ -43,38 +43,66 @@ class WaniCoverSlide {
 
 	render() {
 		this.wrapper = document.createElement('div');
-		this.wrapper.classList.add('wani-cover-slide-wrapper');
+		this.wrapper.classList.add('card', 'mb-5');
 
-		// 카드 컨테이너
+		// 1. 카드 헤더 생성 (Flexbox 설정)
+		const cardsTitle = document.createElement('div');
+		cardsTitle.classList.add('card-header', 'd-flex', 'align-items-center');
+
+		// 2. 타이틀 및 아이콘 설정 (왼쪽 영역)
+		cardsTitle.innerHTML = `
+        <span>커버 슬라이드</span>
+        <i class="bi bi-info-circle-fill text-info ms-2" 
+           data-bs-toggle="tooltip" 
+           data-bs-html="true" 
+           data-bs-placement="right"
+           data-bs-custom-class="custom-tooltip1"
+           data-bs-title="<div class='text-start'><img src='/assets/video/cover_slide.gif' width='100%' style='margin-bottom:5px;'><small>홈페이지 상단에서 주로 이용되며 텍스트를 포함한 이미지가 좌우로 슬라이드 됩니다.</small></div>"
+           style="cursor: pointer;">
+        </i>
+    `;
+
+		// 카드 컨테이너 (바디)
 		const cardsContainer = document.createElement('div');
-		cardsContainer.classList.add('wani-cards-container');
-		cardsContainer.style.display = 'grid';
-		cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(250px, 1fr))';
-		cardsContainer.style.gap = '20px';
-		cardsContainer.style.marginBottom = '15px';
+		cardsContainer.classList.add('card-body');
 
-		// 카드 렌더링
-		this.data.cards.forEach((cardData, index) => {
-			const card = this.renderCard(cardData, index);
-			cardsContainer.appendChild(card);
-		});
-
-		// 추가 버튼
+		// 3. 추가 버튼 생성
 		const addButton = document.createElement('button');
 		addButton.type = 'button';
-		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary');
+		// [핵심 1] 'ms-auto' 클래스를 추가하여 오른쪽 끝으로 밀어냅니다.
+		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'ms-auto');
 		addButton.innerHTML = '<i class="bi bi-plus-lg"></i> 카드 추가';
 		addButton.onclick = () => this.addCard(cardsContainer);
 
+		// [핵심 2] 버튼을 'cardsTitle' (헤더) 안에 넣습니다.
+		cardsTitle.appendChild(addButton);
+
+
+		// 카드 렌더링 (기존 로직 유지)
+		if (this.data && this.data.cards) {
+			this.data.cards.forEach((cardData, index) => {
+				const card = this.renderCard(cardData, index);
+				cardsContainer.appendChild(card);
+			});
+		}
+
+		// 최종 조립
+		this.wrapper.appendChild(cardsTitle);
 		this.wrapper.appendChild(cardsContainer);
-		this.wrapper.appendChild(addButton);
+		// (이전 코드에 있던 this.wrapper.appendChild(addButton); 은 삭제해야 합니다)
+
+		// 툴팁 초기화
+		try {
+			const tooltipTriggerList = cardsTitle.querySelectorAll('[data-bs-toggle="tooltip"]');
+			[...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+		} catch (e) { console.warn(e); }
 
 		return this.wrapper;
 	}
 
 	renderCard(cardData, index) {
 		const cardElement = document.createElement('div');
-		cardElement.classList.add('wani-card-item');
+		cardElement.classList.add('wani-card-item', 'mb-3');
 		cardElement.style.border = '1px solid #dee2e6';
 		cardElement.style.borderRadius = '8px';
 		cardElement.style.padding = '15px';
@@ -111,7 +139,7 @@ class WaniCoverSlide {
 		const subtitleInput = document.createElement('textarea');
 		subtitleInput.classList.add('form-control', 'mb-3');
 		subtitleInput.placeholder = '서브타이틀 입력 (Enter로 줄바꿈 가능)';
-		subtitleInput.value = this.data.subtitle || '';
+		subtitleInput.value = cardData.subtitle || '';
 		subtitleInput.rows = 2;
 		subtitleInput.oninput = () => {
 			this.data.subtitle = subtitleInput.value;

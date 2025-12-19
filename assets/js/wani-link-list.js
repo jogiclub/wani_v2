@@ -6,7 +6,7 @@
 class WaniLinkList {
 	static get toolbox() {
 		return {
-			title: '바로가기 섹션',
+			title: '핵심링크 바로가기',
 			icon: '<svg width="17" height="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>'
 		};
 	}
@@ -39,11 +39,39 @@ class WaniLinkList {
 
 	render() {
 		this.wrapper = document.createElement('div');
-		this.wrapper.classList.add('wani-link-list-wrapper');
-		this.wrapper.style.border = '1px solid #dee2e6';
-		this.wrapper.style.borderRadius = '8px';
-		this.wrapper.style.padding = '20px';
-		this.wrapper.style.backgroundColor = '#fff';
+		this.wrapper.classList.add('card', 'mb-5');
+
+
+
+
+		// 1. 카드 헤더 생성 (Flexbox 설정)
+		const cardsTitle = document.createElement('div');
+		cardsTitle.classList.add('card-header', 'd-flex', 'align-items-center');
+
+		// 2. 타이틀 및 아이콘 설정 (왼쪽 영역)
+		cardsTitle.innerHTML = `
+        <span>핵심링크 바로가기</span>
+        <i class="bi bi-info-circle-fill text-info ms-2" 
+           data-bs-toggle="tooltip" 
+           data-bs-html="true" 
+           data-bs-placement="right"
+           data-bs-custom-class="custom-tooltip"
+           data-bs-container="body"           
+           data-bs-title="<div class='text-start'><img src='/assets/images/homepage_link_list.png' width='100%' style='margin-bottom:5px;'><small>페이지의 핵심 메뉴를 바로갈 수 있도록 기능을 제공합니다.</small></div>"
+           style="cursor: pointer;">
+        </i>
+    `;
+
+
+
+
+		// 카드 컨테이너 (바디)
+		const cardsContainer = document.createElement('div');
+		cardsContainer.classList.add('card-body');
+
+		this.wrapper.appendChild(cardsTitle);
+		this.wrapper.appendChild(cardsContainer);
+
 
 		const titleInput = document.createElement('input');
 		titleInput.type = 'text';
@@ -67,7 +95,7 @@ class WaniLinkList {
 		linksContainer.classList.add('wani-links-container');
 		linksContainer.style.marginTop = '15px';
 		linksContainer.style.display = 'grid';
-		linksContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+		linksContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
 		linksContainer.style.gap = '15px';
 
 		this.data.links.forEach((linkData, index) => {
@@ -77,14 +105,27 @@ class WaniLinkList {
 
 		const addButton = document.createElement('button');
 		addButton.type = 'button';
-		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'mt-3');
+		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'ms-auto');
 		addButton.innerHTML = '<i class="bi bi-plus-lg"></i> 링크 추가';
 		addButton.onclick = () => this.addLink(linksContainer);
 
-		this.wrapper.appendChild(titleInput);
-		this.wrapper.appendChild(subtitleInput);
-		this.wrapper.appendChild(linksContainer);
-		this.wrapper.appendChild(addButton);
+		cardsContainer.appendChild(titleInput);
+		cardsContainer.appendChild(subtitleInput);
+		cardsContainer.appendChild(linksContainer);
+		cardsTitle.appendChild(addButton);
+
+
+		const comment = document.createElement('div');
+		comment.classList.add('wani-links-container');
+		comment.innerHTML = `
+        
+        <div class="alert alert-warning alert-dismissible fade show mt-3 mb-0" role="alert">
+		  아이콘 다운로드는 <a href="https://fonts.google.com/icons?icon.size=100&icon.color=%231f1f1f" target="_blank">여기</a>에서 가능합니다.
+		  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+		</div>
+    `;
+
+		cardsContainer.appendChild(comment);
 
 		return this.wrapper;
 	}
@@ -139,7 +180,7 @@ class WaniLinkList {
 		const deleteButton = document.createElement('button');
 		deleteButton.type = 'button';
 		deleteButton.classList.add('btn', 'btn-sm', 'btn-danger', 'w-100', 'mt-2');
-		deleteButton.innerHTML = '<i class="bi bi-dash"></i>';
+		deleteButton.innerHTML = '<i class="bi bi-trash"></i> 삭제';
 		deleteButton.onclick = () => this.deleteLink(linkData, card, container);
 
 		if (this.data.links.length === 1) {
@@ -160,7 +201,7 @@ class WaniLinkList {
 		imageWrapper.classList.add('link-image-wrapper');
 		imageWrapper.style.position = 'relative';
 		imageWrapper.style.width = '100%';
-		imageWrapper.style.height = '150px';
+		
 		imageWrapper.style.backgroundColor = '#f8f9fa';
 		imageWrapper.style.border = '2px dashed #dee2e6';
 		imageWrapper.style.borderRadius = '4px';

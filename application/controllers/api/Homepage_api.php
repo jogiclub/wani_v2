@@ -405,54 +405,69 @@ class Homepage_api extends CI_Controller
 					break;
 
 
-				case 'WaniLatestList':
+				/**
+				 * 파일 위치: application/controllers/api/Homepage_api.php
+				 * 역할: convert_editorjs_to_html 함수 내 waniLatestList 케이스 추가
+				 */
+
+				case 'waniLatestList':
 					$boards = $data_content['boards'] ?? [];
 
 					if (!empty($boards) && !empty($org_code)) {
-						$html .= '<section>';
-						$html .= '<div class="wani-latest-list-block mb-4">';
-						$html .= '<div class="row g-3">';
+						$html .= '<section class="wani-latest-list-section">';
+						$html .= '<div class="container">';
+						$html .= '<div class="row g-4">';
 
-						foreach ($boards as $board_config) {
-							$menu_id = $board_config['menu_id'] ?? '';
-							$limit = $board_config['limit'] ?? 5;
-							$display_type = $board_config['display_type'] ?? 'list';
+						foreach ($boards as $board) {
+							$menu_id = $board['menu_id'] ?? '';
+							$limit = $board['limit'] ?? 5;
 
-							if (!empty($menu_id)) {
-								$posts = $this->get_board_posts($org_code, $menu_id, $limit);
-
-								$html .= '<div class="col-12">';
-								$html .= '<div class="card">';
-								$html .= '<div class="card-body">';
-
-								if ($display_type === 'list') {
-									$html .= '<ul class="list-group list-group-flush">';
-									foreach ($posts as $post) {
-										$html .= '<li class="list-group-item">';
-										$html .= '<a href="/board/' . $menu_id . '/' . $post['idx'] . '" class="text-decoration-none">';
-										$html .= htmlspecialchars($post['board_title']);
-										$html .= '</a>';
-										$html .= '<small class="text-muted ms-2">' . date('Y-m-d', strtotime($post['reg_date'])) . '</small>';
-										$html .= '</li>';
-									}
-									$html .= '</ul>';
-								} else {
-									foreach ($posts as $post) {
-										$html .= '<div class="mb-3">';
-										$html .= '<h6><a href="/board/' . $menu_id . '/' . $post['idx'] . '">' . htmlspecialchars($post['board_title']) . '</a></h6>';
-										if (!empty($post['board_content'])) {
-											$preview = strip_tags(substr($post['board_content'], 0, 150));
-											$html .= '<p class="text-muted small">' . htmlspecialchars($preview) . '...</p>';
-										}
-										$html .= '</div>';
-									}
-								}
-
-								$html .= '</div></div></div>';
+							if (empty($menu_id)) {
+								continue;
 							}
+
+							// 게시판 정보 조회
+							$menu_info = $this->Homepage_api_model->get_menu_info($org_code, $menu_id);
+
+							if (!$menu_info) {
+								continue;
+							}
+
+
+							// 게시글 목록 조회 (기존 메서드 활용)
+							$posts = $this->get_board_posts($org_code, $menu_id, $limit);
+
+							$html .= '<div class="col-md-6">';
+							$html .= '<div class="board-header">';
+							$html .= '<h5 class="py-3 mb-0">' . htmlspecialchars($menu_info['menu_name']) . '</h5>';
+							$html .= '<a href="/board/' . $menu_id . '" target="_blank" class="text-dark text-decoration-none fw-bold"><small>더보기 <i class="bi bi-plus-lg"></i></small></a>';
+
+							$html .= '</div>';
+							$html .= '<div class="board-body">';
+
+							if (!empty($posts)) {
+								$html .= '<ul class="list-group list-group-flush">';
+								foreach ($posts as $post) {
+									$html .= '<li class="list-group-item " >';
+									$html .= '<a href="/board/' . $menu_id . '/' . $post['idx'] . '" class="text-decoration-none text-dark">';
+									$html .= htmlspecialchars($post['board_title']);
+									$html .= '</a>';
+									$html .= '<small class="text-muted ms-2">' . date('Y-m-d', strtotime($post['reg_date'])) . '</small>';
+									$html .= '</li>';
+								}
+								$html .= '</ul>';
+							} else {
+								$html .= '<p class="text-muted text-center mb-0">등록된 게시글이 없습니다.</p>';
+							}
+
+							$html .= '</div>';
+							$html .= '</div>';
+
 						}
 
-						$html .= '</div></div></section>';
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</section>';
 					}
 					break;
 

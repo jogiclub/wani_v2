@@ -39,7 +39,7 @@ header.fixed .logo-container .navbar-brand{color:#333!important;}
 .navbar{display: flex;align-items: center;justify-content: space-between;width: 100%;height: 80px;}
 
 .logo-container {display: flex;align-items: center; padding: 0 20px;}
-.logo-container img {max-height: 50px;max-width: 150px;object-fit: contain;background: rgba(255, 255, 255, 0.9); border-radius: 8px; margin-right: 12px}
+.logo-container img {max-height: 50px;max-width: 150px;object-fit: contain; margin-right: 12px}
 .logo-container .navbar-brand {font-weight: 700;font-size: 1.5rem;color: white !important; margin: 0}
 .navbar-toggler{border: 0; font-size: 30px}
 .navbar-toggler:focus{box-shadow: none;}
@@ -151,6 +151,12 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 	.wani-link-list-bg-block .button-list a{margin-top: 15px}
 }
 
+
+/*좌우게시판*/
+.wani-latest-list-section{padding: 100px 0; background: #efefef;}
+.wani-latest-list-section .board-header {display: flex; justify-content: space-between; align-items: center;}
+.wani-latest-list-section .board-body .list-group li{display: flex; justify-content: space-between; align-items: center;}
+.wani-latest-list-section .board-body .list-group li a{font-weight: 500}
 
 
 

@@ -35,9 +35,18 @@ class WaniLatestYoutubeSlide {
 		container.classList.add('wani-youtube-slide-config');
 
 		container.innerHTML = `
-			<div class="card">
-				<div class="card-header bg-danger bg-opacity-10">
-					<small class="text-muted fw-bold">유튜브 슬라이드 설정</small>
+			<div class="card mb-5">
+				<div class="card-header">
+					유튜브 슬라이드
+					<i class="bi bi-info-circle-fill text-info ms-2" 
+					   data-bs-toggle="tooltip" 
+					   data-bs-html="true" 
+					   data-bs-placement="right"
+					   data-bs-custom-class="custom-tooltip"
+					   data-bs-container="body"           
+					   data-bs-title="<div class='text-start'><img src='/assets/images/homepage_youtube_slide.png' width='100%' style='margin-bottom:5px;'><small>유튜브 게시판의 이미지를 생성하고 슬라이드로 보여줍니다.</small></div>"
+					   style="cursor: pointer;">
+					</i>
 				</div>
 				<div class="card-body">
 					<div class="mb-3">
@@ -49,7 +58,7 @@ class WaniLatestYoutubeSlide {
 						<textarea class="form-control form-control-sm wani-youtube-subtitle" rows="2" placeholder="서브타이틀 입력 (선택사항)">${this.data.subtitle}</textarea>
 					</div>
 					<div class="mb-3">
-						<label class="form-label small fw-bold">게시판 선택</label>
+						<label class="form-label small fw-bold">게시판 선택(게시글에 유튜브 URL이 있어야 표시됩니다!)</label>
 						<div class="youtube-board-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;">
 							<div class="text-center text-muted small">
 								<div class="spinner-border spinner-border-sm" role="status">
@@ -60,7 +69,7 @@ class WaniLatestYoutubeSlide {
 						</div>
 					</div>
 					<div class="mb-3">
-						<label class="form-label small">표시 갯수</label>
+						<label class="form-label small">한 라인에 표시할 이미지 갯수</label>
 						<select class="form-select form-select-sm wani-youtube-display-count">
 							<option value="3">3개</option>
 							<option value="4">4개</option>
@@ -71,7 +80,7 @@ class WaniLatestYoutubeSlide {
 						<div class="form-check">
 							<input class="form-check-input wani-youtube-show-board-name" type="checkbox" id="showBoardName_${Date.now()}">
 							<label class="form-check-label small" for="showBoardName_${Date.now()}">
-								게시판명 표시
+								이미지와 함께 게시판명 표시
 							</label>
 						</div>
 					</div>
@@ -79,18 +88,13 @@ class WaniLatestYoutubeSlide {
 						<div class="form-check">
 							<input class="form-check-input wani-youtube-show-title" type="checkbox" id="showTitle_${Date.now()}">
 							<label class="form-check-label small" for="showTitle_${Date.now()}">
-								타이틀 표시
+								이미지와 함께 타이틀 표시
 							</label>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="mt-3 p-3 bg-light rounded">
-				<small class="text-muted">
-					<i class="bi bi-info-circle"></i> 선택한 게시판의 유튜브 동영상이 슬라이드 형태로 표시됩니다.
-					(게시글에 유튜브 URL이 있어야 표시됩니다)
-				</small>
-			</div>
+	
 		`;
 
 		this.wrapper.appendChild(container);

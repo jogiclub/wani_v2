@@ -6,7 +6,7 @@
 class WaniIntroLink {
 	static get toolbox() {
 		return {
-			title: '소개 링크',
+			title: '부서 소개',
 			icon: '<svg width="17" height="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>'
 		};
 	}
@@ -50,15 +50,31 @@ class WaniIntroLink {
 
 	render() {
 		this.wrapper = document.createElement('div');
-		this.wrapper.classList.add('wani-intro-link-wrapper');
+		this.wrapper.classList.add('card', 'mb-5');
 
-		// 상단 타이틀 영역
-		const headerSection = this.createHeaderSection();
-		this.wrapper.appendChild(headerSection);
+		// 1. 카드 헤더 생성 (Flexbox 설정)
+		const cardsTitle = document.createElement('div');
+		cardsTitle.classList.add('card-header', 'd-flex', 'align-items-center');
+
+		// 2. 타이틀 및 아이콘 설정 (왼쪽 영역)
+		cardsTitle.innerHTML = `
+        <span>부서 소개</span>
+        <i class="bi bi-info-circle-fill text-info ms-2" 
+           data-bs-toggle="tooltip" 
+           data-bs-html="true" 
+           data-bs-placement="right"
+           data-bs-custom-class="custom-tooltip"
+           data-bs-container="body"           
+           data-bs-title="<div class='text-start'><img src='/assets/images/homepage_intro_link.png' width='100%' style='margin-bottom:5px;'><small>각 부서의 소개 또는 새가족 소개 등 이미지와 박스를 활용한 콘텐츠로 구성되어 있습니다.</small></div>"
+           style="cursor: pointer;">
+        </i>
+    `;
+
+		this.wrapper.appendChild(cardsTitle);
 
 		// 카드 컨테이너
 		const cardsContainer = document.createElement('div');
-		cardsContainer.classList.add('wani-cards-container');
+		cardsContainer.classList.add('card-body');
 		cardsContainer.style.display = 'grid';
 		cardsContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
 		cardsContainer.style.gap = '20px';
@@ -70,15 +86,17 @@ class WaniIntroLink {
 			cardsContainer.appendChild(card);
 		});
 
+
+
 		// 카드 추가 버튼
 		const addButton = document.createElement('button');
 		addButton.type = 'button';
-		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary');
+		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'ms-auto');
 		addButton.innerHTML = '<i class="bi bi-plus-lg"></i> 카드 추가';
 		addButton.onclick = () => this.addCard(cardsContainer);
 
 		this.wrapper.appendChild(cardsContainer);
-		this.wrapper.appendChild(addButton);
+		cardsTitle.appendChild(addButton);
 
 		return this.wrapper;
 	}
@@ -115,7 +133,7 @@ class WaniIntroLink {
 
 		headerSection.appendChild(titleInput);
 		headerSection.appendChild(subtitleInput);
-
+		cardsTitle.appendChild(addButton);
 		return headerSection;
 	}
 

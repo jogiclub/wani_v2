@@ -6,7 +6,7 @@
 class WaniLatestImageSlide {
 	static get toolbox() {
 		return {
-			title: '이미지슬라이드',
+			title: '이미지 슬라이드',
 			icon: '<svg width="17" height="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>'
 		};
 	}
@@ -34,10 +34,22 @@ class WaniLatestImageSlide {
 		const container = document.createElement('div');
 		container.classList.add('wani-image-slide-config');
 
+
+
+
 		container.innerHTML = `
-			<div class="card">
-				<div class="card-header bg-primary bg-opacity-10">
-					<small class="text-muted fw-bold">이미지 슬라이드 설정</small>
+			<div class="card mb-5">
+				<div class="card-header">
+					이미지 슬라이드
+					<i class="bi bi-info-circle-fill text-info ms-2" 
+					   data-bs-toggle="tooltip" 
+					   data-bs-html="true" 
+					   data-bs-placement="right"
+					   data-bs-custom-class="custom-tooltip"
+					   data-bs-container="body"           
+					   data-bs-title="<div class='text-start'><img src='/assets/images/homepage_img_slide.png' width='100%' style='margin-bottom:5px;'><small>게시판의 이미지를 생성하고 슬라이드로 보여줍니다.</small></div>"
+					   style="cursor: pointer;">
+					</i>
 				</div>
 				<div class="card-body">
 					<div class="mb-3">
@@ -85,12 +97,8 @@ class WaniLatestImageSlide {
 					</div>
 				</div>
 			</div>
-			<div class="mt-3 p-3 bg-light rounded">
-				<small class="text-muted">
-					<i class="bi bi-info-circle"></i> 선택한 게시판의 이미지가 슬라이드 형태로 표시됩니다.
-					(게시글에 이미지가 첨부되어 있어야 표시됩니다)
-				</small>
-			</div>
+		
+		
 		`;
 
 		this.wrapper.appendChild(container);

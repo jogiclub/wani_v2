@@ -19,7 +19,7 @@ $this->load->view('mng/header');
 			<div class="card mb-3">
 				<div class="card-header d-flex align-items-center justify-content-between">
 					<h5 class="card-title mb-0 d-flex">
-						<i class="bi bi-person-video3 me-2"></i> 전체 회원현황
+						<i class="bi bi-person-video3 me-2"></i> 전체 신규회원현황
 					</h5>
 					<div class="d-flex align-items-center gap-2">
 						<button type="button" class="btn btn-sm btn-outline-secondary" id="memberPrevMonth">
@@ -29,9 +29,12 @@ $this->load->view('mng/header');
 						<button type="button" class="btn btn-sm btn-outline-secondary" id="memberNextMonth">
 							<i class="bi bi-chevron-right"></i>
 						</button>
+						<button type="button" class="btn btn-sm btn-primary" id="memberRefreshBtn">
+							<i class="bi bi-arrow-clockwise"></i> 데이터 갱신
+						</button>
 					</div>
 				</div>
-				<div class="card-body">
+				<div class="card-body" style="height: 503px">
 					<canvas id="memberChart"></canvas>
 				</div>
 			</div>
@@ -53,10 +56,13 @@ $this->load->view('mng/header');
 							<button type="button" class="btn btn-sm btn-outline-secondary" id="attendanceNextMonth">
 								<i class="bi bi-chevron-right"></i>
 							</button>
+							<button type="button" class="btn btn-sm btn-primary" id="attendanceRefreshBtn">
+								<i class="bi bi-arrow-clockwise"></i> 데이터 갱신
+							</button>
 						</div>
 					</div>
 				</div>
-				<div class="card-body">
+				<div class="card-body" style="height: 503px">
 					<canvas id="attendanceChart"></canvas>
 				</div>
 			</div>
@@ -78,10 +84,13 @@ $this->load->view('mng/header');
 							<button type="button" class="btn btn-sm btn-outline-secondary" id="timelineNextMonth">
 								<i class="bi bi-chevron-right"></i>
 							</button>
+							<button type="button" class="btn btn-sm btn-primary" id="timelineRefreshBtn">
+								<i class="bi bi-arrow-clockwise"></i> 데이터 갱신
+							</button>
 						</div>
 					</div>
 				</div>
-				<div class="card-body">
+				<div class="card-body" style="height: 503px">
 					<canvas id="timelineChart"></canvas>
 				</div>
 			</div>
@@ -103,16 +112,20 @@ $this->load->view('mng/header');
 							<button type="button" class="btn btn-sm btn-outline-secondary" id="memoNextMonth">
 								<i class="bi bi-chevron-right"></i>
 							</button>
+							<button type="button" class="btn btn-sm btn-primary" id="memoRefreshBtn">
+								<i class="bi bi-arrow-clockwise"></i> 데이터 갱신
+							</button>
 						</div>
 					</div>
 				</div>
-				<div class="card-body">
+				<div class="card-body" style="height: 503px">
 					<canvas id="memoChart"></canvas>
 				</div>
 			</div>
 		</div>
 	</div>
 </div>
+
 <!-- 출석현황 설정 모달 -->
 <div class="modal fade" id="attendanceSettingModal" tabindex="-1" aria-hidden="true">
 	<div class="modal-dialog">

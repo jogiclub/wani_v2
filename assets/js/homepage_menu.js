@@ -16,7 +16,11 @@ let currentSearchKeyword = '';
 
 $(document).ready(function() {
 	initializePage();
+
 });
+
+
+
 
 /**
  * 페이지 초기화
@@ -30,6 +34,8 @@ function initializePage() {
 	initializeSplit();
 	loadMenuList();
 	bindEvents();
+
+
 }
 
 /**
@@ -91,6 +97,12 @@ function bindEvents() {
 			handleSearchBoard();
 		}
 	});
+
+	// 툴팁초기화
+	$('body').tooltip({
+		selector: '[data-bs-toggle="tooltip"]' // BS4는 data-toggle="tooltip"
+	});
+
 }
 
 
@@ -1116,7 +1128,7 @@ function initPageContentEditor(content) {
 		availableTools.raw = window.RawTool;
 	}
 
-	// WaniLatestList - 게시판 블록
+	// WaniLatestList - 좌우 최신 게시글 블록 (다른 커스텀 툴들과 함께 추가)
 	if (typeof window.WaniLatestList !== 'undefined') {
 		availableTools.waniLatestList = {
 			class: window.WaniLatestList,

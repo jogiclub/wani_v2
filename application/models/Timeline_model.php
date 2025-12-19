@@ -389,7 +389,22 @@ class Timeline_model extends CI_Model {
 		$org_ids = array_column($orgs, 'org_id');
 
 		$this->load->model('Org_model');
-		$timeline_types = $this->Org_model->get_all_timeline_types_by_orgs($org_ids);
+		$timeline_types_raw = $this->Org_model->get_all_timeline_types_by_orgs($org_ids);
+
+		$timeline_types = array();
+		if (!empty($timeline_types_raw)) {
+			foreach ($timeline_types_raw as $type) {
+				if (is_array($type)) {
+					if (isset($type['timeline_type'])) {
+						$timeline_types[] = $type['timeline_type'];
+					}
+				} else {
+					$timeline_types[] = $type;
+				}
+			}
+		}
+
+		$timeline_types = array_unique($timeline_types);
 
 		$this->load->model('Member_model');
 		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
@@ -397,21 +412,13 @@ class Timeline_model extends CI_Model {
 		$weekly_data = array();
 
 		foreach ($sundays as $sunday_info) {
-			$start_date = $sunday_info['start_date'];
-			$end_date = $sunday_info['end_date'];
+			$sunday_date = $sunday_info['sunday_date'];
 
-			$this->db->select("
-			m.org_id,
-			mt.timeline_type,
-			COUNT(*) as count
-		");
-			$this->db->from('wb_member_timeline mt');
-			$this->db->join('wb_member m', 'mt.member_idx = m.member_idx', 'inner');
-			$this->db->where_in('m.org_id', $org_ids);
-			$this->db->where('mt.timeline_date >=', $start_date);
-			$this->db->where('mt.timeline_date <=', $end_date);
-			$this->db->where('m.del_yn', 'N');
-			$this->db->group_by('m.org_id, mt.timeline_type');
+			$this->db->select("org_id, timeline_type, timeline_count");
+			$this->db->from('wb_timeline_weekly_type_stats');
+			$this->db->where_in('org_id', $org_ids);
+			$this->db->where('att_year', $year);
+			$this->db->where('sunday_date', $sunday_date);
 
 			$query = $this->db->get();
 			$results = $query->result_array();
@@ -419,7 +426,7 @@ class Timeline_model extends CI_Model {
 			$org_type_data_map = array();
 			foreach ($results as $row) {
 				$key = $row['org_id'] . '_' . $row['timeline_type'];
-				$org_type_data_map[$key] = (int)$row['count'];
+				$org_type_data_map[$key] = (int)$row['timeline_count'];
 			}
 
 			$week_data = array(
@@ -428,24 +435,35 @@ class Timeline_model extends CI_Model {
 			);
 
 			foreach ($orgs as $org) {
-				$week_data['orgs'][$org['org_id']] = array();
+				$org_id = $org['org_id'];
+				$week_data['orgs'][$org_id] = array();
 
 				foreach ($timeline_types as $timeline_type) {
-					$key = $org['org_id'] . '_' . $timeline_type;
-					$week_data['orgs'][$org['org_id']][$timeline_type] =
-						isset($org_type_data_map[$key]) ? $org_type_data_map[$key] : 0;
+					$type_name = is_string($timeline_type) ? $timeline_type : (string)$timeline_type;
+					$key = $org_id . '_' . $type_name;
+					$week_data['orgs'][$org_id][$type_name] = isset($org_type_data_map[$key])
+						? $org_type_data_map[$key]
+						: 0;
 				}
 			}
 
 			$weekly_data[] = $week_data;
 		}
 
+		// 조직 정보 간소화
+		$simplified_orgs = array();
+		foreach ($orgs as $org) {
+			$simplified_orgs[] = array(
+				'org_id' => $org['org_id'],
+				'org_name' => $org['org_name']
+			);
+		}
+
 		return array(
-			'orgs' => $orgs,
+			'orgs' => $simplified_orgs,
 			'weekly_data' => $weekly_data,
 			'timeline_types' => $timeline_types
 		);
 	}
-
 
 }

@@ -942,45 +942,38 @@ class Member_model extends CI_Model
 	}
 
 
-
-
 	/**
 	 * 월별 주차별 조직별 신규 회원 통계 조회
 	 */
 	public function get_monthly_new_members_by_orgs($orgs, $year, $month)
 	{
 		if (empty($orgs)) {
-			return array();
+			return array(
+				'orgs' => array(),
+				'weekly_data' => array()
+			);
 		}
 
 		$org_ids = array_column($orgs, 'org_id');
-
-		// 해당 월의 모든 일요일 찾기
 		$sundays = $this->get_sundays_in_month($year, $month);
 
 		$weekly_data = array();
 
 		foreach ($sundays as $sunday_info) {
-			$start_date = $sunday_info['start_date'];
-			$end_date = $sunday_info['end_date'];
+			$sunday_date = $sunday_info['sunday_date'];
 
-			$this->db->select("
-			org_id,
-			COUNT(*) as count
-		");
-			$this->db->from('wb_member');
+			$this->db->select("org_id, new_member_count");
+			$this->db->from('wb_member_weekly_stats');
 			$this->db->where_in('org_id', $org_ids);
-			$this->db->where('regi_date >=', $start_date);
-			$this->db->where('regi_date <=', $end_date);
-			$this->db->where('del_yn', 'N');
-			$this->db->group_by('org_id');
+			$this->db->where('att_year', $year);
+			$this->db->where('sunday_date', $sunday_date);
 
 			$query = $this->db->get();
 			$results = $query->result_array();
 
 			$org_data_map = array();
 			foreach ($results as $row) {
-				$org_data_map[$row['org_id']] = (int)$row['count'];
+				$org_data_map[$row['org_id']] = (int)$row['new_member_count'];
 			}
 
 			$week_data = array(
@@ -997,49 +990,47 @@ class Member_model extends CI_Model
 			$weekly_data[] = $week_data;
 		}
 
-		return $weekly_data;
+		// 조직 정보 간소화 (ID와 이름만)
+		$simplified_orgs = array();
+		foreach ($orgs as $org) {
+			$simplified_orgs[] = array(
+				'org_id' => $org['org_id'],
+				'org_name' => $org['org_name']
+			);
+		}
+
+		return array(
+			'orgs' => $simplified_orgs,
+			'weekly_data' => $weekly_data
+		);
 	}
 
 	/**
-	 * 해당 월의 모든 일요일과 주차 정보 반환
+	 * 해당 월의 일요일 날짜 목록 조회
 	 */
 	public function get_sundays_in_month($year, $month)
 	{
 		$sundays = array();
-		$first_day = new DateTime(sprintf('%04d-%02d-01', $year, $month));
-		$last_day = new DateTime(sprintf('%04d-%02d-%02d', $year, $month, cal_days_in_month(CAL_GREGORIAN, $month, $year)));
+		$first_day = new DateTime("{$year}-{$month}-01");
+		$last_day = new DateTime($first_day->format('Y-m-t'));
 
-		// 첫 번째 일요일 찾기
 		$current = clone $first_day;
 		$day_of_week = (int)$current->format('w');
 
 		if ($day_of_week != 0) {
-			$current->modify('next Sunday');
+			$current->add(new DateInterval('P' . (7 - $day_of_week) . 'D'));
 		}
 
-		// 월의 모든 일요일 찾기
 		while ($current <= $last_day) {
-			$sunday_date = $current->format('Y-m-d');
-			$week_start = clone $current;
-			$week_end = clone $current;
-			$week_end->modify('+6 days');
-
-			// 다음 달로 넘어가는 경우 처리
-			$end_date_str = $week_end->format('Y-m-d') . ' 23:59:59';
-
-			$label = (int)$current->format('d') . '일';
-
 			$sundays[] = array(
-				'sunday' => $sunday_date,
-				'start_date' => $week_start->format('Y-m-d') . ' 00:00:00',
-				'end_date' => $end_date_str,
-				'label' => $label
+				'sunday_date' => $current->format('Y-m-d'),
+				'label' => $current->format('n/j')
 			);
-
-			$current->modify('+7 days');
+			$current->add(new DateInterval('P7D'));
 		}
 
 		return $sundays;
 	}
+
 
 }

@@ -6,7 +6,7 @@
 class WaniLinkListBg {
 	static get toolbox() {
 		return {
-			title: '백그라운드링크',
+			title: '백그라운드 이미지 주요 링크',
 			icon: '<svg width="17" height="15" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16v16H4V4zm2 2v12h12V6H6zm2 8h8v2H8v-2z"/></svg>'
 		};
 	}
@@ -41,11 +41,35 @@ class WaniLinkListBg {
 
 	render() {
 		this.wrapper = document.createElement('div');
-		this.wrapper.classList.add('wani-link-list-bg-wrapper');
-		this.wrapper.style.border = '1px solid #dee2e6';
-		this.wrapper.style.borderRadius = '8px';
-		this.wrapper.style.padding = '20px';
-		this.wrapper.style.backgroundColor = '#fff';
+		this.wrapper.classList.add('card', 'mb-5');
+
+		// 1. 카드 헤더 생성 (Flexbox 설정)
+		const cardsTitle = document.createElement('div');
+		cardsTitle.classList.add('card-header', 'd-flex', 'align-items-center');
+
+		// 2. 타이틀 및 아이콘 설정 (왼쪽 영역)
+		cardsTitle.innerHTML = `
+        <span>백그라운드 이미지 주요 링크</span>
+        <i class="bi bi-info-circle-fill text-info ms-2" 
+           data-bs-toggle="tooltip" 
+           data-bs-html="true" 
+           data-bs-placement="right"
+           data-bs-custom-class="custom-tooltip"
+           data-bs-container="body"           
+           data-bs-title="<div class='text-start'><img src='/assets/images/homepage_bg_image.png' width='100%' style='margin-bottom:5px;'><small>백그라운드 이미지가 있는 소개 및 링크가 가능합니다.</small></div>"
+           style="cursor: pointer;">
+        </i>
+    `;
+
+		this.wrapper.appendChild(cardsTitle);
+
+
+
+		// 카드 컨테이너
+		const cardsContainer = document.createElement('div');
+		cardsContainer.classList.add('card-body');
+
+
 
 		// 타이틀 입력
 		const titleInput = document.createElement('input');
@@ -56,6 +80,9 @@ class WaniLinkListBg {
 		titleInput.oninput = () => {
 			this.data.title = titleInput.value;
 		};
+
+
+
 
 		// 서브타이틀 입력
 		const subtitleInput = document.createElement('textarea');
@@ -86,15 +113,16 @@ class WaniLinkListBg {
 		// 버튼 추가
 		const addButton = document.createElement('button');
 		addButton.type = 'button';
-		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'mt-3');
+		addButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'ms-auto');
 		addButton.innerHTML = '<i class="bi bi-plus-lg"></i> 버튼 추가';
 		addButton.onclick = () => this.addButton(buttonsContainer);
 
-		this.wrapper.appendChild(titleInput);
-		this.wrapper.appendChild(subtitleInput);
-		this.wrapper.appendChild(bgImageSection);
-		this.wrapper.appendChild(buttonsContainer);
-		this.wrapper.appendChild(addButton);
+		cardsContainer.appendChild(titleInput);
+		cardsContainer.appendChild(subtitleInput);
+		cardsContainer.appendChild(bgImageSection);
+		cardsContainer.appendChild(buttonsContainer);
+		this.wrapper.appendChild(cardsContainer);
+		cardsTitle.appendChild(addButton);
 
 		return this.wrapper;
 	}

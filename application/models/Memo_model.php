@@ -601,7 +601,22 @@ class Memo_model extends CI_Model {
 		$org_ids = array_column($orgs, 'org_id');
 
 		$this->load->model('Org_model');
-		$memo_types = $this->Org_model->get_all_memo_types_by_orgs($org_ids);
+		$memo_types_raw = $this->Org_model->get_all_memo_types_by_orgs($org_ids);
+
+		$memo_types = array();
+		if (!empty($memo_types_raw)) {
+			foreach ($memo_types_raw as $type) {
+				if (is_array($type)) {
+					if (isset($type['memo_type'])) {
+						$memo_types[] = $type['memo_type'];
+					}
+				} else {
+					$memo_types[] = $type;
+				}
+			}
+		}
+
+		$memo_types = array_unique($memo_types);
 
 		$this->load->model('Member_model');
 		$sundays = $this->Member_model->get_sundays_in_month($year, $month);
@@ -609,22 +624,13 @@ class Memo_model extends CI_Model {
 		$weekly_data = array();
 
 		foreach ($sundays as $sunday_info) {
-			$start_date = $sunday_info['start_date'];
-			$end_date = $sunday_info['end_date'];
+			$sunday_date = $sunday_info['sunday_date'];
 
-			$this->db->select("
-			m.org_id,
-			memo.memo_type,
-			COUNT(*) as count
-		");
-			$this->db->from('wb_memo memo');
-			$this->db->join('wb_member m', 'memo.member_idx = m.member_idx', 'inner');
-			$this->db->where_in('m.org_id', $org_ids);
-			$this->db->where('memo.regi_date >=', $start_date);
-			$this->db->where('memo.regi_date <=', $end_date);
-			$this->db->where('memo.del_yn', 'N');
-			$this->db->where('m.del_yn', 'N');
-			$this->db->group_by('m.org_id, memo.memo_type');
+			$this->db->select("org_id, memo_type, memo_count");
+			$this->db->from('wb_memo_weekly_type_stats');
+			$this->db->where_in('org_id', $org_ids);
+			$this->db->where('att_year', $year);
+			$this->db->where('sunday_date', $sunday_date);
 
 			$query = $this->db->get();
 			$results = $query->result_array();
@@ -632,7 +638,7 @@ class Memo_model extends CI_Model {
 			$org_type_data_map = array();
 			foreach ($results as $row) {
 				$key = $row['org_id'] . '_' . $row['memo_type'];
-				$org_type_data_map[$key] = (int)$row['count'];
+				$org_type_data_map[$key] = (int)$row['memo_count'];
 			}
 
 			$week_data = array(
@@ -641,20 +647,32 @@ class Memo_model extends CI_Model {
 			);
 
 			foreach ($orgs as $org) {
-				$week_data['orgs'][$org['org_id']] = array();
+				$org_id = $org['org_id'];
+				$week_data['orgs'][$org_id] = array();
 
 				foreach ($memo_types as $memo_type) {
-					$key = $org['org_id'] . '_' . $memo_type;
-					$week_data['orgs'][$org['org_id']][$memo_type] =
-						isset($org_type_data_map[$key]) ? $org_type_data_map[$key] : 0;
+					$type_name = is_string($memo_type) ? $memo_type : (string)$memo_type;
+					$key = $org_id . '_' . $type_name;
+					$week_data['orgs'][$org_id][$type_name] = isset($org_type_data_map[$key])
+						? $org_type_data_map[$key]
+						: 0;
 				}
 			}
 
 			$weekly_data[] = $week_data;
 		}
 
+		// 조직 정보 간소화
+		$simplified_orgs = array();
+		foreach ($orgs as $org) {
+			$simplified_orgs[] = array(
+				'org_id' => $org['org_id'],
+				'org_name' => $org['org_name']
+			);
+		}
+
 		return array(
-			'orgs' => $orgs,
+			'orgs' => $simplified_orgs,
 			'weekly_data' => $weekly_data,
 			'memo_types' => $memo_types
 		);
