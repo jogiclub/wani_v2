@@ -414,7 +414,8 @@ class Homepage_api extends CI_Controller
 					$boards = $data_content['boards'] ?? [];
 
 					if (!empty($boards) && !empty($org_code)) {
-						$html .= '<section class="wani-latest-list-section">';
+						$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
+						$html .= '<div class="wani-latest-list-section">';
 						$html .= '<div class="container">';
 						$html .= '<div class="row g-4">';
 
@@ -465,6 +466,7 @@ class Homepage_api extends CI_Controller
 
 						}
 
+						$html .= '</div>';
 						$html .= '</div>';
 						$html .= '</div>';
 						$html .= '</section>';
@@ -578,7 +580,7 @@ class Homepage_api extends CI_Controller
 						if (!empty($all_posts)) {
 							$slider_id = 'youtube-slider-' . uniqid();
 
-							$html .= '<section>';
+							$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
 							$html .= '<div class="wani-youtube-slide-block">';
 							// 타이틀과 서브타이틀 렌더링
 							if (!empty($title) || !empty($subtitle)) {
@@ -653,7 +655,7 @@ class Homepage_api extends CI_Controller
 					$links = $data_content['links'] ?? '';
 
 					if (!empty($links)) {
-						$html .= '<section>';
+						$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
 						$html .= '<div class="wani-link-list-block">';
 						$html .= '<div class="container">';
 
@@ -711,7 +713,7 @@ class Homepage_api extends CI_Controller
 					$cards = $data_content['cards'] ?? [];
 
 					if (!empty($cards)) {
-						$html .= '<section>';
+						$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
 						$html .= '<div class="wani-intro-link-block">';
 						$html .= '<div class="container">';
 
@@ -796,6 +798,9 @@ class Homepage_api extends CI_Controller
 						$html .= '</section>';
 					}
 					break;
+
+
+
 				case 'waniLinkListBg':
 					$title = $data_content['title'] ?? '';
 					$subtitle = $data_content['subtitle'] ?? '';
@@ -803,7 +808,7 @@ class Homepage_api extends CI_Controller
 					$buttons = $data_content['buttons'] ?? [];
 
 					if (!empty($buttons)) {
-						$html .= '<section>';
+						$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
 						$html .= '<div class="wani-link-list-bg-block">';
 
 						// 백그라운드 이미지가 있는 경우
@@ -894,7 +899,7 @@ class Homepage_api extends CI_Controller
 						if (!empty($all_posts)) {
 							$slider_id = 'image-slider-' . uniqid();
 
-							$html .= '<section>';
+							$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
 							$html .= '<div class="wani-image-slide-block">';
 
 							// 타이틀과 서브타이틀 렌더링

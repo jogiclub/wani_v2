@@ -12,6 +12,7 @@
 	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
 	<link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+	<link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.min.css" rel="stylesheet">
 	<link href="https://wani.im/homepage/_theme/{{theme}}/assets/css/theme.css?v={{timestamp}}" rel="stylesheet">
 </head>
 <body>
@@ -30,10 +31,13 @@
 			<div id="logoArea"></div>
 			<a class="navbar-brand" href="/" id="homepageName">{{homepage_name}}</a>
 		</div>
-		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-			<i class="bi bi-list text-dark"></i>
+
+		<button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar">
+			<i class="bi bi-list"></i>
 		</button>
-		<div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+
+
+		<div class="collapse navbar-collapse justify-content-center d-none d-md-flex" id="navbarNav">
 			<ul class="navbar-nav " id="mainMenu">
 				<li class="nav-item">
 					<div class="spinner-border spinner-border-sm text-light" role="status">
@@ -42,6 +46,30 @@
 				</li>
 			</ul>
 		</div>
+
+
+		<div class="offcanvas offcanvas-end text-bg-dark d-md-none d-flex" tabindex="-1" id="offcanvasNavbar" style="width: 300px">
+			<div class="offcanvas-header">
+				<button type="button" class="btn-close btn-close-white fs-2" data-bs-dismiss="offcanvas"></button>
+			</div>
+			<div class="offcanvas-body p-0">
+				<div class="navbar-top">
+					<ul>
+						<li><a href="#"><i class="bi bi-youtube"></i><br/>유튜브</a></li>
+						<li><a href="#"><i class="bi bi-instagram"></i><br/>인스타그램</a></li>
+						<li><a href="#"><i class="bi bi-facebook"></i><br/>페이스북</a></li>
+					</ul>
+				</div>
+				<ul class="accordion justify-content-center flex-grow-1" id="offcanvasMainMenu">
+					<div class="accordion">
+						<div class="spinner-border spinner-border-sm text-light" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+					</div>
+				</ul>
+			</div>
+		</div>
+
 		<div class="link-list d-none d-lg-block">
 			<ul>
 				<li><i class="bi bi-youtube"></i></li>
@@ -77,8 +105,10 @@
 <script src="https://wani.im/homepage/_js/common.js?v={{timestamp}}"></script>
 <script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
 <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.min.js"></script>
 <script src="https://wani.im/homepage/_theme/{{theme}}/assets/js/theme.js?v={{timestamp}}"></script>
 <script>
+
 
 
 
@@ -229,6 +259,12 @@
 			}
 		});
 	});
+
+
+	setTimeout(function() {
+		AOS.init();
+	}, 100);
+
 </script>
 </body>
 </html>
