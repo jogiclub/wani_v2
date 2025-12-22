@@ -156,3 +156,7 @@ $route['api/homepage_api/upload_file'] = 'api/homepage_api/upload_file';
 $route['api/homepage/upload'] = 'api/homepage_api/upload_file';  // 대체 경로 (선택사항)
 // 게시글 수정 API 라우트 추가
 $route['api/homepage/board/update'] = 'api/homepage_api/update_board';
+
+// 관리자 확인 및 수정 권한 확인 API
+$route['api/homepage/check_admin'] = 'api/homepage_api/check_admin';
+$route['api/homepage/verify_edit_permission'] = 'api/homepage_api/verify_edit_permission';

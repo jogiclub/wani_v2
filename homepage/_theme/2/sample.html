@@ -1,56 +1,156 @@
-<div id="mainContent" class="">
-	<div class="board-container fade-in">
-		<div class="container py-5"><h4 class="mb-0">군선교연합회게시판</h4>
-			<nav aria-label="breadcrumb">
-				<ol class="breadcrumb">
-					<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>
-					<li class="breadcrumb-item"><a href="#">회사소개</a></li>
-					<li class="breadcrumb-item active" aria-current="page">군선교연합회게시판</li>
-				</ol>
-			</nav>
-			<div class="d-flex justify-content-between align-items-center py-3">
-				<div class="input-group" style="width: 300px;"><input type="text" class="form-control"
-																	  id="boardSearchInput" placeholder="제목 또는 작성자 검색"
-																	  value="">
-					<button class="btn btn-outline-secondary" type="button" id="boardSearchBtn">검색</button>
-				</div>
-				<div class="d-flex gap-2"><a href="/board/menu_1765768563827/write" class="btn btn-primary">글쓰기</a>
-					<div class="btn-group" role="group">
-						<button type="button" class="btn btn-outline-secondary " data-view="list" title="리스트"><i
-							class="bi bi-list-ul"></i></button>
-						<button type="button" class="btn btn-outline-secondary active" data-view="gallery" title="갤러리">
-							<i class="bi bi-grid-3x3-gap"></i></button>
-						<button type="button" class="btn btn-outline-secondary " data-view="article" title="아티클"><i
-							class="bi bi-card-text"></i></button>
+
+	<style>
+		:root {
+			--navy: #1a3a5f;
+			--gold: #c9a050;
+			--soft-blue: #f0f4f8;
+		}
+
+
+		.container { max-width: 1100px; margin: 80px auto; padding: 0 20px; }
+
+		/* 섹션 헤더 */
+		.section-header { text-align: center; margin-bottom: 60px; }
+		.section-header h2 { font-size: 2.5rem; color: var(--navy); margin: 0; }
+		.section-header p { color: var(--gold); font-weight: 600; margin-top: 10px; letter-spacing: 1px; }
+		.line { width: 50px; height: 3px; background: var(--gold); margin: 20px auto; }
+
+		/* 선교/운동 그리드 */
+		.mission-grid {
+			display: grid;
+			grid-template-columns: repeat(2, 1fr);
+			gap: 40px;
+		}
+
+		.mission-card {
+			background: #fff;
+			border-radius: 20px;
+			padding: 40px;
+			box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+			border: 1px solid #eee;
+			position: relative;
+			overflow: hidden;
+			transition: 0.3s;
+		}
+
+		.mission-card:hover { transform: translateY(-10px); border-color: var(--gold); }
+
+		.mission-card h3 {
+			font-size: 1.6rem;
+			color: var(--navy);
+			margin-bottom: 25px;
+			display: flex;
+			align-items: center;
+			gap: 15px;
+		}
+
+		/* 아이콘 포인트 */
+		.mission-card h3::before {
+			content: '●';
+			color: var(--gold);
+			font-size: 1.2rem;
+		}
+
+		.mission-list {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+
+		.mission-list li {
+			padding: 15px 0;
+			border-bottom: 1px solid #f0f0f0;
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+		}
+
+		.mission-list li:last-child { border-bottom: none; }
+
+		.mission-list li strong {
+			color: var(--navy);
+			display: block;
+			font-size: 1.1rem;
+			margin-bottom: 5px;
+		}
+
+		.mission-list li span {
+			color: #666;
+			font-size: 0.95rem;
+		}
+
+		/* 강조 박스 */
+		.highlight-box {
+			grid-column: span 2;
+			background: var(--navy);
+			color: #fff;
+			padding: 30px;
+			border-radius: 15px;
+			text-align: center;
+			margin-top: 20px;
+		}
+
+		@media (max-width: 768px) {
+			.mission-grid { grid-template-columns: 1fr; }
+			.highlight-box { grid-column: span 1; }
+		}
+	</style>
+
+
+<div class="container">
+
+
+	<div class="mission-grid text-start">
+		<div class="mission-card">
+			<h3>세계 선교 및 화해</h3>
+			<ul class="mission-list">
+				<li>
+					<div>
+						<strong>세계원로목사총연합회 결성</strong>
+						<span>전 세계 원로 목회자들의 네트워크를 구축하여 공동의 선교 비전을 수립하고 협력합니다.</span>
 					</div>
-				</div>
-			</div>
-			<div class="row g-3">
-				<div class="col-6 col-md-4 col-lg-3">
-					<div class="card h-100 shadow-sm" style="cursor:pointer"
-						 onclick="window.location.href='/board/menu_1765768563827/115'">
-						<div class="card-img-top bg-light d-flex align-items-center justify-content-center"
-							 style="height: 200px;"><i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
-						</div>
-						<div class="card-body"><h6 class="card-title" title="123">123</h6>
-							<div class="d-flex justify-content-between align-items-center"><small
-								class="text-muted">정충상</small><small class="text-muted">2025. 12. 17.</small></div>
-						</div>
+				</li>
+				<li>
+					<div>
+						<strong>중동 평화 및 화해 운동</strong>
+						<span>기독교가 먼저 사과하고 다가가는 화해 운동을 통해 종교적 갈등의 근원적인 해결을 도모합니다.</span>
 					</div>
-				</div>
-				<div class="col-6 col-md-4 col-lg-3">
-					<div class="card h-100 shadow-sm" style="cursor:pointer"
-						 onclick="window.location.href='/board/menu_1765768563827/112'"><img
-						src="https://wani.im/uploads/homepage/3/2025/12/15/thumb/21fca567c5288f17020b3740a898a5cc.png"
-						class="card-img-top" alt="군선교연합회입니다." style="height: 200px; object-fit: cover;">
-						<div class="card-body"><h6 class="card-title" title="군선교연합회입니다.">군선교연합회입니다.<i
-							class="bi bi-image text-primary ms-1" title="이미지 첨부"></i></h6>
-							<div class="d-flex justify-content-between align-items-center"><small
-								class="text-muted">정충상</small><small class="text-muted">2025. 12. 15.</small></div>
-						</div>
+				</li>
+				<li>
+					<div>
+						<strong>글로벌 선교 협력</strong>
+						<span>해외 원로 목회자들과의 정기적인 교류를 통해 지구촌 화평 건설을 위한 실천 방안을 연구합니다.</span>
 					</div>
-				</div>
-			</div>
+				</li>
+			</ul>
+		</div>
+
+		<div class="mission-card text-start">
+			<h3>시대 사명 및 평화 운동</h3>
+			<ul class="mission-list">
+				<li>
+					<div>
+						<strong>범지구촌 평화 운동</strong>
+						<span>예수 그리스도의 산상보훈 정신을 바탕으로 전쟁과 기아가 없는 평화로운 세상을 꿈꿉니다.</span>
+					</div>
+				</li>
+				<li>
+					<div>
+						<strong>시국 의견 개진 및 성명서 발표</strong>
+						<span>사회적 갈등 상황에서 성경적 원리에 기초한 올바른 목소리를 내어 시대의 파수꾼 역할을 수행합니다.</span>
+					</div>
+				</li>
+				<li>
+					<div>
+						<strong>복음 중심의 가치 확산</strong>
+						<span>세속화되어 가는 사회 속에서 원로들의 신앙 전통을 계승하고 복음적 가치를 확산시키는 운동을 전개합니다.</span>
+					</div>
+				</li>
+			</ul>
+		</div>
+
+		<div class="highlight-box">
+			"우리는 화평하게 하는 자로서, 땅끝까지 복음의 평화를 전파하는 일에 멈추지 않겠습니다."
 		</div>
 	</div>
 </div>

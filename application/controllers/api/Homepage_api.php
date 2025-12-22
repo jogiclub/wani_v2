@@ -1650,4 +1650,134 @@ class Homepage_api extends CI_Controller
 		}
 	}
 
+
+	/**
+	 * 관리자 여부 확인 API
+	 * POST /api/homepage/check_admin
+	 */
+	public function check_admin()
+	{
+		header('Content-Type: application/json; charset=utf-8');
+
+		$input = json_decode(file_get_contents('php://input'), true);
+
+		$org_code = isset($input['org_code']) ? $input['org_code'] : '';
+		$user_id = isset($input['user_id']) ? trim($input['user_id']) : '';
+
+		if (empty($org_code) || empty($user_id)) {
+			echo json_encode([
+				'success' => false,
+				'message' => '필수 정보가 누락되었습니다.',
+				'data' => ['is_admin' => false]
+			]);
+			return;
+		}
+
+		// org_code로 org_id 조회
+		$org_id = $this->Homepage_api_model->get_org_id_by_code($org_code);
+
+		if ($org_id === false) {
+			echo json_encode([
+				'success' => false,
+				'message' => '조직 정보를 찾을 수 없습니다.',
+				'data' => ['is_admin' => false]
+			]);
+			return;
+		}
+
+		// wb_org_user 테이블에서 해당 user_id가 있는지 확인
+		$this->db->select('user_id, level');
+		$this->db->from('wb_org_user');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('user_id', $user_id);
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			$row = $query->row_array();
+			echo json_encode([
+				'success' => true,
+				'message' => '관리자 확인 완료',
+				'data' => [
+					'is_admin' => true,
+					'level' => (int)$row['level']
+				]
+			]);
+		} else {
+			echo json_encode([
+				'success' => true,
+				'message' => '관리자가 아닙니다.',
+				'data' => ['is_admin' => false]
+			]);
+		}
+	}
+
+	/**
+	 * 게시글 수정 권한 확인 API (작성자 확인 + 회원 확인)
+	 * POST /api/homepage/verify_edit_permission
+	 */
+	public function verify_edit_permission()
+	{
+		header('Content-Type: application/json; charset=utf-8');
+
+		$input = json_decode(file_get_contents('php://input'), true);
+
+		$org_code = isset($input['org_code']) ? $input['org_code'] : '';
+		$idx = isset($input['idx']) ? (int)$input['idx'] : 0;
+		$member_name = isset($input['member_name']) ? trim($input['member_name']) : '';
+		$member_phone = isset($input['member_phone']) ? trim($input['member_phone']) : '';
+
+		if (empty($org_code) || $idx <= 0 || empty($member_name) || empty($member_phone)) {
+			echo json_encode([
+				'success' => false,
+				'message' => '필수 정보가 누락되었습니다.',
+				'data' => null
+			]);
+			return;
+		}
+
+		// 1. 게시글 정보 조회
+		$board = $this->Homepage_api_model->get_board_detail_by_org_code($org_code, $idx);
+
+		if (!$board) {
+			echo json_encode([
+				'success' => false,
+				'message' => '게시글을 찾을 수 없습니다.',
+				'data' => null
+			]);
+			return;
+		}
+
+		// 2. 작성자명 일치 확인
+		if ($board['writer_name'] !== $member_name) {
+			echo json_encode([
+				'success' => false,
+				'message' => '작성자 정보가 일치하지 않습니다.',
+				'data' => null
+			]);
+			return;
+		}
+
+		// 3. 회원 확인 (이름 + 휴대폰번호로 wb_member에서 확인)
+		$verify_result = $this->Homepage_api_model->verify_member($org_code, $member_name, $member_phone);
+
+		if (!$verify_result['success'] || !$verify_result['data']['is_member']) {
+			echo json_encode([
+				'success' => false,
+				'message' => '회원 정보가 일치하지 않습니다.',
+				'data' => null
+			]);
+			return;
+		}
+
+		// 모든 확인 통과
+		echo json_encode([
+			'success' => true,
+			'message' => '수정 권한이 확인되었습니다.',
+			'data' => [
+				'can_edit' => true,
+				'member_idx' => $verify_result['data']['member_idx']
+			]
+		]);
+	}
+
 }

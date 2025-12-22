@@ -1,0 +1,81 @@
+[
+	{
+		"id": "menu_1760703783526",
+		"name": "회사소개",
+		"type": "link",
+		"parent_id": null,
+		"children": [
+			{
+				"id": "menu_1760703906690",
+				"name": "test",
+				"type": "link",
+				"parent_id": "menu_1760703783526",
+				"children": []
+			},
+			{
+				"id": "menu_1760704717934",
+				"name": "페이지 테스트",
+				"type": "page",
+				"parent_id": "menu_1760703783526",
+				"children": []
+			},
+			{
+				"id": "menu_1762604532948",
+				"name": "갤러리",
+				"type": "board",
+				"parent_id": "menu_1760703783526",
+				"children": []
+			},
+			{
+				"id": "menu_1765768563827",
+				"name": "군선교연합회게시판",
+				"type": "board",
+				"parent_id": "menu_1760703783526",
+				"children": []
+			}
+		]
+	},
+	{
+		"id": "menu_1760703923961",
+		"name": "서비스",
+		"type": "link",
+		"parent_id": null,
+		"children": [
+			{
+				"id": "menu_1760703940979",
+				"name": "자유게시판",
+				"type": "board",
+				"parent_id": "menu_1760703923961",
+				"children": []
+			},
+			{
+				"id": "menu_1760703931873",
+				"name": "주일설교",
+				"type": "board",
+				"parent_id": "menu_1760703923961",
+				"children": []
+			}
+		]
+	},
+	{
+		"id": "menu_1760706827412",
+		"name": "고객지원",
+		"type": "link",
+		"parent_id": null,
+		"children": []
+	},
+	{
+		"id": "menu_1762325371988",
+		"name": "프로덕트",
+		"type": "page",
+		"parent_id": null,
+		"children": []
+	},
+	{
+		"id": "menu_1762585665239",
+		"name": "마이페이지",
+		"type": "page",
+		"parent_id": null,
+		"children": []
+	}
+]

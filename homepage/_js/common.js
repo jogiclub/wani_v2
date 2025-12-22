@@ -184,28 +184,57 @@ function applyOrgInfo(info) {
 // 메뉴 HTML 생성
 function generateMenuHtml(menus) {
 	let html = '';
-
 	menus.forEach(menu => {
 		if (!menu.parent_id) {
 			const hasChildren = menu.children && menu.children.length > 0;
-
 			if (hasChildren) {
-				html += `
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            ${escapeHtml(menu.name)}
-                        </a>
-                        <ul class="dropdown-menu">`;
-
+				html += ` <li class="nav-item dropdown"> <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"> ${escapeHtml(menu.name)} </a> <ul class="dropdown-menu">`;
 				menu.children.forEach(child => {
 					const url = getMenuUrl(child.type, child.id);
 					html += `<li><a class="dropdown-item" href="${url}" data-menu-id="${child.id}" data-menu-type="${child.type}">${escapeHtml(child.name)}</a></li>`;
 				});
-
 				html += `</ul></li>`;
 			} else {
 				const url = getMenuUrl(menu.type, menu.id);
 				html += `<li class="nav-item"><a class="nav-link" href="${url}" data-menu-id="${menu.id}" data-menu-type="${menu.type}">${escapeHtml(menu.name)}</a></li>`;
+			}
+		}
+	});
+	return html;
+}
+// 메뉴 HTML 생성
+function generateMenuHtml2(menus) {
+	let html = '';
+
+	// 아코디언의 고유 ID 생성을 위한 index
+	menus.forEach((menu, index) => {
+		if (!menu.parent_id) {
+			const hasChildren = menu.children && menu.children.length > 0;
+			const accordionId = `menuAccordion_${index}`;
+
+			if (hasChildren) {
+				html += `
+                    <div class="accordion-item border-0 ">
+                        <h2 class="accordion-header" id="heading${accordionId}">
+                            <button class="accordion-button collapsed  text-white py-3 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${accordionId}" aria-expanded="false" aria-controls="collapse${accordionId}">
+                                ${escapeHtml(menu.name)}
+                            </button>
+                        </h2>
+                        <div id="collapse${accordionId}" class="accordion-collapse collapse" aria-labelledby="heading${accordionId}" data-bs-parent="#mainMenu">
+                            <div class="accordion-body p-0 ps-3">
+                                <ul class="p-0">`;
+				menu.children.forEach(child => {
+					const url = getMenuUrl(child.type, child.id);
+					html += `<li><a class="nav-link py-3 text-white-50" href="${url}" data-menu-id="${child.id}" data-menu-type="${child.type}">${escapeHtml(child.name)}</a></li>`;
+				});
+
+				html += `</ul>
+                            </div>
+                        </div>
+                    </div>`;
+			} else {
+				const url = getMenuUrl(menu.type, menu.id);
+				html += `<div class="accordion-item border-0 "><h2 class="accordion-header" id="heading${accordionId}"><button class="collapsed  text-white py-3 px-3" href="${url}" data-menu-id="${menu.id}" data-menu-type="${menu.type}">${escapeHtml(menu.name)}</button></h2></div>`;
 			}
 		}
 	});
@@ -237,7 +266,9 @@ async function loadMenu() {
 		if (result.success && result.data && result.data.length > 0) {
 			menuData = result.data;
 			const menuHtml = generateMenuHtml(result.data);
+			const menuHtml2 = generateMenuHtml2(result.data);
 			document.getElementById('mainMenu').innerHTML = menuHtml;
+			document.getElementById('offcanvasMainMenu').innerHTML = menuHtml2;
 
 			document.querySelectorAll('[data-menu-id]').forEach(link => {
 				link.addEventListener('click', (e) => {
@@ -264,37 +295,112 @@ async function loadMenu() {
 	}
 }
 
-// 페이지 내용 로드
+/**
+ * 페이지 콘텐츠 로드
+ * @param {string} menuId - 메뉴 ID
+ */
 async function loadPageContent(menuId) {
+	const mainContent = document.getElementById('mainContent');
+
 	try {
 		console.log('페이지 로드 시작:', menuId);
 		const response = await fetch(`${API_BASE_URL}/page/${ORG_CODE}/${menuId}`);
 		const result = await response.json();
 
-		const mainContent = document.getElementById('mainContent');
+		// 1. 초기화
+		mainContent.innerHTML = '';
+		mainContent.className = '';
+
+		// 2. 최상위 게시판 컨테이너 생성
+		const pageContainer = document.createElement('div');
+		if (menuId !== 'main' && menuId !== '' && menuId !== null) {
+			pageContainer.className = 'page-container sub';
+		} else {
+			pageContainer.className = 'page-container';
+		}
+
+
 
 		if (result.success && result.data) {
-			if (result.data.page_content_html) {
-				mainContent.innerHTML = result.data.page_content_html;
-			} else if (result.data.page_content) {
-				mainContent.innerHTML = result.data.page_content;
-			} else {
-				mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
-			}
 
-			mainContent.classList.add('fade-in');
-			hidePageLoading();
+			if (menuId !== 'main' && menuId !== '' && menuId !== null) {
+				const container = document.createElement('div');
+				container.className = 'container py-5';
+
+
+				const pageData = result.data;
+				const contentHtml = pageData.page_content_html || pageData.page_content || '';
+
+				// 메뉴 정보 가져오기
+				const menuInfo = getMenuInfo(menuId);
+				const menuName = menuInfo ? menuInfo.name : (pageData.page_title || '페이지');
+				const categoryName = menuInfo ? menuInfo.category : '';
+
+				// Breadcrumb HTML 생성
+				let breadcrumbHtml = '<nav aria-label="breadcrumb">';
+				breadcrumbHtml += '<ol class="breadcrumb">';
+				breadcrumbHtml += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
+				if (categoryName) {
+					breadcrumbHtml += `<li class="breadcrumb-item"><a href="#">${escapeHtml(categoryName)}</a></li>`;
+				}
+				breadcrumbHtml += `<li class="breadcrumb-item active" aria-current="page">${escapeHtml(menuName)}</li>`;
+				breadcrumbHtml += '</ol>';
+				breadcrumbHtml += '</nav>';
+
+				// 4. HTML 구조 생성 (헤더 + page-body)
+				container.innerHTML = `
+                <div class="page-header mb-4">
+                    <h4 class="mb-0">${escapeHtml(menuName)}</h4>
+                    ${breadcrumbHtml}
+                </div>
+
+                <div class="page-body">
+                    ${contentHtml || '<p class="text-center text-muted">내용이 없습니다.</p>'}
+                </div>
+            `;
+
+				pageContainer.appendChild(container);
+				mainContent.appendChild(pageContainer);
+			} else {
+
+
+
+				const pageData = result.data;
+				const contentHtml = pageData.page_content_html || pageData.page_content || '';
+
+				// 4. HTML 구조 생성 (헤더 + page-body)
+				pageContainer.innerHTML = `
+                
+                    ${contentHtml || '<p class="text-center text-muted">내용이 없습니다.</p>'}
+                
+                `;
+
+				//pageContainer.appendChild(contentHtml);
+				mainContent.appendChild(pageContainer);
+			}
+			// AOS 애니메이션 새로고침
+			setTimeout(() => { if (typeof AOS !== 'undefined') AOS.refresh(); }, 100);
+
 		} else {
-			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지 내용이 없습니다.</p></div>';
-			hidePageLoading();
+			// 데이터가 없는 경우
+			container.innerHTML = '<div class="text-center py-5"><p class="text-muted">페이지를 찾을 수 없습니다.</p></div>';
+			pageContainer.appendChild(container);
+			mainContent.appendChild(pageContainer);
 		}
+
 	} catch (error) {
-		console.error('페이지 로드 실패:', error);
-		const mainContent = document.getElementById('mainContent');
-		mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">페이지를 불러오는 중 오류가 발생했습니다.</p></div>';
+		console.error('로드 오류:', error);
+		mainContent.innerHTML = `
+            <div class="board-container">
+                <div class="container py-5 text-center">
+                    <p class="text-danger">데이터를 불러오는 중 오류가 발생했습니다.</p>
+                </div>
+            </div>`;
+	} finally {
 		hidePageLoading();
 	}
 }
+
 
 // 링크 처리
 async function loadLinkContent(menuId) {
@@ -834,36 +940,6 @@ function stripHtml(html) {
 	return tmp.textContent || tmp.innerText || '';
 }
 
-// 메뉴 정보 조회 헬퍼 함수
-function getMenuInfo(menuId) {
-	if (!menuData || menuData.length === 0) {
-		return null;
-	}
-
-	// 메뉴 데이터에서 해당 menuId 찾기
-	for (const menu of menuData) {
-		if (menu.id === menuId) {
-			return {
-				name: menu.name,
-				category: menu.menu_category || ''
-			};
-		}
-
-		// 하위 메뉴가 있는 경우
-		if (menu.children && menu.children.length > 0) {
-			for (const child of menu.children) {
-				if (child.id === menuId) {
-					return {
-						name: child.name,
-						category: menu.name
-					};
-				}
-			}
-		}
-	}
-
-	return null;
-}
 
 
 
@@ -1028,126 +1104,6 @@ function parseEditorJSToHTML(editorData) {
 
 
 
-/**
- * 역할: 게시글 상세 로드 함수 수정 (수정 버튼 추가)
- */
-async function loadBoardDetail(menuId, idx) {
-	try {
-		const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
-		const result = await response.json();
-
-		const mainContent = document.getElementById('mainContent');
-		mainContent.classList.remove('loading');
-
-		if (result.success && result.data) {
-			const item = result.data;
-			const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
-			const modDate = item.modi_date ?
-				'<br><small class="text-muted">(수정: ' + new Date(item.modi_date).toLocaleDateString('ko-KR') + ')</small>' : '';
-
-			const menuInfo = findMenuById(menuData, menuId);
-			const menuName = menuInfo ? menuInfo.name : '게시판';
-			const categoryName = menuInfo ? menuInfo.category : '';
-
-			let html = '<div class="board-container fade-in">';
-			html += '<div class="container py-5">';
-
-			// Breadcrumb
-			html += '<h4 class="mb-0">' + escapeHtml(menuName) + '</h4>';
-			html += '<nav aria-label="breadcrumb">';
-			html += '<ol class="breadcrumb">';
-			html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
-			if (categoryName) {
-				html += '<li class="breadcrumb-item"><a href="#">' + escapeHtml(categoryName) + '</a></li>';
-			}
-			html += '<li class="breadcrumb-item"><a href="/board/' + menuId + '">' + escapeHtml(menuName) + '</a></li>';
-			html += '<li class="breadcrumb-item active" aria-current="page">게시글 상세</li>';
-			html += '</ol>';
-			html += '</nav>';
-
-			// 게시글 제목
-			html += '<div class="card shadow-sm mt-4">';
-			html += '<div class="card-body">';
-			html += '<h3 class="card-title">' + escapeHtml(item.board_title) + '</h3>';
-			html += '<div class="d-flex justify-content-between align-items-center text-muted border-bottom pb-3">';
-			html += '<div>';
-			html += '<small>작성자: ' + escapeHtml(item.writer_name || '') + '</small> | ';
-			html += '<small>작성일: ' + date + modDate + '</small> | ';
-			html += '<small>조회수: ' + item.view_count + '</small>';
-			html += '</div>';
-			html += '</div>';
-
-			// YouTube 동영상
-			if (item.youtube_url) {
-				const videoId = extractYoutubeId(item.youtube_url);
-				if (videoId) {
-					html += '<div class="ratio ratio-16x9 my-4">';
-					html += '<iframe src="https://www.youtube.com/embed/' + videoId + '" allowfullscreen></iframe>';
-					html += '</div>';
-				}
-			}
-
-			// 게시글 내용
-			html += '<div class="mt-4">';
-			html += convertEditorJsToHtml(item.board_content);
-			html += '</div>';
-
-			// 첨부파일
-			if (item.file_path) {
-				try {
-					const files = JSON.parse(item.file_path);
-					if (Array.isArray(files) && files.length > 0) {
-						html += '<div class="mt-4 pt-3 border-top">';
-						html += '<h6 class="mb-3">첨부파일</h6>';
-						html += '<div class="list-group">';
-
-						files.forEach(file => {
-							const fileIcon = file.type && file.type.includes('image') ?
-								'<i class="bi bi-image text-primary me-2"></i>' :
-								'<i class="bi bi-file-earmark-text text-secondary me-2"></i>';
-							const fileSize = file.size ? ' (' + formatBytes(file.size) + ')' : '';
-
-							// /api/download 엔드포인트 사용
-							const downloadUrl = `/api/download?file=${encodeURIComponent(file.path)}&name=${encodeURIComponent(file.name)}`;
-
-							html += '<a href="' + downloadUrl + '" class="list-group-item list-group-item-action" download>';
-							html += fileIcon;
-							html += escapeHtml(file.name) + fileSize;
-							html += '</a>';
-						});
-
-						html += '</div>';
-						html += '</div>';
-					}
-				} catch (e) {
-					console.error('파일 정보 파싱 실패:', e);
-				}
-			}
-
-			html += '</div>';
-			html += '</div>';
-
-			// 버튼 영역 (목록으로 + 수정 버튼)
-			html += '<div class="mt-4 d-flex gap-2">';
-			html += '<a href="/board/' + menuId + '/" class="btn btn-secondary">목록으로</a>';
-			html += '<a href="/board/' + menuId + '/' + idx + '/edit" class="btn btn-primary">수정</a>';
-			html += '</div>';
-
-			html += '</div>';
-			html += '</div>';
-
-			mainContent.innerHTML = html;
-
-		} else {
-			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 찾을 수 없습니다.</p></div>';
-		}
-		hidePageLoading();
-	} catch (error) {
-		console.error('게시글 로드 실패:', error);
-		document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 불러오는 중 오류가 발생했습니다.</p></div>';
-		hidePageLoading();
-	}
-}
 
 // 게시글 작성 폼 표시
 async function showBoardWriteForm(menuId) {
@@ -1399,225 +1355,6 @@ async function initializePage() {
 	console.log('=== 홈페이지 초기화 완료 ===');
 }
 
-/**
- * 역할: 게시글 수정 폼 표시 (기존 데이터 로드)
- */
-async function showBoardEditForm(menuId, idx) {
-	const mainContent = document.getElementById('mainContent');
-
-	try {
-		// 기존 게시글 데이터 조회
-		const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
-		const result = await response.json();
-
-		if (!result.success || !result.data) {
-			showToast('게시글을 찾을 수 없습니다.');
-			window.location.href = `/board/${menuId}/`;
-			return;
-		}
-
-		const boardData = result.data;
-
-		const menuInfo = findMenuById(menuData, menuId);
-		const menuName = menuInfo ? menuInfo.name : '게시판';
-		const categoryName = menuInfo ? menuInfo.category : '';
-
-		let html = '<div class="board-container fade-in">';
-		html += '<div class="container py-5">';
-
-		// Breadcrumb
-		html += '<h4 class="mb-0">' + escapeHtml(menuName) + '</h4>';
-		html += '<nav aria-label="breadcrumb">';
-		html += '<ol class="breadcrumb">';
-		html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
-		if (categoryName) {
-			html += '<li class="breadcrumb-item"><a href="#">' + escapeHtml(categoryName) + '</a></li>';
-		}
-		html += '<li class="breadcrumb-item"><a href="/board/' + menuId + '">' + escapeHtml(menuName) + '</a></li>';
-		html += '<li class="breadcrumb-item active" aria-current="page">게시글 수정</li>';
-		html += '</ol>';
-		html += '</nav>';
-
-		html += '<div class="card shadow-sm mt-4">';
-		html += '<div class="card-body">';
-		html += '<h5 class="card-title mb-4">게시글 수정</h5>';
-		html += '<form id="boardEditForm">';
-		html += '<input type="hidden" id="boardIdx" value="' + idx + '">';
-		html += '<input type="hidden" id="isVerified" value="0">';
-
-		// 제목
-		html += '<div class="mb-3">';
-		html += '<label for="boardTitle" class="form-label">제목 <span class="text-danger">*</span></label>';
-		html += '<input type="text" class="form-control" id="boardTitle" value="' + escapeHtml(boardData.board_title) + '" required>';
-		html += '</div>';
-
-		// 작성자 확인
-		html += '<div class="mb-3">';
-		html += '<label class="form-label">작성자 확인 <span class="text-danger">*</span></label>';
-		html += '<div class="input-group mb-2">';
-		html += '<input type="text" class="form-control" id="writerName" placeholder="작성자명" value="' + escapeHtml(boardData.writer_name || '') + '" readonly>';
-		html += '<input type="tel" class="form-control" id="writerPhone" placeholder="휴대폰번호 (- 없이)" maxlength="11">';
-		html += '<button class="btn btn-outline-secondary" type="button" id="btnVerifyWriter">확인</button>';
-		html += '</div>';
-		html += '<div id="verifyResult"></div>';
-		html += '<small class="text-muted">작성자 본인 확인을 위해 휴대폰 번호를 입력하고 확인 버튼을 클릭해주세요.</small>';
-		html += '</div>';
-
-		// 내용
-		html += '<div class="mb-3">';
-		html += '<label for="boardContent" class="form-label">내용 <span class="text-danger">*</span></label>';
-		html += '<textarea class="form-control" id="boardContent" rows="10" required></textarea>';
-		html += '</div>';
-
-		// YouTube URL
-		html += '<div class="mb-3">';
-		html += '<label for="youtubeUrl" class="form-label">YouTube 동영상 (선택)</label>';
-		html += '<input type="url" class="form-control" id="youtubeUrl" value="' + escapeHtml(boardData.youtube_url || '') + '" placeholder="예: https://www.youtube.com/watch?v=...">';
-		html += '<small class="text-muted">YouTube 동영상 URL을 입력하면 게시글에 표시됩니다.</small>';
-		html += '</div>';
-
-		// 파일 첨부
-		html += '<div class="mb-3">';
-		html += '<label class="form-label">파일 첨부 (선택)</label>';
-		html += '<div id="boardFileDropzone" class="dropzone"></div>';
-		html += '<input type="hidden" id="uploadedFiles" value="' + escapeHtml(boardData.file_path || '') + '">';
-		html += '</div>';
-
-		html += '<div class="d-flex gap-2">';
-		html += `<a href="/board/${menuId}/${idx}" class="btn btn-secondary">취소</a>`;
-		html += '<button type="submit" class="btn btn-primary">수정 완료</button>';
-		html += '</div>';
-		html += '</form>';
-		html += '</div>';
-		html += '</div>';
-		html += '</div>';
-		html += '</div>';
-
-		mainContent.innerHTML = html;
-		mainContent.classList.remove('loading');
-
-		// Dropzone 초기화
-		initBoardWriteDropzone();
-
-		// 기존 파일 복원
-		if (boardData.file_path) {
-			try {
-				const files = JSON.parse(boardData.file_path);
-				if (Array.isArray(files) && files.length > 0) {
-					// Dropzone에 기존 파일 표시
-					const dropzone = Dropzone.forElement('#boardFileDropzone');
-					files.forEach(file => {
-						const mockFile = {
-							name: file.name,
-							size: file.size,
-							type: file.type,
-							path: file.path
-						};
-
-						dropzone.displayExistingFile(mockFile, file.path);
-					});
-				}
-			} catch (e) {
-				console.error('파일 정보 파싱 실패:', e);
-			}
-		}
-
-		// 기존 내용을 textarea에 표시 (EditorJS에서 텍스트만 추출)
-		try {
-			const content = JSON.parse(boardData.board_content);
-			if (content.blocks && Array.isArray(content.blocks)) {
-				const textContent = content.blocks.map(block => {
-					if (block.type === 'paragraph') {
-						return block.data.text;
-					}
-					return '';
-				}).join('\n\n');
-				document.getElementById('boardContent').value = textContent;
-			}
-		} catch (e) {
-			document.getElementById('boardContent').value = '';
-		}
-
-		// 작성자 확인 버튼 이벤트
-		document.getElementById('btnVerifyWriter').addEventListener('click', verifyWriter);
-
-		// 폼 제출 이벤트
-		document.getElementById('boardEditForm').addEventListener('submit', async (e) => {
-			e.preventDefault();
-
-			const isVerified = document.getElementById('isVerified').value;
-			if (isVerified !== '1') {
-				showToast('작성자 확인을 먼저 진행해주세요.');
-				return;
-			}
-
-			const title = document.getElementById('boardTitle').value.trim();
-			const content = document.getElementById('boardContent').value.trim();
-			const writerName = document.getElementById('writerName').value.trim();
-			const writerPhone = document.getElementById('writerPhone').value.trim();
-			const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
-			const uploadedFiles = document.getElementById('uploadedFiles').value;
-
-			if (!title || !content) {
-				showToast('제목과 내용을 입력해주세요.');
-				return;
-			}
-
-			// EditorJS 형식으로 변환
-			const editorJsContent = {
-				time: Date.now(),
-				blocks: [
-					{
-						id: generateRandomId(),
-						type: "paragraph",
-						data: {
-							text: content
-						}
-					}
-				],
-				version: "2.31.0"
-			};
-
-			// 게시글 수정 API 호출
-			try {
-				const response = await fetch(`${API_BASE_URL}/board/update`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({
-						idx: idx,
-						org_code: ORG_CODE,
-						menu_id: menuId,
-						board_title: title,
-						board_content: JSON.stringify(editorJsContent),
-						writer_name: writerName,
-						writer_phone: writerPhone,
-						youtube_url: youtubeUrl,
-						file_path: uploadedFiles
-					})
-				});
-
-				const result = await response.json();
-
-				if (result.success) {
-					showToast('게시글이 수정되었습니다.');
-					window.location.href = `/board/${menuId}/${idx}`;
-				} else {
-					showToast(result.message || '게시글 수정에 실패했습니다.');
-				}
-			} catch (error) {
-				console.error('게시글 수정 실패:', error);
-				showToast('게시글 수정 중 오류가 발생했습니다.');
-			}
-		});
-
-	} catch (error) {
-		console.error('게시글 수정 폼 로드 실패:', error);
-		mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 불러오는 중 오류가 발생했습니다.</p></div>';
-		mainContent.classList.remove('loading');
-	}
-}
 
 
 function findMenuById(menus, menuId) {
@@ -2034,3 +1771,691 @@ if (typeof showToast === 'undefined') {
 	}
 }
 
+
+/**
+ * 게시글 수정 폼 표시 (기존 파일 유지 버전)
+ */
+async function showBoardEditForm(menuId, idx) {
+	const mainContent = document.getElementById('mainContent');
+
+	try {
+		// 기존 게시글 데이터 조회
+		const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
+		const result = await response.json();
+
+		if (!result.success || !result.data) {
+			showToast('게시글을 찾을 수 없습니다.');
+			window.location.href = `/board/${menuId}/`;
+			return;
+		}
+
+		const boardData = result.data;
+
+		const menuInfo = findMenuById(menuData, menuId);
+		const menuName = menuInfo ? menuInfo.name : '게시판';
+		const categoryName = menuInfo ? menuInfo.category : '';
+
+		let html = '<div class="board-container fade-in">';
+		html += '<div class="container py-5">';
+
+		// Breadcrumb
+		html += '<h4 class="mb-0">' + escapeHtml(menuName) + '</h4>';
+		html += '<nav aria-label="breadcrumb">';
+		html += '<ol class="breadcrumb">';
+		html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
+		if (categoryName) {
+			html += '<li class="breadcrumb-item"><a href="#">' + escapeHtml(categoryName) + '</a></li>';
+		}
+		html += '<li class="breadcrumb-item"><a href="/board/' + menuId + '">' + escapeHtml(menuName) + '</a></li>';
+		html += '<li class="breadcrumb-item active" aria-current="page">게시글 수정</li>';
+		html += '</ol>';
+		html += '</nav>';
+
+		html += '<div class="card shadow-sm mt-4">';
+		html += '<div class="card-body">';
+		html += '<h5 class="card-title mb-4">게시글 수정</h5>';
+		html += '<form id="boardEditForm">';
+		html += '<input type="hidden" id="boardIdx" value="' + idx + '">';
+		html += '<input type="hidden" id="isVerified" value="1">'; // 이미 확인된 상태
+
+		// 제목
+		html += '<div class="mb-3">';
+		html += '<label for="boardTitle" class="form-label">제목 <span class="text-danger">*</span></label>';
+		html += '<input type="text" class="form-control" id="boardTitle" value="' + escapeHtml(boardData.board_title) + '" required>';
+		html += '</div>';
+
+		// 작성자 정보 (읽기 전용)
+		html += '<div class="mb-3">';
+		html += '<label class="form-label">작성자</label>';
+		html += '<input type="text" class="form-control" id="writerName" value="' + escapeHtml(boardData.writer_name || '') + '" readonly>';
+		html += '</div>';
+
+		// 내용
+		html += '<div class="mb-3">';
+		html += '<label for="boardContent" class="form-label">내용 <span class="text-danger">*</span></label>';
+		html += '<textarea class="form-control" id="boardContent" rows="10" required></textarea>';
+		html += '</div>';
+
+		// YouTube URL
+		html += '<div class="mb-3">';
+		html += '<label for="youtubeUrl" class="form-label">YouTube 동영상 (선택)</label>';
+		html += '<input type="url" class="form-control" id="youtubeUrl" value="' + escapeHtml(boardData.youtube_url || '') + '" placeholder="예: https://www.youtube.com/watch?v=...">';
+		html += '<small class="text-muted">YouTube 동영상 URL을 입력하면 게시글에 표시됩니다.</small>';
+		html += '</div>';
+
+		// 파일 첨부
+		html += '<div class="mb-3">';
+		html += '<label class="form-label">파일 첨부 (선택)</label>';
+		html += '<div id="boardFileDropzone" class="dropzone"></div>';
+		html += '<input type="hidden" id="uploadedFiles" value="">';
+		html += '<input type="hidden" id="existingFiles" value="' + escapeHtml(boardData.file_path || '') + '">';
+		html += '</div>';
+
+		html += '<div class="d-flex gap-2">';
+		html += `<a href="/board/${menuId}/${idx}" class="btn btn-secondary">취소</a>`;
+		html += '<button type="submit" class="btn btn-primary">수정 완료</button>';
+		html += '</div>';
+		html += '</form>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+		html += '</div>';
+
+		mainContent.innerHTML = html;
+		mainContent.classList.remove('loading');
+
+		// Dropzone 초기화 (수정 모드 - 기존 파일 포함)
+		initBoardEditDropzone(boardData.file_path);
+
+		// 기존 내용을 textarea에 표시 (EditorJS에서 텍스트만 추출)
+		try {
+			const content = JSON.parse(boardData.board_content);
+			if (content.blocks && Array.isArray(content.blocks)) {
+				const textContent = content.blocks.map(block => {
+					if (block.type === 'paragraph') {
+						return block.data.text;
+					}
+					return '';
+				}).join('\n\n');
+				document.getElementById('boardContent').value = textContent;
+			}
+		} catch (e) {
+			document.getElementById('boardContent').value = boardData.board_content || '';
+		}
+
+		// 폼 제출 이벤트
+		document.getElementById('boardEditForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+
+			const title = document.getElementById('boardTitle').value.trim();
+			const content = document.getElementById('boardContent').value.trim();
+			const writerName = document.getElementById('writerName').value.trim();
+			const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
+			const uploadedFiles = document.getElementById('uploadedFiles').value;
+
+			if (!title || !content) {
+				showToast('제목과 내용을 입력해주세요.');
+				return;
+			}
+
+			// EditorJS 형식으로 변환
+			const editorJsContent = {
+				time: Date.now(),
+				blocks: [
+					{
+						id: generateRandomId(),
+						type: "paragraph",
+						data: {
+							text: content
+						}
+					}
+				],
+				version: "2.31.0"
+			};
+
+			// 게시글 수정 API 호출
+			try {
+				const response = await fetch(`${API_BASE_URL}/board/update`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						idx: idx,
+						org_code: ORG_CODE,
+						menu_id: menuId,
+						board_title: title,
+						board_content: JSON.stringify(editorJsContent),
+						writer_name: writerName,
+						youtube_url: youtubeUrl,
+						file_path: uploadedFiles
+					})
+				});
+
+				const result = await response.json();
+
+				if (result.success) {
+					showToast('게시글이 수정되었습니다.');
+					window.location.href = `/board/${menuId}/${idx}`;
+				} else {
+					showToast(result.message || '게시글 수정에 실패했습니다.');
+				}
+			} catch (error) {
+				console.error('게시글 수정 실패:', error);
+				showToast('게시글 수정 중 오류가 발생했습니다.');
+			}
+		});
+
+	} catch (error) {
+		console.error('게시글 수정 폼 로드 실패:', error);
+		mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 불러오는 중 오류가 발생했습니다.</p></div>';
+		mainContent.classList.remove('loading');
+	}
+}
+
+/**
+ * 게시글 수정용 Dropzone 초기화 (기존 파일 복원 포함)
+ */
+function initBoardEditDropzone(existingFilePath) {
+	// 기존 Dropzone 인스턴스 제거
+	if (boardWriteDropzone) {
+		boardWriteDropzone.destroy();
+		boardWriteDropzone = null;
+	}
+
+	const dropzoneElement = document.getElementById('boardFileDropzone');
+	if (!dropzoneElement) {
+		console.error('Dropzone 요소를 찾을 수 없습니다.');
+		return;
+	}
+
+	// 기존 파일 파싱
+	let existingFiles = [];
+	if (existingFilePath) {
+		try {
+			existingFiles = JSON.parse(existingFilePath);
+			if (!Array.isArray(existingFiles)) {
+				existingFiles = [];
+			}
+		} catch (e) {
+			console.error('기존 파일 파싱 실패:', e);
+			existingFiles = [];
+		}
+	}
+
+	boardWriteDropzone = new Dropzone('#boardFileDropzone', {
+		url: 'https://wani.im/api/homepage_api/upload_file',
+		paramName: 'file',
+		maxFilesize: 50,
+		maxFiles: 20,
+		addRemoveLinks: true,
+		dictDefaultMessage: '파일을 드래그하거나 클릭하여 업로드하세요',
+		dictRemoveFile: '삭제',
+		dictCancelUpload: '취소',
+		dictMaxFilesExceeded: '최대 20개까지 업로드 가능합니다',
+		acceptedFiles: 'image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.hwp,.hwpx,.zip',
+		autoProcessQueue: true,
+		headers: {
+			'X-Requested-With': 'XMLHttpRequest'
+		},
+		params: {
+			org_code: ORG_CODE
+		},
+		init: function() {
+			const dropzoneInstance = this;
+
+			// 기존 파일 복원
+			existingFiles.forEach((file, index) => {
+				// 이미지 여부 확인
+				const isImage = file.type && (file.type === 'image' || file.type.startsWith('image/'));
+
+				// 표시용 파일명 (원본 파일명 우선)
+				const displayName = file.original_name || file.name;
+
+				// 썸네일 URL 생성
+				let thumbUrl = null;
+				if (isImage) {
+					let imagePath = file.thumb_path || file.path;
+					if (imagePath) {
+						if (!imagePath.startsWith('http')) {
+							if (!imagePath.startsWith('/')) imagePath = '/' + imagePath;
+							thumbUrl = 'https://wani.im' + imagePath;
+						} else {
+							thumbUrl = imagePath;
+						}
+					}
+				}
+
+				// Mock 파일 객체 생성 (기존 파일임을 표시)
+				const mockFile = {
+					name: displayName,
+					size: file.size || 0,
+					type: isImage ? 'image/jpeg' : 'application/octet-stream',
+					status: Dropzone.SUCCESS,
+					accepted: true,
+					upload: { progress: 100 },
+					// 기존 파일 정보 저장
+					existingFile: true,
+					fileData: {
+						name: file.name,
+						original_name: file.original_name || file.name,
+						path: file.path,
+						url: file.url || '',
+						thumb_path: file.thumb_path || '',
+						thumb_url: file.thumb_url || '',
+						size: file.size || 0,
+						type: file.type || 'document'
+					}
+				};
+
+				// Dropzone에 파일 추가
+				dropzoneInstance.files.push(mockFile);
+				dropzoneInstance.emit('addedfile', mockFile);
+
+				// 이미지인 경우 썸네일 표시
+				if (isImage && thumbUrl) {
+					dropzoneInstance.emit('thumbnail', mockFile, thumbUrl);
+				}
+
+				dropzoneInstance.emit('complete', mockFile);
+
+				console.log('[기존 파일 복원]', displayName, isImage ? '(이미지)' : '(문서)');
+			});
+
+			// 초기 파일 목록 업데이트
+			updateEditFilesList();
+
+			// 새 파일 업로드 성공
+			this.on('success', function(file, response) {
+				console.log('파일 업로드 성공:', response);
+
+				if (response.success && response.file_info) {
+					// 새로 업로드된 파일 정보 저장
+					file.existingFile = false;
+					file.fileData = {
+						name: response.file_info.name,
+						original_name: response.file_info.original_name,
+						path: response.file_info.path,
+						url: response.file_info.url,
+						thumb_path: response.file_info.thumb_path,
+						thumb_url: response.file_info.thumb_url,
+						size: file.size,
+						type: response.file_info.type
+					};
+
+					updateEditFilesList();
+				}
+			});
+
+			// 파일 업로드 실패
+			this.on('error', function(file, errorMessage) {
+				console.error('파일 업로드 실패:', errorMessage);
+
+				let message = '파일 업로드에 실패했습니다.';
+				if (typeof errorMessage === 'object' && errorMessage.message) {
+					message = errorMessage.message;
+				} else if (typeof errorMessage === 'string') {
+					message = errorMessage;
+				}
+
+				showToast(message);
+			});
+
+			// 파일 제거
+			this.on('removedfile', function(file) {
+				console.log('파일 제거됨:', file.name);
+				updateEditFilesList();
+			});
+		}
+	});
+}
+
+/**
+ * 수정 폼용 파일 목록 업데이트
+ */
+function updateEditFilesList() {
+	if (!boardWriteDropzone) return;
+
+	const fileBlocks = [];
+
+	// Dropzone의 모든 파일 순회
+	boardWriteDropzone.files.forEach(file => {
+		// 기존 파일 또는 업로드 성공한 파일만 포함
+		if (file.fileData) {
+			fileBlocks.push({
+				name: file.fileData.name,
+				original_name: file.fileData.original_name,
+				path: file.fileData.path,
+				url: file.fileData.url || '',
+				thumb_path: file.fileData.thumb_path || '',
+				thumb_url: file.fileData.thumb_url || '',
+				size: file.fileData.size || 0,
+				type: file.fileData.type || 'document'
+			});
+		}
+	});
+
+	// hidden input 업데이트
+	const uploadedFilesInput = document.getElementById('uploadedFiles');
+	if (uploadedFilesInput) {
+		uploadedFilesInput.value = JSON.stringify(fileBlocks);
+		console.log('[수정 폼] 파일 목록 업데이트:', fileBlocks.length, '개');
+	}
+}
+
+
+/**
+ * 수정 폼용 업로드 파일 목록 업데이트
+ */
+function updateUploadedFilesListForEdit() {
+	if (!boardWriteDropzone) return;
+
+	// 기존 파일 + 새로 업로드된 파일 모두 포함
+	const files = boardWriteDropzone.files.filter(f => {
+		// 기존 파일이거나 업로드 성공한 파일
+		return f.isExisting || (f.status === 'success' && f.serverFileName);
+	});
+
+	const fileBlocks = files.map(f => {
+		return {
+			name: f.serverFileName || f.name,
+			original_name: f.originalFileName || f.name,
+			path: f.serverFilePath || '',
+			url: f.serverFileUrl || '',
+			thumb_path: f.serverThumbPath || '',
+			thumb_url: f.serverThumbUrl || '',
+			size: f.size || 0,
+			type: f.fileType || 'document'
+		};
+	});
+
+	document.getElementById('uploadedFiles').value = JSON.stringify(fileBlocks);
+	console.log('[수정 폼] 파일 목록 업데이트:', fileBlocks);
+}
+
+
+
+/**
+ * 게시글 상세 로드 함수 (수정 버튼에 권한 확인 로직 추가)
+ */
+async function loadBoardDetail(menuId, idx) {
+	try {
+		const response = await fetch(`${API_BASE_URL}/board/detail/${ORG_CODE}/${idx}`);
+		const result = await response.json();
+
+		const mainContent = document.getElementById('mainContent');
+		mainContent.classList.remove('loading');
+
+		if (result.success && result.data) {
+			const item = result.data;
+			const date = new Date(item.reg_date).toLocaleDateString('ko-KR');
+			const modDate = item.modi_date ?
+				'<br><small class="text-muted">(수정: ' + new Date(item.modi_date).toLocaleDateString('ko-KR') + ')</small>' : '';
+
+			const menuInfo = findMenuById(menuData, menuId);
+			const menuName = menuInfo ? menuInfo.name : '게시판';
+			const categoryName = menuInfo ? menuInfo.category : '';
+
+			let html = '<div class="board-container fade-in">';
+			html += '<div class="container py-5">';
+
+			// Breadcrumb
+			html += '<h4 class="mb-0">' + escapeHtml(menuName) + '</h4>';
+			html += '<nav aria-label="breadcrumb">';
+			html += '<ol class="breadcrumb">';
+			html += '<li class="breadcrumb-item"><a href="/"><i class="bi bi-house-door-fill"></i></a></li>';
+			if (categoryName) {
+				html += '<li class="breadcrumb-item"><a href="#">' + escapeHtml(categoryName) + '</a></li>';
+			}
+			html += '<li class="breadcrumb-item"><a href="/board/' + menuId + '">' + escapeHtml(menuName) + '</a></li>';
+			html += '<li class="breadcrumb-item active" aria-current="page">게시글 상세</li>';
+			html += '</ol>';
+			html += '</nav>';
+
+			// 게시글 제목
+			html += '<div class="card shadow-sm mt-4">';
+			html += '<div class="card-body">';
+			html += '<h3 class="card-title">' + escapeHtml(item.board_title) + '</h3>';
+			html += '<div class="d-flex justify-content-between align-items-center text-muted border-bottom pb-3">';
+			html += '<div>';
+			html += '<small>작성자: ' + escapeHtml(item.writer_name || '') + '</small> | ';
+			html += '<small>작성일: ' + date + modDate + '</small> | ';
+			html += '<small>조회수: ' + item.view_count + '</small>';
+			html += '</div>';
+			html += '</div>';
+
+			// YouTube 동영상
+			if (item.youtube_url) {
+				const videoId = extractYoutubeId(item.youtube_url);
+				if (videoId) {
+					html += '<div class="ratio ratio-16x9 my-4">';
+					html += '<iframe src="https://www.youtube.com/embed/' + videoId + '" allowfullscreen></iframe>';
+					html += '</div>';
+				}
+			}
+
+			// 게시글 내용
+			html += '<div class="mt-4">';
+			html += convertEditorJsToHtml(item.board_content);
+			html += '</div>';
+
+			// 첨부파일 (이미지 lightbox + 문서 목록)
+			if (item.file_path) {
+				html += renderAttachmentGrid(item.file_path);
+			}
+
+			html += '</div>';
+			html += '</div>';
+
+			// 버튼 영역 (목록으로 + 수정 버튼)
+			html += '<div class="mt-4 d-flex gap-2">';
+			html += '<a href="/board/' + menuId + '/" class="btn btn-secondary">목록으로</a>';
+			// 수정 버튼 - 클릭 시 권한 확인
+			html += '<button type="button" class="btn btn-primary" id="btnEditBoard" data-menu-id="' + menuId + '" data-idx="' + idx + '" data-writer-name="' + escapeHtml(item.writer_name || '') + '">수정</button>';
+			html += '</div>';
+
+			html += '</div>';
+			html += '</div>';
+
+			// 작성자 확인 모달 추가
+			html += getEditVerifyModalHtml();
+
+			mainContent.innerHTML = html;
+
+			// GLightbox 초기화
+			initGLightbox();
+
+			// 수정 버튼 이벤트 바인딩
+			document.getElementById('btnEditBoard').addEventListener('click', handleEditButtonClick);
+
+		} else {
+			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 찾을 수 없습니다.</p></div>';
+		}
+		hidePageLoading();
+	} catch (error) {
+		console.error('게시글 로드 실패:', error);
+		document.getElementById('mainContent').innerHTML = '<div class="text-center py-5"><p class="text-danger">게시글을 불러오는 중 오류가 발생했습니다.</p></div>';
+		hidePageLoading();
+	}
+}
+
+/**
+ * 수정 버튼 클릭 핸들러
+ */
+async function handleEditButtonClick(e) {
+	const btn = e.currentTarget;
+	const menuId = btn.dataset.menuId;
+	const idx = btn.dataset.idx;
+	const writerName = btn.dataset.writerName;
+
+	// 1. 먼저 관리자인지 확인 (로그인된 사용자 ID가 있다면)
+	const userId = getCurrentUserId(); // 현재 로그인된 사용자 ID 가져오기
+
+	if (userId) {
+		try {
+			const adminResponse = await fetch(`${API_BASE_URL}/check_admin`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					org_code: ORG_CODE,
+					user_id: userId
+				})
+			});
+			const adminResult = await adminResponse.json();
+
+			// 관리자인 경우 바로 수정 페이지로 이동
+			if (adminResult.success && adminResult.data && adminResult.data.is_admin) {
+				console.log('[수정] 관리자 권한 확인됨, 바로 수정 페이지로 이동');
+				window.location.href = `/board/${menuId}/${idx}/edit`;
+				return;
+			}
+		} catch (error) {
+			console.error('관리자 확인 실패:', error);
+			// 오류 발생 시 일반 사용자로 처리
+		}
+	}
+
+	// 2. 관리자가 아닌 경우 작성자 확인 모달 표시
+	showEditVerifyModal(menuId, idx, writerName);
+}
+
+/**
+ * 현재 로그인된 사용자 ID 가져오기
+ * (쿠키 또는 전역 변수에서 가져옴)
+ */
+function getCurrentUserId() {
+	// 방법 1: 전역 변수에서 가져오기
+	if (typeof CURRENT_USER_ID !== 'undefined' && CURRENT_USER_ID) {
+		return CURRENT_USER_ID;
+	}
+
+	// 방법 2: 쿠키에서 가져오기
+	const cookies = document.cookie.split(';');
+	for (let cookie of cookies) {
+		const [name, value] = cookie.trim().split('=');
+		if (name === 'user_id' || name === 'wani_user_id') {
+			return decodeURIComponent(value);
+		}
+	}
+
+	// 방법 3: localStorage에서 가져오기
+	const storedUserId = localStorage.getItem('user_id');
+	if (storedUserId) {
+		return storedUserId;
+	}
+
+	return null;
+}
+
+/**
+ * 작성자 확인 모달 HTML 생성
+ */
+function getEditVerifyModalHtml() {
+	return `
+        <div class="modal fade" id="editVerifyModal" tabindex="-1" aria-labelledby="editVerifyModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editVerifyModalLabel">작성자 확인</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">게시글 수정을 위해 작성자 본인 확인이 필요합니다.</p>
+                        <form id="editVerifyForm">
+                            <input type="hidden" id="editMenuId" value="">
+                            <input type="hidden" id="editIdx" value="">
+                            <div class="mb-3">
+                                <label for="editWriterName" class="form-label">이름</label>
+                                <input type="text" class="form-control" id="editWriterName" placeholder="이름을 입력하세요" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editWriterPhone" class="form-label">휴대폰번호</label>
+                                <input type="tel" class="form-control" id="editWriterPhone" placeholder="휴대폰번호 (- 없이)" maxlength="11" required>
+                            </div>
+                            <div id="editVerifyResult" class="mb-3"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                        <button type="button" class="btn btn-primary" id="btnConfirmEdit">확인</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 작성자 확인 모달 표시
+ */
+function showEditVerifyModal(menuId, idx, writerName) {
+	// 값 설정
+	document.getElementById('editMenuId').value = menuId;
+	document.getElementById('editIdx').value = idx;
+	document.getElementById('editWriterName').value = '';
+	document.getElementById('editWriterPhone').value = '';
+	document.getElementById('editVerifyResult').innerHTML = '';
+
+	// 모달 표시
+	const modal = new bootstrap.Modal(document.getElementById('editVerifyModal'));
+	modal.show();
+
+	// 확인 버튼 이벤트 (기존 이벤트 제거 후 새로 바인딩)
+	const btnConfirm = document.getElementById('btnConfirmEdit');
+	const newBtnConfirm = btnConfirm.cloneNode(true);
+	btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+
+	newBtnConfirm.addEventListener('click', async function() {
+		const menuId = document.getElementById('editMenuId').value;
+		const idx = document.getElementById('editIdx').value;
+		const name = document.getElementById('editWriterName').value.trim();
+		const phone = document.getElementById('editWriterPhone').value.trim();
+		const resultDiv = document.getElementById('editVerifyResult');
+
+		if (!name || !phone) {
+			resultDiv.innerHTML = '<div class="alert alert-warning py-2">이름과 휴대폰번호를 모두 입력해주세요.</div>';
+			return;
+		}
+
+		// 버튼 비활성화
+		newBtnConfirm.disabled = true;
+		newBtnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>확인 중...';
+
+		try {
+			// 수정 권한 확인 API 호출
+			const response = await fetch(`${API_BASE_URL}/verify_edit_permission`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					org_code: ORG_CODE,
+					idx: parseInt(idx),
+					member_name: name,
+					member_phone: phone
+				})
+			});
+
+			const result = await response.json();
+
+			if (result.success && result.data && result.data.can_edit) {
+				// 확인 성공 - 모달 닫고 수정 페이지로 이동
+				resultDiv.innerHTML = '<div class="alert alert-success py-2">확인되었습니다. 수정 페이지로 이동합니다.</div>';
+
+				// 잠시 후 페이지 이동
+				setTimeout(() => {
+					bootstrap.Modal.getInstance(document.getElementById('editVerifyModal')).hide();
+					window.location.href = `/board/${menuId}/${idx}/edit`;
+				}, 500);
+			} else {
+				// 확인 실패
+				resultDiv.innerHTML = '<div class="alert alert-danger py-2">' + (result.message || '작성자 확인에 실패했습니다.') + '</div>';
+				newBtnConfirm.disabled = false;
+				newBtnConfirm.innerHTML = '확인';
+			}
+		} catch (error) {
+			console.error('수정 권한 확인 실패:', error);
+			resultDiv.innerHTML = '<div class="alert alert-danger py-2">확인 중 오류가 발생했습니다.</div>';
+			newBtnConfirm.disabled = false;
+			newBtnConfirm.innerHTML = '확인';
+		}
+	});
+}
