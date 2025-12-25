@@ -189,6 +189,8 @@
 <script src="/assets/js/wani-cover-slide.js?<?php echo WB_VERSION; ?>"></script>
 <!-- 바로가기 섹션 커스텀 플러그인 (커버 슬라이드 다음에 추가) -->
 <script src="/assets/js/wani-link-list.js?<?php echo WB_VERSION; ?>"></script>
+<!-- 바로가기 섹션 커스텀 플러그인 (커버 슬라이드 다음에 추가) -->
+<script src="/assets/js/wani-partner-list.js?<?php echo WB_VERSION; ?>"></script>
 <!-- 유튜브 슬라이드 커스텀 플러그인 -->
 <script src="/assets/js/wani-latest-youtube-slide.js?<?php echo WB_VERSION; ?>"></script>
 <!-- 소개 링크 커스텀 플러그인 -->

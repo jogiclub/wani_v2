@@ -1158,6 +1158,16 @@ function initPageContentEditor(content) {
 		};
 	}
 
+	// WaniPartnerList - 바로가기 섹션 블록
+	if (typeof window.WaniPartnerList !== 'undefined') {
+		availableTools.WaniPartnerList = {
+			class: window.WaniPartnerList,
+			config: {
+				org_id: $('#current_org_id').val()
+			}
+		};
+	}
+
 	// waniLinkListBg - 백그라운드링크 블록
 	if (typeof window.WaniLinkListBg !== 'undefined') {
 		availableTools.waniLinkListBg = {

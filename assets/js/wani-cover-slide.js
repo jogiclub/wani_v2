@@ -127,12 +127,12 @@ class WaniCoverSlide {
 		imageWrapper.onclick = () => fileInput.click();
 
 		// 타이틀 입력
-		const titleInput = document.createElement('input');
-		titleInput.type = 'text';
+		const titleInput = document.createElement('textarea');
 		titleInput.classList.add('form-control', 'form-control-sm', 'mb-2');
-		titleInput.placeholder = '타이틀 입력';
+		titleInput.placeholder = '타이틀 입력 (Enter로 줄바꿈 가능)';
 		titleInput.value = cardData.title || '';
-		titleInput.onchange = () => {
+		titleInput.rows = 2;
+		titleInput.oninput = () => {
 			cardData.title = titleInput.value;
 		};
 
@@ -142,9 +142,8 @@ class WaniCoverSlide {
 		subtitleInput.value = cardData.subtitle || '';
 		subtitleInput.rows = 2;
 		subtitleInput.oninput = () => {
-			this.data.subtitle = subtitleInput.value;
+			cardData.subtitle = subtitleInput.value;  // cardData로 수정
 		};
-
 		// 버튼 목록 영역
 		const buttonsContainer = this.createButtonsContainer(cardData);
 

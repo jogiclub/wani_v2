@@ -515,14 +515,14 @@ class Homepage_api extends CI_Controller
 
 							// 버튼 렌더링
 							if (!empty($buttons)) {
-								$html .= '<div class="card-buttons mt-3">';
+								$html .= '<div class="card-buttons mt-3 text-center">';
 								foreach ($buttons as $button) {
 									$btn_name = $button['name'] ?? '';
 									$btn_url = $button['url'] ?? '';
 
 									// 버튼명과 URL이 모두 있는 경우만 렌더링
 									if (!empty($btn_name) && !empty($btn_url)) {
-										$html .= '<a href="' . $btn_url . '" class="btn btn-outline-warning btn-lg mx-1 fw-semibold" style="border-radius:30px;">' . htmlspecialchars($btn_name) . '</a>';
+										$html .= '<a href="' . $btn_url . '" class="btn btn-outline-warning btn-lg mx-1 my-1 fw-semibold" style="border-radius:30px;">' . htmlspecialchars($btn_name) . '</a>';
 									}
 								}
 								$html .= '</div>';
@@ -701,6 +701,58 @@ class Homepage_api extends CI_Controller
 					}
 					break;
 
+
+				case 'waniPartnerList':
+					$title = $data_content['title'] ?? '';
+					$subtitle = $data_content['subtitle'] ?? '';
+					$links = $data_content['links'] ?? '';
+
+					if (!empty($links)) {
+						$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
+						$html .= '<div class="wani-partner-list-block">';
+						$html .= '<div class="container">';
+
+						if (!empty($title)) {
+							$html .= '<h4 class="text-center mb-2">' . htmlspecialchars($title) . '</h4>';
+						}
+
+						if (!empty($subtitle)) {
+							$html .= '<h6 class="text-center text-muted mt-3 mb-5">' . nl2br(htmlspecialchars($subtitle)) . '</h6>';
+						}
+
+						$html .= '<div class="box-list">';
+
+						foreach ($links as $link) {
+							$link_name = $link['name'] ?? '';
+							$link_url = $link['url'] ?? '';
+							$link_image = $link['image'] ?? '';
+
+							if (!empty($link_name)) {
+								$display_url = !empty($link_url) ? htmlspecialchars($link_url) : '#';
+
+
+								$html .= '<a href="' . $display_url . '" class="text-decoration-none">';
+								$html .= '<div class="box" style="transition: all 0.3s;">';
+
+								if (!empty($link_image)) {
+									$html .= '<img src="' . htmlspecialchars($link_image) . '" class="card-img-top" alt="' . htmlspecialchars($link_name) . '" style="height: 40px; object-fit: contain;">';
+								}
+								$html .= '</div>';
+
+								$html .= '<div class="mt-2 mb-0 text-center text-dark fw-semibold">' . htmlspecialchars($link_name) . '</div>';
+
+
+								$html .= '</a>';
+
+							}
+						}
+
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</div>';
+						$html .= '</section>';
+					}
+					break;
 
 				/**
 				 * 파일 위치: application/controllers/api/Homepage_api.php

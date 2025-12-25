@@ -239,7 +239,7 @@ footer a:hover {color: white;}
 @media (max-width: 992px) {
 
 	.board-container, .board-detail {padding: 1rem; padding-top: 80px;}
-	.slide-item .cover-text .card-title{font-size: 80px}
+	.slide-item .cover-text .card-title{font-size: 60px}
 	.slide-item .cover-text .card-text{font-size: 40px}
 
 	.table {font-size: 0.9rem;}

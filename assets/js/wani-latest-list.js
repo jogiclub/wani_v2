@@ -34,7 +34,7 @@ class WaniLatestList {
 
 		// 2개의 게시판 선택 영역
 		container.innerHTML = `
-            <div class="card">
+            <div class="card mb-5">
                 <div class="card-header">
                     좌/우 최신 게시글
                     <i class="bi bi-info-circle-fill text-info ms-2" 
