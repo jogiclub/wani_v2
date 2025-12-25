@@ -704,8 +704,7 @@ class Homepage_api extends CI_Controller
 
 				case 'waniPartnerList':
 					$title = $data_content['title'] ?? '';
-					$subtitle = $data_content['subtitle'] ?? '';
-					$links = $data_content['links'] ?? '';
+					$links = $data_content['links'] ?? [];
 
 					if (!empty($links)) {
 						$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
@@ -716,34 +715,22 @@ class Homepage_api extends CI_Controller
 							$html .= '<h4 class="text-center mb-2">' . htmlspecialchars($title) . '</h4>';
 						}
 
-						if (!empty($subtitle)) {
-							$html .= '<h6 class="text-center text-muted mt-3 mb-5">' . nl2br(htmlspecialchars($subtitle)) . '</h6>';
-						}
-
 						$html .= '<div class="box-list">';
 
 						foreach ($links as $link) {
-							$link_name = $link['name'] ?? '';
 							$link_url = $link['url'] ?? '';
 							$link_image = $link['image'] ?? '';
 
-							if (!empty($link_name)) {
+							// 이미지가 있는 경우에만 출력
+							if (!empty($link_image)) {
 								$display_url = !empty($link_url) ? htmlspecialchars($link_url) : '#';
+								$target = !empty($link_url) ? ' target="_blank"' : '';
 
-
-								$html .= '<a href="' . $display_url . '" class="text-decoration-none">';
+								$html .= '<a href="' . $display_url . '" class="text-decoration-none"' . $target . '>';
 								$html .= '<div class="box" style="transition: all 0.3s;">';
-
-								if (!empty($link_image)) {
-									$html .= '<img src="' . htmlspecialchars($link_image) . '" class="card-img-top" alt="' . htmlspecialchars($link_name) . '" style="height: 40px; object-fit: contain;">';
-								}
+								$html .= '<img src="' . htmlspecialchars($link_image) . '" class="card-img-top" alt="협력기관" style="height: 40px; object-fit: contain;">';
 								$html .= '</div>';
-
-								$html .= '<div class="mt-2 mb-0 text-center text-dark fw-semibold">' . htmlspecialchars($link_name) . '</div>';
-
-
 								$html .= '</a>';
-
 							}
 						}
 

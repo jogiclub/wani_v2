@@ -20,9 +20,6 @@ class WaniPartnerList {
 		if (!this.data.title) {
 			this.data.title = '';
 		}
-		if (!this.data.subtitle) {
-			this.data.subtitle = '';
-		}
 		if (!this.data.links || !Array.isArray(this.data.links)) {
 			this.data.links = [this.createEmptyLink()];
 		}
@@ -31,7 +28,6 @@ class WaniPartnerList {
 	createEmptyLink() {
 		return {
 			id: 'link_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-			name: '',
 			url: '',
 			image: ''
 		};
@@ -40,9 +36,6 @@ class WaniPartnerList {
 	render() {
 		this.wrapper = document.createElement('div');
 		this.wrapper.classList.add('card', 'mb-5');
-
-
-
 
 		// 1. 카드 헤더 생성 (Flexbox 설정)
 		const cardsTitle = document.createElement('div');
@@ -62,16 +55,12 @@ class WaniPartnerList {
         </i>
     `;
 
-
-
-
 		// 카드 컨테이너 (바디)
 		const cardsContainer = document.createElement('div');
 		cardsContainer.classList.add('card-body');
 
 		this.wrapper.appendChild(cardsTitle);
 		this.wrapper.appendChild(cardsContainer);
-
 
 		const titleInput = document.createElement('input');
 		titleInput.type = 'text';
@@ -82,20 +71,11 @@ class WaniPartnerList {
 			this.data.title = titleInput.value;
 		};
 
-		const subtitleInput = document.createElement('textarea');
-		subtitleInput.classList.add('form-control', 'mb-3');
-		subtitleInput.placeholder = '서브타이틀 입력 (Enter로 줄바꿈 가능)';
-		subtitleInput.value = this.data.subtitle || '';
-		subtitleInput.rows = 2;
-		subtitleInput.oninput = () => {
-			this.data.subtitle = subtitleInput.value;
-		};
-
 		const linksContainer = document.createElement('div');
 		linksContainer.classList.add('wani-links-container');
 		linksContainer.style.marginTop = '15px';
 		linksContainer.style.display = 'grid';
-		linksContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
+		linksContainer.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
 		linksContainer.style.gap = '15px';
 
 		this.data.links.forEach((linkData, index) => {
@@ -110,22 +90,10 @@ class WaniPartnerList {
 		addButton.onclick = () => this.addLink(linksContainer);
 
 		cardsContainer.appendChild(titleInput);
-		cardsContainer.appendChild(subtitleInput);
 		cardsContainer.appendChild(linksContainer);
 		cardsTitle.appendChild(addButton);
 
 
-		const comment = document.createElement('div');
-		comment.classList.add('wani-links-container');
-		comment.innerHTML = `
-        
-        <div class="alert alert-warning alert-dismissible fade show mt-3 mb-0" role="alert">
-		  아이콘 다운로드는 <a href="https://fonts.google.com/icons?icon.size=100&icon.color=%231f1f1f" target="_blank">여기</a>에서 가능합니다.
-		  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-		</div>
-    `;
-
-		cardsContainer.appendChild(comment);
 
 		return this.wrapper;
 	}
@@ -156,16 +124,6 @@ class WaniPartnerList {
 
 		imageWrapper.onclick = () => fileInput.click();
 
-		// 링크명 입력
-		const nameInput = document.createElement('input');
-		nameInput.type = 'text';
-		nameInput.classList.add('form-control', 'form-control-sm', 'mb-2');
-		nameInput.placeholder = '링크명';
-		nameInput.value = linkData.name || '';
-		nameInput.oninput = () => {
-			linkData.name = nameInput.value;
-		};
-
 		// URL 입력
 		const urlInput = document.createElement('input');
 		urlInput.type = 'text';
@@ -189,7 +147,6 @@ class WaniPartnerList {
 
 		card.appendChild(imageWrapper);
 		card.appendChild(fileInput);
-		card.appendChild(nameInput);
 		card.appendChild(urlInput);
 		card.appendChild(deleteButton);
 
@@ -343,7 +300,6 @@ class WaniPartnerList {
 		console.log('WaniPartnerList 저장:', this.data);
 		return {
 			title: this.data.title,
-			subtitle: this.data.subtitle,
 			links: this.data.links
 		};
 	}
@@ -351,7 +307,6 @@ class WaniPartnerList {
 	static get sanitize() {
 		return {
 			title: {},
-			subtitle: {},
 			links: {}
 		};
 	}
