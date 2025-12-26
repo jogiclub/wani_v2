@@ -702,20 +702,20 @@ class Homepage_api extends CI_Controller
 					break;
 
 
-				case 'waniPartnerList':
+				case 'WaniPartnerList':
 					$title = $data_content['title'] ?? '';
 					$links = $data_content['links'] ?? [];
 
 					if (!empty($links)) {
 						$html .= '<section data-aos="fade-up" data-aos-duration="1000">';
 						$html .= '<div class="wani-partner-list-block">';
-						$html .= '<div class="container">';
+						$html .= '<div class="container d-block d-md-flex gap-3 align-items-center">';
 
 						if (!empty($title)) {
-							$html .= '<h4 class="text-center mb-2">' . htmlspecialchars($title) . '</h4>';
+							$html .= '<h4 class="text-center">' . htmlspecialchars($title) . '</h4>';
 						}
 
-						$html .= '<div class="box-list">';
+						$html .= '<div class="box-list gap-3">';
 
 						foreach ($links as $link) {
 							$link_url = $link['url'] ?? '';

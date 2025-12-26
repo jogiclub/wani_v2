@@ -86,14 +86,32 @@
 
 <footer>
 	<div class="container">
-		<div class="row">
+		<div class="row align-items-center">
 			<div class="col-md-6">
-				<h5 id="footerOrgName">{{homepage_name}}</h5>
-				<p class="mb-0">조직 코드: <span id="footerOrgCode">{{org_code}}</span></p>
+				<!-- 로고 영역 -->
+				<div class="footer-logo mb-3">
+					<div id="footerLogoArea" class="" ></div>
+					<h5 id="footerOrgName" class="">{{homepage_name}}</h5>
+				</div>
+
+				<!-- 주소 영역 -->
+				<p class="mb-1" id="footerAddressWrap">
+					<span id="footerAddress"></span>
+				</p>
+
+				<!-- 전화번호 영역 -->
+				<p class="mb-1" id="footerPhoneWrap">
+					<span id="footerPhone"></span>
+				</p>
+
+				<!-- 대표자 영역 -->
+				<p class="mb-1" id="footerRepWrap">
+					<span id="footerRep"></span>
+				</p>
 			</div>
 			<div class="col-md-6 text-md-end">
-				<p class="mb-0">&copy; <span id="currentYear"></span> <span id="footerCopyright">{{homepage_name}}</span>. All rights reserved.</p>
-				<small class="text-muted">Powered by 왓니</small>
+				<p class="mb-1">&copy; <span id="currentYear"></span> <span id="footerCopyright">{{homepage_name}}</span>. All rights reserved</p>
+				<small>Designed by <a href="https://webhows.com" target="_blank">webhows.com<a/></small>
 			</div>
 		</div>
 	</div>

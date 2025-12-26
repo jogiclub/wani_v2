@@ -191,6 +191,17 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 }
 
 
+/*협력기관*/
+
+.wani-partner-list-block {padding: 100px 0; background: #fff;}
+.wani-partner-list-block h4{margin: 0;}
+.wani-partner-list-block .box-list{display: flex;align-items: center;}
+.wani-partner-list-block .box-list a{}
+
+@media (max-width: 992px) {
+
+}
+
 /*좌우게시판*/
 .wani-latest-list-section{padding: 100px 0; background: #efefef;}
 .wani-latest-list-section .board-header {display: flex; justify-content: space-between; align-items: center;}
@@ -234,6 +245,9 @@ footer {background: #343a40;color: white;padding: 2rem 0;margin-top: auto;}
 footer h5 {font-weight: 700;margin-bottom: 1rem;}
 footer a {color: rgba(255, 255, 255, 0.8);text-decoration: none;transition: color 0.2s;}
 footer a:hover {color: white;}
+footer .footer-logo{display: flex;align-items: center;gap: 14px;}
+footer .footer-logo h5{font-size: 26px; margin: 0}
+footer .footer-logo img{filter: brightness(0) invert(1);}
 
 /* 반응형 디자인 */
 @media (max-width: 992px) {

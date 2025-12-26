@@ -141,7 +141,7 @@ class Homepage_api_model extends CI_Model
 	 */
 	public function get_org_info_by_org_code($org_code)
 	{
-		$this->db->select('org_id, org_code, org_name, homepage_setting');
+		$this->db->select('org_id, org_code, org_name, org_address, org_address_detail, org_phone, org_rep, homepage_setting');
 		$this->db->from('wb_org');
 		$this->db->where('org_code', $org_code);
 		$this->db->where('del_yn', 'N');

@@ -150,6 +150,7 @@ async function loadOrgInfo() {
 	}
 }
 
+
 // 조직 정보 적용
 function applyOrgInfo(info) {
 	const setting = info.homepage_setting || {};
@@ -162,12 +163,10 @@ function applyOrgInfo(info) {
 		if (el) el.textContent = homepageName;
 	});
 
-	const codeElement = document.getElementById('footerOrgCode');
-	if (codeElement) codeElement.textContent = info.org_code;
-
 	const yearElement = document.getElementById('currentYear');
 	if (yearElement) yearElement.textContent = new Date().getFullYear();
 
+	// 헤더 로고 적용
 	const logoArea = document.getElementById('logoArea');
 	if (logoArea && (setting.logo1 || setting.logo2)) {
 		let logoHtml = '';
@@ -179,6 +178,62 @@ function applyOrgInfo(info) {
 		}
 		logoArea.innerHTML = logoHtml;
 	}
+
+	// 푸터 로고 적용
+	const footerLogoArea = document.getElementById('footerLogoArea');
+	if (footerLogoArea && (setting.logo1 || setting.logo2)) {
+		let footerLogoHtml = '';
+		if (setting.logo1) {
+			footerLogoHtml += `<img src="https://wani.im${setting.logo1}" alt="${homepageName}" style="max-height: 50px;">`;
+		}
+		if (setting.logo2) {
+			footerLogoHtml += `<img src="https://wani.im${setting.logo2}" alt="${homepageName}" style="max-height: 50px; margin-left: 10px;">`;
+		}
+		footerLogoArea.innerHTML = footerLogoHtml;
+	}
+
+	// 푸터 주소 적용
+	const footerAddress = document.getElementById('footerAddress');
+	if (footerAddress) {
+		let addressText = '';
+		if (info.org_address) {
+			addressText = info.org_address;
+			if (info.org_address_detail) {
+				addressText += ' ' + info.org_address_detail;
+			}
+		}
+		footerAddress.textContent = addressText;
+	}
+
+	// 푸터 전화번호 적용
+	const footerPhone = document.getElementById('footerPhone');
+	if (footerPhone && info.org_phone) {
+		footerPhone.textContent = info.org_phone;
+	}
+
+
+	const footerAddressWrap = document.getElementById('footerAddressWrap');
+	if (footerAddressWrap && !info.org_address) {
+		footerAddressWrap.style.display = 'none';
+	}
+
+	const footerPhoneWrap = document.getElementById('footerPhoneWrap');
+	if (footerPhoneWrap && !info.org_phone) {
+		footerPhoneWrap.style.display = 'none';
+	}
+
+	const footerRepWrap = document.getElementById('footerRepWrap');
+	if (footerRepWrap && !info.org_rep) {
+		footerRepWrap.style.display = 'none';
+	}
+
+	// 푸터 대표자 적용
+	const footerRep = document.getElementById('footerRep');
+	if (footerRep && info.org_rep) {
+		footerRep.textContent = info.org_rep;
+	}
+
+
 }
 
 // 메뉴 HTML 생성
