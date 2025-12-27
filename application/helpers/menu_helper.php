@@ -52,6 +52,21 @@ if (!function_exists('get_system_menus')) {
 				'icon' => 'bi bi-journal-bookmark',
 				'level' => 1
 			),
+			'HOMEPAGE_BASIC' => array(
+				'name' => '홈페이지 기본 설정',
+				'key' => 'HOMEPAGE_BASIC',
+				'url' => 'memos',
+				'icon' => 'bi bi-house-gear',
+				'level' => 1
+			),
+			'HOMEPAGE_MENU' => array(
+				'name' => '홈페이지 메뉴 설정',
+				'key' => 'HOMEPAGE_MENU',
+				'url' => 'memos',
+				'icon' => 'bi bi-view-stacked',
+				'level' => 1
+			),
+
 			/*'WEEKLY_STATISTICS' => array(
 				'name' => '주별통계',
 				'key' => 'WEEKLY_STATISTICS',

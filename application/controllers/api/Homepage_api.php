@@ -712,7 +712,7 @@ class Homepage_api extends CI_Controller
 						$html .= '<div class="container d-block d-md-flex gap-3 align-items-center">';
 
 						if (!empty($title)) {
-							$html .= '<h4 class="text-center">' . htmlspecialchars($title) . '</h4>';
+							$html .= '<h4 class="text-center"> <i class="bi bi-buildings"></i> ' . htmlspecialchars($title) . '</h4>';
 						}
 
 						$html .= '<div class="box-list gap-3">';

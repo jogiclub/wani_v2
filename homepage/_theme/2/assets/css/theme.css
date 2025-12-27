@@ -194,8 +194,8 @@ main {flex: 1;padding:0;background: #f8f9fa; position: relative;}
 /*협력기관*/
 
 .wani-partner-list-block {padding: 100px 0; background: #fff;}
-.wani-partner-list-block h4{margin: 0;}
-.wani-partner-list-block .box-list{display: flex;align-items: center;}
+.wani-partner-list-block h4{margin: 0; white-space: pre}
+.wani-partner-list-block .box-list{width: 100%;display: flex;align-items: center;justify-content: space-around;}
 .wani-partner-list-block .box-list a{}
 
 @media (max-width: 992px) {
