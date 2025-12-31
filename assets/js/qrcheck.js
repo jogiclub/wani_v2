@@ -214,12 +214,17 @@ function displayMembers(members) {
 }
 
 /**
- * 소그룹별 회원 그룹화
+ * 역할: 소그룹별 회원 그룹화 - 미분류 회원 제외
  */
 function groupMembersByArea(members) {
 	var membersByArea = {};
 	$.each(members, function(index, member) {
-		var areaName = member.area_name || '미분류';
+		// 미분류 회원 제외 (area_idx가 없거나 area_name이 없는 경우)
+		if (!member.area_idx || !member.area_name) {
+			return true; // continue
+		}
+
+		var areaName = member.area_name;
 		if (!membersByArea[areaName]) {
 			membersByArea[areaName] = [];
 		}
@@ -229,16 +234,74 @@ function groupMembersByArea(members) {
 }
 
 /**
- * 소그룹 순서대로 정렬
+ * 역할: 소그룹 순서대로 정렬 (area_order 기준)
  */
 function sortAreasByOrder(membersByArea) {
-	return Object.keys(membersByArea).sort(function(a, b) {
-		var areaA = membersByArea[a][0];
-		var areaB = membersByArea[b][0];
-		var orderA = areaA.area_order || 999;
-		var orderB = areaB.area_order || 999;
-		return orderA - orderB;
+	// 각 area의 정보를 수집 (area_idx, parent_idx, area_order)
+	var areaInfoMap = {};
+	$.each(membersByArea, function(areaName, members) {
+		if (members.length > 0) {
+			var member = members[0];
+			areaInfoMap[areaName] = {
+				area_idx: member.area_idx,
+				parent_idx: member.parent_idx || null,
+				area_order: parseInt(member.area_order) || 999
+			};
+		}
 	});
+
+	// 계층 구조로 정렬된 결과 배열
+	var sortedAreas = [];
+
+	// 1depth (최상위 그룹) 추출 및 정렬
+	var topLevelAreas = [];
+	$.each(areaInfoMap, function(areaName, info) {
+		if (!info.parent_idx || info.parent_idx === '0' || info.parent_idx === 0 || info.parent_idx === '') {
+			topLevelAreas.push({
+				name: areaName,
+				area_idx: info.area_idx,
+				area_order: info.area_order
+			});
+		}
+	});
+
+	// 1depth area_order 기준 정렬
+	topLevelAreas.sort(function(a, b) {
+		return (a.area_order || 999) - (b.area_order || 999);
+	});
+
+	// 재귀적으로 자식 그룹 추가
+	function addChildrenRecursive(parentIdx) {
+		var children = [];
+		$.each(areaInfoMap, function(areaName, info) {
+			if (String(info.parent_idx) === String(parentIdx)) {
+				children.push({
+					name: areaName,
+					area_idx: info.area_idx,
+					area_order: info.area_order
+				});
+			}
+		});
+
+		// 자식들을 area_order 기준으로 정렬
+		children.sort(function(a, b) {
+			return (a.area_order || 999) - (b.area_order || 999);
+		});
+
+		// 각 자식과 그 자식들을 순서대로 추가
+		$.each(children, function(index, child) {
+			sortedAreas.push(child.name);
+			addChildrenRecursive(child.area_idx);
+		});
+	}
+
+	// 각 최상위 그룹과 그 자식들을 순서대로 추가
+	$.each(topLevelAreas, function(index, topArea) {
+		sortedAreas.push(topArea.name);
+		addChildrenRecursive(topArea.area_idx);
+	});
+
+	return sortedAreas;
 }
 
 /**

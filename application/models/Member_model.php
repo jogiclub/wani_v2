@@ -430,26 +430,26 @@ class Member_model extends CI_Model
 	}
 
 
-
 	/**
-	 * 역할: QR출석 화면용 조직 회원 조회 최적화 - 필요한 필드만 조회
+	 * 역할: QR출석 화면용 조직 회원 조회 최적화 - parent_idx 추가
 	 */
 	public function get_org_members_optimized($org_id, $level = null, $start_date = null, $end_date = null)
 	{
 		$this->db->select('
-        m.member_idx,
-        m.org_id,
-        m.member_name,
-        m.member_sex,
-        m.member_nick,
-        m.photo,
-        m.leader_yn,
-        m.new_yn,
-        m.member_birth,
-        m.area_idx,
-        a.area_name,
-        a.area_order
-    ');
+		m.member_idx,
+		m.org_id,
+		m.member_name,
+		m.member_sex,
+		m.member_nick,
+		m.photo,
+		m.leader_yn,
+		m.new_yn,
+		m.member_birth,
+		m.area_idx,
+		a.area_name,
+		a.area_order,
+		a.parent_idx
+	');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
@@ -459,8 +459,8 @@ class Member_model extends CI_Model
 			$att_year = date('Y', strtotime($sunday_date));
 
 			$this->db->select('
-            GROUP_CONCAT(DISTINCT CONCAT(at.att_type_nickname, ",", at.att_type_idx, ",", at.att_type_category_idx, ",", at.att_type_color) ORDER BY at.att_type_order SEPARATOR "|") as att_type_data
-        ', false);
+			GROUP_CONCAT(DISTINCT CONCAT(at.att_type_nickname, ",", at.att_type_idx, ",", at.att_type_category_idx, ",", at.att_type_color) ORDER BY at.att_type_order SEPARATOR "|") as att_type_data
+		', false);
 			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date = "' . $sunday_date . '" AND ma.att_year = ' . $att_year, 'left');
 			$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
 		}
@@ -481,9 +481,11 @@ class Member_model extends CI_Model
 		return $query->result_array();
 	}
 
+
 	/**
-	 * 역할: QR출석 화면용 권한별 회원 조회 최적화 - 관리 가능한 그룹만
-	 */
+ * 파일 위치: application/models/Member_model.php
+ * 역할: QR출석 화면용 권한별 회원 조회 최적화 - parent_idx 추가
+ */
 	public function get_org_members_by_areas_optimized($org_id, $area_indices, $level = null, $start_date = null, $end_date = null)
 	{
 		if (empty($area_indices)) {
@@ -491,19 +493,20 @@ class Member_model extends CI_Model
 		}
 
 		$this->db->select('
-        m.member_idx,
-        m.org_id,
-        m.member_name,
-        m.member_sex,
-        m.member_nick,
-        m.photo,
-        m.leader_yn,
-        m.new_yn,
-        m.member_birth,
-        m.area_idx,
-        a.area_name,
-        a.area_order
-    ');
+		m.member_idx,
+		m.org_id,
+		m.member_name,
+		m.member_sex,
+		m.member_nick,
+		m.photo,
+		m.leader_yn,
+		m.new_yn,
+		m.member_birth,
+		m.area_idx,
+		a.area_name,
+		a.area_order,
+		a.parent_idx
+	');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
@@ -513,8 +516,8 @@ class Member_model extends CI_Model
 			$att_year = date('Y', strtotime($sunday_date));
 
 			$this->db->select('
-            GROUP_CONCAT(DISTINCT CONCAT(at.att_type_nickname, ",", at.att_type_idx, ",", at.att_type_category_idx, ",", at.att_type_color) ORDER BY at.att_type_order SEPARATOR "|") as att_type_data
-        ', false);
+			GROUP_CONCAT(DISTINCT CONCAT(at.att_type_nickname, ",", at.att_type_idx, ",", at.att_type_category_idx, ",", at.att_type_color) ORDER BY at.att_type_order SEPARATOR "|") as att_type_data
+		', false);
 			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date = "' . $sunday_date . '" AND ma.att_year = ' . $att_year, 'left');
 			$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
 		}
