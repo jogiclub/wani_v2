@@ -11,7 +11,7 @@
 		height: 30px
 	}
 </style>
-<div class="container send-popup">
+<div class="container-fluid send-popup">
 	<div class="row">
 		<div class="col-12">
 			<div class="alert alert-warning alert-dismissible fade show" role="alert">

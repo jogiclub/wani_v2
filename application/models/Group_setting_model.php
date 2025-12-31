@@ -363,12 +363,25 @@ class Group_setting_model extends CI_Model {
 
 	/**
 	 * 계층적 그룹 목록 구성 (들여쓰기 포함)
+	 * parent_idx 비교 로직 수정 - NULL, 빈 문자열, 0을 동일하게 처리
 	 */
 	private function build_hierarchical_group_list($areas, $parent_idx = null, $depth = 0) {
 		$result = array();
 
 		foreach ($areas as $area) {
-			if ($area['parent_idx'] == $parent_idx) {
+			// parent_idx 정규화: NULL, 빈 문자열, '0', 0을 모두 null로 처리
+			$area_parent_idx = $area['parent_idx'];
+			if (empty($area_parent_idx) || $area_parent_idx === '0' || $area_parent_idx === 0) {
+				$area_parent_idx = null;
+			}
+
+			// 비교할 parent_idx도 정규화
+			$compare_parent_idx = $parent_idx;
+			if (empty($compare_parent_idx) || $compare_parent_idx === '0' || $compare_parent_idx === 0) {
+				$compare_parent_idx = null;
+			}
+
+			if ($area_parent_idx === $compare_parent_idx) {
 				$indent = str_repeat('　', $depth); // 전각 공백으로 들여쓰기
 				$result[] = array(
 					'area_idx' => $area['area_idx'],
