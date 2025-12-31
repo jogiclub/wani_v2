@@ -175,20 +175,61 @@ class Member_model extends CI_Model
 		$area_ids = $this->get_all_child_area_ids($area_idx, $org_id);
 		$area_ids[] = $area_idx; // 자기 자신도 포함
 
+		// 먼저 모든 그룹 정보를 조회
+		$all_areas = $this->get_all_areas_for_hierarchy($org_id);
+
+		// 조직의 duty_name 순서 조회
+		$duty_order = $this->get_duty_order($org_id);
+
 		// 회원 조회
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address,m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.grade, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order, a.parent_idx');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 		$this->db->where('m.org_id', $org_id);
 		$this->db->where_in('m.area_idx', $area_ids);
 		$this->db->where('m.del_yn', 'N');
-		$this->db->order_by('a.area_order', 'ASC');
-		$this->db->order_by('m.leader_yn', 'ASC');
-		$this->db->order_by('m.member_name', 'ASC');
 
 		$query = $this->db->get();
-		return $query->result_array();
+		$members = $query->result_array();
+
+		// 각 회원에 계층 구조 정보 추가
+		foreach ($members as &$member) {
+			if ($member['area_idx']) {
+				$hierarchy = $this->build_area_hierarchy($member['area_idx'], $all_areas);
+				$member['area_sort_path'] = $hierarchy['sort_path'];
+				$member['area_full_path'] = $hierarchy['name_path'];
+			} else {
+				$member['area_sort_path'] = '999';
+				$member['area_full_path'] = '';
+			}
+		}
+
+		// 계층 구조 경로로 정렬
+		usort($members, function($a, $b) use ($duty_order) {
+			// 1. area_sort_path로 그룹 정렬
+			$pathCompare = strcmp($a['area_sort_path'], $b['area_sort_path']);
+			if ($pathCompare !== 0) return $pathCompare;
+
+			// 2. duty_name 있는 회원 우선 (있으면 0, 없으면 1)
+			$posA = empty($a['duty_name']) ? 1 : 0;
+			$posB = empty($b['duty_name']) ? 1 : 0;
+			if ($posA !== $posB) return $posA - $posB;
+
+			// 3. duty_name이 둘 다 있으면 duty_order 순서대로
+			if (!empty($a['duty_name']) && !empty($b['duty_name'])) {
+				$orderA = isset($duty_order[$a['duty_name']]) ? $duty_order[$a['duty_name']] : 9999;
+				$orderB = isset($duty_order[$b['duty_name']]) ? $duty_order[$b['duty_name']] : 9999;
+				if ($orderA !== $orderB) return $orderA - $orderB;
+			}
+
+			// 4. member_idx 순
+			return (int)$a['member_idx'] - (int)$b['member_idx'];
+		});
+
+		return $members;
 	}
+
+
 	/**
 	 * 특정 영역과 그 하위 영역들의 회원 수 조회
 	 */
@@ -1059,7 +1100,7 @@ class Member_model extends CI_Model
 		// 조직의 duty_name 순서 조회
 		$duty_order = $this->get_duty_order($org_id);
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order, a.parent_idx');
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order, a.parent_idx');
 		$this->db->from('wb_member m');
 		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
 
@@ -1119,7 +1160,6 @@ class Member_model extends CI_Model
 	}
 
 
-
 	/**
 	 * 역할: 조직의 duty_name 순서 조회 (설정된 순서대로 인덱스 반환)
 	 */
@@ -1135,15 +1175,15 @@ class Member_model extends CI_Model
 		$result = $query->row_array();
 
 		if ($result && !empty($result['duty_name'])) {
-			$dutys = json_decode($result['duty_name'], true);
-			if (is_array($dutys)) {
-				foreach ($dutys as $index => $dutys) {
-					$dutys_order[$dutys] = $index;
+			$duties = json_decode($result['duty_name'], true);
+			if (is_array($duties)) {
+				foreach ($duties as $index => $duty) {
+					$duty_order[$duty] = $index;
 				}
 			}
 		}
 
-		return $dutys_order;
+		return $duty_order;
 	}
 
 	/**

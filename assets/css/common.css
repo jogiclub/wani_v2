@@ -55,7 +55,7 @@ ul, dl{}
 
 .grid-item .member-card.off{opacity: 0.5; box-shadow: none;}
 .grid-item .member-card.on{opacity: 1; box-shadow: 0 0 3px 0 #ddd!important;}
-.grid-item .member-card.birth{background:url('/assets/images/bg_birth7.png?5') center top/100%;}
+.grid-item .member-card.birth{background:url('/assets/images/bg_birth.gif?1') center center/cover;}
 
 
 .grid-item .member-card .member-wrap .memo-stamp-warp{display: flex; position: absolute;right: 20px;bottom: 17px;}
