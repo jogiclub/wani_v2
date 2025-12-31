@@ -329,9 +329,9 @@ function addMemberPhoto(memberCard, member) {
 function addMemberBadges(memberCard, member) {
 
 
-	if (member.position_name) {
-		var badgeColor = getPositionBadgeColor(member.position_name);
-		memberCard.find('.member-card .member-wrap .member-name').prepend('<span class="badge" style="background-color: ' + badgeColor + ';">' + member.position_name + '</span>');
+	if (member.duty_name) {
+		var badgeColor = getPositionBadgeColor(member.duty_name);
+		memberCard.find('.member-card .member-wrap .member-name').prepend('<span class="badge" style="color: ' + badgeColor + '; border:1px solid ' + badgeColor + ';">' + member.duty_name + '</span>');
 	}
 
 
@@ -341,7 +341,7 @@ function addMemberBadges(memberCard, member) {
 }
 
 /**
- * 역할: position_name에 따른 고정 배지 색상 반환
+ * 역할: duty_name에 따른 고정 배지 색상 반환
  */
 function getPositionBadgeColor(positionName) {
 	// 문자열을 해시값으로 변환하여 고정된 색상 생성
@@ -702,8 +702,8 @@ function saveAttendance(memberIdx, attTypeIdx, selectedValue) {
 		$('.member-card').removeClass('now');
 		memberCard.addClass('now');
 
-		$('html, body').animate({
-			scrollTop: memberCard.offset().top - 100
+		$('.member-list').animate({
+			scrollTop: memberCard.offset().top - 270
 		}, 500);
 	}
 
