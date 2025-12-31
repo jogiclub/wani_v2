@@ -11,41 +11,6 @@ class Member_model extends CI_Model
 
 
 
-	/**
-	 * 파일 위치: application/models/Member_model.php
-	 * 역할: 회원 정보 조회 시 position_name, duty_name 필드 추가
-	 */
-
-	public function get_org_members($org_id, $level = null, $start_date = null, $end_date = null)
-	{
-		$user_id = $this->session->userdata('user_id');
-
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
-		$this->db->from('wb_member m');
-		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
-
-		if ($start_date && $end_date) {
-			$this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ", ", at.att_type_idx, ", ", at.att_type_category_idx, ", ", at.att_type_color) SEPARATOR "|") AS att_type_data', false);
-			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date >= "' . $start_date . '" AND ma.att_date <= "' . $end_date . '"', 'left');
-			$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
-		}
-
-		$this->db->where('m.org_id', $org_id);
-		$this->db->where('m.del_yn', 'N');
-
-		if ($level == 2) {
-			$this->db->join('wb_member mm', 'mm.member_phone = (SELECT user_hp FROM wb_user WHERE user_id = "' . $user_id . '") AND mm.area_idx = m.area_idx', 'inner');
-		}
-
-		$this->db->group_by('m.member_idx');
-		$this->db->order_by('a.area_order', 'ASC');
-		$this->db->order_by('m.leader_yn ASC');
-		$this->db->order_by('m.member_name ASC');
-
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
 
 	public function get_same_members($member_idx, $org_id, $area_idx, $start_date, $end_date)
 	{
@@ -305,42 +270,7 @@ class Member_model extends CI_Model
 	}
 
 
-	/**
-	 * 역할: 특정 그룹들의 회원만 조회 (관리 권한에 따른 필터링용)
-	 */
-	/**
-	 * 역할: 특정 그룹들의 회원만 조회 (관리 권한에 따른 필터링용)
-	 */
-	public function get_org_members_by_areas($org_id, $area_indices, $level = null, $start_date = null, $end_date = null)
-	{
-		if (empty($area_indices)) {
-			return array();
-		}
 
-		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order');
-		$this->db->from('wb_member m');
-		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
-
-		if ($start_date && $end_date) {
-			$this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ", ", at.att_type_idx, ", ", at.att_type_category_idx, ", ", at.att_type_color) SEPARATOR "|") AS att_type_data', false);
-			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date >= "' . $start_date . '" AND ma.att_date <= "' . $end_date . '"', 'left');
-			$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
-		}
-
-		$this->db->where('m.org_id', $org_id);
-		$this->db->where('m.del_yn', 'N');
-		$this->db->where_in('m.area_idx', $area_indices);
-
-
-
-		$this->db->group_by('m.member_idx');
-		$this->db->order_by('a.area_order', 'ASC');
-		$this->db->order_by('m.leader_yn', 'ASC');
-		$this->db->order_by('m.member_name', 'ASC');
-
-		$query = $this->db->get();
-		return $query->result_array();
-	}
 	/**
 	 * 역할: 특정 area_idx 목록으로 그룹 정보 조회 (권한 필터링용)
 	 */
@@ -1035,5 +965,192 @@ class Member_model extends CI_Model
 		return $sundays;
 	}
 
+
+
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 회원 정보 조회 - 계층 구조 정렬 경로 추가
+	 */
+	public function get_org_members($org_id, $level = null, $start_date = null, $end_date = null)
+	{
+		$user_id = $this->session->userdata('user_id');
+
+		// 먼저 모든 그룹 정보를 조회
+		$all_areas = $this->get_all_areas_for_hierarchy($org_id);
+
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.position_name, m.duty_name, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order, a.parent_idx');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+
+		if ($start_date && $end_date) {
+			$this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ", ", at.att_type_idx, ", ", at.att_type_category_idx, ", ", at.att_type_color) SEPARATOR "|") AS att_type_data', false);
+			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date >= "' . $start_date . '" AND ma.att_date <= "' . $end_date . '"', 'left');
+			$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
+		}
+
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+
+		if ($level == 2) {
+			$this->db->join('wb_member mm', 'mm.member_phone = (SELECT user_hp FROM wb_user WHERE user_id = "' . $user_id . '") AND mm.area_idx = m.area_idx', 'inner');
+		}
+
+		$this->db->group_by('m.member_idx');
+		$this->db->order_by('a.area_order', 'ASC');
+		$this->db->order_by('m.leader_yn', 'ASC');
+		$this->db->order_by('m.member_name', 'ASC');
+
+		$query = $this->db->get();
+		$members = $query->result_array();
+
+		// 각 회원에 계층 구조 정보 추가
+		foreach ($members as &$member) {
+			if ($member['area_idx']) {
+				$hierarchy = $this->build_area_hierarchy($member['area_idx'], $all_areas);
+				$member['area_sort_path'] = $hierarchy['sort_path'];
+				$member['area_full_path'] = $hierarchy['name_path'];
+			} else {
+				$member['area_sort_path'] = '999';
+				$member['area_full_path'] = '';
+			}
+		}
+
+		// 계층 구조 경로로 정렬
+		usort($members, function($a, $b) {
+			// 1. area_sort_path로 그룹 정렬
+			$pathCompare = strcmp($a['area_sort_path'], $b['area_sort_path']);
+			if ($pathCompare !== 0) return $pathCompare;
+
+			// 2. position_name 있는 회원 우선 (있으면 0, 없으면 1)
+			$posA = empty($a['position_name']) ? 1 : 0;
+			$posB = empty($b['position_name']) ? 1 : 0;
+			if ($posA !== $posB) return $posA - $posB;
+
+			// 3. position_name이 둘 다 있으면 position_name 가나다순
+			if (!empty($a['position_name']) && !empty($b['position_name'])) {
+				$posNameCompare = strcmp($a['position_name'], $b['position_name']);
+				if ($posNameCompare !== 0) return $posNameCompare;
+			}
+
+			// 4. 이름순
+			return strcmp($a['member_name'], $b['member_name']);
+		});
+
+		return $members;
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 특정 그룹들의 회원만 조회 - 계층 구조 정렬 경로 추가
+	 */
+	public function get_org_members_by_areas($org_id, $area_indices, $level = null, $start_date = null, $end_date = null)
+	{
+		if (empty($area_indices)) {
+			return array();
+		}
+
+		// 먼저 모든 그룹 정보를 조회
+		$all_areas = $this->get_all_areas_for_hierarchy($org_id);
+
+		$this->db->select('m.member_idx, m.org_id, m.member_name, m.member_sex, m.member_nick, m.photo, m.member_phone, m.member_address, m.member_address_detail, m.member_etc, m.leader_yn, m.new_yn, m.member_birth, m.regi_date, m.modi_date, a.area_idx, a.area_name, a.area_order, a.parent_idx');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+
+		if ($start_date && $end_date) {
+			$this->db->select('GROUP_CONCAT(CONCAT(at.att_type_nickname, ", ", at.att_type_idx, ", ", at.att_type_category_idx, ", ", at.att_type_color) SEPARATOR "|") AS att_type_data', false);
+			$this->db->join('wb_member_att ma', 'm.member_idx = ma.member_idx AND ma.att_date >= "' . $start_date . '" AND ma.att_date <= "' . $end_date . '"', 'left');
+			$this->db->join('wb_att_type at', 'ma.att_type_idx = at.att_type_idx', 'left');
+		}
+
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where_in('m.area_idx', $area_indices);
+
+		$this->db->group_by('m.member_idx');
+		$this->db->order_by('a.area_order', 'ASC');
+		$this->db->order_by('m.leader_yn', 'ASC');
+		$this->db->order_by('m.member_name', 'ASC');
+
+		$query = $this->db->get();
+		$members = $query->result_array();
+
+		// 각 회원에 계층 구조 정보 추가
+		foreach ($members as &$member) {
+			if ($member['area_idx']) {
+				$hierarchy = $this->build_area_hierarchy($member['area_idx'], $all_areas);
+				$member['area_sort_path'] = $hierarchy['sort_path'];
+				$member['area_full_path'] = $hierarchy['name_path'];
+			} else {
+				$member['area_sort_path'] = '999';
+				$member['area_full_path'] = '';
+			}
+		}
+
+		// 계층 구조 경로로 정렬
+		usort($members, function($a, $b) {
+			$pathCompare = strcmp($a['area_sort_path'], $b['area_sort_path']);
+			if ($pathCompare !== 0) return $pathCompare;
+
+			if ($a['leader_yn'] !== $b['leader_yn']) {
+				return strcmp($a['leader_yn'], $b['leader_yn']);
+			}
+			return strcmp($a['member_name'], $b['member_name']);
+		});
+
+		return $members;
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 조직의 모든 그룹 정보 조회 (계층 구조 계산용)
+	 */
+	private function get_all_areas_for_hierarchy($org_id)
+	{
+		$this->db->select('area_idx, area_name, area_order, parent_idx');
+		$this->db->from('wb_member_area');
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get();
+
+		$areas = array();
+		foreach ($query->result_array() as $area) {
+			$areas[$area['area_idx']] = $area;
+		}
+		return $areas;
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 특정 그룹의 계층 구조 경로 생성 (정렬용 경로 + 표시용 경로)
+	 */
+	private function build_area_hierarchy($area_idx, $all_areas, $max_depth = 10)
+	{
+		$sort_parts = array();
+		$name_parts = array();
+		$current_idx = $area_idx;
+		$depth = 0;
+
+		// 최상위까지 역순으로 올라가며 경로 수집
+		while ($current_idx && isset($all_areas[$current_idx]) && $depth < $max_depth) {
+			$area = $all_areas[$current_idx];
+			// 정렬용: area_order를 3자리 숫자로 패딩 (예: 4 -> "004")
+			array_unshift($sort_parts, str_pad($area['area_order'], 3, '0', STR_PAD_LEFT));
+			// 표시용: area_name
+			array_unshift($name_parts, $area['area_name']);
+
+			$parent_idx = $area['parent_idx'];
+			// parent_idx가 0이거나 빈 값이면 최상위
+			if (empty($parent_idx) || $parent_idx == '0') {
+				break;
+			}
+			$current_idx = $parent_idx;
+			$depth++;
+		}
+
+		return array(
+			'sort_path' => implode('-', $sort_parts),  // 예: "004-001-001"
+			'name_path' => implode(' <i class="bi bi-chevron-right" style="font-size: 12px"></i> ', $name_parts)
+		);
+	}
 
 }

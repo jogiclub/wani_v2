@@ -44,7 +44,9 @@ ul, dl{}
 .grid-item .member-card .birth i{color: #CB3227}
 .grid-item .member-card .bedge-leader{}
 .grid-item .member-card .member-wrap{width: 100%; margin-top: 5px; margin-bottom: 5px}
-.grid-item .member-card .member-wrap .member-name{line-height: 20px;}
+
+.grid-item .member-card .member-wrap .member-name{line-height: 20px; display: flex; align-items: center; justify-content: center;}
+.grid-item .member-card .member-wrap .member-name .badge{font-size: 12px;padding: 2px 3px; border-radius: 3px}
 .grid-item .member-card .member-wrap .att-stamp-warp{display: flex; justify-content: center; margin-top: 5px;flex-wrap: wrap}
 .grid-item .member-card .member-wrap .att-stamp-warp.hidden{display: none}
 .grid-item .member-card .member-wrap .att-stamp-warp .att-stamp{background: #CB3227;height: 20px;width: 20px;border-radius: 3px;font-size: 12px;color: #fff;display: flex;align-items: center;justify-content: center; white-space: pre; margin: 1px}

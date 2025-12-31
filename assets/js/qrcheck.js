@@ -171,7 +171,7 @@ function updateAttendanceStamps(attendanceData) {
 }
 
 /**
- * 회원 목록 표시
+ * 역할: 회원 목록 표시 - area_full_path 사용
  */
 function displayMembers(members) {
 	var memberList = $('.member-list .grid');
@@ -192,9 +192,10 @@ function displayMembers(members) {
 	$.each(sortedAreas, function(areaIndex, areaName) {
 		var areaMembers = membersByArea[areaName];
 		var areaIdx = areaMembers[0].area_idx || null;
+		var areaFullPath = areaMembers[0].area_full_path || areaName;
 
-		// 소그룹 헤더 추가
-		addAreaHeader(memberList, areaName, areaIdx);
+		// 소그룹 헤더 추가 (전체 경로 표시)
+		addAreaHeader(memberList, areaName, areaIdx, areaFullPath);
 
 		// 회원 카드들 추가
 		addMemberCards(memberList, areaMembers);
@@ -233,84 +234,45 @@ function groupMembersByArea(members) {
 	return membersByArea;
 }
 
+
+
 /**
- * 역할: 소그룹 순서대로 정렬 (area_order 기준)
+ * 역할: 소그룹 정렬 - area_sort_path 사용
  */
 function sortAreasByOrder(membersByArea) {
-	// 각 area의 정보를 수집 (area_idx, parent_idx, area_order)
-	var areaInfoMap = {};
+	// 각 area의 정보를 수집
+	var areaInfoList = [];
+
 	$.each(membersByArea, function(areaName, members) {
 		if (members.length > 0) {
 			var member = members[0];
-			areaInfoMap[areaName] = {
-				area_idx: member.area_idx,
-				parent_idx: member.parent_idx || null,
-				area_order: parseInt(member.area_order) || 999
-			};
-		}
-	});
-
-	// 계층 구조로 정렬된 결과 배열
-	var sortedAreas = [];
-
-	// 1depth (최상위 그룹) 추출 및 정렬
-	var topLevelAreas = [];
-	$.each(areaInfoMap, function(areaName, info) {
-		if (!info.parent_idx || info.parent_idx === '0' || info.parent_idx === 0 || info.parent_idx === '') {
-			topLevelAreas.push({
+			areaInfoList.push({
 				name: areaName,
-				area_idx: info.area_idx,
-				area_order: info.area_order
+				sort_path: member.area_sort_path || '999'
 			});
 		}
 	});
 
-	// 1depth area_order 기준 정렬
-	topLevelAreas.sort(function(a, b) {
-		return (a.area_order || 999) - (b.area_order || 999);
+	// area_sort_path로 정렬
+	areaInfoList.sort(function(a, b) {
+		return a.sort_path.localeCompare(b.sort_path);
 	});
 
-	// 재귀적으로 자식 그룹 추가
-	function addChildrenRecursive(parentIdx) {
-		var children = [];
-		$.each(areaInfoMap, function(areaName, info) {
-			if (String(info.parent_idx) === String(parentIdx)) {
-				children.push({
-					name: areaName,
-					area_idx: info.area_idx,
-					area_order: info.area_order
-				});
-			}
-		});
-
-		// 자식들을 area_order 기준으로 정렬
-		children.sort(function(a, b) {
-			return (a.area_order || 999) - (b.area_order || 999);
-		});
-
-		// 각 자식과 그 자식들을 순서대로 추가
-		$.each(children, function(index, child) {
-			sortedAreas.push(child.name);
-			addChildrenRecursive(child.area_idx);
-		});
-	}
-
-	// 각 최상위 그룹과 그 자식들을 순서대로 추가
-	$.each(topLevelAreas, function(index, topArea) {
-		sortedAreas.push(topArea.name);
-		addChildrenRecursive(topArea.area_idx);
+	// 정렬된 area 이름 배열 반환
+	return areaInfoList.map(function(item) {
+		return item.name;
 	});
-
-	return sortedAreas;
 }
+
+
 
 /**
  * 소그룹 헤더 추가
  */
-function addAreaHeader(memberList, areaName, areaIdx) {
+function addAreaHeader(memberList, areaName, areaIdx, areaFullPath) {
 	var areaHeader = $('<div class="grid-item grid-item--width100 area-header">' +
 		'<div class="area-title">' +
-		'<span class="area-name">' + areaName + '</span>' +
+		'<span class="area-name">' + areaFullPath + '</span>' +
 		'<div class="area-buttons">' +
 		'<button class="btn btn-sm btn-outline-primary btn-area-attendance-memo" data-area-idx="' + areaIdx + '" data-area-name="' + areaName + '">' +
 		'<i class="bi bi-clipboard-check"></i> 그룹출석' +
@@ -365,21 +327,48 @@ function addMemberPhoto(memberCard, member) {
  * 회원 배지 추가
  */
 function addMemberBadges(memberCard, member) {
-	// 리더 배지
-	if (member.leader_yn === 'Y') {
-		memberCard.find('.member-card').addClass('leader');
-		memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-star-fill"></i></span>');
+
+
+	if (member.position_name) {
+		var badgeColor = getPositionBadgeColor(member.position_name);
+		memberCard.find('.member-card .member-wrap .member-name').prepend('<span class="badge" style="background-color: ' + badgeColor + ';">' + member.position_name + '</span>');
 	}
 
-	// 새가족 배지
-	if (member.new_yn === 'Y') {
-		memberCard.find('.member-card').addClass('new');
-		memberCard.find('.member-card .member-wrap').prepend('<span class="badge"><i class="bi bi-asterisk"></i></span>');
-	}
 
 	if (member.area_idx) {
 		memberCard.find('.member-card').addClass('area-idx-' + member.area_idx);
 	}
+}
+
+/**
+ * 역할: position_name에 따른 고정 배지 색상 반환
+ */
+function getPositionBadgeColor(positionName) {
+	// 문자열을 해시값으로 변환하여 고정된 색상 생성
+	var hash = 0;
+	for (var i = 0; i < positionName.length; i++) {
+		hash = positionName.charCodeAt(i) + ((hash << 5) - hash);
+	}
+
+	// 미리 정의된 색상 팔레트 (가독성 좋은 색상들)
+	var colors = [
+		'#f97316', // orange
+		'#14b8a6', // teal
+		'#22c55e', // green
+		'#6366f1', // indigo
+		'#8b5cf6', // violet
+		'#ec4899', // pink
+		'#ef4444', // red
+		'#eab308', // yellow
+		'#06b6d4', // cyan
+		'#3b82f6', // blue
+		'#a855f7', // purple
+		'#f43f5e'  // rose
+	];
+
+	// 해시값을 색상 인덱스로 변환
+	var index = Math.abs(hash) % colors.length;
+	return colors[index];
 }
 
 /**

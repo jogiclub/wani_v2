@@ -8,17 +8,8 @@
 	height: 50px;
 }
 
-.area-header .area-title {
-	padding: 8px 5px;
-	font-size: 16px;
-	font-weight: 600;
-	text-align: left;
-	margin: 10px 0 0;
-	position: relative;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
+.area-header .area-title {padding: 8px 5px;font-size: 16px;font-weight: 600;text-align: left;margin: 10px 0 0;position: relative;display: flex;align-items: center;justify-content: space-between;}
+.area-header .area-title .area-name{display: flex;align-items: center;gap: 5px;}
 
 
 #pastoralAttendanceGrid{height: calc(100vh - 200px)!important;}
