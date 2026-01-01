@@ -65,12 +65,11 @@
 							</div>
 							<!-- 홈페이지 로고 #1 -->
 							<div class="mb-4">
-								<label class="form-label">홈페이지 로고 #1</label>
+								<label class="form-label">홈페이지 로고</label>
 								<div class="d-flex align-items-center gap-3">
 									<div class="logo-preview">
 										<?php if (!empty($homepage_setting['logo1'])): ?>
-											<img src="<?php echo $homepage_setting['logo1']; ?>" alt="로고 1"
-												 class="border" style="max-width: 200px; max-height: 100px; object-fit: contain;" id="logo1Preview">
+											<img src="<?php echo $homepage_setting['logo1']; ?>" alt="로고 1" class="border" style="max-width: 200px; max-height: 100px; object-fit: contain;" id="logo1Preview">
 										<?php else: ?>
 											<div class="bg-light border d-flex align-items-center justify-content-center"
 												 style="width: 200px; height: 100px;" id="logo1Preview">
@@ -85,6 +84,12 @@
 												<i class="bi bi-upload"></i> 업로드
 											</button>
 										</div>
+										<div class="form-check my-2">
+											<input class="form-check-input" type="checkbox" value="" id="logoColor">
+											<label class="form-check-label" for="logoColor">
+												로고가 위치에 스크롤에 따라 색상 변하지 않음
+											</label>
+										</div>
 										<div class="form-text">JPG, PNG, GIF 파일 (최대 2MB)</div>
 										<input type="hidden" id="logo1_current" name="logo1_current"
 											   value="<?php echo htmlspecialchars($homepage_setting['logo1'] ?? ''); ?>">
@@ -94,7 +99,7 @@
 
 							<!-- 홈페이지 로고 #2 -->
 							<div class="mb-4">
-								<label class="form-label">홈페이지 로고 #2</label>
+								<label class="form-label">파비콘</label>
 								<div class="d-flex align-items-center gap-3">
 									<div class="logo-preview">
 										<?php if (!empty($homepage_setting['logo2'])): ?>
@@ -114,9 +119,8 @@
 												<i class="bi bi-upload"></i> 업로드
 											</button>
 										</div>
-										<div class="form-text">JPG, PNG, GIF 파일 (최대 2MB)</div>
-										<input type="hidden" id="logo2_current" name="logo2_current"
-											   value="<?php echo htmlspecialchars($homepage_setting['logo2'] ?? ''); ?>">
+										<div class="form-text">PNG파일, 투명이미지, 정사각형 필요</div>
+										<input type="hidden" id="logo2_current" name="logo2_current" value="<?php echo htmlspecialchars($homepage_setting['logo2'] ?? ''); ?>">
 									</div>
 								</div>
 							</div>

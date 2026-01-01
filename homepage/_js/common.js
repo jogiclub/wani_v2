@@ -173,9 +173,6 @@ function applyOrgInfo(info) {
 		if (setting.logo1) {
 			logoHtml += `<img src="https://wani.im${setting.logo1}" alt="Logo 1">`;
 		}
-		if (setting.logo2) {
-			logoHtml += `<img src="https://wani.im${setting.logo2}" alt="Logo 2">`;
-		}
 		logoArea.innerHTML = logoHtml;
 	}
 

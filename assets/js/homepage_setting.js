@@ -9,7 +9,7 @@ $(document).ready(function() {
 		uploadLogo('logo1');
 	});
 
-	// 로고 2 업로드
+	// 로고 2 (파비콘) 업로드
 	$('#uploadLogo2Btn').on('click', function() {
 		uploadLogo('logo2');
 	});
@@ -51,7 +51,7 @@ function uploadLogo(logoType) {
 	formData.append('org_id', $('#org_id').val());
 	formData.append('logo_type', logoType);
 
-	const uploadBtn = $('#upload' + logoType.charAt(0).toUpperCase() + logoType.slice(1) + 'Btn');
+	const uploadBtn = $('#uploadLogo' + logoType.charAt(0).toUpperCase() + logoType.slice(1) + 'Btn');
 	const originalText = uploadBtn.html();
 	uploadBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> 업로드 중...');
 
@@ -66,22 +66,29 @@ function uploadLogo(logoType) {
 			if (response.success) {
 				showToast('로고가 업로드되었습니다.', 'success');
 				if (response.logo_url) {
+					// 캐시 방지를 위한 타임스탬프 추가
+					const imageUrl = response.logo_url + '?t=' + new Date().getTime();
 					const preview = $('#' + logoType + 'Preview');
+
 					if (preview.is('img')) {
-						preview.attr('src', response.logo_url);
+						preview.attr('src', imageUrl);
 					} else {
 						preview.replaceWith(
-							'<img src="' + response.logo_url + '" alt="로고" class="border" ' +
+							'<img src="' + imageUrl + '" alt="로고" class="border" ' +
 							'style="max-width: 200px; max-height: 100px; object-fit: contain;" id="' + logoType + 'Preview">'
 						);
 					}
 					$('#' + logoType + '_current').val(response.logo_url);
 				}
+
+				// 파일 input 초기화
+				fileInput.value = '';
 			} else {
 				showToast(response.message || '로고 업로드에 실패했습니다.');
 			}
 		},
-		error: function() {
+		error: function(xhr, status, error) {
+			console.error('Upload error:', error);
 			showToast('로고 업로드 중 오류가 발생했습니다.');
 		},
 		complete: function() {
@@ -116,11 +123,12 @@ function saveHomepageSetting() {
 			if (response.success) {
 				showToast('홈페이지 설정이 저장되었습니다.', 'success');
 			} else {
-				showToast(response.message || '설정 저장에 실패했습니다.');
+				showToast(response.message || '홈페이지 설정 저장에 실패했습니다.');
 			}
 		},
-		error: function() {
-			showToast('설정 저장 중 오류가 발생했습니다.');
+		error: function(xhr, status, error) {
+			console.error('Save error:', error);
+			showToast('홈페이지 설정 저장 중 오류가 발생했습니다.');
 		},
 		complete: function() {
 			submitBtn.prop('disabled', false).html(originalText);
