@@ -41,7 +41,7 @@ header.fixed .link-list ul li{color:#333!important;}
 header.fixed .logo-container .navbar-brand{color:#333!important;}
 
 
-header .logo-container img{filter: brightness(0) invert(1);}
+header .logo-container img.logo-white{filter: brightness(0) invert(1);}
 header.fixed .logo-container img{filter: brightness(1) invert(0);}
 
 .navbar{display: flex;align-items: center;justify-content: space-between;width: 100%;height: 80px;}

@@ -151,90 +151,6 @@ async function loadOrgInfo() {
 }
 
 
-// 조직 정보 적용
-function applyOrgInfo(info) {
-	const setting = info.homepage_setting || {};
-	const homepageName = setting.homepage_name || info.org_name;
-
-	document.title = homepageName;
-
-	const nameElements = document.querySelectorAll('#homepageName, #footerOrgName, #footerCopyright');
-	nameElements.forEach(el => {
-		if (el) el.textContent = homepageName;
-	});
-
-	const yearElement = document.getElementById('currentYear');
-	if (yearElement) yearElement.textContent = new Date().getFullYear();
-
-	// 헤더 로고 적용
-	const logoArea = document.getElementById('logoArea');
-	if (logoArea && (setting.logo1 || setting.logo2)) {
-		let logoHtml = '';
-		if (setting.logo1) {
-			logoHtml += `<img src="https://wani.im${setting.logo1}" alt="Logo 1">`;
-		}
-		if (setting.logo2) {
-			logoHtml += `<img src="https://wani.im${setting.logo2}" alt="Logo 2">`;
-		}
-		logoArea.innerHTML = logoHtml;
-	}
-
-	// 푸터 로고 적용
-	const footerLogoArea = document.getElementById('footerLogoArea');
-	if (footerLogoArea && (setting.logo1 || setting.logo2)) {
-		let footerLogoHtml = '';
-		if (setting.logo1) {
-			footerLogoHtml += `<img src="https://wani.im${setting.logo1}" alt="${homepageName}" style="max-height: 50px;">`;
-		}
-		if (setting.logo2) {
-			footerLogoHtml += `<img src="https://wani.im${setting.logo2}" alt="${homepageName}" style="max-height: 50px; margin-left: 10px;">`;
-		}
-		footerLogoArea.innerHTML = footerLogoHtml;
-	}
-
-	// 푸터 주소 적용
-	const footerAddress = document.getElementById('footerAddress');
-	if (footerAddress) {
-		let addressText = '';
-		if (info.org_address) {
-			addressText = info.org_address;
-			if (info.org_address_detail) {
-				addressText += ' ' + info.org_address_detail;
-			}
-		}
-		footerAddress.textContent = addressText;
-	}
-
-	// 푸터 전화번호 적용
-	const footerPhone = document.getElementById('footerPhone');
-	if (footerPhone && info.org_phone) {
-		footerPhone.textContent = info.org_phone;
-	}
-
-
-	const footerAddressWrap = document.getElementById('footerAddressWrap');
-	if (footerAddressWrap && !info.org_address) {
-		footerAddressWrap.style.display = 'none';
-	}
-
-	const footerPhoneWrap = document.getElementById('footerPhoneWrap');
-	if (footerPhoneWrap && !info.org_phone) {
-		footerPhoneWrap.style.display = 'none';
-	}
-
-	const footerRepWrap = document.getElementById('footerRepWrap');
-	if (footerRepWrap && !info.org_rep) {
-		footerRepWrap.style.display = 'none';
-	}
-
-	// 푸터 대표자 적용
-	const footerRep = document.getElementById('footerRep');
-	if (footerRep && info.org_rep) {
-		footerRep.textContent = info.org_rep;
-	}
-
-
-}
 
 // 메뉴 HTML 생성
 function generateMenuHtml(menus) {
@@ -2513,4 +2429,175 @@ function showEditVerifyModal(menuId, idx, writerName) {
 			newBtnConfirm.innerHTML = '확인';
 		}
 	});
+}
+
+
+// 조직 정보 적용
+function applyOrgInfo(info) {
+	const setting = info.homepage_setting || {};
+	const homepageName = setting.homepage_name || info.org_name;
+
+	document.title = homepageName;
+
+	const nameElements = document.querySelectorAll('#homepageName, #footerOrgName, #footerCopyright');
+	nameElements.forEach(el => {
+		if (el) el.textContent = homepageName;
+	});
+
+	const yearElement = document.getElementById('currentYear');
+	if (yearElement) yearElement.textContent = new Date().getFullYear();
+
+	// 파비콘 적용
+	if (setting.logo2) {
+		applyFavicon(setting.logo2);
+	}
+
+	// OG 이미지 및 메타 태그 적용
+	applyMetaTags(homepageName, setting);
+
+	// 헤더 로고 적용
+	const logoArea = document.getElementById('logoArea');
+	if (logoArea && setting.logo1) {
+		let logoHtml = '';
+		const logoClass = (setting.logo_color_change === 'Y') ? 'logo-white' : '';
+
+		if (setting.logo1) {
+			logoHtml += `<img src="https://wani.im${setting.logo1}" alt="${escapeHtml(homepageName)}" class="${logoClass}">`;
+		}
+		logoArea.innerHTML = logoHtml;
+	}
+
+	// 푸터 로고 적용
+	const footerLogoArea = document.getElementById('footerLogoArea');
+	if (footerLogoArea && (setting.logo1 || setting.logo2)) {
+		let footerLogoHtml = '';
+		if (setting.logo1) {
+			footerLogoHtml += `<img src="https://wani.im${setting.logo1}" alt="${escapeHtml(homepageName)}" style="max-height: 50px;">`;
+		}
+		footerLogoArea.innerHTML = footerLogoHtml;
+	}
+
+	// 푸터 주소 적용
+	const footerAddress = document.getElementById('footerAddress');
+	if (footerAddress) {
+		let addressText = '';
+		if (info.org_address) {
+			addressText = info.org_address;
+			if (info.org_address_detail) {
+				addressText += ' ' + info.org_address_detail;
+			}
+		}
+		footerAddress.textContent = addressText;
+	}
+
+	// 푸터 전화번호 적용
+	const footerPhone = document.getElementById('footerPhone');
+	if (footerPhone && info.org_phone) {
+		footerPhone.textContent = info.org_phone;
+	}
+
+	const footerAddressWrap = document.getElementById('footerAddressWrap');
+	if (footerAddressWrap && !info.org_address) {
+		footerAddressWrap.style.display = 'none';
+	}
+
+	const footerPhoneWrap = document.getElementById('footerPhoneWrap');
+	if (footerPhoneWrap && !info.org_phone) {
+		footerPhoneWrap.style.display = 'none';
+	}
+
+	const footerRepWrap = document.getElementById('footerRepWrap');
+	if (footerRepWrap && !info.org_rep) {
+		footerRepWrap.style.display = 'none';
+	}
+
+	// 푸터 대표자 적용
+	const footerRep = document.getElementById('footerRep');
+	if (footerRep && info.org_rep) {
+		footerRep.textContent = info.org_rep;
+	}
+}
+
+/**
+ * 파비콘 동적 적용
+ */
+function applyFavicon(faviconPath) {
+	try {
+		const faviconUrl = 'https://wani.im' + faviconPath;
+
+		// 기존 파비콘 제거
+		const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
+		existingFavicons.forEach(favicon => favicon.remove());
+
+		// 새 파비콘 추가
+		const link = document.createElement('link');
+		link.rel = 'icon';
+		link.type = 'image/png';
+		link.href = faviconUrl;
+		document.head.appendChild(link);
+
+		// Apple Touch Icon
+		const appleTouchIcon = document.createElement('link');
+		appleTouchIcon.rel = 'apple-touch-icon';
+		appleTouchIcon.href = faviconUrl;
+		document.head.appendChild(appleTouchIcon);
+
+		console.log('[파비콘 적용] URL:', faviconUrl);
+	} catch (error) {
+		console.error('[파비콘 적용 실패]', error);
+	}
+}
+
+/**
+ * 메타 태그 동적 적용 (OG 이미지, 설명 등)
+ */
+function applyMetaTags(siteName, setting) {
+	try {
+		const description = siteName;
+		const imageUrl = setting.logo3 ? 'https://wani.im' + setting.logo3 : '';
+		const currentUrl = window.location.href;
+
+		// 메타 태그 업데이트 헬퍼 함수
+		const updateMetaTag = (selector, attribute, value) => {
+			let tag = document.querySelector(selector);
+			if (!tag) {
+				tag = document.createElement('meta');
+				const attrName = attribute.split('=')[0];
+				const attrValue = attribute.split('=')[1].replace(/['"]/g, '');
+				tag.setAttribute(attrName, attrValue);
+				document.head.appendChild(tag);
+			}
+			tag.setAttribute('content', value);
+		};
+
+		// 기본 메타 태그
+		updateMetaTag('meta[name="description"]', 'name="description"', description);
+
+		// Open Graph 메타 태그
+		updateMetaTag('meta[property="og:title"]', 'property="og:title"', siteName);
+		updateMetaTag('meta[property="og:description"]', 'property="og:description"', description);
+		updateMetaTag('meta[property="og:url"]', 'property="og:url"', currentUrl);
+		updateMetaTag('meta[property="og:site_name"]', 'property="og:site_name"', siteName);
+
+		if (imageUrl) {
+			updateMetaTag('meta[property="og:image"]', 'property="og:image"', imageUrl);
+			updateMetaTag('meta[property="og:image:width"]', 'property="og:image:width"', '1200');
+			updateMetaTag('meta[property="og:image:height"]', 'property="og:image:height"', '630');
+		}
+
+		// Twitter Card 메타 태그
+		updateMetaTag('meta[name="twitter:card"]', 'name="twitter:card"', 'summary_large_image');
+		updateMetaTag('meta[name="twitter:title"]', 'name="twitter:title"', siteName);
+		updateMetaTag('meta[name="twitter:description"]', 'name="twitter:description"', description);
+		updateMetaTag('meta[name="twitter:url"]', 'name="twitter:url"', currentUrl);
+
+		if (imageUrl) {
+			updateMetaTag('meta[name="twitter:image"]', 'name="twitter:image"', imageUrl);
+		}
+
+		console.log('[메타 태그 적용] 사이트명:', siteName);
+		console.log('[메타 태그 적용] 카드 이미지:', imageUrl);
+	} catch (error) {
+		console.error('[메타 태그 적용 실패]', error);
+	}
 }

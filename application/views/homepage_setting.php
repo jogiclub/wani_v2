@@ -63,14 +63,14 @@
 									<li><a href="https://<?php echo htmlspecialchars($homepage_setting['homepage_domain'] ?? ''); ?>" target="_blank"><?php echo htmlspecialchars($homepage_setting['homepage_domain'] ?? ''); ?></a></li>
 								</ul>
 							</div>
-							<!-- 홈페이지 로고 #1 -->
+
+							<!-- 홈페이지 로고 -->
 							<div class="mb-4">
-								<label class="form-label">홈페이지 로고 #1</label>
+								<label class="form-label">홈페이지 로고</label>
 								<div class="d-flex align-items-center gap-3">
 									<div class="logo-preview">
 										<?php if (!empty($homepage_setting['logo1'])): ?>
-											<img src="<?php echo $homepage_setting['logo1']; ?>" alt="로고 1"
-												 class="border" style="max-width: 200px; max-height: 100px; object-fit: contain;" id="logo1Preview">
+											<img src="<?php echo $homepage_setting['logo1']; ?>?v=<?php echo time(); ?>" alt="로고" class="border" style="max-width: 200px; max-height: 100px; object-fit: contain;" id="logo1Preview">
 										<?php else: ?>
 											<div class="bg-light border d-flex align-items-center justify-content-center"
 												 style="width: 200px; height: 100px;" id="logo1Preview">
@@ -85,20 +85,26 @@
 												<i class="bi bi-upload"></i> 업로드
 											</button>
 										</div>
+										<div class="form-check my-2">
+											<input class="form-check-input" type="checkbox" value="Y" id="checkLogoColor"
+												<?php echo (!empty($homepage_setting['logo_color_change']) && $homepage_setting['logo_color_change'] === 'Y') ? 'checked' : ''; ?>>
+											<label class="form-check-label" for="checkLogoColor">
+												스크롤에 따라 로고 색상 변경
+											</label>
+										</div>
 										<div class="form-text">JPG, PNG, GIF 파일 (최대 2MB)</div>
-										<input type="hidden" id="logo1_current" name="logo1_current"
-											   value="<?php echo htmlspecialchars($homepage_setting['logo1'] ?? ''); ?>">
+										<input type="hidden" id="logo1_current" name="logo1_current" value="<?php echo htmlspecialchars($homepage_setting['logo1'] ?? ''); ?>">
 									</div>
 								</div>
 							</div>
 
-							<!-- 홈페이지 로고 #2 -->
+							<!-- 파비콘 -->
 							<div class="mb-4">
-								<label class="form-label">홈페이지 로고 #2</label>
+								<label class="form-label">파비콘</label>
 								<div class="d-flex align-items-center gap-3">
 									<div class="logo-preview">
 										<?php if (!empty($homepage_setting['logo2'])): ?>
-											<img src="<?php echo $homepage_setting['logo2']; ?>" alt="로고 2"
+											<img src="<?php echo $homepage_setting['logo2']; ?>?v=<?php echo time(); ?>" alt="파비콘"
 												 class="border" style="max-width: 200px; max-height: 100px; object-fit: contain;" id="logo2Preview">
 										<?php else: ?>
 											<div class="bg-light border d-flex align-items-center justify-content-center"
@@ -114,9 +120,36 @@
 												<i class="bi bi-upload"></i> 업로드
 											</button>
 										</div>
-										<div class="form-text">JPG, PNG, GIF 파일 (최대 2MB)</div>
-										<input type="hidden" id="logo2_current" name="logo2_current"
-											   value="<?php echo htmlspecialchars($homepage_setting['logo2'] ?? ''); ?>">
+										<div class="form-text">PNG파일, 투명이미지, 정사각형 필요</div>
+										<input type="hidden" id="logo2_current" name="logo2_current" value="<?php echo htmlspecialchars($homepage_setting['logo2'] ?? ''); ?>">
+									</div>
+								</div>
+							</div>
+
+							<!-- 카드이미지 -->
+							<div class="mb-4">
+								<label class="form-label">카드이미지</label>
+								<div class="d-flex align-items-center gap-3">
+									<div class="logo-preview">
+										<?php if (!empty($homepage_setting['logo3'])): ?>
+											<img src="<?php echo $homepage_setting['logo3']; ?>?v=<?php echo time(); ?>" alt="카드이미지"
+												 class="border" style="max-width: 200px; max-height: 100px; object-fit: contain;" id="logo3Preview">
+										<?php else: ?>
+											<div class="bg-light border d-flex align-items-center justify-content-center"
+												 style="width: 200px; height: 100px;" id="logo3Preview">
+												<i class="bi bi-image text-muted fs-1"></i>
+											</div>
+										<?php endif; ?>
+									</div>
+									<div class="flex-grow-1">
+										<div class="input-group">
+											<input type="file" class="form-control" id="logo3File" accept=".jpg,.jpeg,.png,.gif">
+											<button type="button" class="btn btn-primary" id="uploadLogo3Btn">
+												<i class="bi bi-upload"></i> 업로드
+											</button>
+										</div>
+										<div class="form-text">SNS 공유 시 표시되는 이미지 (1200x630 권장)</div>
+										<input type="hidden" id="logo3_current" name="logo3_current" value="<?php echo htmlspecialchars($homepage_setting['logo3'] ?? ''); ?>">
 									</div>
 								</div>
 							</div>
@@ -170,8 +203,6 @@
 		<?php endif; ?>
 	</form>
 </div>
-
-
 
 <?php $this->load->view('footer'); ?>
 <script src="/assets/js/homepage_setting.js?<?php echo WB_VERSION; ?>"></script>

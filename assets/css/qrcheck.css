@@ -1,12 +1,13 @@
 
-
-
-/* 소그룹 헤더 스타일 */
-.area-header {
-	margin-bottom: 5px !important;
-	padding: 0 !important;
-	height: 50px;
+.member-list{overflow: auto;height: calc(100vh - 180px);}
+@media screen and (max-width: 1200px){
+	.member-list{overflow: auto;height: calc(100vh - 220px);}
 }
+@media screen and (max-width: 992px){
+	.member-list{overflow: auto;height: calc(100vh - 270px);}
+}
+/* 소그룹 헤더 스타일 */
+.area-header {margin-bottom: 5px !important;padding: 0 !important;height: 50px;}
 
 .area-header .area-title {padding: 8px 5px;font-size: 16px;font-weight: 600;text-align: left;margin: 10px 0 0;position: relative;display: flex;align-items: center;justify-content: space-between;}
 .area-header .area-title .area-name{display: flex;align-items: center;gap: 5px;}
