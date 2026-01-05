@@ -535,13 +535,14 @@ class Member_model extends CI_Model
 		$this->db->from('wb_member');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');
+		$this->db->where('area_idx IS NOT NULL');
 
 		if (!empty($search)) {
 			$this->db->like('member_name', $search);
 		}
 
 		$this->db->order_by('member_name', 'ASC');
-		$this->db->limit(50);
+//		$this->db->limit(50);
 
 		$query = $this->db->get();
 		return $query->result_array();

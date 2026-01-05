@@ -149,7 +149,7 @@ $this->load->view('header');
 
 			<div class="mb-3">
 				<label for="memo_content" class="form-label">내용</label>
-				<textarea class="form-control" id="memo_content" name="memo_content" rows="3" placeholder="내용을 입력하세요"></textarea>
+				<textarea class="form-control" id="memo_content" name="memo_content" rows="16" placeholder="내용을 입력하세요"></textarea>
 			</div>
 
 			<div class="mb-3" id="memberSelectDiv">

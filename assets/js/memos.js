@@ -47,13 +47,13 @@ $(document).ready(function() {
 				title: '항목',
 				dataIndx: 'memo_type',
 				dataType: 'string',
-				width: 120
+				width: 100
 			},
 			{
 				title: '출석일',
 				dataIndx: 'memo_date',
 				dataType: 'string',
-				width: 120,
+				width: 100,
 				render: function(ui) {
 					if (ui.cellData) {
 						const date = new Date(ui.cellData);
@@ -69,13 +69,14 @@ $(document).ready(function() {
 				title: '이름',
 				dataIndx: 'member_name',
 				dataType: 'string',
-				width: 100
+				width: 80
 			},
 			{
 				title: '내용',
 				dataIndx: 'memo_content',
 				dataType: 'string',
-				width: 250
+				cls: 'memo-contents',
+				width: 500
 			},
 			{
 				title: '등록일',
@@ -100,7 +101,7 @@ $(document).ready(function() {
 				title: '등록자',
 				dataIndx: 'regi_user_name',
 				dataType: 'string',
-				width: 100
+				width: 80
 			},
 			{
 				title: '수정일',

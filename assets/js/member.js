@@ -2484,6 +2484,15 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		const modal = new bootstrap.Modal(document.getElementById('memoModal'));
 		const modalTitle = mode === 'add' ? '메모 추가' : '메모 수정';
 
+		// 추가 모드일 때 오늘 날짜를 기본값으로 설정
+		if (mode === 'add' && !date) {
+			const today = new Date();
+			const year = today.getFullYear();
+			const month = String(today.getMonth() + 1).padStart(2, '0');
+			const day = String(today.getDate()).padStart(2, '0');
+			date = `${year}-${month}-${day}`;
+		}
+
 		$('#memoModalLabel').text(modalTitle);
 		$('#memoType').val(memoType);
 		$('#memoContent').val(content);
@@ -2568,7 +2577,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		return `
 		<div class="memo-item" data-idx="${memo.idx}" data-date="${memo.att_date || ''}">				
 			<div class="row">
-				<div class="col-9">
+				<div class="col-10">
 					<div class="mb-2">
 						${memoTypeBadge}
 					</div>
@@ -2578,7 +2587,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 					</div>
 				</div>
 				
-				<div class="memo-actions col-3 d-flex align-items-center justify-content-end">
+				<div class="memo-actions col-2 d-flex align-items-center justify-content-end">
 					<div class="btn-group-vertical btn-group-sm" role="group">
 						<button type="button" class="btn btn-sm btn-outline-secondary btn-memo-edit" data-idx="${memo.idx}">수정</button>
 						<button type="button" class="btn btn-sm btn-outline-danger btn-memo-delete" data-idx="${memo.idx}">삭제</button>

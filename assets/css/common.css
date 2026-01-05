@@ -218,6 +218,8 @@ footer .btn-area i{font-size:30px}
 .memo-list ul li .memo-id{width: 50%;font-size: 14px; color:#999;  text-align: right;}
 .memo-list ul li .memo-content{width: 100%; margin: 5px 0 20px; background: #efefef; padding: 10px 20px 10px 10px}
 
+.memo-list-section .memo-content{white-space: break-spaces; word-break: break-all;}
+.pq-grid-table tr td.memo-contents{text-align: left;white-space: pre!important; word-break: break-all;}
 
 .area-list{height: 300px;overflow-y: scroll; padding: 10px; background: #efefef;}
 .area-list .btn-delete-area{display: flex;align-items: center;justify-content: center;}
