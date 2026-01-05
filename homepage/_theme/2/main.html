@@ -80,11 +80,10 @@
 				<button type="button" class="btn-close btn-close-white fs-2" data-bs-dismiss="offcanvas"></button>
 			</div>
 			<div class="offcanvas-body p-0">
+				<!-- 모바일 오프캔버스 내 링크 영역 -->
 				<div class="navbar-top">
 					<ul>
-						<li><a href="#"><i class="bi bi-youtube"></i><br/>유튜브</a></li>
-						<li><a href="#"><i class="bi bi-instagram"></i><br/>인스타그램</a></li>
-						<li><a href="#"><i class="bi bi-facebook"></i><br/>페이스북</a></li>
+						<!-- renderRelatedLinks() 함수에서 동적으로 채워짐 -->
 					</ul>
 				</div>
 				<ul class="accordion justify-content-center flex-grow-1" id="offcanvasMainMenu">
@@ -97,11 +96,10 @@
 			</div>
 		</div>
 
+		<!-- 데스크톱 링크 영역 (JavaScript로 동적 렌더링) -->
 		<div class="link-list d-none d-lg-block">
 			<ul>
-				<li><i class="bi bi-youtube"></i></li>
-				<li><i class="bi bi-instagram"></i></li>
-				<li><i class="bi bi-facebook"></i></li>
+				<!-- renderRelatedLinks() 함수에서 동적으로 채워짐 -->
 			</ul>
 		</div>
 	</nav>

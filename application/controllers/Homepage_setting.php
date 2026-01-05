@@ -52,6 +52,7 @@ class Homepage_setting extends My_Controller
 
 
 
+
 	/**
 	 * 홈페이지 설정 저장
 	 */
@@ -96,6 +97,9 @@ class Homepage_setting extends My_Controller
 		$org_code = $org_detail['org_code'];
 		$org_name = $org_detail['org_name'];
 
+		// ========== 기존 설정 조회하여 related_links 유지 ==========
+		$current_setting = $this->Homepage_setting_model->get_homepage_setting($org_id);
+
 		$homepage_setting = array(
 			'homepage_name' => $homepage_name,
 			'homepage_domain' => $homepage_domain,
@@ -105,6 +109,12 @@ class Homepage_setting extends My_Controller
 			'logo_color_change' => $logo_color_change,
 			'theme' => $theme
 		);
+
+		// 기존 related_links가 있으면 유지
+		if (!empty($current_setting['related_links'])) {
+			$homepage_setting['related_links'] = $current_setting['related_links'];
+		}
+		// ===========================================================
 
 		// DB 저장
 		$result = $this->Homepage_setting_model->update_homepage_setting($org_id, $homepage_setting);
@@ -117,7 +127,7 @@ class Homepage_setting extends My_Controller
 		// 라이브러리 로드
 		$this->load->library('nginx_manager');
 
-		// Nginx 설정 파일은 항상 생성 (기본 도메인 + 사용자 도메인)
+		// Nginx 설정 파일 생성
 		$nginx_result = $this->nginx_manager->create_nginx_config($org_code, $homepage_domain, $org_name);
 
 		if (!$nginx_result['success']) {
@@ -251,4 +261,235 @@ class Homepage_setting extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '파일 업로드 실패: ' . $error));
 		}
 	}
+
+
+
+	/**
+	 * 관련 링크 목록 조회
+	 */
+	public function get_related_links()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(['success' => false, 'message' => '조직 정보가 없습니다.']);
+			return;
+		}
+
+		$links = $this->Homepage_setting_model->get_related_links($org_id);
+
+		echo json_encode([
+			'success' => true,
+			'data' => $links
+		]);
+	}
+
+	/**
+	 * 관련 링크 추가
+	 */
+	public function add_related_link()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			echo json_encode(['success' => false, 'message' => '조직 정보가 없습니다.']);
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(['success' => false, 'message' => '링크를 추가할 권한이 없습니다.']);
+			return;
+		}
+
+		$link_data = [
+			'link_name' => '새 링크',
+			'link_url' => '',
+			'link_icon' => ''
+		];
+
+		$new_idx = $this->Homepage_setting_model->add_related_link($org_id, $link_data);
+
+		if ($new_idx) {
+			$new_link = $this->Homepage_setting_model->get_related_link($org_id, $new_idx);
+			echo json_encode([
+				'success' => true,
+				'message' => '링크가 추가되었습니다.',
+				'data' => $new_link
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '링크 추가에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 관련 링크 수정
+	 */
+	public function update_related_link()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$idx = $this->input->post('idx');
+		$link_name = $this->input->post('link_name');
+		$link_url = $this->input->post('link_url');
+
+		if (!$org_id || !$idx) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 없습니다.']);
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(['success' => false, 'message' => '링크를 수정할 권한이 없습니다.']);
+			return;
+		}
+
+		$existing = $this->Homepage_setting_model->get_related_link($org_id, $idx);
+		if (!$existing) {
+			echo json_encode(['success' => false, 'message' => '링크를 찾을 수 없습니다.']);
+			return;
+		}
+
+		$update_data = [
+			'link_name' => $link_name,
+			'link_url' => $link_url
+		];
+
+		$result = $this->Homepage_setting_model->update_related_link($org_id, $idx, $update_data);
+
+		if ($result) {
+			$updated_link = $this->Homepage_setting_model->get_related_link($org_id, $idx);
+			echo json_encode([
+				'success' => true,
+				'message' => '링크가 수정되었습니다.',
+				'data' => $updated_link
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '링크 수정에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 관련 링크 삭제
+	 */
+	public function delete_related_link()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$idx = $this->input->post('idx');
+
+		if (!$org_id || !$idx) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 없습니다.']);
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(['success' => false, 'message' => '링크를 삭제할 권한이 없습니다.']);
+			return;
+		}
+
+		$deleted_link = $this->Homepage_setting_model->delete_related_link($org_id, $idx);
+
+		if ($deleted_link) {
+			// 아이콘 파일 삭제
+			if (!empty($deleted_link['link_icon']) && file_exists('.' . $deleted_link['link_icon'])) {
+				@unlink('.' . $deleted_link['link_icon']);
+			}
+
+			echo json_encode(['success' => true, 'message' => '링크가 삭제되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '링크 삭제에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 관련 링크 아이콘 업로드
+	 */
+	public function upload_related_link_icon()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+		$idx = $this->input->post('idx');
+
+		if (!$org_id || !$idx) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 없습니다.']);
+			return;
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+
+		if ($user_level < 9 && $this->session->userdata('master_yn') !== 'Y') {
+			echo json_encode(['success' => false, 'message' => '아이콘을 업로드할 권한이 없습니다.']);
+			return;
+		}
+
+		$existing = $this->Homepage_setting_model->get_related_link($org_id, $idx);
+		if (!$existing) {
+			echo json_encode(['success' => false, 'message' => '링크를 찾을 수 없습니다.']);
+			return;
+		}
+
+		// 기존 아이콘 삭제
+		if (!empty($existing['link_icon']) && file_exists('.' . $existing['link_icon'])) {
+			@unlink('.' . $existing['link_icon']);
+		}
+
+		$upload_path = './uploads/related_link_icons/';
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		$file_ext = strtolower(pathinfo($_FILES['icon_file']['name'], PATHINFO_EXTENSION));
+		$new_filename = 'link_icon_' . $org_id . '_' . $idx . '_' . time() . '.' . $file_ext;
+
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'jpg|jpeg|png|gif|svg';
+		$config['max_size'] = 1024;
+		$config['file_name'] = $new_filename;
+		$config['overwrite'] = false;
+
+		$this->upload->initialize($config);
+
+		if ($this->upload->do_upload('icon_file')) {
+			$upload_data = $this->upload->data();
+			$file_path = '/uploads/related_link_icons/' . $upload_data['file_name'];
+
+			$this->Homepage_setting_model->update_related_link($org_id, $idx, ['link_icon' => $file_path]);
+
+			echo json_encode([
+				'success' => true,
+				'message' => '아이콘이 업로드되었습니다.',
+				'icon_url' => $file_path
+			]);
+		} else {
+			$error = $this->upload->display_errors('', '');
+			echo json_encode(['success' => false, 'message' => '파일 업로드 실패: ' . $error]);
+		}
+	}
+
 }

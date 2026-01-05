@@ -2516,6 +2516,15 @@ function applyOrgInfo(info) {
 	if (footerRep && info.org_rep) {
 		footerRep.textContent = info.org_rep;
 	}
+
+	// 관련 링크 렌더링
+	if (setting.related_links && setting.related_links.length > 0) {
+		renderRelatedLinks(setting.related_links);
+	} else {
+		// 링크가 없으면 영역 숨김
+		$('.link-list').hide();
+		$('.navbar-top').hide();
+	}
 }
 
 /**
@@ -2600,4 +2609,75 @@ function applyMetaTags(siteName, setting) {
 	} catch (error) {
 		console.error('[메타 태그 적용 실패]', error);
 	}
+}
+
+
+/**
+ * 관련 링크 렌더링
+ */
+function renderRelatedLinks(relatedLinks) {
+	// 데스크톱 링크 영역
+	var $desktopLinkList = $('.link-list ul');
+	// 모바일 오프캔버스 링크 영역
+	var $mobileLinkList = $('.navbar-top ul');
+
+	// 링크가 없으면 영역 숨김
+	if (!relatedLinks || relatedLinks.length === 0) {
+		$('.link-list').hide();
+		$('.navbar-top').hide();
+		return;
+	}
+
+	// display_order로 정렬
+	relatedLinks.sort(function(a, b) {
+		return (a.display_order || 0) - (b.display_order || 0);
+	});
+
+	// 데스크톱 링크 렌더링
+	var desktopHtml = '';
+	for (var i = 0; i < relatedLinks.length; i++) {
+		var link = relatedLinks[i];
+		var linkUrl = link.link_url || '#';
+		var linkName = link.link_name || '';
+		var linkIcon = link.link_icon || '';
+
+		// 아이콘 URL에 도메인 추가
+		var iconUrl = linkIcon ? 'https://wani.im' + linkIcon : '';
+
+		if (iconUrl) {
+			desktopHtml += '<li><a href="' + linkUrl + '" target="_blank" title="' + linkName + '">' +
+				'<img src="' + iconUrl + '" alt="' + linkName + '">' +
+				'</a></li>';
+		} else {
+			desktopHtml += '<li><a href="' + linkUrl + '" target="_blank" title="' + linkName + '">' +
+				'<i class="bi bi-link-45deg"></i>' +
+				'</a></li>';
+		}
+	}
+	$desktopLinkList.html(desktopHtml);
+	$('.link-list').show();
+
+	// 모바일 링크 렌더링
+	var mobileHtml = '';
+	for (var j = 0; j < relatedLinks.length; j++) {
+		var mLink = relatedLinks[j];
+		var mLinkUrl = mLink.link_url || '#';
+		var mLinkName = mLink.link_name || '';
+		var mLinkIcon = mLink.link_icon || '';
+
+		// 아이콘 URL에 도메인 추가
+		var mIconUrl = mLinkIcon ? 'https://wani.im' + mLinkIcon : '';
+
+		if (mIconUrl) {
+			mobileHtml += '<li><a href="' + mLinkUrl + '" target="_blank">' +
+				'<img src="' + mIconUrl + '" alt="' + mLinkName + '" style="width: 32px; height: 32px; object-fit: contain;"><br/>' +
+				mLinkName + '</a></li>';
+		} else {
+			mobileHtml += '<li><a href="' + mLinkUrl + '" target="_blank">' +
+				'<i class="bi bi-link-45deg"></i><br/>' +
+				mLinkName + '</a></li>';
+		}
+	}
+	$mobileLinkList.html(mobileHtml);
+	$('.navbar-top').show();
 }
