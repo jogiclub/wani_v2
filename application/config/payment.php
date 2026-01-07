@@ -19,7 +19,7 @@ if ($is_production) {
 	$config['smartro_pg'] = array(
 		'mode' => 'REAL',
 		'mid' => 'webhows01m',
-		'merchant_key' => '4GFsSd7ERVRGX9WHOzJ96GyeMTwvIaKSWUCKmN3fDklNRGw3CualCFoMPZaS99YiFGOuwtzTkrLo4bR4V+Ow==',
+		'merchant_key' => 'zAT7JcQwS6ZJzzkbyGHZti7GxT4RRqTUpAhPRPmw5qCR5AHDokTEeiK5bmDnDgTFR1VjWX8/OiOSDCIYtSJuYg==',
 		'sdk_url' => 'https://pay.smartropay.co.kr/asset/js/SmartroPAY-1.0.min.js',
 		'approval_url' => 'https://approval.smartropay.co.kr/payment/approval/urlCallApproval.do',
 		'cancel_url' => 'https://approval.smartropay.co.kr/payment/cancel/cancelApproval.do'
