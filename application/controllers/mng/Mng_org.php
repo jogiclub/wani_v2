@@ -639,6 +639,9 @@ class Mng_org extends CI_Controller
 		if ($this->input->post('org_name') !== null) {
 			$data['org_name'] = trim($this->input->post('org_name'));
 		}
+		if ($this->input->post('org_code') !== null) {
+			$data['org_code'] = trim($this->input->post('org_code'));
+		}
 		if ($this->input->post('org_type') !== null) {
 			$data['org_type'] = $this->input->post('org_type');
 		}
@@ -987,6 +990,69 @@ class Mng_org extends CI_Controller
 	{
 		$data['user'] = $this->User_model->get_user_by_id($this->session->userdata('user_id'));
 		$this->load->view('mng/org_map_popup', $data);
+	}
+
+
+	/**
+	 * 빠른 조직 추가 (AJAX)
+	 * 선택된 카테고리에 '새조직_{org_id}' 이름으로 기본 조직 생성
+	 */
+	public function quick_add_org()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$category_idx = $this->input->post('category_idx');
+
+		// 빈 문자열이면 null로 처리 (미분류)
+		if ($category_idx === '' || $category_idx === 'uncategorized') {
+			$category_idx = null;
+		}
+
+		try {
+			// 기본 조직 데이터 준비
+			$data = array(
+				'org_name' => '새조직',
+				'org_type' => 'church',
+				'category_idx' => $category_idx
+			);
+
+			// 조직 생성
+			$result = $this->Org_model->insert_org($data);
+
+			if ($result) {
+				// 방금 생성된 조직의 ID 가져오기
+				$new_org_id = $this->db->insert_id();
+
+				// 조직명을 '새조직_{org_id}'로 업데이트
+				$update_data = array(
+					'org_name' => '새조직_' . $new_org_id
+				);
+				$this->Org_model->update_org($new_org_id, $update_data);
+
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => true,
+					'message' => '새 조직이 추가되었습니다.',
+					'org_id' => $new_org_id,
+					'org_name' => '새조직_' . $new_org_id
+				), JSON_UNESCAPED_UNICODE);
+			} else {
+				header('Content-Type: application/json; charset=utf-8');
+				echo json_encode(array(
+					'success' => false,
+					'message' => '조직 추가에 실패했습니다.'
+				), JSON_UNESCAPED_UNICODE);
+			}
+		} catch (Exception $e) {
+			log_message('error', '빠른 조직 추가 오류: ' . $e->getMessage());
+			header('Content-Type: application/json; charset=utf-8');
+			echo json_encode(array(
+				'success' => false,
+				'message' => '조직 추가 중 오류가 발생했습니다.'
+			), JSON_UNESCAPED_UNICODE);
+		}
 	}
 
 }

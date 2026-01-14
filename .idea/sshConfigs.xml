@@ -6,7 +6,7 @@
         <option name="customName" value="webhows" />
       </sshConfig>
       <sshConfig host="52.78.233.8" id="48da65db-f876-4db2-b73b-9d9ec692dd0f" keyPath="D:\SynologyDrive\52server\wani_web_20251021.ppk" port="22" nameFormat="DESCRIPTIVE" username="ubuntu" useOpenSSHConfig="true" />
-      <sshConfig host="43.201.66.77" id="d3bf1f35-8796-420f-bcf6-85369b2f1a95" keyPath="C:\Users\jogic\OneDrive\key\52ch-key.ppk" port="22" nameFormat="DESCRIPTIVE" username="ubuntu" useOpenSSHConfig="true" />
+      <sshConfig connectionConfig="{&quot;serverAliveInterval&quot;:300}" host="43.201.66.77" id="d3bf1f35-8796-420f-bcf6-85369b2f1a95" keyPath="C:\Users\jogic\OneDrive\key\52ch-key.ppk" port="22" nameFormat="DESCRIPTIVE" username="ubuntu" useOpenSSHConfig="true" />
     </configs>
   </component>
 </project>

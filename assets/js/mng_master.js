@@ -31,33 +31,48 @@ $(document).ready(function() {
 		const $container = $('#menu_permissions');
 		$container.empty();
 
-		// 관리자 메뉴 정의 (향후 추가 가능)
+		// 관리자 메뉴 정의
 		const masterMenus = [
-			{ key: 'mng_org', name: '조직관리', icon: 'bi bi-building' },
-			{ key: 'mng_master', name: '마스터관리', icon: 'bi bi-people' }
+			// ORG 분류
+			{ key: 'mng_org', name: '조직관리', icon: 'bi bi-building', group: 'ORG' },
+			{ key: 'mng_member', name: '회원관리', icon: 'bi bi-person', group: 'ORG' },
+			// MASTER 분류
+			{ key: 'mng_master', name: '마스터관리', icon: 'bi bi-people', group: 'MASTER' },
+			{ key: 'mng_cost', name: '비용관리', icon: 'bi bi-cash-coin', group: 'MASTER' },
+			{ key: 'mng_homepage', name: '홈페이지관리', icon: 'bi bi-globe', group: 'MASTER' }
 		];
 
 		// 전체 선택 체크박스 추가
 		const selectAllHtml = `
-			<div class="form-check mb-3 border-bottom pb-2">
-				<input class="form-check-input" type="checkbox" id="menu_select_all">
-				<label class="form-check-label fw-bold" for="menu_select_all">
-					전체 선택
-				</label>
-			</div>
-		`;
+        <div class="form-check mb-3 border-bottom pb-2">
+            <input class="form-check-input" type="checkbox" id="menu_select_all">
+            <label class="form-check-label fw-bold" for="menu_select_all">
+                전체 선택
+            </label>
+        </div>
+    `;
 		$container.append(selectAllHtml);
 
-		// 개별 메뉴 체크박스
+		// 그룹별로 메뉴 체크박스 생성
+		let currentGroup = '';
 		masterMenus.forEach(function(menu) {
+			// 그룹이 변경되면 그룹 헤더 추가
+			if (menu.group !== currentGroup) {
+				currentGroup = menu.group;
+				const groupHtml = `
+                <div class="text-muted small fw-bold mt-3 mb-2">${currentGroup}</div>
+            `;
+				$container.append(groupHtml);
+			}
+
 			const checkboxHtml = `
-				<div class="form-check mb-2">
-					<input class="form-check-input menu-checkbox" type="checkbox" value="${menu.key}" id="menu_${menu.key}">
-					<label class="form-check-label" for="menu_${menu.key}">
-						<i class="${menu.icon} me-2"></i>${menu.name}
-					</label>
-				</div>
-			`;
+            <div class="form-check mb-2 ms-2">
+                <input class="form-check-input menu-checkbox" type="checkbox" value="${menu.key}" id="menu_${menu.key}">
+                <label class="form-check-label" for="menu_${menu.key}">
+                    <i class="${menu.icon} me-2"></i>${menu.name}
+                </label>
+            </div>
+        `;
 			$container.append(checkboxHtml);
 		});
 
