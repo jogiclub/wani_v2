@@ -54,6 +54,12 @@ $this->load->view('mng/header');
 							</h5>
 						</div>
 						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
+
+							<button type="button" class="btn btn-outline-primary" id="btnStatusChange" disabled>
+								<i class="bi bi-arrow-repeat"></i> 상태변경 (<span id="selectedCount">0</span>)
+							</button>
+
+
 							<small class="text-muted">총 <span id="totalMemberCount">0</span>명</small>
 							<button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefresh">
 								<i class="bi bi-arrow-clockwise"></i> 새로고침
@@ -148,6 +154,39 @@ $this->load->view('mng/header');
 			<div class="mb-4">
 				<h6 class="border-bottom pb-2 mb-3">메모</h6>
 				<div id="detail_member_etc" class="p-2 bg-light rounded" style="min-height: 60px;">-</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- 파일 위치: 회원관리 뷰 파일 -->
+<!-- 역할: 상태 변경 모달 -->
+
+<!-- 상태 변경 모달 -->
+<div class="modal fade" id="statusChangeModal" tabindex="-1" aria-labelledby="statusChangeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="statusChangeModalLabel">회원 상태 변경</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label class="form-label fw-bold">선택된 회원 (<span id="statusChangeCount">0</span>명)</label>
+					<div id="statusChangeMemberList" style="max-height: 200px; overflow-y: auto;"></div>
+				</div>
+				<hr>
+				<div class="mb-3">
+					<label class="form-label fw-bold">변경할 상태 선택</label>
+					<div id="statusOptions" class="mt-2">
+						<!-- 상태 옵션이 동적으로 생성됩니다 -->
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmStatusChangeBtn">변경</button>
 			</div>
 		</div>
 	</div>

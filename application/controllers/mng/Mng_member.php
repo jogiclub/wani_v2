@@ -484,4 +484,58 @@ class Mng_member extends CI_Controller
 			'data' => $member
 		), JSON_UNESCAPED_UNICODE);
 	}
+
+	/**
+	 * 파일 위치: application/controllers/mng/Mng_member.php
+	 * 역할: 회원 상태 일괄 변경
+	 */
+	public function update_member_status()
+	{
+		$member_idx_list = $this->input->post('member_idx_list');
+		$member_status = $this->input->post('member_status');
+
+		if (empty($member_idx_list) || !is_array($member_idx_list)) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '변경할 회원을 선택해주세요.'
+			));
+			return;
+		}
+
+		// 허용된 상태값 검증
+		$allowed_statuses = array('enlisted', 'assigned', 'settled', 'nurturing', 'dispatched');
+		if (!in_array($member_status, $allowed_statuses)) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '유효하지 않은 상태값입니다.'
+			));
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		$success_count = 0;
+		$error_count = 0;
+
+		foreach ($member_idx_list as $member_idx) {
+			$result = $this->Member_model->update_member_status($member_idx, $member_status);
+			if ($result) {
+				$success_count++;
+			} else {
+				$error_count++;
+			}
+		}
+
+		if ($success_count > 0) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => $success_count . '명의 상태가 변경되었습니다.'
+			));
+		} else {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '상태 변경에 실패했습니다.'
+			));
+		}
+	}
 }

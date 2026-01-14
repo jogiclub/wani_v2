@@ -1239,4 +1239,20 @@ class Member_model extends CI_Model
 		);
 	}
 
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 회원 상태 업데이트
+	 */
+	public function update_member_status($member_idx, $member_status)
+	{
+		$this->db->where('member_idx', $member_idx);
+		$this->db->update('wb_member', array(
+			'member_status' => $member_status,
+			'modi_date' => date('Y-m-d H:i:s')
+		));
+
+		return $this->db->affected_rows() > 0;
+	}
+
 }

@@ -14,6 +14,16 @@
 	let selectedNodeId = null;
 	let selectedNodeName = '';
 	let memberOffcanvas = null;
+	let checkedMemberIds = new Set();
+
+	// 상태 목록 정의
+	const STATUS_LIST = [
+		{ value: 'enlisted', label: '입소' },
+		{ value: 'assigned', label: '자대' },
+		{ value: 'settled', label: '정착' },
+		{ value: 'nurturing', label: '양육' },
+		{ value: 'dispatched', label: '파송' }
+	];
 
 	// DOM 준비 완료 시 초기화
 	$(document).ready(function() {
@@ -74,6 +84,8 @@
 			}
 			memberGrid = null;
 		}
+
+		checkedMemberIds.clear();
 	}
 
 	/**
@@ -348,7 +360,8 @@
 	}
 
 	/**
-	 * ParamQuery Grid 초기화
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: ParamQuery Grid 초기화 (체크박스 선택 기능 포함)
 	 */
 	function initParamQueryGrid() {
 		showGridSpinner();
@@ -361,19 +374,22 @@
 				height: "100%",
 				dataModel: { data: [] },
 				colModel: colModel,
-				freezeCols: 3,
-				numberCell: { show: true, width: 40 },
+				freezeCols: 4,
+				numberCell: { show: false },
 				hoverMode: 'row',
-				selectionModel: { type: 'row', mode: 'single' },
+				selectionModel: { type: 'cell', mode: 'single' },
 				resizable: true,
 				wrap: false,
 				hwrap: false,
 				strNoRows: '회원 정보가 없습니다',
-				rowDblClick: function(event, ui) {
-					const rowData = ui.rowData;
-					if (rowData && rowData.member_idx) {
-						openMemberOffcanvas(rowData.member_idx);
-					}
+				cellClick: function(event, ui) {
+					handleCellClick(event, ui);
+				},
+				complete: function() {
+					setTimeout(function() {
+						bindCheckboxEvents();
+						updateCheckboxStates();
+					}, 100);
 				}
 			});
 
@@ -388,10 +404,65 @@
 	}
 
 	/**
-	 * 그리드 컬럼 모델 생성
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 그리드 컬럼 모델 생성
+	 * 순서: 체크박스, 상태, 사진, 이름, 소속조직, 카테고리, 연락처, 직위/직분, 직책, 성별, 생년월일, 주소, 상세주소, 등록일, 수정일
 	 */
 	function createColumnModel() {
 		return [
+			{
+				title: '<input type="checkbox" id="selectAllMembers" />',
+				dataIndx: "checkbox",
+				width: 40,
+				align: "center",
+				resizable: false,
+				sortable: false,
+				editable: false,
+				menuIcon: false,
+				frozen: true,
+				render: function(ui) {
+					const memberIdx = ui.rowData.member_idx;
+					const isChecked = checkedMemberIds.has(memberIdx);
+					return '<input type="checkbox" class="member-checkbox" data-member-idx="' + memberIdx + '" ' + (isChecked ? 'checked' : '') + ' />';
+				}
+			},
+			{
+				dataIndx: 'member_status',
+				title: '상태',
+				width: 70,
+				align: 'center',
+				frozen: true,
+				render: function(ui) {
+					const status = ui.cellData;
+					if (!status) {
+						return '<span class="badge bg-light text-dark">-</span>';
+					}
+					const statusObj = STATUS_LIST.find(s => s.value === status);
+					if (statusObj) {
+						let badgeClass = 'bg-secondary';
+						switch(status) {
+							case 'enlisted': badgeClass = 'bg-info'; break;
+							case 'assigned': badgeClass = 'bg-primary'; break;
+							case 'settled': badgeClass = 'bg-success'; break;
+							case 'nurturing': badgeClass = 'bg-warning text-dark'; break;
+							case 'dispatched': badgeClass = 'bg-danger'; break;
+						}
+						return '<span class="badge ' + badgeClass + '">' + statusObj.label + '</span>';
+					}
+					return '<span class="badge bg-light text-dark">' + status + '</span>';
+				},
+				filter: {
+					type: 'select',
+					options: [
+						{ '': '전체' },
+						{ 'enlisted': '입소' },
+						{ 'assigned': '자대' },
+						{ 'settled': '정착' },
+						{ 'nurturing': '양육' },
+						{ 'dispatched': '파송' }
+					]
+				}
+			},
 			{
 				dataIndx: 'photo_url',
 				title: '사진',
@@ -402,25 +473,23 @@
 				frozen: true,
 				render: function(ui) {
 					const photoUrl = ui.cellData || '/assets/images/photo_no.png';
-					return `<img src="${photoUrl}" class="rounded-circle" width="40" height="40" style="object-fit: cover;" onerror="this.src='/assets/images/photo_no.png'">`;
+					return '<img src="' + photoUrl + '" class="rounded-circle" width="40" height="40" style="object-fit: cover;" onerror="this.src=\'/assets/images/photo_no.png\'">';
 				}
 			},
 			{
 				dataIndx: 'member_name',
 				title: '이름',
 				width: 100,
-				frozen: true,
 				filter: { type: 'textbox', condition: 'contain' }
 			},
 			{
 				dataIndx: 'org_name',
-				title: '소속 조직',
+				title: '소속조직',
 				width: 150,
-				frozen: true,
 				filter: { type: 'textbox', condition: 'contain' },
 				render: function(ui) {
 					if (ui.cellData) {
-						return `<span class="badge bg-primary">${ui.cellData}</span>`;
+						return '<span class="badge bg-primary">' + ui.cellData + '</span>';
 					}
 					return '<span class="badge bg-light text-dark">미지정</span>';
 				}
@@ -432,7 +501,7 @@
 				filter: { type: 'textbox', condition: 'contain' },
 				render: function(ui) {
 					if (ui.cellData) {
-						return `<span class="badge bg-secondary">${ui.cellData}</span>`;
+						return '<span class="badge bg-secondary">' + ui.cellData + '</span>';
 					}
 					return '<span class="badge bg-light text-dark">미분류</span>';
 				}
@@ -481,8 +550,32 @@
 				align: 'center'
 			},
 			{
+				dataIndx: 'member_address',
+				title: '주소',
+				width: 200,
+				filter: { type: 'textbox', condition: 'contain' }
+			},
+			{
+				dataIndx: 'member_address_detail',
+				title: '상세주소',
+				width: 150,
+				filter: { type: 'textbox', condition: 'contain' }
+			},
+			{
 				dataIndx: 'regi_date',
 				title: '등록일',
+				width: 100,
+				align: 'center',
+				render: function(ui) {
+					if (ui.cellData) {
+						return ui.cellData.substring(0, 10);
+					}
+					return '-';
+				}
+			},
+			{
+				dataIndx: 'modi_date',
+				title: '수정일',
 				width: 100,
 				align: 'center',
 				render: function(ui) {
@@ -496,10 +589,125 @@
 	}
 
 	/**
+	 * 셀 클릭 처리
+	 */
+	function handleCellClick(event, ui) {
+		if (ui.colIndx === 0) {
+			// 체크박스 컬럼 클릭
+			const target = event.originalEvent.target;
+			if (!$(target).hasClass('member-checkbox')) {
+				const memberIdx = ui.rowData.member_idx;
+				const checkbox = $('.member-checkbox[data-member-idx="' + memberIdx + '"]');
+				if (checkbox.length > 0) {
+					checkbox.prop('checked', !checkbox.prop('checked')).trigger('change');
+				}
+			}
+		} else {
+			// 다른 컬럼 클릭 시 상세 정보 열기
+			const memberIdx = ui.rowData.member_idx;
+			if (memberIdx) {
+				openMemberOffcanvas(memberIdx);
+			}
+		}
+	}
+
+	/**
+	 * 체크박스 이벤트 바인딩
+	 */
+	function bindCheckboxEvents() {
+		// 기존 이벤트 제거
+		$(document).off('change', '#selectAllMembers');
+		$(document).off('change', '.member-checkbox');
+
+		// 전체 선택 체크박스
+		$(document).on('change', '#selectAllMembers', function(e) {
+			e.stopPropagation();
+			const isChecked = $(this).is(':checked');
+			const wasIndeterminate = $(this).prop('indeterminate');
+
+			if (wasIndeterminate) {
+				$(this).prop('indeterminate', false);
+				$(this).prop('checked', true);
+			}
+
+			$('.member-checkbox').each(function() {
+				const memberIdx = parseInt($(this).data('member-idx'));
+				const shouldCheck = wasIndeterminate || isChecked;
+				$(this).prop('checked', shouldCheck);
+
+				if (shouldCheck) {
+					checkedMemberIds.add(memberIdx);
+				} else {
+					checkedMemberIds.delete(memberIdx);
+				}
+			});
+
+			updateSelectedCount();
+		});
+
+		// 개별 체크박스
+		$(document).on('change', '.member-checkbox', function(e) {
+			e.stopPropagation();
+			const memberIdx = parseInt($(this).data('member-idx'));
+			const isChecked = $(this).is(':checked');
+
+			if (isChecked) {
+				checkedMemberIds.add(memberIdx);
+			} else {
+				checkedMemberIds.delete(memberIdx);
+			}
+
+			updateSelectAllCheckboxState();
+			updateSelectedCount();
+		});
+	}
+
+	/**
+	 * 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateSelectAllCheckboxState() {
+		const totalCheckboxes = $('.member-checkbox').length;
+		const checkedCount = checkedMemberIds.size;
+		const selectAllCheckbox = $('#selectAllMembers');
+
+		if (checkedCount === 0) {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else if (checkedCount === totalCheckboxes) {
+			selectAllCheckbox.prop('checked', true);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', true);
+		}
+	}
+
+	/**
+	 * 체크박스 상태 업데이트
+	 */
+	function updateCheckboxStates() {
+		updateSelectAllCheckboxState();
+		updateSelectedCount();
+	}
+
+	/**
+	 * 선택된 회원 수 업데이트
+	 */
+	function updateSelectedCount() {
+		const count = checkedMemberIds.size;
+		$('#selectedCount').text(count);
+
+		// 버튼 상태 업데이트
+		const isDisabled = count === 0;
+		$('#btnStatusChange').prop('disabled', isDisabled);
+	}
+
+	/**
 	 * 회원 목록 로드
 	 */
 	function loadMemberList() {
 		showGridSpinner();
+		checkedMemberIds.clear();
 
 		const params = {
 			type: selectedNodeType || 'all'
@@ -527,6 +735,13 @@
 
 					$('#totalMemberCount').text(data.length);
 					console.log('회원 목록 로드 완료:', data.length, '명');
+
+					// 그리드 로드 완료 후 체크박스 이벤트 재바인딩
+					setTimeout(function() {
+						$('#selectAllMembers').prop('checked', false).prop('indeterminate', false);
+						bindCheckboxEvents();
+						updateSelectedCount();
+					}, 200);
 				} else {
 					showToast(response.message || '회원 목록을 불러오는데 실패했습니다', 'error');
 				}
@@ -535,6 +750,141 @@
 				hideGridSpinner();
 				console.error('회원 목록 로드 오류:', error);
 				showToast('회원 목록을 불러오는데 실패했습니다', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 선택된 회원 목록 가져오기
+	 */
+	function getSelectedMembers() {
+		const selectedMembers = [];
+
+		if (!memberGrid) {
+			return selectedMembers;
+		}
+
+		try {
+			const gridData = memberGrid.pqGrid('option', 'dataModel.data');
+
+			if (!gridData || !Array.isArray(gridData)) {
+				return selectedMembers;
+			}
+
+			// 체크된 각 ID에 대해 그리드에서 해당 데이터 찾기
+			checkedMemberIds.forEach(checkedMemberIdx => {
+				const memberData = gridData.find(row => {
+					const rowMemberIdx = parseInt(row.member_idx);
+					return rowMemberIdx === checkedMemberIdx;
+				});
+
+				if (memberData) {
+					selectedMembers.push(memberData);
+				}
+			});
+
+		} catch (error) {
+			console.error('getSelectedMembers 오류:', error);
+		}
+
+		return selectedMembers;
+	}
+
+	/**
+	 * 상태 변경 버튼 클릭 핸들러
+	 */
+	function handleStatusChange() {
+		const selectedMembers = getSelectedMembers();
+
+		if (selectedMembers.length === 0) {
+			showToast('상태를 변경할 회원을 선택해주세요.', 'warning');
+			return;
+		}
+
+		// 상태 변경 모달 열기
+		openStatusChangeModal(selectedMembers);
+	}
+
+	/**
+	 * 상태 변경 모달 열기
+	 */
+	function openStatusChangeModal(selectedMembers) {
+		// 선택된 회원 목록 표시
+		const memberListHtml = selectedMembers.map(member => {
+			const currentStatus = member.member_status ?
+				(STATUS_LIST.find(s => s.value === member.member_status)?.label || member.member_status) : '없음';
+			return '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+				'<div>' +
+				'<strong>' + (member.member_name || '이름 없음') + '</strong>' +
+				'<br><small class="text-muted">' + (member.org_name || '소속 없음') + '</small>' +
+				'</div>' +
+				'<span class="badge bg-secondary">' + currentStatus + '</span>' +
+				'</li>';
+		}).join('');
+
+		$('#statusChangeMemberList').html('<ul class="list-group list-group-flush">' + memberListHtml + '</ul>');
+
+		// 상태 선택 라디오 버튼 생성
+		const statusOptionsHtml = STATUS_LIST.map(status => {
+			return '<div class="form-check form-check-inline">' +
+				'<input class="form-check-input" type="radio" name="newStatus" id="status_' + status.value + '" value="' + status.value + '">' +
+				'<label class="form-check-label" for="status_' + status.value + '">' + status.label + '</label>' +
+				'</div>';
+		}).join('');
+
+		$('#statusOptions').html(statusOptionsHtml);
+
+		// 선택 개수 표시
+		$('#statusChangeCount').text(selectedMembers.length);
+
+		// 모달 열기
+		$('#statusChangeModal').modal('show');
+	}
+
+	/**
+	 * 상태 변경 실행
+	 */
+	function executeStatusChange() {
+		const newStatus = $('input[name="newStatus"]:checked').val();
+
+		if (!newStatus) {
+			showToast('변경할 상태를 선택해주세요.', 'warning');
+			return;
+		}
+
+		const memberIdxList = Array.from(checkedMemberIds);
+
+		if (memberIdxList.length === 0) {
+			showToast('상태를 변경할 회원이 없습니다.', 'warning');
+			return;
+		}
+
+		// 버튼 비활성화
+		$('#confirmStatusChangeBtn').prop('disabled', true);
+
+		$.ajax({
+			url: '/mng/mng_member/update_member_status',
+			type: 'POST',
+			data: {
+				member_idx_list: memberIdxList,
+				member_status: newStatus
+			},
+			dataType: 'json',
+			success: function(response) {
+				$('#confirmStatusChangeBtn').prop('disabled', false);
+				$('#statusChangeModal').modal('hide');
+
+				showToast(response.message, response.success ? 'success' : 'error');
+
+				if (response.success) {
+					// 회원 목록 새로고침
+					loadMemberList();
+				}
+			},
+			error: function() {
+				$('#confirmStatusChangeBtn').prop('disabled', false);
+				$('#statusChangeModal').modal('hide');
+				showToast('상태 변경 중 오류가 발생했습니다', 'error');
 			}
 		});
 	}
@@ -610,6 +960,9 @@
 	 */
 	function refreshTreeAndGrid() {
 		console.log('트리와 그리드 새로고침 시작');
+
+		// 체크된 회원 ID 초기화
+		checkedMemberIds.clear();
 
 		// 현재 선택된 정보 임시 저장
 		const currentSelectedType = selectedNodeType;
@@ -716,12 +1069,23 @@
 	}
 
 	/**
-	 * 글로벌 이벤트 바인딩
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 글로벌 이벤트 바인딩 (상태변경 버튼 추가)
 	 */
 	function bindGlobalEvents() {
 		// 새로고침 버튼
 		$('#btnRefresh').on('click', function() {
 			refreshTreeAndGrid();
+		});
+
+		// 상태 변경 버튼
+		$('#btnStatusChange').on('click', function() {
+			handleStatusChange();
+		});
+
+		// 상태 변경 확인 버튼
+		$('#confirmStatusChangeBtn').on('click', function() {
+			executeStatusChange();
 		});
 	}
 
