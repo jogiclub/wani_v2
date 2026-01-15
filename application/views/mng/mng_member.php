@@ -7,7 +7,7 @@ $this->load->view('mng/header');
 ?>
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
-
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <!-- Fancytree CSS -->
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
 
@@ -48,22 +48,24 @@ $this->load->view('mng/header');
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-6 d-flex align-items-center">
+						<div class="col-12 col-lg-4 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedNodeName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
 							<small class="ms-3 text-muted">총 <span id="totalMemberCount">0</span>명</small>
 						</div>
-						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
+
+						<div class="col-12 col-lg-4 d-flex align-items-center">
+							<!--검색영역-->
+						</div>
+						
+						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
 						
 							<small class="text-muted me-2">선택된 회원 <span id="selectedCount">0</span>명</small>
 
 							<button type="button" class="btn btn-outline-primary" id="btnStatusChange" disabled>
-								<i class="bi bi-arrow-repeat"></i> 상태변경
+								<i class="bi bi-arrow-repeat"></i> 관리tag변경
 							</button>
-
-
-
 						</div>
 					</div>
 				</div>
@@ -87,33 +89,50 @@ $this->load->view('mng/header');
 </div>
 
 
-<!-- 파일 위치: 회원관리 뷰 파일 -->
-<!-- 역할: 상태 변경 모달 -->
-
-<!-- 상태 변경 모달 -->
+<!-- 관리tag 변경 모달 -->
 <div class="modal fade" id="statusChangeModal" tabindex="-1" aria-labelledby="statusChangeModalLabel" aria-hidden="true">
 	<div class="modal-dialog modal-dialog-centered">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="statusChangeModalLabel">회원 상태 변경</h5>
+				<h5 class="modal-title" id="statusChangeModalLabel">회원 태그 변경</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
 				<div class="mb-3">
 					<label class="form-label fw-bold">선택된 회원 (<span id="statusChangeCount">0</span>명)</label>
-					<div id="statusChangeMemberList" style="max-height: 200px; overflow-y: auto;"></div>
+					<div id="statusChangeMemberList"></div>
 				</div>
 				<hr>
-				<div class="mb-3">
-					<label class="form-label fw-bold">변경할 상태 선택</label>
-					<div id="statusOptions" class="mt-2">
-						<!-- 상태 옵션이 동적으로 생성됩니다 -->
+
+				<!-- 단일 회원 모드 -->
+				<div id="singleModeSection" class="d-none">
+					<div class="mb-3">
+						<label for="statusTagSelect" class="form-label fw-bold">회원 태그</label>
+						<select class="form-select" id="statusTagSelect" name="status_tags" multiple="multiple">
+						</select>
+						<small class="text-muted">태그를 선택하거나 새로 입력할 수 있습니다.</small>
+					</div>
+				</div>
+
+				<!-- 일괄 변경 모드 -->
+				<div id="bulkModeSection" class="d-none">
+					<div class="mb-3">
+						<label for="addTagSelect" class="form-label fw-bold">추가할 회원 태그</label>
+						<select class="form-select" id="addTagSelect" name="add_tags" multiple="multiple">
+						</select>
+						<small class="text-muted">선택한 회원들에게 추가할 태그</small>
+					</div>
+					<div class="mb-3">
+						<label for="removeTagSelect" class="form-label fw-bold">삭제할 회원 태그</label>
+						<select class="form-select" id="removeTagSelect" name="remove_tags" multiple="multiple">
+						</select>
+						<small class="text-muted">선택한 회원들에게서 삭제할 태그</small>
 					</div>
 				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-primary" id="confirmStatusChangeBtn">변경</button>
+				<button type="button" class="btn btn-primary" id="confirmStatusChangeBtn">저장</button>
 			</div>
 		</div>
 	</div>
@@ -127,5 +146,7 @@ $this->load->view('mng/header');
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
 <!-- ParamQuery Grid -->
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
 <!-- 회원관리 JavaScript -->
 <script src="/assets/js/mng_member.js?<?php echo WB_VERSION; ?>"></script>

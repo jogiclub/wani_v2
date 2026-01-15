@@ -1,6 +1,6 @@
 <?php
 /**
- * 파일 위치: application/controllers/mng/Mng_member.php
+ 
  * 역할: 마스터 회원관리 컨트롤러 - 카테고리+조직 트리, 회원 목록 관리
  */
 defined('BASEPATH') or exit('No direct script access allowed');
@@ -485,14 +485,85 @@ class Mng_member extends CI_Controller
 		), JSON_UNESCAPED_UNICODE);
 	}
 
+
+
+	/**
+	 
+	 * 역할: 기존에 사용된 상태 태그 목록 조회 (AJAX)
+	 */
+	public function get_existing_status_tags()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$visible_categories = $this->get_visible_categories();
+
+		// 권한에 따른 회원의 상태 태그 조회
+		$this->db->distinct();
+		$this->db->select('m.member_status');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_org o', 'm.org_id = o.org_id');
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where('m.member_status IS NOT NULL');
+		$this->db->where('m.member_status !=', '');
+
+		if (!empty($visible_categories)) {
+			$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
+			if (!empty($category_ids)) {
+				$this->db->where_in('o.category_idx', $category_ids);
+			}
+		}
+
+		$query = $this->db->get();
+		$results = $query->result_array();
+
+		// 모든 태그 수집 (쉼표로 구분된 값 분리)
+		$all_tags = array();
+		foreach ($results as $row) {
+			if (!empty($row['member_status'])) {
+				$tags = explode(',', $row['member_status']);
+				foreach ($tags as $tag) {
+					$tag = trim($tag);
+					if ($tag !== '' && !in_array($tag, $all_tags)) {
+						$all_tags[] = $tag;
+					}
+				}
+			}
+		}
+
+		// 가나다순 정렬
+		sort($all_tags);
+
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(array(
+			'success' => true,
+			'data' => $all_tags
+		), JSON_UNESCAPED_UNICODE);
+	}
+
+
 	/**
 	 * 파일 위치: application/controllers/mng/Mng_member.php
-	 * 역할: 회원 상태 일괄 변경
+	 * 역할: 회원 상태 변경 (대량 처리 최적화)
 	 */
 	public function update_member_status()
 	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		// 실행 시간 제한 늘리기
+		set_time_limit(300);
+
 		$member_idx_list = $this->input->post('member_idx_list');
-		$member_status = $this->input->post('member_status');
+		$mode = $this->input->post('mode');
+
+		// 문자열로 전달된 경우 배열로 변환
+		if (is_string($member_idx_list)) {
+			$member_idx_list = json_decode($member_idx_list, true);
+		}
 
 		if (empty($member_idx_list) || !is_array($member_idx_list)) {
 			echo json_encode(array(
@@ -502,40 +573,92 @@ class Mng_member extends CI_Controller
 			return;
 		}
 
-		// 허용된 상태값 검증
-		$allowed_statuses = array('enlisted', 'assigned', 'settled', 'nurturing', 'dispatched');
-		if (!in_array($member_status, $allowed_statuses)) {
-			echo json_encode(array(
-				'success' => false,
-				'message' => '유효하지 않은 상태값입니다.'
+		$affected_count = 0;
+
+		if ($mode === 'replace') {
+			// 단일 모드: 태그 전체 교체 (일괄 UPDATE)
+			$member_status = trim($this->input->post('member_status'));
+
+			$this->db->where_in('member_idx', $member_idx_list);
+			$this->db->update('wb_member', array(
+				'member_status' => $member_status,
+				'modi_date' => date('Y-m-d H:i:s')
 			));
-			return;
-		}
 
-		$this->load->model('Member_model');
+			$affected_count = count($member_idx_list);
 
-		$success_count = 0;
-		$error_count = 0;
+		} else if ($mode === 'bulk') {
+			// 일괄 모드: 태그 추가/삭제
+			$add_tags = $this->input->post('add_tags');
+			$remove_tags = $this->input->post('remove_tags');
 
-		foreach ($member_idx_list as $member_idx) {
-			$result = $this->Member_model->update_member_status($member_idx, $member_status);
-			if ($result) {
-				$success_count++;
-			} else {
-				$error_count++;
+			if (is_string($add_tags)) {
+				$add_tags = json_decode($add_tags, true);
+			}
+			if (is_string($remove_tags)) {
+				$remove_tags = json_decode($remove_tags, true);
+			}
+
+			if (!is_array($add_tags)) $add_tags = array();
+			if (!is_array($remove_tags)) $remove_tags = array();
+
+			// 대량 처리를 위해 청크 단위로 분할
+			$chunks = array_chunk($member_idx_list, 100);
+
+			foreach ($chunks as $chunk) {
+				// 현재 청크의 회원 상태 일괄 조회
+				$this->db->select('member_idx, member_status');
+				$this->db->where_in('member_idx', $chunk);
+				$query = $this->db->get('wb_member');
+				$members = $query->result_array();
+
+				// 각 회원별 태그 처리
+				foreach ($members as $member) {
+					$member_idx = $member['member_idx'];
+
+					// 현재 태그 파싱
+					$current_tags = array();
+					if (!empty($member['member_status'])) {
+						$current_tags = array_map('trim', explode(',', $member['member_status']));
+						$current_tags = array_filter($current_tags, function($v) { return $v !== ''; });
+					}
+
+					// 삭제할 태그 제거
+					foreach ($remove_tags as $tag) {
+						$tag = trim($tag);
+						$key = array_search($tag, $current_tags);
+						if ($key !== false) {
+							unset($current_tags[$key]);
+						}
+					}
+
+					// 추가할 태그 추가 (중복 방지)
+					foreach ($add_tags as $tag) {
+						$tag = trim($tag);
+						if ($tag !== '' && !in_array($tag, $current_tags)) {
+							$current_tags[] = $tag;
+						}
+					}
+
+					// 업데이트
+					$new_status = implode(',', array_values($current_tags));
+
+					$this->db->where('member_idx', $member_idx);
+					$this->db->update('wb_member', array(
+						'member_status' => $new_status,
+						'modi_date' => date('Y-m-d H:i:s')
+					));
+
+					$affected_count++;
+				}
 			}
 		}
 
-		if ($success_count > 0) {
-			echo json_encode(array(
-				'success' => true,
-				'message' => $success_count . '명의 상태가 변경되었습니다.'
-			));
-		} else {
-			echo json_encode(array(
-				'success' => false,
-				'message' => '상태 변경에 실패했습니다.'
-			));
-		}
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(array(
+			'success' => true,
+			'message' => $affected_count . '명의 회원 상태가 변경되었습니다.'
+		), JSON_UNESCAPED_UNICODE);
 	}
+
 }

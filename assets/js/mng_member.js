@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * 파일 위치: assets/js/mng_member.js
+ 
  * 역할: 마스터 회원관리 화면의 메인 JavaScript 파일
  */
 
@@ -15,15 +15,8 @@
 	let selectedNodeName = '';
 	let memberOffcanvas = null;
 	let checkedMemberIds = new Set();
+	let existingStatusTags = [];
 
-	// 상태 목록 정의
-	const STATUS_LIST = [
-		{ value: 'enlisted', label: '입소' },
-		{ value: 'assigned', label: '자대' },
-		{ value: 'settled', label: '정착' },
-		{ value: 'nurturing', label: '양육' },
-		{ value: 'dispatched', label: '파송' }
-	];
 
 	// DOM 준비 완료 시 초기화
 	$(document).ready(function() {
@@ -236,7 +229,7 @@
 	}
 
 	/**
-	 * 선택된 트리 노드 상태를 localStorage에 저장
+	 * 선택된 트리 노드 관리tag를 localStorage에 저장
 	 */
 	function saveSelectedTreeNode(nodeData) {
 		try {
@@ -248,14 +241,14 @@
 			};
 
 			localStorage.setItem('mng_member_selected_tree_node', JSON.stringify(treeState));
-			console.log('트리 선택 상태 저장:', treeState);
+			console.log('트리 선택 관리tag 저장:', treeState);
 		} catch (error) {
-			console.error('트리 상태 저장 실패:', error);
+			console.error('트리 관리tag 저장 실패:', error);
 		}
 	}
 
 	/**
-	 * localStorage에서 트리 선택 상태 불러오기
+	 * localStorage에서 트리 선택 관리tag 불러오기
 	 */
 	function loadSelectedTreeNode() {
 		try {
@@ -271,11 +264,11 @@
 					return null;
 				}
 
-				console.log('저장된 트리 상태 로드:', treeState);
+				console.log('저장된 트리 관리tag 로드:', treeState);
 				return treeState;
 			}
 		} catch (error) {
-			console.error('트리 상태 로드 실패:', error);
+			console.error('트리 관리tag 로드 실패:', error);
 		}
 
 		return null;
@@ -338,7 +331,7 @@
 			selectedNodeName = '미분류';
 		}
 
-		// 트리 선택 상태 저장
+		// 트리 선택 관리tag 저장
 		saveSelectedTreeNode(nodeData);
 
 		updateSelectedTitle();
@@ -360,7 +353,7 @@
 	}
 
 	/**
-	 * 파일 위치: assets/js/mng_member.js
+	 
 	 * 역할: ParamQuery Grid 초기화 (체크박스 선택 기능 포함)
 	 */
 	function initParamQueryGrid() {
@@ -404,9 +397,9 @@
 	}
 
 	/**
-	 * 파일 위치: assets/js/mng_member.js
+	 
 	 * 역할: 그리드 컬럼 모델 생성
-	 * 순서: 체크박스, 상태, 사진, 이름, 소속조직, 카테고리, 연락처, 직위/직분, 직책, 성별, 생년월일, 주소, 상세주소, 등록일, 수정일
+	 * 순서: 체크박스, 관리tag, 사진, 이름, 소속조직, 카테고리, 연락처, 직위/직분, 직책, 성별, 생년월일, 주소, 상세주소, 등록일, 수정일
 	 */
 	function createColumnModel() {
 		return [
@@ -428,8 +421,8 @@
 			},
 			{
 				dataIndx: 'member_status',
-				title: '상태',
-				width: 70,
+				title: '관리tag',
+				width: 150,
 				align: 'center',
 				frozen: true,
 				render: function(ui) {
@@ -437,31 +430,27 @@
 					if (!status) {
 						return '<span class="badge bg-light text-dark">-</span>';
 					}
-					const statusObj = STATUS_LIST.find(s => s.value === status);
-					if (statusObj) {
-						let badgeClass = 'bg-secondary';
-						switch(status) {
-							case 'enlisted': badgeClass = 'bg-info'; break;
-							case 'assigned': badgeClass = 'bg-primary'; break;
-							case 'settled': badgeClass = 'bg-success'; break;
-							case 'nurturing': badgeClass = 'bg-warning text-dark'; break;
-							case 'dispatched': badgeClass = 'bg-danger'; break;
-						}
-						return '<span class="badge ' + badgeClass + '">' + statusObj.label + '</span>';
+
+					// 쉼표로 구분된 태그 파싱
+					const tags = status.split(',').map(function(tag) {
+						return tag.trim();
+					}).filter(function(tag) {
+						return tag !== '';
+					});
+
+					if (tags.length === 0) {
+						return '<span class="badge bg-light text-dark">-</span>';
 					}
-					return '<span class="badge bg-light text-dark">' + status + '</span>';
+
+					// 태그별 색상 지정 (해시 기반)
+					const badgeHtml = tags.map(function(tag) {
+						const colorStyle = getTagColorClass(tag);
+						return '<span class="badge me-1" style="' + colorStyle + '">' + tag + '</span>';
+					}).join('');
+
+					return badgeHtml;
 				},
-				filter: {
-					type: 'select',
-					options: [
-						{ '': '전체' },
-						{ 'enlisted': '입소' },
-						{ 'assigned': '자대' },
-						{ 'settled': '정착' },
-						{ 'nurturing': '양육' },
-						{ 'dispatched': '파송' }
-					]
-				}
+				filter: { type: 'textbox', condition: 'contain' }
 			},
 			{
 				dataIndx: 'photo_url',
@@ -590,7 +579,7 @@
 	}
 
 	/**
-	 * 셀 클릭 처리
+	 * 역할: 셀 클릭 처리 - 관리tag 클릭 제거, 조직 링크만 처리
 	 */
 	function handleCellClick(event, ui) {
 		const target = $(event.originalEvent.target);
@@ -619,9 +608,8 @@
 		}
 	}
 
-
 	/**
-	 * 파일 위치: assets/js/mng_member.js
+	 
 	 * 역할: 조직 대시보드로 이동 (새 탭) - 조직관리 바로가기와 동일한 로직
 	 */
 	function goToOrgDashboard(orgId, orgName) {
@@ -711,7 +699,7 @@
 	}
 
 	/**
-	 * 전체 선택 체크박스 상태 업데이트
+	 * 전체 선택 체크박스 관리tag 업데이트
 	 */
 	function updateSelectAllCheckboxState() {
 		const totalCheckboxes = $('.member-checkbox').length;
@@ -731,7 +719,7 @@
 	}
 
 	/**
-	 * 체크박스 상태 업데이트
+	 * 체크박스 관리tag 업데이트
 	 */
 	function updateCheckboxStates() {
 		updateSelectAllCheckboxState();
@@ -745,7 +733,7 @@
 		const count = checkedMemberIds.size;
 		$('#selectedCount').text(count);
 
-		// 버튼 상태 업데이트
+		// 버튼 관리tag 업데이트
 		const isDisabled = count === 0;
 		$('#btnStatusChange').prop('disabled', isDisabled);
 	}
@@ -839,67 +827,111 @@
 	}
 
 	/**
-	 * 상태 변경 버튼 클릭 핸들러
+	 * 관리tag 변경 버튼 클릭 핸들러
 	 */
 	function handleStatusChange() {
 		const selectedMembers = getSelectedMembers();
 
 		if (selectedMembers.length === 0) {
-			showToast('상태를 변경할 회원을 선택해주세요.', 'warning');
+			showToast('관리tag를 변경할 회원을 선택해주세요.', 'warning');
 			return;
 		}
 
-		// 상태 변경 모달 열기
+		// 관리tag 변경 모달 열기
 		openStatusChangeModal(selectedMembers);
 	}
 
 	/**
-	 * 상태 변경 모달 열기
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 관리tag 변경 모달 열기 - 단일/일괄 모드에 따라 다른 UI 표시
 	 */
 	function openStatusChangeModal(selectedMembers) {
+		const count = selectedMembers.length;
+		const isSingleMode = count === 1;
+
 		// 선택된 회원 목록 표시
-		const memberListHtml = selectedMembers.map(member => {
-			const currentStatus = member.member_status ?
-				(STATUS_LIST.find(s => s.value === member.member_status)?.label || member.member_status) : '없음';
-			return '<li class="list-group-item d-flex justify-content-between align-items-center">' +
-				'<div>' +
+		let memberListHtml = '';
+
+		if (isSingleMode) {
+			// 단일 회원: 상세 정보 표시
+			const member = selectedMembers[0];
+			memberListHtml = '<div class="p-2">' +
 				'<strong>' + (member.member_name || '이름 없음') + '</strong>' +
 				'<br><small class="text-muted">' + (member.org_name || '소속 없음') + '</small>' +
-				'</div>' +
-				'<span class="badge bg-secondary">' + currentStatus + '</span>' +
-				'</li>';
-		}).join('');
-
-		$('#statusChangeMemberList').html('<ul class="list-group list-group-flush">' + memberListHtml + '</ul>');
-
-		// 상태 선택 라디오 버튼 생성
-		const statusOptionsHtml = STATUS_LIST.map(status => {
-			return '<div class="form-check form-check-inline">' +
-				'<input class="form-check-input" type="radio" name="newStatus" id="status_' + status.value + '" value="' + status.value + '">' +
-				'<label class="form-check-label" for="status_' + status.value + '">' + status.label + '</label>' +
 				'</div>';
-		}).join('');
+		} else {
+			// 복수 회원: 요약 정보 표시
+			const firstMember = selectedMembers[0];
+			const otherCount = count - 1;
 
-		$('#statusOptions').html(statusOptionsHtml);
+			// 고유 조직 목록 추출
+			const uniqueOrgs = [...new Set(selectedMembers.map(m => m.org_name).filter(Boolean))];
+			const orgText = uniqueOrgs.length === 1
+				? uniqueOrgs[0]
+				: uniqueOrgs[0] + ' 외 ' + (uniqueOrgs.length - 1) + '개';
 
-		// 선택 개수 표시
-		$('#statusChangeCount').text(selectedMembers.length);
+			memberListHtml = '<div class="p-2">' +
+				'<strong>' + (firstMember.member_name || '이름 없음') + '</strong> 외 ' + otherCount + '명' +
+				'<br><small class="text-muted">' + orgText + '</small>' +
+				'</div>';
+		}
 
-		// 모달 열기
+		$('#statusChangeMemberList').html(memberListHtml);
+		$('#statusChangeCount').text(count);
+
+		// 모드에 따라 섹션 표시/숨김
+		if (isSingleMode) {
+			$('#singleModeSection').removeClass('d-none');
+			$('#bulkModeSection').addClass('d-none');
+
+			// 현재 태그 파싱
+			const member = selectedMembers[0];
+			let currentTags = [];
+			if (member.member_status) {
+				currentTags = member.member_status.split(',').map(function(tag) {
+					return tag.trim();
+				}).filter(function(tag) {
+					return tag !== '';
+				});
+			}
+
+			// 기존 태그 목록 로드 후 Select2 초기화
+			loadExistingStatusTags().then(function() {
+				initializeSingleModeSelect(currentTags);
+			});
+		} else {
+			$('#singleModeSection').addClass('d-none');
+			$('#bulkModeSection').removeClass('d-none');
+
+			// 선택된 회원들의 모든 태그 수집 (삭제용)
+			const allCurrentTags = new Set();
+			selectedMembers.forEach(function(member) {
+				if (member.member_status) {
+					member.member_status.split(',').forEach(function(tag) {
+						const trimmed = tag.trim();
+						if (trimmed) allCurrentTags.add(trimmed);
+					});
+				}
+			});
+
+			// 기존 태그 목록 로드 후 Select2 초기화
+			loadExistingStatusTags().then(function() {
+				initializeBulkModeSelect(Array.from(allCurrentTags));
+			});
+		}
+
+		// 모드 저장
+		$('#statusChangeModal').data('mode', isSingleMode ? 'single' : 'bulk');
 		$('#statusChangeModal').modal('show');
 	}
 
+
 	/**
-	 * 상태 변경 실행
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 상태 변경 실행 - 대량 처리를 위해 JSON 문자열로 전송
 	 */
 	function executeStatusChange() {
-		const newStatus = $('input[name="newStatus"]:checked').val();
-
-		if (!newStatus) {
-			showToast('변경할 상태를 선택해주세요.', 'warning');
-			return;
-		}
-
+		const mode = $('#statusChangeModal').data('mode');
 		const memberIdxList = Array.from(checkedMemberIds);
 
 		if (memberIdxList.length === 0) {
@@ -907,32 +939,59 @@
 			return;
 		}
 
-		// 버튼 비활성화
-		$('#confirmStatusChangeBtn').prop('disabled', true);
+		let requestData = {
+			member_idx_list: JSON.stringify(memberIdxList),
+			mode: mode
+		};
+
+		if (mode === 'single') {
+			// 단일 모드: 태그 전체 교체
+			const selectedTags = $('#statusTagSelect').val() || [];
+			requestData.member_status = selectedTags.join(',');
+		} else {
+			// 일괄 모드: 태그 추가/삭제
+			const addTags = $('#addTagSelect').val() || [];
+			const removeTags = $('#removeTagSelect').val() || [];
+
+			if (addTags.length === 0 && removeTags.length === 0) {
+				showToast('추가하거나 삭제할 태그를 선택해주세요.', 'warning');
+				return;
+			}
+
+			requestData.add_tags = JSON.stringify(addTags);
+			requestData.remove_tags = JSON.stringify(removeTags);
+		}
+
+		// 버튼 비활성화 및 로딩 표시
+		const $btn = $('#confirmStatusChangeBtn');
+		const originalText = $btn.text();
+		$btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>처리 중...');
 
 		$.ajax({
 			url: '/mng/mng_member/update_member_status',
 			type: 'POST',
-			data: {
-				member_idx_list: memberIdxList,
-				member_status: newStatus
-			},
+			data: requestData,
 			dataType: 'json',
+			timeout: 300000, // 5분 타임아웃
 			success: function(response) {
-				$('#confirmStatusChangeBtn').prop('disabled', false);
+				$btn.prop('disabled', false).text(originalText);
 				$('#statusChangeModal').modal('hide');
 
 				showToast(response.message, response.success ? 'success' : 'error');
 
 				if (response.success) {
-					// 회원 목록 새로고침
 					loadMemberList();
 				}
 			},
-			error: function() {
-				$('#confirmStatusChangeBtn').prop('disabled', false);
+			error: function(xhr, status, error) {
+				$btn.prop('disabled', false).text(originalText);
 				$('#statusChangeModal').modal('hide');
-				showToast('상태 변경 중 오류가 발생했습니다', 'error');
+
+				if (status === 'timeout') {
+					showToast('처리 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.', 'error');
+				} else {
+					showToast('상태 변경 중 오류가 발생했습니다', 'error');
+				}
 			}
 		});
 	}
@@ -1053,8 +1112,8 @@
 	}
 
 	/**
-	 * 파일 위치: assets/js/mng_member.js
-	 * 역할: 글로벌 이벤트 바인딩 (상태변경 버튼 추가)
+	 
+	 * 역할: 글로벌 이벤트 바인딩 (관리tag변경 버튼 추가)
 	 */
 	function bindGlobalEvents() {
 		// 새로고침 버튼
@@ -1062,12 +1121,12 @@
 			refreshTreeAndGrid();
 		});
 
-		// 상태 변경 버튼
+		// 관리tag 변경 버튼
 		$('#btnStatusChange').on('click', function() {
 			handleStatusChange();
 		});
 
-		// 상태 변경 확인 버튼
+		// 관리tag 변경 확인 버튼
 		$('#confirmStatusChangeBtn').on('click', function() {
 			executeStatusChange();
 		});
@@ -1090,6 +1149,348 @@
 
 	function hideGridSpinner() {
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
+	}
+
+	/**
+	 
+	 * 역할: 태그 문자열 기반으로 일관된 색상 클래스 반환
+	 */
+	function getTagColorClass(tag) {
+		const colors = [
+			'bg-primary',
+			'bg-success',
+			'bg-info',
+			'bg-warning text-dark',
+			'bg-danger',
+			'bg-secondary',
+			'bg-dark'
+		];
+
+		// 문자열 해시 계산
+		let hash = 0;
+		for (let i = 0; i < tag.length; i++) {
+			hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+		}
+
+		const index = Math.abs(hash) % colors.length;
+		return colors[index];
+	}
+
+
+	/**
+	 * 역할: 기존에 사용된 관리tag 태그 목록 로드
+	 */
+	function loadExistingStatusTags() {
+		return new Promise(function(resolve, reject) {
+			$.ajax({
+				url: '/mng/mng_member/get_existing_status_tags',
+				type: 'GET',
+				dataType: 'json',
+				success: function(response) {
+					if (response && response.success && response.data) {
+						existingStatusTags = response.data;
+					}
+					resolve();
+				},
+				error: function() {
+					console.warn('기존 관리tag 태그 목록 로드 실패');
+					resolve();
+				}
+			});
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 관리tag 태그 Select2 초기화
+	 */
+	function initializeStatusTagSelect(currentTags) {
+		// 기존 Select2 인스턴스 제거
+		if ($('#statusTagSelect').hasClass('select2-hidden-accessible')) {
+			$('#statusTagSelect').select2('destroy');
+		}
+
+		// 옵션 초기화
+		$('#statusTagSelect').empty();
+
+		// 기존 태그 목록 추가
+		existingStatusTags.forEach(function(tag) {
+			$('#statusTagSelect').append('<option value="' + tag + '">' + tag + '</option>');
+		});
+
+		// Select2 초기화
+		$('#statusTagSelect').select2({
+			theme: 'bootstrap-5',
+			width: '100%',
+			placeholder: '관리tag 태그를 선택하거나 입력하세요',
+			allowClear: true,
+			tags: true,
+			tokenSeparators: [','],
+			dropdownParent: $('#statusChangeModal'),
+			createTag: function(params) {
+				const term = $.trim(params.term);
+				if (term === '' || term.length < 1) {
+					return null;
+				}
+				return {
+					id: term,
+					text: term,
+					newTag: true
+				};
+			},
+			templateResult: function(tag) {
+				if (tag.newTag) {
+					return $('<span class="text-primary"><i class="bi bi-plus-circle me-1"></i>' + tag.text + ' (새 태그)</span>');
+				}
+				return tag.text;
+			},
+			templateSelection: function(tag) {
+				return tag.text;
+			}
+		});
+
+		// 현재 태그 설정
+		if (currentTags && currentTags.length > 0) {
+			currentTags.forEach(function(tag) {
+				// 옵션이 없으면 추가
+				if ($('#statusTagSelect option[value="' + tag + '"]').length === 0) {
+					$('#statusTagSelect').append('<option value="' + tag + '" selected>' + tag + '</option>');
+				}
+			});
+			$('#statusTagSelect').val(currentTags).trigger('change');
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 개별 회원 관리tag 수정 모달 열기
+	 */
+	function openSingleMemberStatusModal(memberIdx) {
+		// 그리드에서 회원 정보 찾기
+		const gridData = memberGrid.pqGrid('option', 'dataModel.data');
+		const memberData = gridData.find(function(row) {
+			return parseInt(row.member_idx) === parseInt(memberIdx);
+		});
+
+		if (!memberData) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		// 선택된 회원 목록 표시 (1명)
+		const memberListHtml = '<ul class="list-group list-group-flush">' +
+			'<li class="list-group-item d-flex justify-content-between align-items-center">' +
+			'<div>' +
+			'<strong>' + (memberData.member_name || '이름 없음') + '</strong>' +
+			'<br><small class="text-muted">' + (memberData.org_name || '소속 없음') + '</small>' +
+			'</div>' +
+			'</li></ul>';
+
+		$('#statusChangeMemberList').html(memberListHtml);
+		$('#statusChangeCount').text('1');
+
+		// 현재 관리tag 태그 파싱
+		let currentTags = [];
+		if (memberData.member_status) {
+			currentTags = memberData.member_status.split(',').map(function(tag) {
+				return tag.trim();
+			}).filter(function(tag) {
+				return tag !== '';
+			});
+		}
+
+		// 기존 태그 목록 로드 후 Select2 초기화
+		loadExistingStatusTags().then(function() {
+			initializeStatusTagSelect(currentTags);
+
+			// 단일 회원 모드 표시
+			$('#statusChangeModal').data('mode', 'single');
+			$('#statusChangeModal').data('member-idx', memberIdx);
+			$('#statusChangeModal').modal('show');
+		});
+	}
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 단일 회원 모드 Select2 초기화
+	 */
+	function initializeSingleModeSelect(currentTags) {
+		// 기존 Select2 인스턴스 제거
+		if ($('#statusTagSelect').hasClass('select2-hidden-accessible')) {
+			$('#statusTagSelect').select2('destroy');
+		}
+
+		// 옵션 초기화
+		$('#statusTagSelect').empty();
+
+		// 기존 태그 목록 추가
+		existingStatusTags.forEach(function(tag) {
+			$('#statusTagSelect').append('<option value="' + tag + '">' + tag + '</option>');
+		});
+
+		// Select2 초기화
+		$('#statusTagSelect').select2({
+			width: '100%',
+			placeholder: '태그를 선택하거나 입력하세요',
+			allowClear: true,
+			tags: true,
+			tokenSeparators: [','],
+			dropdownParent: $('#statusChangeModal'),
+			createTag: function(params) {
+				const term = $.trim(params.term);
+				if (term === '' || term.length < 1) {
+					return null;
+				}
+				return {
+					id: term,
+					text: term,
+					newTag: true
+				};
+			},
+			templateResult: function(tag) {
+				if (tag.newTag) {
+					return $('<span class="text-primary"><i class="bi bi-plus-circle me-1"></i>' + tag.text + ' (새 태그)</span>');
+				}
+				return tag.text;
+			},
+			templateSelection: function(tag) {
+				return tag.text;
+			}
+		});
+
+		// 현재 태그 설정
+		if (currentTags && currentTags.length > 0) {
+			currentTags.forEach(function(tag) {
+				if ($('#statusTagSelect option[value="' + tag + '"]').length === 0) {
+					$('#statusTagSelect').append('<option value="' + tag + '" selected>' + tag + '</option>');
+				}
+			});
+			$('#statusTagSelect').val(currentTags).trigger('change');
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 일괄 변경 모드 Select2 초기화
+	 */
+	function initializeBulkModeSelect(currentMemberTags) {
+		// 추가 태그 Select2 초기화
+		if ($('#addTagSelect').hasClass('select2-hidden-accessible')) {
+			$('#addTagSelect').select2('destroy');
+		}
+		$('#addTagSelect').empty();
+
+		existingStatusTags.forEach(function(tag) {
+			$('#addTagSelect').append('<option value="' + tag + '">' + tag + '</option>');
+		});
+
+		$('#addTagSelect').select2({
+			width: '100%',
+			placeholder: '추가할 태그 선택 또는 입력',
+			allowClear: true,
+			tags: true,
+			tokenSeparators: [','],
+			dropdownParent: $('#statusChangeModal'),
+			createTag: function(params) {
+				const term = $.trim(params.term);
+				if (term === '' || term.length < 1) {
+					return null;
+				}
+				return {
+					id: term,
+					text: term,
+					newTag: true
+				};
+			},
+			templateResult: function(tag) {
+				if (tag.newTag) {
+					return $('<span class="text-primary"><i class="bi bi-plus-circle me-1"></i>' + tag.text + ' (새 태그)</span>');
+				}
+				return tag.text;
+			},
+			templateSelection: function(tag) {
+				return tag.text;
+			}
+		});
+
+		// 삭제 태그 Select2 초기화 (선택된 회원들의 현재 태그만 표시)
+		if ($('#removeTagSelect').hasClass('select2-hidden-accessible')) {
+			$('#removeTagSelect').select2('destroy');
+		}
+		$('#removeTagSelect').empty();
+
+		currentMemberTags.forEach(function(tag) {
+			$('#removeTagSelect').append('<option value="' + tag + '">' + tag + '</option>');
+		});
+
+		$('#removeTagSelect').select2({
+			width: '100%',
+			placeholder: '삭제할 태그 선택',
+			allowClear: true,
+			tags: false,
+			dropdownParent: $('#statusChangeModal')
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 태그 문자열 기반으로 일관된 색상 클래스 반환 (30가지 색상)
+	 */
+	function getTagColorClass(tag) {
+		const colors = [
+			// 파란 계열
+			'background-color: #2563eb; color: #fff;',  // 파랑
+			'background-color: #3b82f6; color: #fff;',  // 밝은 파랑
+			'background-color: #1d4ed8; color: #fff;',  // 진한 파랑
+			'background-color: #0ea5e9; color: #fff;',  // 하늘색
+			'background-color: #06b6d4; color: #fff;',  // 청록
+
+			// 초록 계열
+			'background-color: #16a34a; color: #fff;',  // 초록
+			'background-color: #22c55e; color: #fff;',  // 밝은 초록
+			'background-color: #15803d; color: #fff;',  // 진한 초록
+			'background-color: #84cc16; color: #fff;',  // 라임
+			'background-color: #10b981; color: #fff;',  // 에메랄드
+
+			// 빨강/주황 계열
+			'background-color: #dc2626; color: #fff;',  // 빨강
+			'background-color: #ef4444; color: #fff;',  // 밝은 빨강
+			'background-color: #f97316; color: #fff;',  // 주황
+			'background-color: #ea580c; color: #fff;',  // 진한 주황
+			'background-color: #f59e0b; color: #000;',  // 호박색
+
+			// 보라/핑크 계열
+			'background-color: #7c3aed; color: #fff;',  // 보라
+			'background-color: #8b5cf6; color: #fff;',  // 밝은 보라
+			'background-color: #a855f7; color: #fff;',  // 퍼플
+			'background-color: #d946ef; color: #fff;',  // 마젠타
+			'background-color: #ec4899; color: #fff;',  // 핑크
+
+			// 노랑/갈색 계열
+			'background-color: #eab308; color: #000;',  // 노랑
+			'background-color: #ca8a04; color: #fff;',  // 진한 노랑
+			'background-color: #a16207; color: #fff;',  // 갈색
+			'background-color: #92400e; color: #fff;',  // 진한 갈색
+			'background-color: #78716c; color: #fff;',  // 웜그레이
+
+			// 기타
+			'background-color: #475569; color: #fff;',  // 슬레이트
+			'background-color: #64748b; color: #fff;',  // 밝은 슬레이트
+			'background-color: #0f766e; color: #fff;',  // 틸
+			'background-color: #be185d; color: #fff;',  // 로즈
+			'background-color: #4f46e5; color: #fff;'   // 인디고
+		];
+
+		// 문자열 해시 계산
+		let hash = 0;
+		for (let i = 0; i < tag.length; i++) {
+			hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+			hash = hash & hash;
+		}
+
+		const index = Math.abs(hash) % colors.length;
+		return colors[index];
 	}
 
 })();
