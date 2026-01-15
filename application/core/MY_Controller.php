@@ -28,27 +28,21 @@ class MY_Controller extends CI_Controller
 	private function check_user_has_organization()
 	{
 		$user_id = $this->session->userdata('user_id');
-		$master_yn = $this->session->userdata('master_yn');
 
-		// 마스터 사용자의 경우 managed_areas 확인
+		// DB에서 사용자 정보 조회하여 master_yn 확인
 		$user = $this->User_model->get_user_by_id($user_id);
-		$visible_categories = array();
-		if ($master_yn === 'Y' && !empty($user['managed_areas'])) {
-			$managed_areas = json_decode($user['managed_areas'], true);
-			if (is_array($managed_areas) && !empty($managed_areas)) {
-				$visible_categories = $managed_areas;
-			}
+		$master_yn = isset($user['master_yn']) ? $user['master_yn'] : 'N';
+
+		// 세션의 master_yn 값이 DB와 다르면 동기화
+		if ($this->session->userdata('master_yn') !== $master_yn) {
+			$this->session->set_userdata('master_yn', $master_yn);
 		}
 
-		// 조직 목록 조회
-		if ($master_yn === "N") {
-			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+		// 조직 목록 조회 (Org_model 내부에서 카테고리 필터링 처리)
+		if ($master_yn === 'Y') {
+			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
 		} else {
-			if (!empty($visible_categories)) {
-				$user_orgs = $this->Org_model->get_user_orgs_master_filtered($user_id, $visible_categories);
-			} else {
-				$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
-			}
+			$user_orgs = $this->Org_model->get_user_orgs($user_id);
 		}
 
 		// 조직이 없으면 login으로 리다이렉트
@@ -64,38 +58,29 @@ class MY_Controller extends CI_Controller
 	protected function prepare_header_data()
 	{
 		$user_id = $this->session->userdata('user_id');
-		$master_yn = $this->session->userdata('master_yn');
 
 		// 사용자 정보 로드
 		$this->load->model('User_model');
 		$user = $this->User_model->get_user_by_id($user_id);
 
+		// DB에서 master_yn 값 직접 사용 (세션 값 대신)
+		$master_yn = isset($user['master_yn']) ? $user['master_yn'] : 'N';
+
 		$data = array();
 		$data['user'] = $user;
+		$data['is_master'] = $master_yn;
 
-		// 마스터 사용자의 경우 managed_areas 확인
-		$visible_categories = array();
-		if ($master_yn === 'Y' && !empty($user['managed_areas'])) {
-			$managed_areas = json_decode($user['managed_areas'], true);
-			if (is_array($managed_areas) && !empty($managed_areas)) {
-				$visible_categories = $managed_areas;
-			}
-		}
-
-		// 조직 목록 조회
+		// 조직 목록 조회 (Org_model 내부에서 카테고리 필터링 처리)
 		$this->load->model('Org_model');
-		if ($master_yn === "N") {
-			$user_orgs = $this->Org_model->get_user_orgs($user_id);
+		if ($master_yn === 'Y') {
+			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
 		} else {
-			// 마스터인 경우 카테고리 필터링 적용
-			if (!empty($visible_categories)) {
-				$user_orgs = $this->Org_model->get_user_orgs_master_filtered($user_id, $visible_categories);
-			} else {
-				$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
-			}
+			$user_orgs = $this->Org_model->get_user_orgs($user_id);
 		}
 
 		$data['user_orgs'] = $user_orgs;
+
+
 
 		// 현재 선택된 조직 확인
 		$current_org_id = $this->get_current_org_id($user_orgs);
@@ -108,7 +93,7 @@ class MY_Controller extends CI_Controller
 				}
 			}
 
-			if (!isset($data['current_org'])) {
+			if (!isset($data['current_org']) && !empty($user_orgs)) {
 				$data['current_org'] = $user_orgs[0];
 				$this->input->set_cookie('activeOrg', $user_orgs[0]['org_id'], 86400);
 			}
@@ -195,12 +180,15 @@ class MY_Controller extends CI_Controller
 	protected function check_org_access($org_id)
 	{
 		$user_id = $this->session->userdata('user_id');
-		$master_yn = $this->session->userdata('master_yn');
 
-		if ($master_yn === "N") {
-			$user_orgs = $this->Org_model->get_user_orgs($user_id);
-		} else {
+		// DB에서 master_yn 확인
+		$user = $this->User_model->get_user_by_id($user_id);
+		$master_yn = isset($user['master_yn']) ? $user['master_yn'] : 'N';
+
+		if ($master_yn === 'Y') {
 			$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
+		} else {
+			$user_orgs = $this->Org_model->get_user_orgs($user_id);
 		}
 
 		foreach ($user_orgs as $org) {
@@ -243,18 +231,16 @@ class MY_Controller extends CI_Controller
 		// 3순위: 사용자의 첫 번째 조직 사용
 		if (!$org_id) {
 			$user_id = $this->session->userdata('user_id');
-			$master_yn = $this->session->userdata('master_yn');
 
 			if ($user_id) {
-				// User_management_model 사용
-				if (!isset($this->User_management_model)) {
-					$this->load->model('User_management_model');
-				}
+				// DB에서 master_yn 확인
+				$user = $this->User_model->get_user_by_id($user_id);
+				$master_yn = isset($user['master_yn']) ? $user['master_yn'] : 'N';
 
-				if ($master_yn === "N") {
-					$user_orgs = $this->User_management_model->get_user_orgs($user_id);
+				if ($master_yn === 'Y') {
+					$user_orgs = $this->Org_model->get_user_orgs_master($user_id);
 				} else {
-					$user_orgs = $this->User_management_model->get_user_orgs_master($user_id);
+					$user_orgs = $this->Org_model->get_user_orgs($user_id);
 				}
 
 				if (!empty($user_orgs)) {
@@ -277,7 +263,10 @@ class MY_Controller extends CI_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
-		$master_yn = $this->session->userdata('master_yn');
+
+		// DB에서 master_yn 확인
+		$user = $this->User_model->get_user_by_id($user_id);
+		$master_yn = isset($user['master_yn']) ? $user['master_yn'] : 'N';
 
 		// 마스터 사용자는 모든 메뉴 접근 가능
 		if ($master_yn === 'Y') {
