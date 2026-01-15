@@ -52,18 +52,18 @@ $this->load->view('mng/header');
 							<h5 class="mb-0 text-truncate" id="selectedNodeName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
+							<small class="ms-3 text-muted">총 <span id="totalMemberCount">0</span>명</small>
 						</div>
 						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
+						
+							<small class="text-muted me-2">선택된 회원 <span id="selectedCount">0</span>명</small>
 
 							<button type="button" class="btn btn-outline-primary" id="btnStatusChange" disabled>
-								<i class="bi bi-arrow-repeat"></i> 상태변경 (<span id="selectedCount">0</span>)
+								<i class="bi bi-arrow-repeat"></i> 상태변경
 							</button>
 
 
-							<small class="text-muted">총 <span id="totalMemberCount">0</span>명</small>
-							<button type="button" class="btn btn-sm btn-outline-secondary" id="btnRefresh">
-								<i class="bi bi-arrow-clockwise"></i> 새로고침
-							</button>
+
 						</div>
 					</div>
 				</div>
@@ -81,79 +81,6 @@ $this->load->view('mng/header');
 					<!-- ParamQuery Grid -->
 					<div id="memberGrid"></div>
 				</div>
-			</div>
-		</div>
-	</div>
-</div>
-
-<!-- 회원 상세 정보 Offcanvas -->
-<div class="offcanvas offcanvas-end" data-bs-scroll="true" data-bs-backdrop="false" tabindex="-1" id="memberOffcanvas" aria-labelledby="memberOffcanvasLabel" style="width: 500px;">
-	<div class="offcanvas-header">
-		<h5 class="offcanvas-title" id="memberOffcanvasLabel">회원 상세정보</h5>
-		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-	</div>
-	<div class="offcanvas-body">
-		<!-- 로딩 스피너 -->
-		<div id="memberOffcanvasSpinner" class="d-flex justify-content-center align-items-center" style="height: 200px;">
-			<div class="text-center">
-				<div class="spinner-border text-primary mb-2" role="status">
-					<span class="visually-hidden">로딩 중...</span>
-				</div>
-				<div class="small text-muted">회원 정보를 불러오는 중...</div>
-			</div>
-		</div>
-
-		<!-- 회원 정보 폼 -->
-		<div id="memberDetailForm" style="display: none;">
-			<div class="text-center mb-4">
-				<img id="detail_photo" src="/assets/images/photo_no.png" class="rounded-circle" width="120" height="120" style="object-fit: cover;">
-			</div>
-
-			<div class="mb-4">
-				<h6 class="border-bottom pb-2 mb-3">기본 정보</h6>
-				<table class="table table-sm">
-					<tr>
-						<th class="bg-light" width="30%">이름</th>
-						<td id="detail_member_name">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">소속 조직</th>
-						<td id="detail_org_name">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">연락처</th>
-						<td id="detail_member_phone">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">생년월일</th>
-						<td id="detail_member_birth">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">성별</th>
-						<td id="detail_member_sex">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">직위/직분</th>
-						<td id="detail_position_name">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">직책</th>
-						<td id="detail_duty_name">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">주소</th>
-						<td id="detail_address">-</td>
-					</tr>
-					<tr>
-						<th class="bg-light">등록일</th>
-						<td id="detail_regi_date">-</td>
-					</tr>
-				</table>
-			</div>
-
-			<div class="mb-4">
-				<h6 class="border-bottom pb-2 mb-3">메모</h6>
-				<div id="detail_member_etc" class="p-2 bg-light rounded" style="min-height: 60px;">-</div>
 			</div>
 		</div>
 	</div>

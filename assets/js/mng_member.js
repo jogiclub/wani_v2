@@ -488,8 +488,9 @@
 				width: 150,
 				filter: { type: 'textbox', condition: 'contain' },
 				render: function(ui) {
-					if (ui.cellData) {
-						return '<span class="badge bg-primary">' + ui.cellData + '</span>';
+					if (ui.cellData && ui.rowData.org_id) {
+						return '<span class="badge bg-primary org-dashboard-link" data-org-id="' + ui.rowData.org_id + '" data-org-name="' + ui.cellData + '" style="cursor: pointer;" title="' + ui.cellData + ' 대시보드 바로가기">' +
+							ui.cellData + ' <i class="bi bi-box-arrow-up-right"></i></span>';
 					}
 					return '<span class="badge bg-light text-dark">미지정</span>';
 				}
@@ -592,23 +593,70 @@
 	 * 셀 클릭 처리
 	 */
 	function handleCellClick(event, ui) {
+		const target = $(event.originalEvent.target);
+
+		// 체크박스 컬럼 클릭
 		if (ui.colIndx === 0) {
-			// 체크박스 컬럼 클릭
-			const target = event.originalEvent.target;
-			if (!$(target).hasClass('member-checkbox')) {
+			if (!target.hasClass('member-checkbox')) {
 				const memberIdx = ui.rowData.member_idx;
 				const checkbox = $('.member-checkbox[data-member-idx="' + memberIdx + '"]');
 				if (checkbox.length > 0) {
 					checkbox.prop('checked', !checkbox.prop('checked')).trigger('change');
 				}
 			}
-		} else {
-			// 다른 컬럼 클릭 시 상세 정보 열기
-			const memberIdx = ui.rowData.member_idx;
-			if (memberIdx) {
-				openMemberOffcanvas(memberIdx);
-			}
+			return;
 		}
+
+		// 조직 대시보드 링크 클릭 처리
+		const orgLink = target.closest('.org-dashboard-link');
+		if (orgLink.length > 0) {
+			const orgId = orgLink.data('org-id');
+			const orgName = orgLink.data('org-name');
+			if (orgId) {
+				goToOrgDashboard(orgId, orgName);
+			}
+			return;
+		}
+	}
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 조직 대시보드로 이동 (새 탭) - 조직관리 바로가기와 동일한 로직
+	 */
+	function goToOrgDashboard(orgId, orgName) {
+		if (!orgId) {
+			showToast('조직 정보를 찾을 수 없습니다.', 'warning');
+			return;
+		}
+
+		// 로컬스토리지에 조직 정보 저장
+		try {
+			localStorage.setItem('lastSelectedOrgId', orgId);
+			localStorage.setItem('lastSelectedOrgName', orgName || '');
+		} catch (e) {
+			console.warn('로컬스토리지 저장 실패:', e);
+		}
+
+		// 서버에 조직 전환 요청 후 대시보드로 이동
+		$.ajax({
+			url: '/login/set_default_org',
+			type: 'POST',
+			data: { org_id: orgId },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					// 새 탭에서 대시보드 열기
+					window.open('/dashboard', '_blank');
+					showToast((orgName || '조직') + '(으)로 전환되었습니다', 'success');
+				} else {
+					showToast(response.message || '조직 전환에 실패했습니다', 'error');
+				}
+			},
+			error: function() {
+				showToast('조직 전환 중 오류가 발생했습니다', 'error');
+			}
+		});
 	}
 
 	/**
@@ -889,71 +937,7 @@
 		});
 	}
 
-	/**
-	 * 회원 상세 정보 Offcanvas 열기
-	 */
-	function openMemberOffcanvas(memberIdx) {
-		// 스피너 표시
-		$('#memberOffcanvasSpinner').show();
-		$('#memberDetailForm').hide();
 
-		// Offcanvas 열기
-		if (memberOffcanvas) {
-			memberOffcanvas.show();
-		}
-
-		$.ajax({
-			url: '/mng/mng_member/get_member_detail',
-			type: 'GET',
-			data: { member_idx: memberIdx },
-			dataType: 'json',
-			success: function(response) {
-				$('#memberOffcanvasSpinner').hide();
-				$('#memberDetailForm').show();
-
-				if (response.success) {
-					const member = response.data;
-
-					// 기본 정보 설정
-					$('#detail_photo').attr('src', member.photo_url || '/assets/images/photo_no.png');
-					$('#detail_member_name').text(member.member_name || '-');
-					$('#detail_org_name').text(member.org_name || '-');
-					$('#detail_member_phone').text(member.member_phone || '-');
-					$('#detail_member_birth').text(member.member_birth || '-');
-
-					// 성별
-					let sexText = '-';
-					if (member.member_sex === 'male') sexText = '남';
-					else if (member.member_sex === 'female') sexText = '여';
-					$('#detail_member_sex').text(sexText);
-
-					$('#detail_position_name').text(member.position_name || '-');
-					$('#detail_duty_name').text(member.duty_name || '-');
-
-					// 주소
-					let address = member.member_address || '';
-					if (member.member_address_detail) {
-						address += ' ' + member.member_address_detail;
-					}
-					$('#detail_address').text(address || '-');
-
-					// 등록일
-					let regiDate = member.regi_date ? member.regi_date.substring(0, 10) : '-';
-					$('#detail_regi_date').text(regiDate);
-
-					// 메모
-					$('#detail_member_etc').text(member.member_etc || '-');
-				} else {
-					showToast(response.message || '회원 정보를 불러오는데 실패했습니다', 'error');
-				}
-			},
-			error: function(xhr, status, error) {
-				$('#memberOffcanvasSpinner').hide();
-				console.error('회원 상세 조회 오류:', error);
-				showToast('회원 정보를 불러오는데 실패했습니다', 'error');
-			}
-		});
-	}
 
 	/**
 	 * 트리와 그리드 새로고침
