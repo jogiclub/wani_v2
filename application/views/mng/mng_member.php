@@ -143,7 +143,7 @@ $this->load->view('mng/header');
 <!-- Split.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.5/split.min.js"></script>
 <!-- Fancytree -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
+<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js"></script>
 <!-- ParamQuery Grid -->
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

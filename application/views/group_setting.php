@@ -195,7 +195,7 @@ $this->load->view('header');
 <script src="https://unpkg.com/split.js@1.6.2/dist/split.min.js"></script>
 
 <!-- Fancytree -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.fancytree/2.38.5/jquery.fancytree-all-deps.min.js"></script>
+<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js"></script>
 
 <!-- Group Setting JS -->
 <script src="/assets/js/group_setting.js?<?php echo WB_VERSION; ?>"></script>
