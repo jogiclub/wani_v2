@@ -56,6 +56,9 @@ $this->load->view('mng/header');
 							<small class="text-muted me-2">선택된 조직 <span id="selectedCount">0</span>개</small>
 
 							<div class="btn-group" role="group" aria-label="Basic example">
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="btnAddOrg" disabled>
+									<i class="bi bi-plus-lg"></i> 조직추가
+								</button>
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnOrgMap" disabled>
 									<i class="bi bi-geo-alt"></i> 선택지도
 								</button>

@@ -502,8 +502,15 @@
 			// 트리 선택 상태 저장
 			saveSelectedTreeNode(nodeData);
 
+			// 조직추가 버튼 활성화 (카테고리 선택 시)
+			$('#btnAddOrg').prop('disabled', false);
+
+
 			updateSelectedTitle();
 			loadOrgList();
+
+
+
 		}
 	}
 
@@ -1472,6 +1479,9 @@
 		// 엑셀편집 버튼 이벤트 추가
 		$('#btnExcelEdit').on('click', openExcelEditPopup);
 
+		// 조직추가 버튼 이벤트
+		$('#btnAddOrg').on('click', addQuickOrg);
+
 		$(window).on('resize', debounce(function() {
 			if (orgGrid) {
 				try {
@@ -1482,6 +1492,49 @@
 			}
 		}, 250));
 	}
+
+	/**
+	 * 빠른 조직 추가
+	 * 선택된 카테고리에 '새조직_{org_id}' 이름으로 기본 조직 생성
+	 */
+	function addQuickOrg() {
+		if (selectedCategoryIdx === null) {
+			showToast('조직을 추가할 카테고리를 선택해주세요', 'warning');
+			return;
+		}
+
+		// 미분류 선택 시에도 추가 가능
+		const categoryIdx = selectedCategoryIdx === 'uncategorized' ? '' : selectedCategoryIdx;
+
+		// 버튼 비활성화 (중복 클릭 방지)
+		$('#btnAddOrg').prop('disabled', true);
+
+		$.ajax({
+			url: '/mng/mng_org/quick_add_org',
+			type: 'POST',
+			data: {
+				category_idx: categoryIdx
+			},
+			dataType: 'json',
+			success: function(response) {
+				$('#btnAddOrg').prop('disabled', false);
+
+				if (response.success) {
+					showToast(response.message, 'success');
+					// 트리와 그리드 새로고침
+					refreshTreeAndGrid();
+				} else {
+					showToast(response.message || '조직 추가에 실패했습니다', 'error');
+				}
+			},
+			error: function(xhr, status, error) {
+				$('#btnAddOrg').prop('disabled', false);
+				console.error('조직 추가 실패:', error);
+				showToast('조직 추가 중 오류가 발생했습니다', 'error');
+			}
+		});
+	}
+
 
 	/**
 	 * 엑셀편집 팝업 열기
@@ -1771,6 +1824,7 @@
 					source: treeData,
 					activate: function(event, data) {
 						handleTreeNodeActivate(data.node);
+
 					},
 					selectMode: 1
 				});
