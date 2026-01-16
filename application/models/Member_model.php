@@ -1255,4 +1255,197 @@ class Member_model extends CI_Model
 		return $this->db->affected_rows() > 0;
 	}
 
+
+	public function get_master_members_all($category_ids = array(), $status_tag = '', $keyword = '')
+	{
+		$this->db->select('m.*, o.org_name, c.category_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_org o', 'm.org_id = o.org_id');
+		$this->db->join('wb_org_category c', 'o.category_idx = c.category_idx', 'left');
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+
+		// 카테고리 필터
+		if (!empty($category_ids)) {
+			$this->db->where_in('o.category_idx', $category_ids);
+		}
+
+		// 검색 조건 적용
+		$this->apply_master_search_conditions($status_tag, $keyword);
+
+		$this->db->order_by('m.regi_date', 'DESC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 마스터 회원관리 - 카테고리별 회원 조회 (하위 카테고리 포함)
+	 * @param array $category_ids 조회할 카테고리 ID 배열 (하위 포함된 상태)
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
+	 */
+	public function get_master_members_by_category($category_ids, $status_tag = '', $keyword = '')
+	{
+		if (empty($category_ids)) {
+			return array();
+		}
+
+		$this->db->select('m.*, o.org_name, c.category_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_org o', 'm.org_id = o.org_id');
+		$this->db->join('wb_org_category c', 'o.category_idx = c.category_idx', 'left');
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where_in('o.category_idx', $category_ids);
+
+		// 검색 조건 적용
+		$this->apply_master_search_conditions($status_tag, $keyword);
+
+		$this->db->order_by('m.regi_date', 'DESC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 마스터 회원관리 - 조직별 회원 조회
+	 * @param string $org_id 조직 ID
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
+	 */
+	public function get_master_members_by_org($org_id, $status_tag = '', $keyword = '')
+	{
+		$this->db->select('m.*, o.org_name, c.category_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_org o', 'm.org_id = o.org_id');
+		$this->db->join('wb_org_category c', 'o.category_idx = c.category_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+
+		// 검색 조건 적용
+		$this->apply_master_search_conditions($status_tag, $keyword);
+
+		$this->db->order_by('m.regi_date', 'DESC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 마스터 회원관리 - 미분류 조직의 회원 조회
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
+	 */
+	public function get_master_members_uncategorized($status_tag = '', $keyword = '')
+	{
+		$this->db->select('m.*, o.org_name, "" as category_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_org o', 'm.org_id = o.org_id');
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->group_start();
+		$this->db->where('o.category_idx IS NULL');
+		$this->db->or_where('o.category_idx', 0);
+		$this->db->group_end();
+
+		// 검색 조건 적용
+		$this->apply_master_search_conditions($status_tag, $keyword);
+
+		$this->db->order_by('m.regi_date', 'DESC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 마스터 회원관리 검색 조건 적용 (다중 태그 지원)
+	 * @param mixed $status_tags 관리tag 검색 조건 (문자열 또는 배열)
+	 * @param string $keyword 이름/연락처 검색 조건
+	 */
+	private function apply_master_search_conditions($status_tags = '', $keyword = '')
+	{
+		// 관리tag 검색 (다중 태그 - OR 조건)
+		if (!empty($status_tags)) {
+			// 문자열인 경우 배열로 변환
+			if (is_string($status_tags)) {
+				$tags_array = array_filter(array_map('trim', explode(',', $status_tags)));
+			} else {
+				$tags_array = $status_tags;
+			}
+
+			if (!empty($tags_array)) {
+				$this->db->group_start();
+				foreach ($tags_array as $index => $tag) {
+					if ($index === 0) {
+						$this->db->like('m.member_status', $tag);
+					} else {
+						$this->db->or_like('m.member_status', $tag);
+					}
+				}
+				$this->db->group_end();
+			}
+		}
+
+		// 이름 또는 연락처 검색
+		if (!empty($keyword)) {
+			$this->db->group_start();
+			$this->db->like('m.member_name', $keyword);
+			$this->db->or_like('m.member_phone', $keyword);
+			$this->db->group_end();
+		}
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 마스터 회원관리 - 기존 관리tag 태그 목록 조회
+	 */
+	public function get_existing_status_tags()
+	{
+		$this->db->select('DISTINCT(member_status) as status');
+		$this->db->from('wb_member');
+		$this->db->where('member_status IS NOT NULL');
+		$this->db->where('member_status !=', '');
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+
+		$tags = array();
+		foreach ($query->result_array() as $row) {
+			// 쉼표로 구분된 태그 파싱
+			$status_tags = explode(',', $row['status']);
+			foreach ($status_tags as $tag) {
+				$tag = trim($tag);
+				if (!empty($tag) && !in_array($tag, $tags)) {
+					$tags[] = $tag;
+				}
+			}
+		}
+
+		sort($tags);
+		return $tags;
+	}
+
+	/**
+	 * 파일 위치: application/models/Member_model.php
+	 * 역할: 회원 사진 URL 처리
+	 * @param array $members 회원 목록 배열
+	 * @return array 사진 URL이 추가된 회원 목록
+	 */
+	public function process_member_photo_urls($members)
+	{
+		foreach ($members as &$member) {
+			$photo_url = '/assets/images/photo_no.png';
+			if (!empty($member['photo'])) {
+				if (strpos($member['photo'], '/uploads/') === false) {
+					$photo_url = '/uploads/member_photos/' . $member['org_id'] . '/' . $member['photo'];
+				} else {
+					$photo_url = $member['photo'];
+				}
+			}
+			$member['photo_url'] = $photo_url;
+		}
+		return $members;
+	}
+
 }

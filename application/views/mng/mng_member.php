@@ -56,15 +56,32 @@ $this->load->view('mng/header');
 						</div>
 
 						<div class="col-12 col-lg-4 d-flex align-items-center">
-							<!--검색영역-->
+							<div class="input-group input-group-sm">
+								<button type="button" class="btn btn-outline-secondary" id="searchTagText">관리tag 전체</button>
+								<button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside" id="searchTagDropdown">
+									<span class="visually-hidden">Toggle Dropdown</span>
+								</button>
+								<ul class="dropdown-menu" id="searchTagMenu" style="max-height: 300px; overflow-y: auto;">
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2" id="searchTag_all" value="" checked>
+											<label class="form-check-label" for="searchTag_all">전체</label>
+										</div>
+									</li>
+									<li><hr class="dropdown-divider"></li>
+								</ul>
+								<input type="text" class="form-control" id="searchKeyword" placeholder="이름 또는 연락처" style="max-width: 150px;">
+								<button type="button" class="btn btn-outline-primary" id="btnSearch"><i class="bi bi-search"></i> 검색</button>
+								<button type="button" class="btn btn-outline-secondary" id="btnSearchReset"><i class="bi bi-x-circle"></i> 검색초기화</button>
+							</div>
 						</div>
 						
 						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
 						
 							<small class="text-muted me-2">선택된 회원 <span id="selectedCount">0</span>명</small>
 
-							<button type="button" class="btn btn-outline-primary" id="btnStatusChange" disabled>
-								<i class="bi bi-arrow-repeat"></i> 관리tag변경
+							<button type="button" class="btn btn-sm btn-1primary" id="btnStatusChange" disabled>
+								<i class="bi bi-arrow-repeat"></i> 관리tag일괄처리
 							</button>
 						</div>
 					</div>

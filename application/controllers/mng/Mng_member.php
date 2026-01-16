@@ -297,67 +297,15 @@ class Mng_member extends CI_Controller
 		echo json_encode(array('total_count' => $total_count));
 	}
 
-	/**
-	 * 회원 목록 조회 (AJAX)
-	 */
-	public function get_member_list()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
 
-		$type = $this->input->get('type'); // all, category, org, uncategorized
-		$id = $this->input->get('id');
-
-		$visible_categories = $this->get_visible_categories();
-
-		$members = array();
-
-		switch ($type) {
-			case 'all':
-				$members = $this->get_all_members($visible_categories);
-				break;
-
-			case 'category':
-				$members = $this->get_category_members($id);
-				break;
-
-			case 'org':
-				$members = $this->get_org_members_list($id);
-				break;
-
-			case 'uncategorized':
-				$members = $this->get_uncategorized_members();
-				break;
-
-			default:
-				$members = array();
-		}
-
-		// 사진 URL 처리
-		foreach ($members as &$member) {
-			$photo_url = '/assets/images/photo_no.png';
-			if (!empty($member['photo'])) {
-				if (strpos($member['photo'], '/uploads/') === false) {
-					$photo_url = '/uploads/member_photos/' . $member['org_id'] . '/' . $member['photo'];
-				} else {
-					$photo_url = $member['photo'];
-				}
-			}
-			$member['photo_url'] = $photo_url;
-		}
-
-		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode(array(
-			'success' => true,
-			'data' => $members
-		), JSON_UNESCAPED_UNICODE);
-	}
 
 	/**
 	 * 전체 회원 조회
+	 * @param array $visible_categories 접근 가능한 카테고리 목록
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
 	 */
-	private function get_all_members($visible_categories)
+	private function get_all_members($visible_categories, $status_tag = '', $keyword = '')
 	{
 		$this->db->select('m.*, o.org_name, c.category_name');
 		$this->db->from('wb_member m');
@@ -373,6 +321,9 @@ class Mng_member extends CI_Controller
 			}
 		}
 
+		// 검색 조건 적용
+		$this->apply_search_conditions($status_tag, $keyword);
+
 		$this->db->order_by('m.regi_date', 'DESC');
 		$query = $this->db->get();
 		return $query->result_array();
@@ -380,8 +331,11 @@ class Mng_member extends CI_Controller
 
 	/**
 	 * 카테고리별 회원 조회 (하위 카테고리 포함)
+	 * @param int $category_idx 카테고리 ID
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
 	 */
-	private function get_category_members($category_idx)
+	private function get_category_members($category_idx, $status_tag = '', $keyword = '')
 	{
 		$category_ids = $this->Org_category_model->get_category_with_descendants_public(array($category_idx));
 
@@ -396,6 +350,10 @@ class Mng_member extends CI_Controller
 		$this->db->where('m.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');
 		$this->db->where_in('o.category_idx', $category_ids);
+
+		// 검색 조건 적용
+		$this->apply_search_conditions($status_tag, $keyword);
+
 		$this->db->order_by('m.regi_date', 'DESC');
 		$query = $this->db->get();
 		return $query->result_array();
@@ -403,8 +361,11 @@ class Mng_member extends CI_Controller
 
 	/**
 	 * 조직별 회원 조회
+	 * @param string $org_id 조직 ID
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
 	 */
-	private function get_org_members_list($org_id)
+	private function get_org_members_list($org_id, $status_tag = '', $keyword = '')
 	{
 		$this->db->select('m.*, o.org_name, c.category_name');
 		$this->db->from('wb_member m');
@@ -413,6 +374,10 @@ class Mng_member extends CI_Controller
 		$this->db->where('m.org_id', $org_id);
 		$this->db->where('m.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');
+
+		// 검색 조건 적용
+		$this->apply_search_conditions($status_tag, $keyword);
+
 		$this->db->order_by('m.regi_date', 'DESC');
 		$query = $this->db->get();
 		return $query->result_array();
@@ -420,8 +385,10 @@ class Mng_member extends CI_Controller
 
 	/**
 	 * 미분류 조직의 회원 조회
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
 	 */
-	private function get_uncategorized_members()
+	private function get_uncategorized_members($status_tag = '', $keyword = '')
 	{
 		$this->db->select('m.*, o.org_name, "" as category_name');
 		$this->db->from('wb_member m');
@@ -432,9 +399,36 @@ class Mng_member extends CI_Controller
 		$this->db->where('o.category_idx IS NULL');
 		$this->db->or_where('o.category_idx', 0);
 		$this->db->group_end();
+
+		// 검색 조건 적용
+		$this->apply_search_conditions($status_tag, $keyword);
+
 		$this->db->order_by('m.regi_date', 'DESC');
 		$query = $this->db->get();
 		return $query->result_array();
+	}
+
+
+	/**
+	 * 파일 위치: application/controllers/mng/Mng_member.php
+	 * 역할: 검색 조건 적용 공통 함수
+	 * @param string $status_tag 관리tag 검색 조건
+	 * @param string $keyword 이름/연락처 검색 조건
+	 */
+	private function apply_search_conditions($status_tag = '', $keyword = '')
+	{
+		// 관리tag 검색
+		if (!empty($status_tag)) {
+			$this->db->like('m.member_status', $status_tag);
+		}
+
+		// 이름 또는 연락처 검색
+		if (!empty($keyword)) {
+			$this->db->group_start();
+			$this->db->like('m.member_name', $keyword);
+			$this->db->or_like('m.member_phone', $keyword);
+			$this->db->group_end();
+		}
 	}
 
 	/**
@@ -486,62 +480,6 @@ class Mng_member extends CI_Controller
 	}
 
 
-
-	/**
-	 
-	 * 역할: 기존에 사용된 상태 태그 목록 조회 (AJAX)
-	 */
-	public function get_existing_status_tags()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
-
-		$visible_categories = $this->get_visible_categories();
-
-		// 권한에 따른 회원의 상태 태그 조회
-		$this->db->distinct();
-		$this->db->select('m.member_status');
-		$this->db->from('wb_member m');
-		$this->db->join('wb_org o', 'm.org_id = o.org_id');
-		$this->db->where('m.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->where('m.member_status IS NOT NULL');
-		$this->db->where('m.member_status !=', '');
-
-		if (!empty($visible_categories)) {
-			$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
-			if (!empty($category_ids)) {
-				$this->db->where_in('o.category_idx', $category_ids);
-			}
-		}
-
-		$query = $this->db->get();
-		$results = $query->result_array();
-
-		// 모든 태그 수집 (쉼표로 구분된 값 분리)
-		$all_tags = array();
-		foreach ($results as $row) {
-			if (!empty($row['member_status'])) {
-				$tags = explode(',', $row['member_status']);
-				foreach ($tags as $tag) {
-					$tag = trim($tag);
-					if ($tag !== '' && !in_array($tag, $all_tags)) {
-						$all_tags[] = $tag;
-					}
-				}
-			}
-		}
-
-		// 가나다순 정렬
-		sort($all_tags);
-
-		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode(array(
-			'success' => true,
-			'data' => $all_tags
-		), JSON_UNESCAPED_UNICODE);
-	}
 
 
 	/**
@@ -658,6 +596,91 @@ class Mng_member extends CI_Controller
 		echo json_encode(array(
 			'success' => true,
 			'message' => $affected_count . '명의 회원 상태가 변경되었습니다.'
+		), JSON_UNESCAPED_UNICODE);
+	}
+
+
+	/**
+	 * 파일 위치: application/controllers/mng/Mng_member.php
+	 * 역할: 회원 목록 조회 (AJAX) - Model 사용
+	 */
+	public function get_member_list()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$type = $this->input->get('type');
+		$id = $this->input->get('id');
+
+		// 검색 조건 (status_tags는 쉼표 구분 문자열)
+		$status_tags = $this->input->get('status_tags');
+		$keyword = $this->input->get('keyword');
+
+		$visible_categories = $this->get_visible_categories();
+		$members = array();
+
+		switch ($type) {
+			case 'all':
+				$category_ids = array();
+				if (!empty($visible_categories)) {
+					$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
+				}
+				$members = $this->Member_model->get_master_members_all($category_ids, $status_tags, $keyword);
+				break;
+
+			case 'category':
+				if ($id) {
+					$category_ids = $this->Org_category_model->get_category_with_descendants_public(array($id));
+					$members = $this->Member_model->get_master_members_by_category($category_ids, $status_tags, $keyword);
+				}
+				break;
+
+			case 'org':
+				if ($id) {
+					$members = $this->Member_model->get_master_members_by_org($id, $status_tags, $keyword);
+				}
+				break;
+
+			case 'uncategorized':
+				$members = $this->Member_model->get_master_members_uncategorized($status_tags, $keyword);
+				break;
+
+			default:
+				$category_ids = array();
+				if (!empty($visible_categories)) {
+					$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
+				}
+				$members = $this->Member_model->get_master_members_all($category_ids, $status_tags, $keyword);
+				break;
+		}
+
+		// 사진 URL 처리
+		$members = $this->Member_model->process_member_photo_urls($members);
+
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(array(
+			'success' => true,
+			'data' => $members
+		), JSON_UNESCAPED_UNICODE);
+	}
+
+	/**
+	 * 파일 위치: application/controllers/mng/Mng_member.php
+	 * 역할: 기존 관리tag 태그 목록 조회 (AJAX)
+	 */
+	public function get_existing_status_tags()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$tags = $this->Member_model->get_existing_status_tags();
+
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(array(
+			'success' => true,
+			'data' => $tags
 		), JSON_UNESCAPED_UNICODE);
 	}
 

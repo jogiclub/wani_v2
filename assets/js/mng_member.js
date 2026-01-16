@@ -16,7 +16,9 @@
 	let memberOffcanvas = null;
 	let checkedMemberIds = new Set();
 	let existingStatusTags = [];
-
+	let searchStatusTags = [];  // 선택된 태그 배열
+	let searchKeyword = '';
+	let allStatusTags = [];     // 전체 태그 목록
 
 	// DOM 준비 완료 시 초기화
 	$(document).ready(function() {
@@ -39,9 +41,273 @@
 		initSplitJS();
 		initFancytree();
 		initParamQueryGrid();
+		initSearchControls();  // 검색 컨트롤 초기화 추가
 		bindGlobalEvents();
 
 		console.log('회원관리 페이지 초기화 완료');
+	}
+
+
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 검색 컨트롤 초기화 - Dropdown Menu 방식
+	 */
+	function initSearchControls() {
+		// 관리tag 드롭다운 초기화
+		loadStatusTagsForDropdown();
+
+		// 검색 버튼 클릭 이벤트
+		$('#btnSearch').off('click').on('click', function() {
+			executeSearch();
+		});
+
+		// 검색 초기화 버튼 클릭 이벤트
+		$('#btnSearchReset').off('click').on('click', function() {
+			resetSearchConditions();
+			loadMemberList();
+		});
+
+		// 엔터키로 검색
+		$('#searchKeyword').off('keypress').on('keypress', function(e) {
+			if (e.which === 13) {
+				executeSearch();
+			}
+		});
+
+		// 드롭다운 이벤트 바인딩
+		bindTagDropdownEvents();
+	}
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 검색 조건 초기화
+	 */
+	function resetSearchConditions() {
+		searchKeyword = '';
+		searchStatusTags = [];
+		$('#searchKeyword').val('');
+		$('#searchTag_all').prop('checked', true);
+		$('.status-tag-checkbox').prop('checked', false);
+		updateTagButtonText();
+	}
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 관리tag 목록 로드 및 드롭다운 메뉴 구성
+	 */
+	function loadStatusTagsForDropdown() {
+		$.ajax({
+			url: '/mng/mng_member/get_existing_status_tags',
+			type: 'GET',
+			dataType: 'json',
+			success: function(response) {
+				if (response && response.success && response.data) {
+					allStatusTags = response.data;
+					updateTagDropdownMenu();
+				}
+			},
+			error: function() {
+				console.warn('관리tag 목록 로드 실패');
+			}
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 관리tag 드롭다운 메뉴 업데이트
+	 */
+	function updateTagDropdownMenu() {
+		const $menu = $('#searchTagMenu');
+
+		// 기존 항목 제거 (전체와 구분선은 유지)
+		$menu.find('li:gt(1)').remove();
+
+		// 관리tag 항목들 추가
+		allStatusTags.forEach(function(tag) {
+			const itemId = 'searchTag_' + tag.replace(/\s+/g, '_').replace(/[()]/g, '');
+			const $li = $('<li></li>');
+			const $div = $('<div class="dropdown-item"></div>');
+			const $checkbox = $('<input type="checkbox" class="form-check-input me-2 status-tag-checkbox">');
+			$checkbox.attr('id', itemId);
+			$checkbox.attr('value', tag);
+			const $label = $('<label class="form-check-label"></label>');
+			$label.attr('for', itemId);
+			$label.text(tag);
+
+			$div.append($checkbox);
+			$div.append($label);
+			$li.append($div);
+			$menu.append($li);
+		});
+
+		// 이벤트 재바인딩
+		bindTagDropdownEvents();
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 관리tag 드롭다운 이벤트 바인딩
+	 */
+	function bindTagDropdownEvents() {
+		// 전체 체크박스 클릭
+		$('#searchTag_all').off('change').on('change', function() {
+			const isChecked = $(this).is(':checked');
+
+			if (isChecked) {
+				// 전체 선택 시 다른 체크박스 해제
+				$('.status-tag-checkbox').prop('checked', false);
+				searchStatusTags = [];
+				updateTagButtonText();
+				executeSearch();
+			}
+		});
+
+		// 개별 태그 체크박스 클릭
+		$('.status-tag-checkbox').off('change').on('change', function() {
+			const value = $(this).val();
+			const isChecked = $(this).is(':checked');
+
+			if (isChecked) {
+				// 전체 체크 해제
+				$('#searchTag_all').prop('checked', false);
+				// 배열에 추가
+				if (!searchStatusTags.includes(value)) {
+					searchStatusTags.push(value);
+				}
+			} else {
+				// 배열에서 제거
+				searchStatusTags = searchStatusTags.filter(function(tag) {
+					return tag !== value;
+				});
+
+				// 모두 해제되면 전체 체크
+				if (searchStatusTags.length === 0) {
+					$('#searchTag_all').prop('checked', true);
+				}
+			}
+
+			updateTagButtonText();
+			executeSearch();
+		});
+
+		// 드롭다운 아이템 클릭 시 드롭다운 닫히지 않도록
+		$('#searchTagMenu .dropdown-item').off('click').on('click', function(e) {
+			e.stopPropagation();
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 관리tag 버튼 텍스트 업데이트
+	 */
+	function updateTagButtonText() {
+		const $btn = $('#searchTagText');
+
+		if (searchStatusTags.length === 0) {
+			$btn.text('관리tag 전체');
+		} else if (searchStatusTags.length === 1) {
+			$btn.text(searchStatusTags[0]);
+		} else {
+			$btn.text(searchStatusTags[0] + ' 외 ' + (searchStatusTags.length - 1) + '개');
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 검색용 관리tag Select2 초기화 (다중 선택 + 태그 입력)
+	 */
+	function initSearchStatusTagSelect() {
+		// 기존 Select2 인스턴스 제거
+		if ($('#searchStatusTag').hasClass('select2-hidden-accessible')) {
+			$('#searchStatusTag').select2('destroy');
+		}
+
+		// 옵션 초기화
+		$('#searchStatusTag').empty();
+
+		// 기존 태그 목록 로드
+		$.ajax({
+			url: '/mng/mng_member/get_existing_status_tags',
+			type: 'GET',
+			dataType: 'json',
+			success: function(response) {
+				if (response && response.success && response.data) {
+					response.data.forEach(function(tag) {
+						$('#searchStatusTag').append('<option value="' + tag + '">' + tag + '</option>');
+					});
+				}
+
+				// Select2 초기화 (다중 선택 + 태그 입력 가능)
+				$('#searchStatusTag').select2({
+					width: '100%',
+					placeholder: '관리tag 검색',
+					allowClear: true,
+					multiple: true,
+					tags: true,
+					tokenSeparators: [','],
+					minimumResultsForSearch: 0,
+					createTag: function(params) {
+						const term = $.trim(params.term);
+						if (term === '') {
+							return null;
+						}
+						return {
+							id: term,
+							text: term,
+							newTag: true
+						};
+					},
+					templateResult: function(tag) {
+						if (!tag.id) {
+							return tag.text;
+						}
+						if (tag.newTag) {
+							return $('<span><i class="bi bi-plus-circle me-1"></i>' + tag.text + ' (검색)</span>');
+						}
+						return tag.text;
+					},
+					templateSelection: function(tag) {
+						return tag.text;
+					}
+				});
+			},
+			error: function() {
+				// Select2 기본 초기화
+				$('#searchStatusTag').select2({
+					width: '100%',
+					placeholder: '관리tag 검색',
+					allowClear: true,
+					multiple: true,
+					tags: true
+				});
+			}
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 검색 실행
+	 */
+	function executeSearch() {
+		searchKeyword = $('#searchKeyword').val().trim();
+		loadMemberList();
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 검색 조건 초기화
+	 */
+	function resetSearchConditions() {
+		searchKeyword = '';
+		searchStatusTags = [];
+		$('#searchKeyword').val('');
+		$('#searchTag_all').prop('checked', true);
+		$('.status-tag-checkbox').prop('checked', false);
+		updateTagButtonText();
 	}
 
 	/**
@@ -331,10 +597,12 @@
 			selectedNodeName = '미분류';
 		}
 
-		// 트리 선택 관리tag 저장
+
+		// 트리 선택 상태 저장
 		saveSelectedTreeNode(nodeData);
 
 		updateSelectedTitle();
+		// resetSearchConditions();  // 트리 변경 시 검색 조건 초기화하려면 주석 해제
 		loadMemberList();
 	}
 
@@ -739,7 +1007,8 @@
 	}
 
 	/**
-	 * 회원 목록 로드
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 회원 목록 로드
 	 */
 	function loadMemberList() {
 		showGridSpinner();
@@ -753,6 +1022,14 @@
 			params.id = selectedNodeId;
 		} else if (selectedNodeType === 'org' && selectedNodeId) {
 			params.id = selectedNodeId;
+		}
+
+		// 검색 조건 추가
+		if (searchStatusTags && searchStatusTags.length > 0) {
+			params.status_tags = searchStatusTags.join(',');
+		}
+		if (searchKeyword) {
+			params.keyword = searchKeyword;
 		}
 
 		$.ajax({
