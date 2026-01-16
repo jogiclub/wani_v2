@@ -75,14 +75,24 @@ $this->load->view('mng/header');
 								<button type="button" class="btn btn-outline-secondary" id="btnSearchReset"><i class="bi bi-x-circle"></i> 검색초기화</button>
 							</div>
 						</div>
-						
-						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
-						
-							<small class="text-muted me-2">선택된 회원 <span id="selectedCount">0</span>명</small>
 
-							<button type="button" class="btn btn-sm btn-1primary" id="btnStatusChange" disabled>
-								<i class="bi bi-arrow-repeat"></i> 관리tag일괄처리
-							</button>
+						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
+
+							<small class="text-muted me-2">선택된 회원 <span id="selectedCount">0</span>명</small>
+							<div class="btn-group" role="group">
+								<button type="button" class="btn btn-sm btn-primary" id="btnStatusChange" disabled>
+									<i class="bi bi-arrow-repeat"></i> 관리tag일괄처리
+								</button>
+
+								<button type="button" class="btn btn-sm btn-outline-danger" id="btnSendMember" disabled>
+									<i class="bi bi-chat-dots"></i> 선택문자
+								</button>
+
+								<button type="button" class="btn btn-sm btn-outline-success" id="btnExcelDownload">
+									<i class="bi bi-file-spreadsheet"></i> 엑셀다운로드
+								</button>
+							</div>
+
 						</div>
 					</div>
 				</div>
@@ -165,5 +175,6 @@ $this->load->view('mng/header');
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
 <!-- 회원관리 JavaScript -->
 <script src="/assets/js/mng_member.js?<?php echo WB_VERSION; ?>"></script>

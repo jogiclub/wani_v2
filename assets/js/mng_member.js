@@ -297,18 +297,7 @@
 		loadMemberList();
 	}
 
-	/**
-	 * 파일 위치: assets/js/mng_member.js
-	 * 역할: 검색 조건 초기화
-	 */
-	function resetSearchConditions() {
-		searchKeyword = '';
-		searchStatusTags = [];
-		$('#searchKeyword').val('');
-		$('#searchTag_all').prop('checked', true);
-		$('.status-tag-checkbox').prop('checked', false);
-		updateTagButtonText();
-	}
+
 
 	/**
 	 * 기존 인스턴스 정리
@@ -1001,9 +990,10 @@
 		const count = checkedMemberIds.size;
 		$('#selectedCount').text(count);
 
-		// 버튼 관리tag 업데이트
+		// 버튼 상태 업데이트 (엑셀다운로드는 항상 enabled)
 		const isDisabled = count === 0;
 		$('#btnStatusChange').prop('disabled', isDisabled);
+		$('#btnSendMember').prop('disabled', isDisabled);
 	}
 
 	/**
@@ -1389,8 +1379,8 @@
 	}
 
 	/**
-	 
-	 * 역할: 글로벌 이벤트 바인딩 (관리tag변경 버튼 추가)
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 글로벌 이벤트 바인딩 (선택문자, 엑셀다운로드 버튼 추가)
 	 */
 	function bindGlobalEvents() {
 		// 새로고침 버튼
@@ -1407,6 +1397,307 @@
 		$('#confirmStatusChangeBtn').on('click', function() {
 			executeStatusChange();
 		});
+
+		// 선택문자 버튼
+		$('#btnSendMember').on('click', function() {
+			handleSendMember();
+		});
+
+		// 엑셀다운로드 버튼
+		$('#btnExcelDownload').on('click', function() {
+			exportMemberToExcel();
+		});
+
+		// 윈도우 리사이즈 이벤트
+		$(window).on('resize', debounce(function() {
+			if (memberGrid) {
+				try {
+					memberGrid.pqGrid("refresh");
+				} catch(error) {
+					console.warn('그리드 리사이즈 실패:', error);
+				}
+			}
+		}, 250));
+	}
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 선택문자 발송 처리
+	 */
+	function handleSendMember() {
+		const selectedMembers = getSelectedMembers();
+
+		if (selectedMembers.length === 0) {
+			showToast('발송할 회원을 선택해주세요.', 'warning');
+			return;
+		}
+
+		// 전화번호가 없는 회원 체크
+		const membersWithoutPhone = selectedMembers.filter(function(member) {
+			return !member.member_phone || member.member_phone.trim() === '';
+		});
+
+		if (membersWithoutPhone.length > 0) {
+			const memberNames = membersWithoutPhone.map(function(member) {
+				return member.member_name;
+			}).join(', ');
+
+			showConfirmModal(
+				'전화번호 누락 회원 확인',
+				'다음 회원들은 전화번호가 없어 발송 대상에서 제외됩니다.\n' + memberNames + '\n\n계속 진행하시겠습니까?',
+				function() {
+					const validMembers = selectedMembers.filter(function(member) {
+						return member.member_phone && member.member_phone.trim() !== '';
+					});
+					openSendPopup(validMembers);
+				}
+			);
+		} else {
+			openSendPopup(selectedMembers);
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 문자 발송 팝업 열기
+	 */
+	function openSendPopup(selectedMembers) {
+		const popupWidth = 1400;
+		const popupHeight = 850;
+		const left = (screen.width - popupWidth) / 2;
+		const top = (screen.height - popupHeight) / 2;
+
+		// 팝업 창 열기
+		const popupWindow = window.open('', 'sendPopup',
+			'width=' + popupWidth + ',height=' + popupHeight + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes');
+
+		// 임시 폼 생성하여 POST로 데이터 발송
+		const tempForm = $('<form>', {
+			'method': 'POST',
+			'action': '/send/popup',
+			'target': 'sendPopup'
+		});
+
+		// 선택된 회원이 있는 경우에만 member_ids 전송
+		if (selectedMembers && selectedMembers.length > 0) {
+			selectedMembers.forEach(function(member) {
+				tempForm.append($('<input>', {
+					'type': 'hidden',
+					'name': 'member_ids[]',
+					'value': member.member_idx
+				}));
+			});
+		}
+
+		$('body').append(tempForm);
+		tempForm.submit();
+		tempForm.remove();
+
+		// 팝업이 닫힐 때까지 포커스 유지
+		const checkClosed = setInterval(function() {
+			if (popupWindow.closed) {
+				clearInterval(checkClosed);
+			}
+		}, 1000);
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 회원 목록 엑셀 다운로드 (HTML 태그 제거 및 데이터 정제)
+	 */
+	function exportMemberToExcel() {
+		// 그리드가 초기화되지 않은 경우
+		if (!memberGrid) {
+			showToast('회원 데이터를 불러온 후 다시 시도해주세요.', 'warning');
+			return;
+		}
+
+		try {
+			// 현재 그리드 데이터 가져오기
+			const gridData = memberGrid.pqGrid("option", "dataModel.data");
+
+			if (!gridData || gridData.length === 0) {
+				showToast('다운로드할 회원 데이터가 없습니다.', 'info');
+				return;
+			}
+
+			// 파일명 생성
+			const currentDate = new Date();
+			const dateStr = currentDate.getFullYear() +
+				String(currentDate.getMonth() + 1).padStart(2, '0') +
+				String(currentDate.getDate()).padStart(2, '0');
+
+			const fileName = (selectedNodeName || '회원목록').replace(/[^\w가-힣]/g, '_') + '_' + dateStr;
+
+			// 제외할 컬럼 인덱스 (체크박스, 사진)
+			const excludeCols = getExcelExcludeColumns();
+
+			// ParamQuery Grid의 내장 엑셀 익스포트 기능 사용
+			const blob = memberGrid.pqGrid('exportData', {
+				format: 'xlsx',
+				render: false,
+				type: 'blob',
+				sheetName: '회원목록',
+				noCols: excludeCols,
+				// 셀 값 변환 함수
+				cellConvert: function(data) {
+					return convertCellValue(data);
+				}
+			});
+
+			// 파일 다운로드
+			if (blob) {
+				if (typeof saveAs !== 'undefined') {
+					saveAs(blob, fileName + '.xlsx');
+				} else {
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = fileName + '.xlsx';
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+				}
+				showToast('엑셀 파일 다운로드가 시작되었습니다.', 'success');
+			} else {
+				showToast('엑셀 파일 생성에 실패했습니다.', 'error');
+			}
+
+		} catch (error) {
+			console.error('엑셀 다운로드 오류:', error);
+			showToast('엑셀 다운로드 중 오류가 발생했습니다.', 'error');
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 엑셀 다운로드 시 제외할 컬럼 인덱스 반환
+	 */
+	function getExcelExcludeColumns() {
+		const excludeIndices = [];
+		const colModel = memberGrid.pqGrid("option", "colModel");
+
+		colModel.forEach(function(col, index) {
+			// 체크박스 컬럼 제외
+			if (col.dataIndx === 'checkbox') {
+				excludeIndices.push(index);
+			}
+			// 사진 컬럼 제외
+			if (col.dataIndx === 'member_photo' || col.dataIndx === 'photo') {
+				excludeIndices.push(index);
+			}
+		});
+
+		return excludeIndices;
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 엑셀 셀 값 변환 (HTML 태그 제거 및 데이터 정제)
+	 */
+	function convertCellValue(data) {
+		const dataIndx = data.dataIndx;
+		let value = data.rowData[dataIndx];
+
+		if (value === null || value === undefined) {
+			return '';
+		}
+
+		// 문자열로 변환
+		value = String(value);
+
+		// 관리tag (member_status) - badge HTML에서 텍스트만 추출하여 쉼표로 구분
+		if (dataIndx === 'member_status') {
+			return extractTagsFromHtml(value);
+		}
+
+		// 소속조직 (org_name) - HTML 태그 제거
+		if (dataIndx === 'org_name') {
+			return stripHtmlTags(value);
+		}
+
+		// 카테고리 (category_name) - HTML 태그 제거
+		if (dataIndx === 'category_name') {
+			return stripHtmlTags(value);
+		}
+
+		// 기타 필드 - HTML 태그가 있으면 제거
+		if (value.indexOf('<') !== -1) {
+			return stripHtmlTags(value);
+		}
+
+		return value;
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: HTML에서 태그 텍스트 추출 (badge 등에서 태그명만 추출하여 쉼표로 구분)
+	 */
+	function extractTagsFromHtml(html) {
+		if (!html || html.trim() === '') {
+			return '';
+		}
+
+		// 임시 DOM 엘리먼트 생성
+		const tempDiv = document.createElement('div');
+		tempDiv.innerHTML = html;
+
+		// badge나 span 태그에서 텍스트 추출
+		const badges = tempDiv.querySelectorAll('.badge, span');
+		const tags = [];
+
+		if (badges.length > 0) {
+			badges.forEach(function(badge) {
+				const text = badge.textContent.trim();
+				if (text) {
+					tags.push(text);
+				}
+			});
+		} else {
+			// badge가 없으면 전체 텍스트 추출
+			const text = tempDiv.textContent.trim();
+			if (text) {
+				tags.push(text);
+			}
+		}
+
+		return tags.join(', ');
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: HTML 태그 제거
+	 */
+	function stripHtmlTags(html) {
+		if (!html || html.trim() === '') {
+			return '';
+		}
+
+		const tempDiv = document.createElement('div');
+		tempDiv.innerHTML = html;
+		return tempDiv.textContent.trim() || tempDiv.innerText.trim() || '';
+	}
+
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: debounce 유틸리티 함수
+	 */
+	function debounce(func, wait) {
+		let timeout;
+		return function executedFunction() {
+			const context = this;
+			const args = arguments;
+			const later = function() {
+				timeout = null;
+				func.apply(context, args);
+			};
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+		};
 	}
 
 	/**
@@ -1428,30 +1719,7 @@
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
 	}
 
-	/**
-	 
-	 * 역할: 태그 문자열 기반으로 일관된 색상 클래스 반환
-	 */
-	function getTagColorClass(tag) {
-		const colors = [
-			'bg-primary',
-			'bg-success',
-			'bg-info',
-			'bg-warning text-dark',
-			'bg-danger',
-			'bg-secondary',
-			'bg-dark'
-		];
 
-		// 문자열 해시 계산
-		let hash = 0;
-		for (let i = 0; i < tag.length; i++) {
-			hash = tag.charCodeAt(i) + ((hash << 5) - hash);
-		}
-
-		const index = Math.abs(hash) % colors.length;
-		return colors[index];
-	}
 
 
 	/**
