@@ -1289,6 +1289,7 @@
 		const formData = new FormData();
 		formData.append('org_id', $('#edit_org_id').val());
 		formData.append('org_name', $('#edit_org_name').val());
+		formData.append('org_code', $('#edit_org_code').val());
 		formData.append('org_type', $('#edit_org_type').val());
 		formData.append('org_desc', $('#edit_org_desc').val());
 		formData.append('category_idx', $('#edit_category_idx').val());

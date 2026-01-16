@@ -174,7 +174,7 @@ $this->load->view('mng/header');
 
 				<div class="col-6 mb-3">
 					<label for="edit_org_code" class="form-label">조직코드</label>
-					<input type="text" class="form-control" id="edit_org_code" name="org_code" readonly>
+					<input type="text" class="form-control" id="edit_org_code" name="org_code">
 				</div>
 
 				<div class="col-6 mb-3">
