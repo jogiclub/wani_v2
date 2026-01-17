@@ -5,6 +5,7 @@
 
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.fix.css?<?php echo WB_VERSION; ?>">
 
 <!-- Fancytree CSS -->
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
@@ -58,23 +59,37 @@
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-4 d-flex align-items-center">
+						<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								조직을 선택해주세요
 							</h5>
 						</div>
 
-						<div class="col-12 col-lg-3 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
-							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" placeholder="회원명 검색" aria-label="Member's name" aria-describedby="button-search">
-								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
+						<div class="col-12 col-lg-5 d-flex mt-2 mt-lg-0">
+							<!-- 연도/월 선택 컨트롤 -->
+							<div class="d-flex gap-2">
+								<div class="input-group input-group-sm year-selector">
+									<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
+									<label class="input-group-text year-display" id="currentYear"><?php echo date('Y'); ?>년</label>
+									<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
+								</div>
+								<select class="form-select form-select-sm" id="selectMonth" style="width: auto;">
+									<option value="">전체</option>
+									<?php for($m = 1; $m <= 12; $m++): ?>
+										<option value="<?php echo $m; ?>" <?php echo ($m == date('n')) ? 'selected' : ''; ?>><?php echo $m; ?>월</option>
+									<?php endfor; ?>
+								</select>
+							</div>
+							<div class="d-flex gap-2 ms-2">
+								<div class="input-group input-group-sm">
+									<input type="text" class="form-control" placeholder="회원명 검색" aria-label="Member's name" aria-describedby="button-search" style="width:150px">
+									<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
+								</div>
 							</div>
 						</div>
 
-						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
-
+						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 							<!-- 점수재계산 버튼 추가 -->
-
 							<div class="btn-group justify-content-end ">
 								<button class="btn btn-sm btn-outline-warning align-items-center d-none d-lg-flex" type="button" id="btnRecalculateStats">
 									<i class="bi bi-arrow-clockwise"></i> 포인트재계산
@@ -84,17 +99,6 @@
 								</button>
 
 							</div>
-
-							<!-- 연도 선택 컨트롤 -->
-							<div>
-								<div class="input-group input-group-sm year-selector justify-content-start justify-content-lg-end">
-									<button class="btn btn-sm btn-outline-primary" id="prevYear" type="button"><i class="bi bi-chevron-left"></i></button>
-									<label class="input-group-text year-display " id="currentYear">2025</label>
-									<button class="btn btn-sm btn-outline-primary" id="nextYear" type="button"><i class="bi bi-chevron-right"></i></button>
-								</div>
-							</div>
-
-
 						</div>
 					</div>
 				</div>
@@ -165,6 +169,7 @@
 <script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/custom/pqgrid.fix.js?<?php echo WB_VERSION; ?>"></script>
 
 <script>
 	window.attendancePageData = {

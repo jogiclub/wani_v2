@@ -280,6 +280,7 @@ class Attendance extends My_Controller
 		$org_id = $this->input->post('org_id');
 		$area_idx = $this->input->post('area_idx');
 		$year = $this->input->post('year', true) ?: date('Y');
+		$month = $this->input->post('month', true);
 
 		if (!$org_id) {
 			echo json_encode(array('success' => false, 'message' => '조직 ID가 필요합니다.'));
@@ -339,7 +340,7 @@ class Attendance extends My_Controller
 		}
 
 		// 해당 연도의 일요일 날짜들 생성
-		$sunday_dates = $this->get_sunday_dates($year);
+		$sunday_dates = $this->get_sunday_dates($year, $month);
 
 		// 각 회원의 주별 출석데이터 가져오기 (연도 추가)
 		$attendance_data = $this->get_weekly_attendance_data($members, $org_id, $sunday_dates, $year);
@@ -605,35 +606,56 @@ class Attendance extends My_Controller
 	/**
 	 * 역할: 특정 연도의 일요일 날짜들을 가져오기 - 다음주 이후 날짜는 제외하도록 수정
 	 */
-	private function get_sunday_dates($year)
+	private function get_sunday_dates($year, $month = null)
 	{
 		$sunday_dates = array();
 
-		// 해당 연도 1월 1일부터 시작하여 첫 번째 일요일 찾기
-		$date = new DateTime($year . '-01-01');
+		// 월이 지정된 경우 해당 월의 1일부터, 아니면 연도의 1월 1일부터 시작
+		if ($month && $month >= 1 && $month <= 12) {
+			$start_date = new DateTime($year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01');
+		} else {
+			$start_date = new DateTime($year . '-01-01');
+		}
+
+		$date = clone $start_date;
 
 		// 첫 번째 일요일로 이동
-		while ($date->format('w') != 0) { // 0 = 일요일
+		while ($date->format('w') != 0) {
 			$date->add(new DateInterval('P1D'));
 		}
 
-		// 현재 주의 일요일까지 표시 (현재 주가 시작되면 바로 표시)
+		// 현재 주의 일요일까지 표시
 		$today = new DateTime();
 		$current_week_sunday = clone $today;
-
-		// 현재 주의 일요일 날짜 계산
-		$days_from_sunday = $today->format('w'); // 0=일요일, 1=월요일...
+		$days_from_sunday = $today->format('w');
 		if ($days_from_sunday > 0) {
 			$current_week_sunday->sub(new DateInterval('P' . $days_from_sunday . 'D'));
 		}
 
-		// 현재 주의 일요일까지 표시 (다음주는 표시하지 않음)
 		$last_sunday_to_show = $current_week_sunday;
 
-		// 해당 연도의 일요일 수집 (현재 주까지만)
+		// 월이 지정된 경우 해당 월의 마지막 날까지만
+		if ($month && $month >= 1 && $month <= 12) {
+			$month_end = new DateTime($year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01');
+			$month_end->modify('last day of this month');
+
+			// 월의 마지막 날과 현재 주의 일요일 중 더 이른 날짜까지만
+			if ($month_end < $last_sunday_to_show) {
+				$last_sunday_to_show = $month_end;
+			}
+		}
+
+		// 일요일 수집
 		while ($date->format('Y') == $year && $date <= $last_sunday_to_show) {
-			$sunday_dates[] = $date->format('Y-m-d');
-			$date->add(new DateInterval('P7D')); // 7일 후
+			// 월이 지정된 경우 해당 월에 속하는 일요일만 추가
+			if ($month && $month >= 1 && $month <= 12) {
+				if ($date->format('n') == $month) {
+					$sunday_dates[] = $date->format('Y-m-d');
+				}
+			} else {
+				$sunday_dates[] = $date->format('Y-m-d');
+			}
+			$date->add(new DateInterval('P7D'));
 		}
 
 		return $sunday_dates;

@@ -1,0 +1,72 @@
+/**
+ * 파일 위치: assets/css/custom/pqgrid.fix.css
+ * 역할: pqGrid 내 input 요소가 모바일에서 정상 동작하도록 수정
+ */
+
+/* pqGrid 내 모든 input 요소 터치 이벤트 활성화 */
+.pq-grid input[type="text"],
+.pq-grid input[type="number"],
+.pq-grid input[type="checkbox"],
+.pq-grid input[type="radio"],
+.pq-grid input[type="date"],
+.pq-grid input[type="time"],
+.pq-grid input[type="email"],
+.pq-grid input[type="tel"],
+.pq-grid input[type="password"],
+.pq-grid textarea,
+.pq-grid select {
+	position: relative;
+	z-index: 100;
+	pointer-events: auto !important;
+	-webkit-user-select: text !important;
+	user-select: text !important;
+	touch-action: auto !important;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* pqGrid 셀 내부 요소 터치 이벤트 통과 */
+.pq-grid-cell {
+	pointer-events: none;
+}
+
+.pq-grid-cell > * {
+	pointer-events: auto;
+}
+
+/* 셀 내부 wrapper div도 터치 이벤트 통과 */
+.pq-grid-cell > div {
+	pointer-events: auto;
+}
+
+/* input 요소 포커스 스타일 */
+.pq-grid input[type="text"]:focus,
+.pq-grid input[type="number"]:focus,
+.pq-grid textarea:focus,
+.pq-grid select:focus {
+	outline: 2px solid #0d6efd;
+	border-color: #0d6efd !important;
+	box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+	background-color: #fff !important;
+}
+
+/* 체크박스/라디오 포커스 스타일 */
+.pq-grid input[type="checkbox"]:focus,
+.pq-grid input[type="radio"]:focus {
+	outline: 2px solid #0d6efd;
+	outline-offset: 2px;
+}
+
+/* 모바일에서 탭 하이라이트 제거 */
+.pq-grid-cell,
+.pq-grid-cell * {
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* 셀 선택 비활성화된 그리드용 스타일 */
+.pq-grid.pq-no-selection .pq-grid-cell {
+	cursor: default;
+}
+
+.pq-grid.pq-no-selection .pq-grid-cell.pq-state-select {
+	background-color: inherit !important;
+}

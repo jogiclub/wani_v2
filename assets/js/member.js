@@ -1259,11 +1259,18 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 						if (colIndex === 0) {
 							handleCheckboxColumnClick(e, rowData.member_idx);
 						} else {
-							// 일반 셀인 경우 회원 정보 수정 창 열기
-							clearTimeout(window.memberCellClickTimeout);
-							window.memberCellClickTimeout = setTimeout(function () {
-								openMemberOffcanvas('edit', rowData);
-							}, 200);
+							// 클릭한 컬럼의 dataIndx 가져오기
+							const colModel = memberGrid.pqGrid("option", "colModel");
+							const clickedColumn = colModel[colIndex];
+							const dataIndx = clickedColumn ? clickedColumn.dataIndx : null;
+
+							// 이름 컬럼인 경우에만 회원 정보 수정 창 열기
+							if (dataIndx === 'member_name') {
+								clearTimeout(window.memberCellClickTimeout);
+								window.memberCellClickTimeout = setTimeout(function () {
+									openMemberOffcanvas('edit', rowData);
+								}, 200);
+							}
 						}
 					}
 				} catch (error) {
@@ -1322,7 +1329,10 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				width: 80,
 				editable: false,
 				align: "center",
-				frozen: true
+				frozen: true,
+				render: function (ui) {
+					return '<b class="text-primary">' + ui.cellData + '</b>';
+				}
 			},
 			{
 				title: "성별",
@@ -1476,6 +1486,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 
 		const colIndx = ui.colIndx;
+		const dataIndx = ui.dataIndx;
 		const rowData = ui.rowData;
 		const memberIdx = rowData.member_idx;
 
@@ -1492,11 +1503,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			return;
 		}
 
-		// 기타 컬럼인 경우 - 회원 정보 수정 창 열기
-		clearTimeout(window.memberCellClickTimeout);
-		window.memberCellClickTimeout = setTimeout(function () {
-			openMemberOffcanvas('edit', rowData);
-		}, 200);
+		// 이름 컬럼인 경우에만 - 회원 정보 수정 창 열기
+		if (dataIndx === 'member_name') {
+			clearTimeout(window.memberCellClickTimeout);
+			window.memberCellClickTimeout = setTimeout(function () {
+				openMemberOffcanvas('edit', rowData);
+			}, 200);
+		}
 	}
 
 	/**
@@ -4901,7 +4914,3 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 });
-
-
-
-

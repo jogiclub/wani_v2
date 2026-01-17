@@ -17,6 +17,13 @@ ul, dl{}
 .row-lg{    margin-left: -32px;margin-right: -32px;padding-left: 19px;padding-right: 19px;}
 
 
+/*pqgrid터치 오류*/
+.pq-grid * {
+	/* 특정 방향 스크롤을 브라우저에 맡겨 간섭을 줄임 */
+	touch-action: pan-y;
+	-webkit-user-select: none; /* 텍스트 선택 기능이 터치를 방해하지 않도록 설정 */
+}
+
 /*.offcanvas.offcanvas-end{width: 700px}*/
 .circle{border-radius: 50%;}
 .badge{font-weight: 400; letter-spacing: 0}

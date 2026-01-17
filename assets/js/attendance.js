@@ -10,7 +10,6 @@ $(document).ready(function () {
 	let selectedAreaIdx = null;        // 선택된 소그룹 ID
 	let selectedType = null;           // 선택된 타입 ('org', 'area', 'unassigned')
 	let splitInstance = null;          // Split.js 인스턴스
-	let currentYear = window.attendancePageData.currentYear; // 현재 년도
 	let attendanceTypes = [];          // 출석 유형 목록
 	let sundayDates = [];              // 일요일 날짜 목록
 	let attendanceData = {};           // 출석 데이터
@@ -20,7 +19,8 @@ $(document).ready(function () {
 	let currentWeekMemberIndices = []; // 현재 주차의 회원 인덱스 목록
 	let attendanceDetailGrid = null;   // 출석 상세 그리드 인스턴스
 	let attendanceDetailGridData = []; // 출석 상세 그리드 데이터
-
+	let currentYear = new Date().getFullYear();
+	let currentMonth = new Date().getMonth() + 1; // 현재 월 (1-12)
 
 
 	// 초기화 시도
@@ -162,6 +162,15 @@ $(document).ready(function () {
 			navigateWeek(1);
 		});
 
+		$('#selectMonth').on('change', function() {
+			currentMonth = $(this).val() || ''; // 빈값이면 전체
+
+			if (selectedOrgId) {
+				loadAttendanceData();
+			}
+		});
+
+
 		// 주차 출석 엑셀 다운로드 버튼
 		$('#btnPrintWeekAttendance').off('click').on('click', function () {
 			downloadWeekAttendanceExcel();
@@ -289,6 +298,7 @@ $(document).ready(function () {
 	/**
 	 * 연도 변경
 	 */
+
 	function changeYear(direction) {
 		const newYear = currentYear + direction;
 
@@ -298,7 +308,11 @@ $(document).ready(function () {
 		}
 
 		currentYear = newYear;
-		$('#currentYear').text(currentYear);
+		$('#currentYear').text(currentYear + '년');
+
+		// 연도 변경 시 월 선택을 전체로 초기화 (선택사항)
+		// $('#selectMonth').val('');
+		// currentMonth = '';
 
 		if (selectedOrgId) {
 			loadAttendanceData();
@@ -651,8 +665,8 @@ $(document).ready(function () {
 			align: "center",
 			render: function (ui) {
 				const totalScore = parseInt(ui.cellData) || 0;
-				const color = totalScore > 0 ? '#0d6efd' : '#6c757d';
-				return '<span style="font-weight: bold; color: ' + color + ';">' + totalScore + '</span>';
+				const color = totalScore > 0 ? 'text-success' : 'text-secondary';
+				return '<b class="' + color + '">' + totalScore + '</b>';
 			}
 		});
 
@@ -711,13 +725,13 @@ $(document).ready(function () {
 
 		if (weekPoints > 0) {
 			return `<div class="attendance-cell-wrapper clickable" data-member-idx="${memberIdx}" data-sunday="${sunday}" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 4px;">
-			<div class="attendance-score" style="background-color: #d1edff; color: #0d6efd; font-weight: bold; padding: 4px 8px; border-radius: 4px; min-width: 24px; text-align: center;">
+			<b class="attendance-score text-primary" style="background-color: #d1edff; padding: 4px 8px; border-radius: 4px; min-width: 24px; text-align: center;">
 				${weekPoints}
-			</div>
+			</b>
 		</div>`;
 		} else {
 			return `<div class="attendance-cell-wrapper clickable" data-member-idx="${memberIdx}" data-sunday="${sunday}" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 4px;">
-			<div class="attendance-score" style="color: #6c757d;">
+			<div class="attendance-score text-secondary">
 				0
 			</div>
 		</div>`;
@@ -815,7 +829,8 @@ $(document).ready(function () {
 				type: selectedType,
 				org_id: selectedOrgId,
 				area_idx: selectedAreaIdx,
-				year: currentYear
+				year: currentYear,
+				month: currentMonth,
 			},
 			dataType: 'json',
 			success: function (response) {
@@ -1086,12 +1101,18 @@ $(document).ready(function () {
 				width: 150,
 				minWidth: 100,
 				maxWidth: 250,
-				editable: true,
+				editable: false,
 				align: "left",
 				resizable: true,
-				editor: {
-					type: "textbox",
-					attr: "placeholder='메모 입력...'"
+				render: function(ui) {
+					const memoValue = ui.cellData || '';
+					const escapedValue = escapeHtml(memoValue);
+					return '<input type="text" class="form-control form-control-sm memo-textbox" ' +
+						'value="' + escapedValue + '" ' +
+						'placeholder="메모 입력..." ' +
+						'data-row-indx="' + ui.rowIndx + '" ' +
+						'data-member-idx="' + ui.rowData.member_idx + '" ' +
+						'style="width: 100%; border: 1px solid #ced4da; background: #fff;">';
 				}
 			},
 			{
@@ -1105,8 +1126,8 @@ $(document).ready(function () {
 				resizable: false,
 				render: function(ui) {
 					const totalScore = parseInt(ui.cellData) || 0;
-					const color = totalScore > 0 ? '#0d6efd' : '#6c757d';
-					return '<span style="font-weight: bold; color: ' + color + ';">' + totalScore + '</span>';
+					const color = totalScore > 0 ? 'text-primary' : 'text-secondary';
+					return '<b class="'+ color +'" >' + totalScore + '</b>';
 				}
 			}
 		];
@@ -1166,6 +1187,7 @@ $(document).ready(function () {
 			});
 		}
 
+		// 변경 후
 		const gridOptions = {
 			width: "100%",
 			dataModel: {
@@ -1173,7 +1195,7 @@ $(document).ready(function () {
 			},
 			colModel: colModel,
 			selectionModel: {
-				type: 'cell'
+				type: 'none'  // 셀 선택 비활성화
 			},
 			strNoRows: '출석 정보가 없습니다',
 			scrollModel: {
@@ -1188,14 +1210,10 @@ $(document).ready(function () {
 			sortable: false,
 			wrap: false,
 			columnBorders: true,
-			editable: true,
-			editModel: {
-				clicksToEdit: 2,
-				saveKey: $.ui.keyCode.ENTER
-			},
+			editable: false,  // 그리드 자체 편집 비활성화 (직접 input 사용)
+			hoverMode: 'null',  // 호버 효과 비활성화
 			// 그리드 완성 후 이벤트 바인딩
 			complete: function() {
-				// 여러 번 호출될 수 있으므로 지연 후 한 번만 바인딩
 				setTimeout(function() {
 					bindAttendanceDetailEvents();
 				}, 200);
@@ -1318,9 +1336,24 @@ $(document).ready(function () {
 			recalculateGridRowTotal(rowIndx);
 		});
 
-		// 메모 변경 이벤트
-		$(document).on('input.attendance-detail change.attendance-detail', 'input[data-indx="memo_content"]', function() {
-			$(this).data('changed', true);
+		// 메모 텍스트박스 이벤트 - 값 변경 시 그리드 데이터에 반영
+		$(document).on('input.attendance-detail', '.memo-textbox', function() {
+			const $textbox = $(this);
+			const rowIndx = parseInt($textbox.data('row-indx'));
+			const memoValue = $textbox.val();
+
+			// 그리드 데이터 업데이트
+			if (attendanceDetailGrid) {
+				try {
+					const gridData = attendanceDetailGrid.pqGrid("option", "dataModel.data");
+					if (gridData && gridData[rowIndx]) {
+						gridData[rowIndx].memo_content = memoValue;
+						attendanceDetailGrid.pqGrid("option", "dataModel.data", gridData);
+					}
+				} catch (error) {
+					console.error('메모 데이터 업데이트 실패:', error);
+				}
+			}
 		});
 	}
 
