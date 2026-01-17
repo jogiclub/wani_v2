@@ -1292,4 +1292,31 @@ class Send_model extends CI_Model
 	}
 
 
+	/**
+	 * 파일 위치: application/models/Send_model.php
+	 * 역할: 선택된 회원들의 정보 조회 (마스터용 - org_id 필터 없음)
+	 */
+	public function get_selected_members_master($member_ids)
+	{
+		if (empty($member_ids) || !is_array($member_ids)) {
+			return array();
+		}
+
+		$this->db->select('m.member_idx, m.member_name, m.member_phone, m.position_name, m.org_id, a.area_name, o.org_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->join('wb_org o', 'm.org_id = o.org_id', 'left');
+		$this->db->where_in('m.member_idx', $member_ids);
+		$this->db->where('m.del_yn', 'N');
+		$this->db->where('m.member_phone IS NOT NULL');
+		$this->db->where('m.member_phone !=', '');
+		$this->db->order_by('m.member_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+
+
+
 }

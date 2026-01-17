@@ -16,66 +16,6 @@ class Send extends MY_Controller
 		$this->load->helper('url');
 	}
 
-	/**
-	 * 파일 위치: application/controllers/Send.php
-	 * 역할: 문자 발송 팝업 표시
-	 */
-	public function popup()
-	{
-		$user_id = $this->session->userdata('user_id');
-		if (!$user_id) {
-			redirect('login');
-			return;
-		}
-
-		// 현재 조직 정보 가져오기
-		$current_org_id = $this->input->cookie('activeOrg');
-		if (!$current_org_id) {
-			$this->session->set_flashdata('error', '조직 정보를 찾을 수 없습니다.');
-			echo '<script>alert("조직을 먼저 선택해주세요."); window.close();</script>';
-			return;
-		}
-
-		// 선택된 회원 번호들 받기 (배열 또는 JSON 문자열)
-		$member_ids_input = $this->input->post('member_ids');
-		$selected_members = array();
-
-		if (!empty($member_ids_input)) {
-			$member_ids = array();
-
-			// 배열인 경우와 JSON 문자열인 경우 모두 처리
-			if (is_array($member_ids_input)) {
-				// 회원 관리 페이지에서 배열로 전송된 경우
-				$member_ids = $member_ids_input;
-			} else if (is_string($member_ids_input)) {
-				// 메시지 알림에서 JSON 문자열로 전송된 경우
-				$decoded = json_decode($member_ids_input, true);
-				if (is_array($decoded)) {
-					$member_ids = $decoded;
-				}
-			}
-
-			// member_ids가 있으면 회원 정보 조회
-			if (!empty($member_ids) && is_array($member_ids)) {
-				$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
-			}
-		}
-
-		// 발신번호 목록 조회 (인증 상태 포함)
-		$sender_numbers = $this->Send_model->get_sender_numbers_with_auth($current_org_id);
-
-		// 미리 등록된 문구 목록 조회
-		$send_templates = $this->Send_model->get_send_templates($current_org_id);
-
-		$data = array(
-			'selected_members' => $selected_members,
-			'sender_numbers' => $sender_numbers,
-			'send_templates' => $send_templates,
-			'org_id' => $current_org_id
-		);
-
-		$this->load->view('send/popup', $data);
-	}
 
 
 
@@ -1807,5 +1747,80 @@ class Send extends MY_Controller
 
 		echo json_encode($result);
 	}
+
+
+	/**
+	 * 파일 위치: application/controllers/Send.php
+	 * 역할: 문자 발송 팝업 표시 (마스터 지원)
+	 */
+	public function popup()
+	{
+		$user_id = $this->session->userdata('user_id');
+		if (!$user_id) {
+			redirect('login');
+			return;
+		}
+
+		// 현재 조직 정보 가져오기
+		$current_org_id = $this->input->cookie('activeOrg');
+		if (!$current_org_id) {
+			$this->session->set_flashdata('error', '조직 정보를 찾을 수 없습니다.');
+			echo '<script>alert("조직을 먼저 선택해주세요."); window.close();</script>';
+			return;
+		}
+
+		// 마스터 여부 확인
+		$master_yn = $this->session->userdata('master_yn');
+
+		// 마스터 모드 여부 (POST로 전달받음)
+		$is_master_mode = $this->input->post('master_mode') === 'Y';
+
+		// 선택된 회원 번호들 받기 (배열 또는 JSON 문자열)
+		$member_ids_input = $this->input->post('member_ids');
+		$selected_members = array();
+
+		if (!empty($member_ids_input)) {
+			$member_ids = array();
+
+			// 배열인 경우와 JSON 문자열인 경우 모두 처리
+			if (is_array($member_ids_input)) {
+				// 회원 관리 페이지에서 배열로 전송된 경우
+				$member_ids = $member_ids_input;
+			} else if (is_string($member_ids_input)) {
+				// 메시지 알림에서 JSON 문자열로 전송된 경우
+				$decoded = json_decode($member_ids_input, true);
+				if (is_array($decoded)) {
+					$member_ids = $decoded;
+				}
+			}
+
+			// member_ids가 있으면 회원 정보 조회
+			if (!empty($member_ids) && is_array($member_ids)) {
+				// 마스터이고 마스터 모드인 경우 org_id 필터 없이 조회
+				if ($master_yn === 'Y' && $is_master_mode) {
+					$selected_members = $this->Send_model->get_selected_members_master($member_ids);
+				} else {
+					$selected_members = $this->Send_model->get_selected_members($member_ids, $current_org_id);
+				}
+			}
+		}
+
+		// 발신번호 목록 조회 (인증 상태 포함)
+		$sender_numbers = $this->Send_model->get_sender_numbers_with_auth($current_org_id);
+
+		// 미리 등록된 문구 목록 조회
+		$send_templates = $this->Send_model->get_send_templates($current_org_id);
+
+		$data = array(
+			'selected_members' => $selected_members,
+			'sender_numbers' => $sender_numbers,
+			'send_templates' => $send_templates,
+			'org_id' => $current_org_id,
+			'is_master_mode' => $is_master_mode
+		);
+
+		$this->load->view('send/popup', $data);
+	}
+
 
 }

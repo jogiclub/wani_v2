@@ -1057,41 +1057,7 @@
 		});
 	}
 
-	/**
-	 * 선택된 회원 목록 가져오기
-	 */
-	function getSelectedMembers() {
-		const selectedMembers = [];
 
-		if (!memberGrid) {
-			return selectedMembers;
-		}
-
-		try {
-			const gridData = memberGrid.pqGrid('option', 'dataModel.data');
-
-			if (!gridData || !Array.isArray(gridData)) {
-				return selectedMembers;
-			}
-
-			// 체크된 각 ID에 대해 그리드에서 해당 데이터 찾기
-			checkedMemberIds.forEach(checkedMemberIdx => {
-				const memberData = gridData.find(row => {
-					const rowMemberIdx = parseInt(row.member_idx);
-					return rowMemberIdx === checkedMemberIdx;
-				});
-
-				if (memberData) {
-					selectedMembers.push(memberData);
-				}
-			});
-
-		} catch (error) {
-			console.error('getSelectedMembers 오류:', error);
-		}
-
-		return selectedMembers;
-	}
 
 	/**
 	 * 관리tag 변경 버튼 클릭 핸들러
@@ -1378,47 +1344,6 @@
 		});
 	}
 
-	/**
-	 * 파일 위치: assets/js/mng_member.js
-	 * 역할: 글로벌 이벤트 바인딩 (선택문자, 엑셀다운로드 버튼 추가)
-	 */
-	function bindGlobalEvents() {
-		// 새로고침 버튼
-		$('#btnRefresh').on('click', function() {
-			refreshTreeAndGrid();
-		});
-
-		// 관리tag 변경 버튼
-		$('#btnStatusChange').on('click', function() {
-			handleStatusChange();
-		});
-
-		// 관리tag 변경 확인 버튼
-		$('#confirmStatusChangeBtn').on('click', function() {
-			executeStatusChange();
-		});
-
-		// 선택문자 버튼
-		$('#btnSendMember').on('click', function() {
-			handleSendMember();
-		});
-
-		// 엑셀다운로드 버튼
-		$('#btnExcelDownload').on('click', function() {
-			exportMemberToExcel();
-		});
-
-		// 윈도우 리사이즈 이벤트
-		$(window).on('resize', debounce(function() {
-			if (memberGrid) {
-				try {
-					memberGrid.pqGrid("refresh");
-				} catch(error) {
-					console.warn('그리드 리사이즈 실패:', error);
-				}
-			}
-		}, 250));
-	}
 
 
 	/**
@@ -1440,7 +1365,7 @@
 
 		if (membersWithoutPhone.length > 0) {
 			const memberNames = membersWithoutPhone.map(function(member) {
-				return member.member_name;
+				return member.member_name || '이름없음';
 			}).join(', ');
 
 			showConfirmModal(
@@ -1450,6 +1375,10 @@
 					const validMembers = selectedMembers.filter(function(member) {
 						return member.member_phone && member.member_phone.trim() !== '';
 					});
+					if (validMembers.length === 0) {
+						showToast('발송 가능한 회원이 없습니다.', 'warning');
+						return;
+					}
 					openSendPopup(validMembers);
 				}
 			);
@@ -1460,9 +1389,14 @@
 
 	/**
 	 * 파일 위치: assets/js/mng_member.js
-	 * 역할: 문자 발송 팝업 열기
+	 * 역할: 문자 발송 팝업 열기 - member_idx 배열을 POST로 전달 (마스터 모드)
 	 */
 	function openSendPopup(selectedMembers) {
+		if (!selectedMembers || selectedMembers.length === 0) {
+			showToast('발송할 회원이 없습니다.', 'warning');
+			return;
+		}
+
 		const popupWidth = 1400;
 		const popupHeight = 850;
 		const left = (screen.width - popupWidth) / 2;
@@ -1472,6 +1406,11 @@
 		const popupWindow = window.open('', 'sendPopup',
 			'width=' + popupWidth + ',height=' + popupHeight + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes');
 
+		if (!popupWindow) {
+			showToast('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.', 'error');
+			return;
+		}
+
 		// 임시 폼 생성하여 POST로 데이터 발송
 		const tempForm = $('<form>', {
 			'method': 'POST',
@@ -1479,16 +1418,21 @@
 			'target': 'sendPopup'
 		});
 
-		// 선택된 회원이 있는 경우에만 member_ids 전송
-		if (selectedMembers && selectedMembers.length > 0) {
-			selectedMembers.forEach(function(member) {
-				tempForm.append($('<input>', {
-					'type': 'hidden',
-					'name': 'member_ids[]',
-					'value': member.member_idx
-				}));
-			});
-		}
+		// 마스터 모드 플래그 추가
+		tempForm.append($('<input>', {
+			'type': 'hidden',
+			'name': 'master_mode',
+			'value': 'Y'
+		}));
+
+		// member_idx 배열로 전송
+		selectedMembers.forEach(function(member) {
+			tempForm.append($('<input>', {
+				'type': 'hidden',
+				'name': 'member_ids[]',
+				'value': member.member_idx
+			}));
+		});
 
 		$('body').append(tempForm);
 		tempForm.submit();
@@ -1501,6 +1445,96 @@
 			}
 		}, 1000);
 	}
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 선택된 회원 목록 가져오기
+	 */
+	function getSelectedMembers() {
+		const selectedMembers = [];
+
+		if (!memberGrid) {
+			console.warn('memberGrid가 초기화되지 않았습니다.');
+			return selectedMembers;
+		}
+
+		try {
+			const gridData = memberGrid.pqGrid('option', 'dataModel.data');
+
+			if (!gridData || !Array.isArray(gridData)) {
+				console.warn('그리드 데이터가 없습니다.');
+				return selectedMembers;
+			}
+
+			// checkedMemberIds Set에서 체크된 회원 ID 가져오기
+			checkedMemberIds.forEach(function(checkedMemberIdx) {
+				const memberData = gridData.find(function(row) {
+					return parseInt(row.member_idx) === parseInt(checkedMemberIdx);
+				});
+
+				if (memberData) {
+					selectedMembers.push({
+						member_idx: memberData.member_idx,
+						member_name: memberData.member_name || '',
+						member_phone: memberData.member_phone || '',
+						org_name: memberData.org_name || ''
+					});
+				}
+			});
+
+			console.log('선택된 회원:', selectedMembers.length + '명');
+
+		} catch (error) {
+			console.error('getSelectedMembers 오류:', error);
+		}
+
+		return selectedMembers;
+	}
+
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 글로벌 이벤트 바인딩
+	 */
+	function bindGlobalEvents() {
+		// 새로고침 버튼
+		$('#btnRefresh').on('click', function() {
+			refreshTreeAndGrid();
+		});
+
+		// 관리tag 변경 버튼
+		$('#btnStatusChange').on('click', function() {
+			handleStatusChange();
+		});
+
+		// 관리tag 변경 확인 버튼
+		$('#confirmStatusChangeBtn').on('click', function() {
+			executeStatusChange();
+		});
+
+		// 선택문자 버튼
+		$('#btnSendMember').off('click').on('click', function() {
+			handleSendMember();
+		});
+
+		// 엑셀다운로드 버튼
+		$('#btnExcelDownload').off('click').on('click', function() {
+			exportMemberToExcel();
+		});
+
+		// 윈도우 리사이즈 이벤트
+		$(window).on('resize', debounce(function() {
+			if (memberGrid) {
+				try {
+					memberGrid.pqGrid("refresh");
+				} catch(error) {
+					console.warn('그리드 리사이즈 실패:', error);
+				}
+			}
+		}, 250));
+	}
+
 
 	/**
 	 * 파일 위치: assets/js/mng_member.js
