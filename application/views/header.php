@@ -202,9 +202,12 @@
  * 사용자 권한에 따른 메뉴 표시 로직
  */
 
-
 // 메뉴 헬퍼 로드
 $this->load->helper('menu');
+
+// 메뉴 및 카테고리 데이터 가져오기
+$system_menus = get_system_menus();
+$menu_categories = get_menu_categories();
 
 // 현재 조직에서의 사용자 권한 레벨 확인
 $current_user_level = 0;
@@ -216,212 +219,73 @@ if (isset($current_org) && $current_org) {
 // 사용자의 관리 메뉴 조회
 $user_managed_menus = array();
 if ($this->session->userdata('master_yn') !== 'Y' && $current_user_level < 10) {
-// 최고관리자가 아니고 조직 레벨 10이 아닌 경우 관리 메뉴 조회
+	// 최고관리자가 아니고 조직 레벨 10이 아닌 경우 관리 메뉴 조회
 	if (!isset($this->User_management_model)) {
 		$this->load->model('User_management_model');
 	}
 	$user_managed_menus = $this->User_management_model->get_user_managed_menus($this->session->userdata('user_id'));
 }
 
-/**
- * 메뉴 접근 권한 확인 함수
- */
-function can_access_menu($menu_key, $user_managed_menus, $is_master, $user_level)
-{
-// 최고관리자이거나 조직 레벨 10인 경우 모든 메뉴 접근 가능
-	if ($is_master === 'Y' || $user_level >= 10) {
-		return true;
-	}
-
-// 관리 메뉴가 설정되지 않은 경우 접근 불가
-	if (empty($user_managed_menus)) {
-		return false;
-	}
-
-// 관리 메뉴에 포함된 경우 접근 가능
-	return in_array($menu_key, $user_managed_menus);
-}
-
 $is_master = $this->session->userdata('master_yn');
 ?>
 
 <div class="wrapper d-flex"></div>
-		<div class="sidebar border border-right p-0 bg-body-tertiary">
-			<div class="offcanvas-xl offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
-				<div class="offcanvas-header">
-					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
-				</div>
-				<div class="offcanvas-body d-xl-flex flex-column p-0 pt-xl-3 overflow-y-auto">
-
-					<!-- OVERVIEW 섹션 -->
-
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
-							OVERVIEW
-						</h6>
-						<ul class="nav flex-column">
-							<li class="nav-item">
-								<a class="nav-link d-flex align-items-center gap-1 menu-11" aria-current="page"
-								   href="<?php echo base_url('dashboard'); ?>">
-									<i class="bi bi-file-earmark-ruled"></i> 대시보드
-								</a>
-							</li>
-						</ul>
-
-
-					<!-- MEMBER 섹션 -->
-					<?php
-					$show_member_section = $is_master === 'Y' || $current_user_level >= 10 ||
-						can_access_menu('MEMBER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('ATTENDANCE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('TIMELINE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('MEMO_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level);
-					?>
-					<?php if ($show_member_section): ?>
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
-							MEMBER
-						</h6>
-						<ul class="nav flex-column mb-auto">
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('MEMBER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-21"
-									   href="<?php echo base_url('member'); ?>">
-										<i class="bi bi-people"></i> 회원관리
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ATTENDANCE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-22"
-									   href="<?php echo base_url('attendance'); ?>">
-										<i class="bi bi-clipboard-check"></i> 출석관리
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ATTENDANCE_BOARD', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-23"
-									   href="<?php echo base_url('qrcheck'); ?>">
-										<i class="bi bi-qr-code-scan"></i> QR출석
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('TIMELINE_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-24" href="<?php echo base_url('timeline'); ?>">
-										<i class="bi bi-clock-history"></i> 타임라인관리
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('MEMO_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-25" href="<?php echo base_url('memos'); ?>">
-										<i class="bi bi-journal-bookmark"></i> 메모관리
-									</a>
-								</li>
-							<?php endif; ?>
-						</ul>
-					<?php endif; ?>
-
-					<!-- HOMEPAGE 섹션 -->
-					<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
-						HOMEPAGE
-					</h6>
-					<ul class="nav flex-column mb-auto">
-						<li class="nav-item">
-							<a class="nav-link d-flex align-items-center gap-1 menu-51" href="<?php echo base_url('homepage_setting'); ?>">
-								<i class="bi bi-house-gear"></i> 홈페이지 기본설정
-							</a>
-						</li>
-						<li class="nav-item">
-							<a class="nav-link d-flex align-items-center gap-1 menu-52" href="<?php echo base_url('homepage_menu'); ?>">
-								<i class="bi bi-view-stacked"></i> 홈페이지 메뉴설정
-							</a>
-						</li>
-
-					</ul>
-
-
-					<!-- STATICS 섹션 -->
-					<?php
-					$show_statics_section = $is_master === 'Y' || $current_user_level >= 10 ||
-						can_access_menu('WEEKLY_STATISTICS', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('MEMBER_STATISTICS', $user_managed_menus, $is_master, $current_user_level);
-					?>
-
-
-
-
-					<!-- SETTING 섹션 -->
-					<?php
-					$show_setting_section = $is_master === 'Y' || $current_user_level >= 10 ||
-						can_access_menu('ORG_SETTING', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('GROUP_SETTING', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('DETAIL_FIELD_SETTING', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('ATTENDANCE_SETTING', $user_managed_menus, $is_master, $current_user_level) ||
-						can_access_menu('USER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level);
-					?>
-					<?php if ($show_setting_section): ?>
-						<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
-							SETTING
-						</h6>
-						<ul class="nav flex-column mb-auto">
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ORG_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-41"
-									   href="<?php echo base_url('org'); ?>">
-										<i class="bi bi-building-gear"></i> 조직설정
-									</a>
-								</li>
-							<?php endif; ?>
-
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('GROUP_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-42"
-									   href="<?php echo base_url('group_setting'); ?>">
-										<i class="bi bi-diagram-3"></i> 그룹설정
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('DETAIL_FIELD_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-43"
-									   href="<?php echo base_url('detail_field'); ?>">
-										<i class="bi bi-input-cursor-text"></i> 상세필드설정
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('ATTENDANCE_SETTING', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-44"
-									   href="<?php echo base_url('attendance_setting'); ?>">
-										<i class="bi bi-sliders2-vertical"></i> 출석설정
-									</a>
-								</li>
-							<?php endif; ?>
-							<?php if ($is_master === 'Y' || $current_user_level >= 10 || can_access_menu('USER_MANAGEMENT', $user_managed_menus, $is_master, $current_user_level)): ?>
-								<li class="nav-item">
-									<a class="nav-link d-flex align-items-center gap-1 menu-45"
-									   href="<?php echo base_url('user_management'); ?>">
-										<i class="bi bi-person-video"></i> 사용자관리
-									</a>
-								</li>
-							<?php endif; ?>
-						</ul>
-					<?php endif; ?>
-
-					<hr class="my-3">
-					<ul class="nav flex-column mb-auto">
-						<li class="nav-item">
-							<a class="nav-link d-flex align-items-center gap-1 menu-51"
-							   href="<?php echo base_url('login/logout'); ?>">
-								<i class="bi bi-box-arrow-right"></i> 로그아웃
-							</a>
-						</li>
-					</ul>
-				</div>
-			</div>
+<div class="sidebar border border-right p-0 bg-body-tertiary">
+	<div class="offcanvas-xl offcanvas-end bg-body-tertiary" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+		<div class="offcanvas-header">
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
 		</div>
+		<div class="offcanvas-body d-xl-flex flex-column p-0 pt-xl-3 overflow-y-auto">
+
+			<?php foreach ($menu_categories as $category_key => $category): ?>
+				<?php
+				// 카테고리 표시 여부 확인
+				$show_category = check_category_visible($category, $user_managed_menus, $is_master, $current_user_level);
+
+				if (!$show_category) continue;
+				?>
+
+				<!-- <?php echo $category['name']; ?> 섹션 -->
+				<h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-body-secondary text-uppercase">
+					<?php echo $category['name']; ?>
+				</h6>
+				<ul class="nav flex-column mb-auto">
+					<?php foreach ($category['menus'] as $menu_key): ?>
+						<?php
+						// 메뉴가 존재하는지 확인
+						if (!isset($system_menus[$menu_key])) continue;
+
+						$menu = $system_menus[$menu_key];
+
+						// 메뉴 접근 권한 확인
+						$can_access = can_access_menu($menu_key, $user_managed_menus, $is_master, $current_user_level);
+
+						// 항상 표시하는 카테고리의 메뉴이거나 접근 권한이 있는 경우만 표시
+						if (!$category['show_always'] && !$can_access) continue;
+						?>
+						<li class="nav-item">
+							<a class="nav-link d-flex align-items-center gap-1 <?php echo $menu['menu_class']; ?>"
+							   <?php if ($menu_key === 'OVERVIEW'): ?>aria-current="page"<?php endif; ?>
+							   href="<?php echo base_url($menu['url']); ?>">
+								<i class="<?php echo $menu['icon']; ?>"></i> <?php echo $menu['name']; ?>
+							</a>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php endforeach; ?>
+
+			<hr class="my-3">
+			<ul class="nav flex-column mb-auto">
+				<li class="nav-item">
+					<a class="nav-link d-flex align-items-center gap-1 menu-logout"
+					   href="<?php echo base_url('login/logout'); ?>">
+						<i class="bi bi-box-arrow-right"></i> 로그아웃
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+</div>
 
 
 
@@ -530,28 +394,28 @@ $is_master = $this->session->userdata('master_yn');
 
 
 
-		<main class="main pt-3 bg-light" style="height: calc(100vh - 60px);">
-			<?php endif; ?>
+<main class="main pt-3 bg-light" style="height: calc(100vh - 60px);">
+	<?php endif; ?>
 
 
-			<script>
-				function returnToAdmin() {
-					if (confirm('관리자 계정으로 돌아가시겠습니까?')) {
-						$.ajax({
-							url: '/user_management/return_to_admin',
-							type: 'POST',
-							dataType: 'json',
-							success: function (response) {
-								if (response.success) {
-									location.reload();
-								} else {
-									alert('오류가 발생했습니다.');
-								}
-							},
-							error: function () {
-								alert('오류가 발생했습니다.');
-							}
-						});
+	<script>
+		function returnToAdmin() {
+			if (confirm('관리자 계정으로 돌아가시겠습니까?')) {
+				$.ajax({
+					url: '/user_management/return_to_admin',
+					type: 'POST',
+					dataType: 'json',
+					success: function (response) {
+						if (response.success) {
+							location.reload();
+						} else {
+							alert('오류가 발생했습니다.');
+						}
+					},
+					error: function () {
+						alert('오류가 발생했습니다.');
 					}
-				}
-			</script>
+				});
+			}
+		}
+	</script>

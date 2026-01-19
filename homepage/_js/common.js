@@ -449,7 +449,7 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = nu
 			html += '<button class="btn btn-outline-secondary" type="button" id="boardSearchBtn">검색</button>';
 			html += '</div>';
 			html += '<div class="d-flex gap-2">';
-			html += `<a href="/board/${menuId}/write" class="btn btn-primary">글쓰기</a>`;
+			html += `<button type="button" class="btn btn-primary" id="btnBoardWrite" data-menu-id="${menuId}">글쓰기</button>`;
 			html += '<div class="btn-group" role="group">';
 			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'list' ? 'active' : ''}" data-view="list" title="리스트"><i class="bi bi-list-ul"></i></button>`;
 			html += `<button type="button" class="btn btn-outline-secondary ${viewType === 'gallery' ? 'active' : ''}" data-view="gallery" title="갤러리"><i class="bi bi-grid-3x3-gap"></i></button>`;
@@ -518,6 +518,16 @@ async function loadBoardList(menuId, page = 1, searchKeyword = '', viewType = nu
 					}
 				});
 			});
+
+
+			const btnWrite = document.getElementById('btnBoardWrite');
+			if (btnWrite) {
+				btnWrite.addEventListener('click', function() {
+					const menuId = this.dataset.menuId;
+					showWriteVerifyModal(menuId);
+				});
+			}
+
 		} else {
 			mainContent.innerHTML = '<div class="text-center py-5"><p class="text-muted">게시판을 찾을 수 없습니다.</p></div>';
 		}
@@ -550,7 +560,7 @@ function renderListView(data, total, page, menuId, limit) {
 		const diffTime = Math.abs(currentDate - regDate);
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 		if (diffDays <= 3) {
-			icons += '<span class="badge bg-danger ms-1">NEW</span>';
+			icons += '<span class="badge badge-sm bg-danger ms-1">NEW</span>';
 		}
 
 		// YouTube 아이콘
@@ -1081,6 +1091,17 @@ async function showBoardWriteForm(menuId) {
 	const mainContent = document.getElementById('mainContent');
 	mainContent.classList.remove('loading');
 
+	// 세션스토리지에서 작성자 정보 확인
+	const verifiedWriterStr = sessionStorage.getItem('verifiedWriter');
+	if (!verifiedWriterStr) {
+		// 작성자 확인이 되지 않은 경우 목록으로 이동
+		showToast('작성자 확인이 필요합니다.');
+		window.location.href = `/board/${menuId}/`;
+		return;
+	}
+
+	const verifiedWriter = JSON.parse(verifiedWriterStr);
+
 	// 메뉴 정보 조회
 	const menuInfo = menuData.find(item => item.id === menuId);
 	const menuName = menuInfo ? menuInfo.name : '게시판';
@@ -1104,33 +1125,24 @@ async function showBoardWriteForm(menuId) {
 
 	html += '<form id="boardWriteForm" class="mt-4">';
 
-	// 작성자 확인 필드
+	// 작성자 정보 (읽기 전용)
 	html += '<div class="mb-3">';
-	html += '<label class="form-label">작성자 확인</label>';
-	html += '<div class="row g-2">';
-	html += '<div class="col-md-4">';
-	html += '<input type="text" class="form-control" id="writerName" placeholder="이름" required>';
-	html += '</div>';
-	html += '<div class="col-md-4">';
-	html += '<input type="text" class="form-control" id="writerPhone" placeholder="휴대폰번호" required>';
-	html += '</div>';
-	html += '<div class="col-md-4">';
-	html += '<button type="button" class="btn btn-outline-secondary w-100" id="btnVerifyWriter">확인</button>';
-	html += '</div>';
-	html += '</div>';
-	html += '<div id="verifyResult" class="mt-2"></div>';
-	html += '<input type="hidden" id="isVerified" value="0">';
+	html += '<label class="form-label">작성자</label>';
+	html += `<input type="text" class="form-control" id="writerName" value="${escapeHtml(verifiedWriter.name)}" disabled>`;
+	html += `<input type="hidden" id="writerNameHidden" value="${escapeHtml(verifiedWriter.name)}">`;
+	html += `<input type="hidden" id="writerPhone" value="${escapeHtml(verifiedWriter.phone)}">`;
+	html += '<input type="hidden" id="isVerified" value="1">';
 	html += '</div>';
 
 	// 제목
 	html += '<div class="mb-3">';
-	html += '<label for="boardTitle" class="form-label">제목</label>';
+	html += '<label for="boardTitle" class="form-label">제목 <span class="text-danger">*</span></label>';
 	html += '<input type="text" class="form-control" id="boardTitle" required>';
 	html += '</div>';
 
 	// 내용
 	html += '<div class="mb-3">';
-	html += '<label for="boardContent" class="form-label">내용</label>';
+	html += '<label for="boardContent" class="form-label">내용 <span class="text-danger">*</span></label>';
 	html += '<textarea class="form-control" id="boardContent" rows="10" required></textarea>';
 	html += '</div>';
 
@@ -1161,22 +1173,13 @@ async function showBoardWriteForm(menuId) {
 	// Dropzone 초기화
 	initBoardWriteDropzone();
 
-	// 작성자 확인 버튼 이벤트
-	document.getElementById('btnVerifyWriter').addEventListener('click', verifyWriter);
-
 	// 폼 제출 이벤트
 	document.getElementById('boardWriteForm').addEventListener('submit', async (e) => {
 		e.preventDefault();
 
-		const isVerified = document.getElementById('isVerified').value;
-		if (isVerified !== '1') {
-			showToast('작성자 확인을 먼저 진행해주세요.');
-			return;
-		}
-
 		const title = document.getElementById('boardTitle').value.trim();
 		const content = document.getElementById('boardContent').value.trim();
-		const writerName = document.getElementById('writerName').value.trim();
+		const writerName = document.getElementById('writerNameHidden').value.trim();
 		const writerPhone = document.getElementById('writerPhone').value.trim();
 		const youtubeUrl = document.getElementById('youtubeUrl').value.trim();
 		const uploadedFiles = document.getElementById('uploadedFiles').value;
@@ -1212,7 +1215,7 @@ async function showBoardWriteForm(menuId) {
 					org_code: ORG_CODE,
 					menu_id: menuId,
 					board_title: title,
-					board_content: JSON.stringify(editorJsContent), // EditorJS 형식으로 저장
+					board_content: JSON.stringify(editorJsContent),
 					writer_name: writerName,
 					writer_phone: writerPhone,
 					youtube_url: youtubeUrl,
@@ -1223,6 +1226,8 @@ async function showBoardWriteForm(menuId) {
 			const result = await response.json();
 
 			if (result.success) {
+				// 세션스토리지 클리어
+				sessionStorage.removeItem('verifiedWriter');
 				showToast('게시글이 등록되었습니다.');
 				window.location.href = `/board/${menuId}/`;
 			} else {
@@ -1798,7 +1803,8 @@ async function showBoardEditForm(menuId, idx) {
 		// 작성자 정보 (읽기 전용)
 		html += '<div class="mb-3">';
 		html += '<label class="form-label">작성자</label>';
-		html += '<input type="text" class="form-control" id="writerName" value="' + escapeHtml(boardData.writer_name || '') + '" readonly>';
+		html += '<input type="text" class="form-control" id="writerName" value="' + escapeHtml(boardData.writer_name || '') + '" disabled>';
+		html += '<input type="hidden" id="writerNameHidden" value="' + escapeHtml(boardData.writer_name || '') + '">';
 		html += '</div>';
 
 		// 내용
@@ -2680,4 +2686,126 @@ function renderRelatedLinks(relatedLinks) {
 	}
 	$mobileLinkList.html(mobileHtml);
 	$('.navbar-top').show();
+}
+
+
+/**
+ * 글쓰기용 작성자 확인 모달 HTML 생성
+ */
+function getWriteVerifyModalHtml() {
+	return `
+		<div class="modal fade" id="writeVerifyModal" tabindex="-1" aria-labelledby="writeVerifyModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="writeVerifyModalLabel">작성자 확인</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div class="modal-body">
+						<p class="text-muted mb-3">게시글 작성을 위해 본인 확인이 필요합니다.</p>
+						<form id="writeVerifyForm">
+							<input type="hidden" id="writeMenuId" value="">
+							<div class="mb-3">
+								<label for="writeWriterName" class="form-label">이름</label>
+								<input type="text" class="form-control" id="writeWriterName" placeholder="이름을 입력하세요" required>
+							</div>
+							<div class="mb-3">
+								<label for="writeWriterPhone" class="form-label">휴대폰번호</label>
+								<input type="tel" class="form-control" id="writeWriterPhone" placeholder="휴대폰번호 (- 없이)" maxlength="11" required>
+							</div>
+							<div id="writeVerifyResult" class="mb-3"></div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+						<button type="button" class="btn btn-primary" id="btnConfirmWrite">확인</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	`;
+}
+
+/**
+ * 글쓰기용 작성자 확인 모달 표시
+ */
+function showWriteVerifyModal(menuId) {
+	// 모달이 없으면 추가
+	if (!document.getElementById('writeVerifyModal')) {
+		document.body.insertAdjacentHTML('beforeend', getWriteVerifyModalHtml());
+	}
+
+	// 값 초기화
+	document.getElementById('writeMenuId').value = menuId;
+	document.getElementById('writeWriterName').value = '';
+	document.getElementById('writeWriterPhone').value = '';
+	document.getElementById('writeVerifyResult').innerHTML = '';
+
+	// 모달 표시
+	const modal = new bootstrap.Modal(document.getElementById('writeVerifyModal'));
+	modal.show();
+
+	// 확인 버튼 이벤트 (기존 이벤트 제거 후 새로 바인딩)
+	const btnConfirm = document.getElementById('btnConfirmWrite');
+	const newBtnConfirm = btnConfirm.cloneNode(true);
+	btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
+
+	newBtnConfirm.addEventListener('click', async function() {
+		const menuId = document.getElementById('writeMenuId').value;
+		const name = document.getElementById('writeWriterName').value.trim();
+		const phone = document.getElementById('writeWriterPhone').value.trim();
+		const resultDiv = document.getElementById('writeVerifyResult');
+
+		if (!name || !phone) {
+			resultDiv.innerHTML = '<div class="alert alert-warning py-2">이름과 휴대폰번호를 모두 입력해주세요.</div>';
+			return;
+		}
+
+		// 버튼 비활성화
+		newBtnConfirm.disabled = true;
+		newBtnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>확인 중...';
+
+		try {
+			// 회원 확인 API 호출
+			const response = await fetch(`${API_BASE_URL}/board/verify_writer`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					org_code: ORG_CODE,
+					member_name: name,
+					member_phone: phone
+				})
+			});
+
+			const result = await response.json();
+
+			if (result.success && result.data && result.data.is_member) {
+				// 확인 성공 - 모달 닫고 글쓰기 페이지로 이동 (작성자 정보 전달)
+				resultDiv.innerHTML = '<div class="alert alert-success py-2">확인되었습니다. 글쓰기 페이지로 이동합니다.</div>';
+
+				// 세션스토리지에 작성자 정보 저장
+				sessionStorage.setItem('verifiedWriter', JSON.stringify({
+					name: name,
+					phone: phone,
+					memberIdx: result.data.member_idx
+				}));
+
+				// 잠시 후 페이지 이동
+				setTimeout(() => {
+					bootstrap.Modal.getInstance(document.getElementById('writeVerifyModal')).hide();
+					window.location.href = `/board/${menuId}/write`;
+				}, 500);
+			} else {
+				// 확인 실패
+				resultDiv.innerHTML = '<div class="alert alert-danger py-2">' + (result.message || '조직의 회원이 아닙니다.') + '</div>';
+				newBtnConfirm.disabled = false;
+				newBtnConfirm.innerHTML = '확인';
+			}
+		} catch (error) {
+			console.error('작성자 확인 오류:', error);
+			resultDiv.innerHTML = '<div class="alert alert-danger py-2">확인 중 오류가 발생했습니다.</div>';
+			newBtnConfirm.disabled = false;
+			newBtnConfirm.innerHTML = '확인';
+		}
+	});
 }

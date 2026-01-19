@@ -25,6 +25,9 @@
 .btn-secondary {background-color: #6c757d;border-color: #6c757d;}
 .btn-secondary:hover {background-color: #5a6268;border-color: #545b62;}
 
+.badge-sm{padding: 3px 5px; font-size: 12px; border-radius: 3px;}
+
+
 /* 기본 */
 body {font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;min-height: 100vh;display: flex;flex-direction: column;}
 
