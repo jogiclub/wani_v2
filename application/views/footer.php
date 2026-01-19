@@ -1,5 +1,15 @@
+
+
+
 		</main>
+
+		<div class="footer-buttons">
+			<div id="navbarKakao" class="kakao-channel d-flex justify-content-center align-items-center position-relative border border-warning"  data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="카카오채널">
+				<a class="" type="button"><i class="bi bi-chat-fill"></i></a>
+			</div>
+		</div>
 </div>
+
 
 
 <!-- 공통 Toast 컨테이너 -->

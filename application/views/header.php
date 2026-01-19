@@ -149,10 +149,6 @@
 			<a class="" type="button" id="buttonSend"><i class="bi bi-chat-text-fill fs-5 text-secondary"></i></a>
 		</div>
 
-		<div id="navbarKakao" class="kakao-channel d-none d-lg-flex justify-content-center align-items-center position-relative border border-warning" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="카카오채널">
-			<a class="" type="button"><i class="bi bi-chat-fill fs-5 text-warning"></i></a>
-		</div>
-
 		<!--알림메시지-->
 		<?php if (isset($unread_message_count) && $unread_message_count > 0): ?>
 			<div id="navbarMessage" class="d-none d-lg-flex justify-content-center align-items-center position-relative bg-warning me-2" style="cursor: pointer; width: 40px; height: 40px; border-radius: 50%;" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="알림메시지">
