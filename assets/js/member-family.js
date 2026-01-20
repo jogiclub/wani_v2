@@ -221,6 +221,14 @@
 			return;
 		}
 
+		data.forEach(function(member) {
+			if (member.data) {
+				if (!member.data.avatar || member.data.avatar.trim() === '') {
+					member.data.avatar = '/assets/images/photo_no.png';
+				}
+			}
+		});
+
 		$('#familyChartContainer').html('<div id="FamilyChart" style="width:100%;height:100%;"></div>');
 
 		try {
