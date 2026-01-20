@@ -22,6 +22,10 @@ $(document).ready(function () {
 
 	let currentMemberMissionIdx = null;       // 현재 선택된 회원 ID (파송용)
 
+// 전역으로 함수 노출
+	window.openMemberOffcanvas = openMemberOffcanvas;
+	window.loadMemberData = loadMemberData;
+	window.refreshGroupTree = refreshGroupTree;
 
 	/**
 	 * 회원에게 결연교회 추천 링크 전송

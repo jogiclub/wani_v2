@@ -2680,4 +2680,620 @@ class Member extends My_Controller
 		echo json_encode(array('success' => true, 'data' => $memo_types));
 	}
 
+
+
+
+	/**
+	 * 가족 구성원 추가
+	 */
+	public function add_family_member() {
+		$member_idx = $this->input->post('member_idx');
+		$relation_type = $this->input->post('relation_type'); // spouse, child, parent
+		$target_id = $this->input->post('target_id'); // 관계 대상 ID (가계도 내 ID)
+		$new_member = $this->input->post('new_member'); // JSON 문자열
+
+		if (!$member_idx || !$relation_type) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		// 기존 가족 데이터 조회
+		$family_data = $this->Member_model->get_family_json($member_idx);
+		if (!$family_data) {
+			$family_data = [];
+		}
+
+		// 새 가족 구성원 데이터 파싱
+		$new_member_data = json_decode($new_member, true);
+		if (!$new_member_data) {
+			echo json_encode(['success' => false, 'message' => '가족 정보 형식이 올바르지 않습니다.']);
+			return;
+		}
+
+		// 고유 ID 생성
+		$new_id = $this->generate_uuid();
+		$new_member_data['id'] = $new_id;
+
+		if (!isset($new_member_data['rels'])) {
+			$new_member_data['rels'] = [];
+		}
+
+		// 관계 설정
+		switch ($relation_type) {
+			case 'spouse':
+				// 배우자 관계 설정
+				$new_member_data['rels']['spouses'] = [$target_id];
+				// 대상에도 배우자 추가
+				foreach ($family_data as &$member) {
+					if ($member['id'] === $target_id) {
+						if (!isset($member['rels']['spouses'])) {
+							$member['rels']['spouses'] = [];
+						}
+						$member['rels']['spouses'][] = $new_id;
+						break;
+					}
+				}
+				break;
+
+			case 'child':
+				// 자녀 관계 설정 - 부모 ID들 찾기
+				$new_member_data['rels']['parents'] = [$target_id];
+				// 대상(부모)에 자녀 추가
+				foreach ($family_data as &$member) {
+					if ($member['id'] === $target_id) {
+						if (!isset($member['rels']['children'])) {
+							$member['rels']['children'] = [];
+						}
+						$member['rels']['children'][] = $new_id;
+
+						// 배우자가 있으면 배우자에게도 자녀 추가
+						if (!empty($member['rels']['spouses'])) {
+							$spouse_id = $member['rels']['spouses'][0];
+							$new_member_data['rels']['parents'][] = $spouse_id;
+							foreach ($family_data as &$spouse) {
+								if ($spouse['id'] === $spouse_id) {
+									if (!isset($spouse['rels']['children'])) {
+										$spouse['rels']['children'] = [];
+									}
+									$spouse['rels']['children'][] = $new_id;
+									break;
+								}
+							}
+						}
+						break;
+					}
+				}
+				break;
+
+			case 'parent':
+				// 부모 관계 설정
+				if (!isset($new_member_data['rels']['children'])) {
+					$new_member_data['rels']['children'] = [];
+				}
+				$new_member_data['rels']['children'][] = $target_id;
+				// 대상에 부모 추가
+				foreach ($family_data as &$member) {
+					if ($member['id'] === $target_id) {
+						if (!isset($member['rels']['parents'])) {
+							$member['rels']['parents'] = [];
+						}
+						$member['rels']['parents'][] = $new_id;
+						break;
+					}
+				}
+				break;
+		}
+
+		// 새 구성원 추가
+		$family_data[] = $new_member_data;
+
+		// 저장
+		$result = $this->Member_model->save_family_json($member_idx, json_encode($family_data));
+
+		if ($result) {
+			echo json_encode([
+				'success' => true,
+				'message' => '가족 구성원이 추가되었습니다.',
+				'data' => $family_data,
+				'new_id' => $new_id
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '저장에 실패했습니다.']);
+		}
+	}
+
+
+
+	/**
+	 * 가족 구성원 정보 수정
+	 */
+	public function update_family_member() {
+		$member_idx = $this->input->post('member_idx');
+		$family_member_id = $this->input->post('family_member_id');
+		$member_data = $this->input->post('member_data'); // JSON 문자열
+
+		if (!$member_idx || !$family_member_id) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$this->load->model('Member_model');
+		$family_data = $this->Member_model->get_family_json($member_idx);
+
+		if (!$family_data) {
+			echo json_encode(['success' => false, 'message' => '가족 데이터가 없습니다.']);
+			return;
+		}
+
+		$update_data = json_decode($member_data, true);
+		if (!$update_data) {
+			echo json_encode(['success' => false, 'message' => '데이터 형식이 올바르지 않습니다.']);
+			return;
+		}
+
+		// 해당 구성원 찾아서 데이터 업데이트
+		foreach ($family_data as &$member) {
+			if ($member['id'] === $family_member_id) {
+				if (isset($update_data['data'])) {
+					$member['data'] = array_merge($member['data'], $update_data['data']);
+				}
+				break;
+			}
+		}
+
+		$result = $this->Member_model->save_family_json($member_idx, json_encode($family_data));
+
+		if ($result) {
+			echo json_encode([
+				'success' => true,
+				'message' => '가족 정보가 수정되었습니다.',
+				'data' => $family_data
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '수정에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * UUID 생성 헬퍼
+	 */
+	private function generate_uuid() {
+		return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+			mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+			mt_rand(0, 0xffff),
+			mt_rand(0, 0x0fff) | 0x4000,
+			mt_rand(0, 0x3fff) | 0x8000,
+			mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+		);
+	}
+
+
+
+
+
+
+	/**
+	 * 가족 관계 설정 (헬퍼)
+	 */
+	private function set_family_relations(&$family_data, &$new_member, $target_id, $relation_type) {
+		switch ($relation_type) {
+			case 'spouse':
+				$new_member['rels']['spouses'] = [$target_id];
+				foreach ($family_data as &$member) {
+					if ($member['id'] === $target_id) {
+						if (!isset($member['rels']['spouses'])) {
+							$member['rels']['spouses'] = [];
+						}
+						$member['rels']['spouses'][] = $new_member['id'];
+						break;
+					}
+				}
+				break;
+
+			case 'child':
+				$new_member['rels']['parents'] = [$target_id];
+				foreach ($family_data as &$member) {
+					if ($member['id'] === $target_id) {
+						if (!isset($member['rels']['children'])) {
+							$member['rels']['children'] = [];
+						}
+						$member['rels']['children'][] = $new_member['id'];
+
+						// 배우자가 있으면 배우자에게도 자녀 추가
+						if (!empty($member['rels']['spouses'])) {
+							$spouse_id = $member['rels']['spouses'][0];
+							$new_member['rels']['parents'][] = $spouse_id;
+							foreach ($family_data as &$spouse) {
+								if ($spouse['id'] === $spouse_id) {
+									if (!isset($spouse['rels']['children'])) {
+										$spouse['rels']['children'] = [];
+									}
+									$spouse['rels']['children'][] = $new_member['id'];
+									break;
+								}
+							}
+						}
+						break;
+					}
+				}
+				break;
+
+			case 'parent':
+				$new_member['rels']['children'] = [$target_id];
+				foreach ($family_data as &$member) {
+					if ($member['id'] === $target_id) {
+						if (!isset($member['rels']['parents'])) {
+							$member['rels']['parents'] = [];
+						}
+						$member['rels']['parents'][] = $new_member['id'];
+						break;
+					}
+				}
+				break;
+		}
+	}
+
+
+
+	/**
+	 * 가족 데이터 저장
+	 */
+	public function save_family_data() {
+		$member_idx = $this->input->post('member_idx');
+		$family_json = $this->input->post('family_json');
+
+		if (!$member_idx) {
+			echo json_encode(['success' => false, 'message' => '회원 정보가 필요합니다.']);
+			return;
+		}
+
+		$this->load->model('Member_model');
+
+		// JSON 파싱하여 member_idx를 정수형으로 변환
+		$family_data = json_decode($family_json, true);
+		if ($family_data) {
+			foreach ($family_data as &$member) {
+				if (isset($member['member_idx'])) {
+					$member['member_idx'] = (int)$member['member_idx'];
+				}
+			}
+			$family_json = json_encode($family_data);
+		}
+
+		$result = $this->Member_model->save_family_json($member_idx, $family_json);
+
+		if ($result) {
+			$display_data = $this->build_family_display_data($family_data);
+
+			echo json_encode([
+				'success' => true,
+				'message' => '가족 정보가 저장되었습니다.',
+				'data' => $family_data,
+				'display_data' => $display_data
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '저장에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 가족 표시용 데이터 생성 (회원 정보 조회)
+	 */
+	private function build_family_display_data($family_data) {
+		if (empty($family_data)) {
+			return [];
+		}
+
+		$display_data = [];
+
+		// member_idx 목록 수집
+		$member_idxs = [];
+		foreach ($family_data as $member) {
+			if (isset($member['member_idx']) && $member['member_idx']) {
+				$member_idxs[] = (int)$member['member_idx'];
+			}
+		}
+
+		// 회원 정보 일괄 조회
+		$members_info = [];
+		if (!empty($member_idxs)) {
+			$this->db->select('member_idx, member_name, member_sex, member_birth, photo, org_id');
+			$this->db->from('wb_member');
+			$this->db->where_in('member_idx', $member_idxs);
+			$query = $this->db->get();
+
+			foreach ($query->result_array() as $row) {
+				$members_info[(int)$row['member_idx']] = $row;
+			}
+		}
+
+		// display_data 구성
+		foreach ($family_data as $member) {
+			$member_idx = isset($member['member_idx']) ? (int)$member['member_idx'] : null;
+
+			$display_member = [
+				'id' => $member['id'],
+				'member_idx' => $member_idx,
+				'rels' => isset($member['rels']) ? $member['rels'] : [
+					'spouses' => [],
+					'children' => [],
+					'parents' => []
+				],
+				'data' => [
+					'first name' => '',
+					'last name' => '',
+					'birthday' => '',
+					'avatar' => '/assets/images/photo_no.png',
+					'gender' => 'M'
+				]
+			];
+
+			// 회원 정보로 data 채우기
+			if ($member_idx && isset($members_info[$member_idx])) {
+				$info = $members_info[$member_idx];
+
+				// 이미지 경로 처리
+				$avatar = '/assets/images/photo_no.png';
+				if (!empty($info['photo'])) {
+					$photo = $info['photo'];
+
+					// 이미 전체 경로인 경우 (/ 로 시작)
+					if (strpos($photo, '/') === 0) {
+						$avatar = $photo;
+					}
+					// http로 시작하는 외부 URL인 경우
+					else if (strpos($photo, 'http') === 0) {
+						$avatar = $photo;
+					}
+					// 파일명만 있는 경우 경로 조합
+					else {
+						$org_id = $info['org_id'] ?? '';
+						$avatar = '/uploads/member_photos/' . $org_id . '/' . $photo;
+					}
+				}
+
+				$display_member['data'] = [
+					'first name' => $info['member_name'] ?? '',
+					'last name' => '',
+					'birthday' => $info['member_birth'] ?? '',
+					'avatar' => $avatar,
+					'gender' => ($info['member_sex'] === 'female') ? 'F' : 'M'
+				];
+			}
+
+			$display_data[] = $display_member;
+		}
+
+		return $display_data;
+	}
+
+	/**
+	 * 가족 연결용 회원 검색
+	 */
+	public function search_members_for_family() {
+		$keyword = $this->input->post('keyword');
+		$org_id = $this->input->post('org_id');
+		$exclude_member_idx = $this->input->post('exclude_member_idx');
+
+		if (!$keyword || strlen($keyword) < 1) {
+			echo json_encode(['success' => true, 'data' => []]);
+			return;
+		}
+
+		$this->db->select('m.member_idx, m.member_name, m.member_phone, m.member_sex, m.member_birth, m.photo, m.org_id, a.area_name');
+		$this->db->from('wb_member m');
+		$this->db->join('wb_member_area a', 'm.area_idx = a.area_idx', 'left');
+		$this->db->where('m.org_id', $org_id);
+		$this->db->where('m.del_yn', 'N');
+
+		if ($exclude_member_idx) {
+			$this->db->where('m.member_idx !=', $exclude_member_idx);
+		}
+
+		$this->db->group_start();
+		$this->db->like('m.member_name', $keyword);
+		$this->db->or_like('m.member_phone', $keyword);
+		$this->db->group_end();
+
+		$this->db->order_by('m.member_name', 'ASC');
+		$this->db->limit(20);
+
+		$query = $this->db->get();
+		$members = $query->result_array();
+
+		// 이미지 경로 처리
+		foreach ($members as &$member) {
+			if (!empty($member['photo'])) {
+				$photo = $member['photo'];
+
+				// 이미 전체 경로인 경우 (/ 로 시작)
+				if (strpos($photo, '/') === 0) {
+					// 그대로 사용
+				}
+				// http로 시작하는 외부 URL인 경우
+				else if (strpos($photo, 'http') === 0) {
+					// 그대로 사용
+				}
+				// 파일명만 있는 경우 경로 조합
+				else {
+					$member['photo'] = '/uploads/member_photos/' . $member['org_id'] . '/' . $photo;
+				}
+			} else {
+				$member['photo'] = '/assets/images/photo_no.png';
+			}
+		}
+
+		echo json_encode([
+			'success' => true,
+			'data' => $members
+		]);
+	}
+
+
+	/**
+	 * 가족 데이터 조회 (관계 테이블 기반)
+	 */
+	public function get_family_data() {
+		$member_idx = $this->input->post('member_idx');
+
+		if (!$member_idx) {
+			echo json_encode(['success' => false, 'message' => '회원 정보가 필요합니다.']);
+			return;
+		}
+
+		$this->load->model('Member_family_model');
+
+		// family-chart.js용 데이터 구조 생성
+		$display_data = $this->Member_family_model->build_family_chart_data($member_idx);
+
+		echo json_encode([
+			'success' => true,
+			'data' => $display_data,
+			'display_data' => $display_data
+		]);
+	}
+
+	/**
+	 * 기존회원을 가족으로 연결
+	 */
+	public function link_existing_member() {
+		$member_idx = $this->input->post('member_idx');
+		$relation_type = $this->input->post('relation_type');
+		$link_member_idx = $this->input->post('link_member_idx');
+
+		if (!$member_idx || !$relation_type || !$link_member_idx) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$this->load->model('Member_model');
+		$this->load->model('Member_family_model');
+
+		// 연결할 회원 정보 조회
+		$link_member = $this->Member_model->get_member_by_idx($link_member_idx);
+		if (!$link_member) {
+			echo json_encode(['success' => false, 'message' => '연결할 회원을 찾을 수 없습니다.']);
+			return;
+		}
+
+		// 본인 정보 조회
+		$main_member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$main_member) {
+			echo json_encode(['success' => false, 'message' => '회원을 찾을 수 없습니다.']);
+			return;
+		}
+
+		$org_id = $main_member['org_id'];
+
+		// 이미 연결된 관계인지 확인
+		if ($this->Member_family_model->relation_exists($member_idx, $link_member_idx, $relation_type)) {
+			echo json_encode(['success' => false, 'message' => '이미 등록된 가족 관계입니다.']);
+			return;
+		}
+
+		// 관계 추가
+		$result = $this->Member_family_model->add_relation($org_id, $member_idx, $link_member_idx, $relation_type);
+
+		if ($result) {
+			$display_data = $this->Member_family_model->build_family_chart_data($member_idx);
+
+			echo json_encode([
+				'success' => true,
+				'message' => $link_member['member_name'] . ' 회원이 가족으로 연결되었습니다.',
+				'data' => $display_data,
+				'display_data' => $display_data
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '저장에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 가족 추가 (새 회원 생성 후 연결)
+	 */
+	public function add_family_member_new() {
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+		$relation_type = $this->input->post('relation_type');
+		$area_idx = $this->input->post('area_idx');
+		$member_name = $this->input->post('member_name');
+		$member_sex = $this->input->post('member_sex');
+
+		if (!$member_idx || !$relation_type || !$member_name) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$this->load->model('Member_model');
+		$this->load->model('Member_family_model');
+
+		// 1. 새 회원 생성
+		$new_member_data = [
+			'org_id' => $org_id,
+			'member_name' => $member_name,
+			'member_sex' => $member_sex,
+			'area_idx' => $area_idx ?: null,
+			'regi_date' => date('Y-m-d H:i:s'),
+			'del_yn' => 'N'
+		];
+
+		$this->db->insert('wb_member', $new_member_data);
+		$new_member_idx = $this->db->insert_id();
+
+		if (!$new_member_idx) {
+			echo json_encode(['success' => false, 'message' => '회원 생성에 실패했습니다.']);
+			return;
+		}
+
+		// 2. 가족 관계 추가
+		$result = $this->Member_family_model->add_relation($org_id, $member_idx, $new_member_idx, $relation_type);
+
+		if ($result) {
+			$display_data = $this->Member_family_model->build_family_chart_data($member_idx);
+
+			echo json_encode([
+				'success' => true,
+				'message' => $member_name . ' 회원이 추가되었습니다.',
+				'data' => $display_data,
+				'display_data' => $display_data,
+				'new_member_idx' => $new_member_idx
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '저장에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 가족 관계 삭제
+	 */
+	public function delete_family_member() {
+		$member_idx = $this->input->post('member_idx');
+		$related_member_idx = $this->input->post('related_member_idx');
+
+		if (!$member_idx || !$related_member_idx) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$this->load->model('Member_family_model');
+
+		// 관계 삭제
+		$result = $this->Member_family_model->remove_relation($member_idx, $related_member_idx);
+
+		if ($result) {
+			$display_data = $this->Member_family_model->build_family_chart_data($member_idx);
+
+			echo json_encode([
+				'success' => true,
+				'message' => '가족 관계가 삭제되었습니다.',
+				'data' => $display_data,
+				'display_data' => $display_data
+			]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '삭제에 실패했습니다.']);
+		}
+	}
+
 }

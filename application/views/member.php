@@ -8,7 +8,8 @@
 
 <!-- Fancytree CSS - Vista 스킨 사용 (더 안정적) -->
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
-
+<!-- family-chart CSS (헤더 영역에 추가) -->
+<link href="https://cdn.jsdelivr.net/npm/family-chart@0.9.0/dist/styles/family-chart.min.css" rel="stylesheet">
 <!-- Croppie CSS -->
 <link href="https://cdn.jsdelivr.net/npm/croppie@2.6.5/croppie.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -127,6 +128,9 @@
 				</li>
 				<li class="nav-item" role="presentation">
 					<button class="nav-link" id="detail-tab" data-bs-toggle="tab" data-bs-target="#detail-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">상세정보</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button class="nav-link" id="family-tab" data-bs-toggle="tab" data-bs-target="#family-tab-pane" type="button" role="tab" aria-controls="home-tab-pane" aria-selected="true">가족</button>
 				</li>
 				<li class="nav-item" role="presentation">
 					<button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">타임라인</button>
@@ -288,6 +292,45 @@
 						</div>
 					</div>
 				</div>
+
+				<div class="tab-pane fade" id="family-tab-pane" role="tabpanel" aria-labelledby="family-tab" tabindex="0">
+					<div class="row mt-3">
+						<div class="col-12">
+							<!-- 상단 버튼 영역 -->
+							<div class="family-button-section pb-2 mb-2">
+								<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+									<div class="btn-group btn-group-sm">
+										<button type="button" class="btn btn-outline-primary" id="addFamilyMemberBtn">
+											<i class="bi bi-person-plus"></i> 가족 추가
+										</button>
+										<button type="button" class="btn btn-outline-success" id="linkExistingMemberBtn">
+											<i class="bi bi-link-45deg"></i> 기존회원 연결
+										</button>
+									</div>
+
+								</div>
+							</div>
+
+							<!-- 가계도 차트 영역 -->
+							<div id="familyChartContainer" class="f3" style="width:100%; height:400px; background-color:#f8f9fa; border-radius:8px; position:relative; overflow:hidden;">
+								<div id="familyChartLoading" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index:10;">
+									<div class="text-center text-muted">
+										<i class="bi bi-diagram-3 fs-1 mb-2 d-block"></i>
+										<span>가족 정보가 없습니다</span>
+									</div>
+								</div>
+							</div>
+
+							<!-- 가족 목록 (텍스트 형태) -->
+							<div class="mt-3" id="familyListContainer">
+								<h6 class="text-muted mb-2"><i class="bi bi-people"></i> 가족 목록</h6>
+								<div id="familyList" class="list-group list-group-flush">
+									<!-- 동적으로 생성 -->
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 				<div class="tab-pane fade" id="timeline-tab-pane" role="tabpanel" aria-labelledby="timeline-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="col-12">
@@ -377,15 +420,7 @@
 					</div>
 				</div>
 			</div>
-
-
-
-
-
-
 		</form>
-
-
 	</div>
 
 	<!-- 하단 고정 버튼 영역 -->
@@ -874,4 +909,11 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
+
+
+<!-- D3.js와 family-chart.js (footer 영역, pqgrid 다음에 추가) -->
+<script src="https://unpkg.com/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/family-chart@0.9.0/dist/family-chart.min.js"></script>
+
 <script src="/assets/js/member.js?<?php echo WB_VERSION; ?>"></script>
+<script src="/assets/js/member-family.js?<?php echo WB_VERSION; ?>"></script>

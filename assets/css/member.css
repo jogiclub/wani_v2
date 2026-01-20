@@ -556,3 +556,21 @@
 		border-left: none;
 	}
 }
+
+
+
+
+/*family*/
+.f3 div.card{border: 0!important;color:#333!important;font-family: "Pretendard", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;}
+.f3 div.card-image-rect{border: 0!important;}
+.f3 div.card-image-rect img{border-radius: 50%!important;}
+.f3 div.card-image-rect .card-label div:nth-child(1){font-weight: bold;}
+.f3 div.card-image-rect .card-label div:nth-child(2){font-size: 14px}
+.f3 div.card-main .card-inner{outline: 3px solid #ffc107!important; outline-offset: -3px;}
+.f3 div.card-main .card-inner, .f3 div.card:hover .card-inner{box-shadow: none!important;}
+.f3 div.card-female .card-inner, .f3 div.card-female .person-icon svg{background: #f6e1e4 !important;}
+.f3 div.card-male .card-inner, .f3 div.card-male .person-icon svg{background: #d1ecff !important;}
+/* 연결선 색상 변경 (dark 컬러) */
+#FamilyChart .link, #FamilyChart path.link, .f3 .link, .f3 path.link {stroke: #495057 !important;  /* 어두운 회색 */stroke-width: 2px !important;}
+/* 배우자 연결선 (가로선) 별도 스타일 - 필요시 */
+#FamilyChart .link.spouse, .f3 .link.spouse {stroke: #6c757d !important; stroke-width: 2px!important;}
