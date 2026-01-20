@@ -1449,41 +1449,9 @@ class Member_model extends CI_Model
 	}
 
 
-	/**
-	 * 회원의 가족 JSON 데이터 조회
-	 *
-	 * @param int $member_idx 회원 번호
-	 * @return array|null 가족 데이터 배열 또는 null
-	 */
-	public function get_family_json($member_idx) {
-		$this->db->select('family_json');
-		$this->db->where('member_idx', $member_idx);
-		$query = $this->db->get('wb_member');
 
-		if ($query->num_rows() > 0) {
-			$row = $query->row();
-			if (!empty($row->family_json)) {
-				return json_decode($row->family_json, true);
-			}
-		}
 
-		return null;
-	}
 
-	/**
-	 * 회원의 가족 JSON 데이터 저장
-	 *
-	 * @param int $member_idx 회원 번호
-	 * @param string $family_json JSON 문자열
-	 * @return bool 성공 여부
-	 */
-	public function save_family_json($member_idx, $family_json) {
-		$this->db->where('member_idx', $member_idx);
-		return $this->db->update('wb_member', [
-			'family_json' => $family_json,
-			'modi_date' => date('Y-m-d H:i:s')
-		]);
-	}
 
 	/**
 	 * 회원의 초기 가족 데이터 생성 (본인 노드)
