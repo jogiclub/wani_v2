@@ -22,10 +22,11 @@ $(document).ready(function () {
 
 	let currentMemberMissionIdx = null;       // 현재 선택된 회원 ID (파송용)
 
-// 전역으로 함수 노출
+	// 전역으로 함수 노출
 	window.openMemberOffcanvas = openMemberOffcanvas;
 	window.loadMemberData = loadMemberData;
 	window.refreshGroupTree = refreshGroupTree;
+	window.loadMemberDetail = loadMemberDetail;
 
 	/**
 	 * 회원에게 결연교회 추천 링크 전송
@@ -116,9 +117,7 @@ $(document).ready(function () {
 			sendMemberInfoToChurch();
 		});
 
-		/**
-		 * 파송교회에 회원정보 전달
-		 */
+
 		/**
 		 * 파송교회에 회원정보 전달
 		 */
@@ -3156,8 +3155,76 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 	/**
-	 * 필드별 HTML 생성
+	 * 파일 위치: assets/js/member.js
+	 * 역할: member_idx와 org_id로 회원 상세정보 조회 후 offcanvas에 데이터 로드
 	 */
+	function loadMemberDetail(memberIdx, orgId) {
+		if (!memberIdx) {
+			showToast('회원 정보를 찾을 수 없습니다.', 'error');
+			return;
+		}
+
+		// org_id가 전달되지 않은 경우 현재 선택된 조직 사용
+		if (!orgId) {
+			orgId = selectedOrgId;
+		}
+
+		$.ajax({
+			url: '/member/get_member_info',  // 회원 기본정보 조회 API로 변경
+			type: 'POST',
+			data: {
+				member_idx: memberIdx,
+				org_id: orgId
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success && response.data) {
+					const memberData = response.data;
+
+					// org_id 설정
+					if (memberData.org_id) {
+						selectedOrgId = memberData.org_id;
+					}
+
+					// offcanvas 제목 설정
+					const title = memberData.member_name ? memberData.member_name + ' 회원 정보 수정' : '회원 정보 수정';
+					$('#memberOffcanvasLabel').text(title);
+
+					// 폼 초기화
+					resetOffcanvasForm();
+
+					// 탭 초기화
+					resetTabsToFirst();
+
+					// 소그룹 옵션과 직위/직책 옵션을 모두 로드한 후 데이터 채우기
+					loadAreaOptionsWithCallback(selectedOrgId, function() {
+						loadPositionsAndDuties(selectedOrgId, function() {
+							populateFormData(memberData);
+
+							// 메모 관련 초기화
+							currentMemberIdx = memberData.member_idx;
+							currentMemberTimelineIdx = memberData.member_idx;
+							currentMemberMissionIdx = memberData.member_idx;
+
+							// 회원정보 탭에 표시될 상세필드 로드
+							loadDetailFields(selectedOrgId, memberData.member_idx);
+						});
+					});
+
+					// 사진 이벤트 바인딩
+					bindPhotoEvents();
+
+				} else {
+					showToast(response.message || '회원 정보를 불러올 수 없습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('회원 정보 조회 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+
 	/**
 	 * 필드별 HTML 생성
 	 */

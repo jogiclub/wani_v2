@@ -71,6 +71,8 @@
 		// 연결된 회원 보기 버튼 클릭
 		$(document).off('click', '.btn-family-view').on('click', '.btn-family-view', function() {
 			const memberIdx = $(this).data('member-idx');
+			const orgId = $(this).data('org-id');
+
 			if (!memberIdx) {
 				showToast('회원 정보를 찾을 수 없습니다.', 'error');
 				return;
@@ -81,11 +83,11 @@
 			if (currentOffcanvas) {
 				// offcanvas가 완전히 닫힌 후 새 회원 정보 열기
 				$('#memberOffcanvas').one('hidden.bs.offcanvas', function() {
-					openFamilyMemberOffcanvas(memberIdx);
+					openFamilyMemberOffcanvas(memberIdx, orgId);
 				});
 				currentOffcanvas.hide();
 			} else {
-				openFamilyMemberOffcanvas(memberIdx);
+				openFamilyMemberOffcanvas(memberIdx, orgId);
 			}
 		});
 	}
@@ -93,85 +95,14 @@
 	/**
 	 * 가족 회원 정보 열기
 	 */
-	function openFamilyMemberOffcanvas(memberIdx) {
-		// member.js의 전역 함수 사용
-		if (typeof window.loadMemberDetail === 'function') {
-			// offcanvas 열기
-			const offcanvasEl = document.getElementById('memberOffcanvas');
-			const offcanvas = new bootstrap.Offcanvas(offcanvasEl);
-			offcanvas.show();
-
-			// 회원 정보 로드
-			window.loadMemberDetail(memberIdx);
-		} else if (typeof window.openMemberOffcanvas === 'function') {
-			window.openMemberOffcanvas('edit', memberIdx);
-
-			// openMemberOffcanvas가 데이터를 로드하지 않는다면 별도로 로드
-			setTimeout(function() {
-				if (typeof window.loadMemberDetail === 'function') {
-					window.loadMemberDetail(memberIdx);
-				}
-			}, 100);
-		} else {
-			// 직접 로드
-			loadMemberDataDirect(memberIdx);
-		}
-	}
-
-	/**
-	 * 회원 데이터 직접 로드
-	 */
-	function loadMemberDataDirect(memberIdx) {
+	function openFamilyMemberOffcanvas(memberIdx, orgId) {
+		// offcanvas 열기
 		const offcanvasEl = document.getElementById('memberOffcanvas');
 		const offcanvas = new bootstrap.Offcanvas(offcanvasEl);
+		offcanvas.show();
 
-		$('#memberForm')[0].reset();
-		$('#member_idx').val(memberIdx);
-		$('#memberOffcanvasLabel').text('회원 정보 수정');
-
-		$.ajax({
-			url: '/member/get_member_detail',
-			type: 'POST',
-			data: { member_idx: memberIdx },
-			dataType: 'json',
-			success: function(response) {
-				if (response.success && response.data) {
-					const member = response.data;
-
-					// 폼에 데이터 채우기
-					Object.keys(member).forEach(function(key) {
-						const $field = $('#' + key);
-						if ($field.length > 0) {
-							$field.val(member[key] || '');
-						}
-					});
-
-					// 프로필 사진
-					if (member.photo) {
-						let photoUrl = member.photo;
-						if (photoUrl.indexOf('/') !== 0 && photoUrl.indexOf('http') !== 0) {
-							photoUrl = '/uploads/member_photos/' + member.org_id + '/' + photoUrl;
-						}
-						$('#previewImage').attr('src', photoUrl);
-					} else {
-						$('#previewImage').attr('src', '/assets/images/photo_no.png');
-					}
-
-					// 기본정보 탭으로
-					const basicTab = document.querySelector('#basic-tab');
-					if (basicTab) {
-						new bootstrap.Tab(basicTab).show();
-					}
-
-					offcanvas.show();
-				} else {
-					showToast('회원 정보를 불러올 수 없습니다.', 'error');
-				}
-			},
-			error: function() {
-				showToast('회원 정보 조회 중 오류가 발생했습니다.', 'error');
-			}
-		});
+		// member.js의 loadMemberDetail 함수 호출
+		window.loadMemberDetail(memberIdx, orgId);
 	}
 
 
@@ -255,12 +186,6 @@
 		}
 	}
 
-	/**
-	 * 가족 목록 렌더링
-	 */
-	/**
-	 * 가족 목록 렌더링
-	 */
 	function renderFamilyList(data) {
 		const container = $('#familyList');
 		container.empty();
@@ -277,6 +202,7 @@
 			const birthday = (member.data && member.data.birthday) || '';
 			const relation = getRelationLabel(member, data);
 			const linkedMemberIdx = member.member_idx || null;
+			const linkedOrgId = member.org_id || null;
 
 			// 이미지 경로 처리
 			let avatar = '/assets/images/photo_no.png';
@@ -285,33 +211,33 @@
 			}
 
 			const html = `
-            <div class="list-group-item d-flex justify-content-between align-items-center py-2">
-                <div class="d-flex align-items-center">
-                    <img src="${avatar}" alt="사진" class="me-2" style="width:40px; height:40px; border-radius:50%; object-fit:cover;" onerror="this.src='/assets/images/photo_no.png'">
-                    <div>
-                        <span class="family-name fw-bold">${name.trim() || '이름없음'}</span>
-                        <span class="badge bg-secondary ms-1">${gender}</span>
-                        ${isMe ? '<span class="badge bg-primary ms-1">본인</span>' : ''}
-                        <div class="small text-muted">
-                            ${relation ? '<span class="me-2">' + relation + '</span>' : ''}
-                            ${birthday ? '<span>' + birthday + '</span>' : ''}
-                        </div>
+        <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <div class="d-flex align-items-center">
+                <img src="${avatar}" alt="사진" class="me-2" style="width:40px; height:40px; border-radius:50%; object-fit:cover;" onerror="this.src='/assets/images/photo_no.png'">
+                <div>
+                    <span class="family-name fw-bold">${name.trim() || '이름없음'}</span>
+                    <span class="badge bg-secondary ms-1">${gender}</span>
+                    ${isMe ? '<span class="badge bg-primary ms-1">본인</span>' : ''}
+                    <div class="small text-muted">
+                        ${relation ? '<span class="me-2">' + relation + '</span>' : ''}
+                        ${birthday ? '<span>' + birthday + '</span>' : ''}
                     </div>
                 </div>
-                <div class="btn-group btn-group-sm">
-                    ${!isMe && linkedMemberIdx ? `
-                        <button type="button" class="btn btn-outline-info btn-family-view" data-member-idx="${linkedMemberIdx}" title="회원정보 보기">
-                            <i class="bi bi-zoom-in"></i>
-                        </button>
-                    ` : ''}
-                    ${!isMe ? `
-                        <button type="button" class="btn btn-outline-danger btn-family-delete" data-id="${member.id}" data-member-idx="${linkedMemberIdx}" title="관계 삭제">
-                            <i class="bi bi-person-dash-fill"></i>
-                        </button>
-                    ` : ''}
-                </div>
             </div>
-        `;
+            <div class="btn-group btn-group-sm">
+                ${!isMe && linkedMemberIdx ? `
+                    <button type="button" class="btn btn-outline-info btn-family-view" data-member-idx="${linkedMemberIdx}" data-org-id="${linkedOrgId}" title="회원정보 보기">
+                        <i class="bi bi-zoom-in"></i>
+                    </button>
+                ` : ''}
+                ${!isMe ? `
+                    <button type="button" class="btn btn-outline-danger btn-family-delete" data-id="${member.id}" data-member-idx="${linkedMemberIdx}" title="관계 삭제">
+                        <i class="bi bi-person-dash-fill"></i>
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
 
 			container.append(html);
 		});
@@ -567,14 +493,117 @@
 		// 폼 초기화
 		$('#linkMemberForm')[0].reset();
 		$('#linkTargetId').val('0');
-		$('#linkMemberSelect').val(null).trigger('change');
+
+		// [변경] Dropdown UI 초기화
+		$('#member-search-input').val('');
+		$('#member-search-results').html('<li class="px-3 py-2 text-center text-muted small">검색어를 입력하세요 (2자 이상)</li>');
+
 		$('#selectedLinkMember').hide();
 		$('#selectedMemberIdx').val('');
 
 		const modal = new bootstrap.Modal(document.getElementById('linkMemberModal'));
 		modal.show();
 
-		initLinkMemberSelect2();
+		// [변경] Select2 대신 Dropdown 검색 기능 초기화
+		initMemberSearchDropdown();
+	}
+
+	function initMemberSearchDropdown() {
+		const orgId = $('#org_id').val() || selectedOrgId;
+		let searchTimer = null;
+
+		// 1. 검색어 입력 이벤트 (Debounce 적용)
+		$('#member-search-input').off('keyup input').on('keyup input', function() {
+			const keyword = $(this).val().trim();
+			const resultsContainer = $('#member-search-results');
+
+			if (searchTimer) clearTimeout(searchTimer);
+
+			if (keyword.length < 2) {
+				resultsContainer.html('<li class="px-3 py-2 text-center text-muted small">검색어를 2자 이상 입력하세요</li>');
+				return;
+			}
+
+			// 300ms 딜레이 후 검색 실행
+			searchTimer = setTimeout(function() {
+				resultsContainer.html('<li class="px-3 py-2 text-center text-muted small"><div class="spinner-border spinner-border-sm" role="status"></div> 검색 중...</li>');
+
+				$.ajax({
+					url: '/member/search_members_for_family',
+					type: 'POST',
+					dataType: 'json',
+					data: {
+						keyword: keyword,
+						org_id: orgId,
+						exclude_member_idx: currentFamilyMemberIdx
+					},
+					success: function(response) {
+						if (response.success && response.data.length > 0) {
+							renderSearchResults(response.data);
+						} else {
+							resultsContainer.html('<li class="px-3 py-2 text-center text-muted small">검색 결과가 없습니다.</li>');
+						}
+					},
+					error: function() {
+						resultsContainer.html('<li class="px-3 py-2 text-center text-danger small">검색 중 오류가 발생했습니다.</li>');
+					}
+				});
+			}, 300);
+		});
+
+		// 2. 검색 결과 렌더링 함수
+		function renderSearchResults(members) {
+			const resultsContainer = $('#member-search-results');
+			resultsContainer.empty();
+
+			members.forEach(function(member) {
+				const photo = member.photo || '/assets/images/photo_no.png';
+				const phone = member.member_phone || '';
+				const group = member.area_name || '';
+
+				// 데이터 속성에 JSON 문자열로 저장하여 클릭 시 활용
+				const memberDataStr = encodeURIComponent(JSON.stringify(member));
+
+				const itemHtml = `
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 member-selector py-2" href="#" data-member="${memberDataStr}">
+                            <img src="${photo}" class="rounded-circle flex-shrink-0" width="32" height="32" style="object-fit: cover;" onerror="this.src='/assets/images/photo_no.png'">
+                            <div class="flex-grow-1 text-truncate">
+                                <div class="fw-bold text-truncate">${member.member_name}</div>
+                                <div class="small text-muted text-truncate">
+                                    ${phone} ${group ? '<span class="mx-1">|</span>' + group : ''}
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                `;
+				resultsContainer.append(itemHtml);
+			});
+		}
+
+		// 3. 검색 결과 클릭(선택) 이벤트
+		$(document).off('click', '.member-selector').on('click', '.member-selector', function(e) {
+			e.preventDefault();
+
+			const memberStr = decodeURIComponent($(this).data('member'));
+			const member = JSON.parse(memberStr);
+
+			// 선택된 값 Hidden Input에 저장
+			$('#selectedMemberIdx').val(member.member_idx);
+
+			// UI 업데이트 (선택된 멤버 카드 표시)
+			$('#selectedMemberPhoto').attr('src', member.photo || '/assets/images/photo_no.png');
+			$('#selectedMemberName').text(member.member_name);
+			$('#selectedMemberPhone').text(member.member_phone || '');
+			$('#selectedMemberGroup').text(member.area_name || '');
+			$('#selectedLinkMember').show();
+
+			// 검색창 및 드롭다운 초기화/닫기
+			// $('#memberSearchDropdownBtn span').text(member.member_name); // 버튼 텍스트 변경하고 싶다면 주석 해제
+			const dropdownEl = document.getElementById('memberSearchDropdownBtn');
+			const dropdown = bootstrap.Dropdown.getOrCreateInstance(dropdownEl);
+			dropdown.hide();
+		});
 	}
 
 	/**
@@ -583,7 +612,7 @@
 	function createLinkMemberModal() {
 		const modalHtml = `
         <div class="modal fade" id="linkMemberModal" tabindex="-1" aria-labelledby="linkMemberModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="linkMemberModalLabel"><i class="bi bi-link-45deg"></i> 기존회원 연결</h5>
@@ -592,13 +621,13 @@
                     <div class="modal-body">
                         <form id="linkMemberForm">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <div class="mb-3">
                                         <label for="linkTargetId" class="form-label">기준 가족 <span class="text-danger">*</span></label>
                                         <select class="form-select" id="linkTargetId" required></select>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <div class="mb-3">
                                         <label for="linkRelationType" class="form-label">관계 <span class="text-danger">*</span></label>
                                         <select class="form-select" id="linkRelationType" required>
@@ -610,13 +639,28 @@
                                     </div>
                                 </div>
                             </div>
-                            <hr>
+                            
                             <div class="mb-3">
-                                <label for="linkMemberSelect" class="form-label">연결할 회원 검색 <span class="text-danger">*</span></label>
-                                <select class="form-select" id="linkMemberSelect" style="width:100%">
-                                    <option value="">회원 이름으로 검색...</option>
-                                </select>
+                                <label class="form-label">연결할 회원 검색 <span class="text-danger">*</span></label>
+                                <div class="dropdown w-100">
+                                    <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center" 
+                                            type="button" id="memberSearchDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                        <span>회원 이름 또는 연락처로 검색...</span>
+                                    </button>
+                                    
+                                    <ul class="dropdown-menu w-100" aria-labelledby="memberSearchDropdownBtn">
+                                        <li class="px-3 py-2">
+                                            <input type="text" class="form-control form-control-sm" id="member-search-input" placeholder="이름 또는 연락처 검색 (2자 이상)" autocomplete="off">
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        
+                                        <div id="member-search-results" style="max-height: 250px; overflow-y: auto;">
+                                            <li class="px-3 py-2 text-center text-muted small">검색어를 입력하세요</li>
+                                        </div>
+                                    </ul>
+                                </div>
                             </div>
+
                             <div id="selectedLinkMember" class="card bg-light mb-3" style="display:none;">
                                 <div class="card-body py-2">
                                     <div class="d-flex align-items-center">
@@ -631,8 +675,8 @@
                                             </div>
                                         </div>
                                         <div>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="clearSelectedMember">
-                                                <i class="bi bi-x"></i>
+                                            <button type="button" class="btn" id="clearSelectedMember">
+                                                <i class="bi bi-x-lg"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -653,87 +697,17 @@
 		$('body').append(modalHtml);
 
 		$(document).off('click', '#saveLinkMemberBtn').on('click', '#saveLinkMemberBtn', saveLinkMember);
+
+		// 선택 취소 버튼
 		$(document).off('click', '#clearSelectedMember').on('click', '#clearSelectedMember', function() {
-			$('#linkMemberSelect').val(null).trigger('change');
 			$('#selectedLinkMember').hide();
 			$('#selectedMemberIdx').val('');
+			// 드롭다운 버튼 텍스트 초기화
+			$('#memberSearchDropdownBtn span').text('회원 이름 또는 연락처로 검색');
 		});
 	}
 
-	/**
-	 * 회원 검색 Select2 초기화
-	 */
-	function initLinkMemberSelect2() {
-		const orgId = $('#org_id').val() || selectedOrgId;
 
-		$('#linkMemberSelect').select2({
-			dropdownParent: $('#linkMemberModal'),
-			placeholder: '회원 이름 또는 연락처로 검색...',
-			allowClear: true,
-			minimumInputLength: 1,
-			ajax: {
-				url: '/member/search_members_for_family',
-				type: 'POST',
-				dataType: 'json',
-				delay: 300,
-				data: function(params) {
-					return {
-						keyword: params.term,
-						org_id: orgId,
-						exclude_member_idx: currentFamilyMemberIdx
-					};
-				},
-				processResults: function(response) {
-					if (response.success) {
-						return {
-							results: response.data.map(function(member) {
-								return {
-									id: member.member_idx,
-									text: member.member_name + (member.member_phone ? ' (' + member.member_phone + ')' : ''),
-									member: member
-								};
-							})
-						};
-					}
-					return { results: [] };
-				},
-				cache: true
-			},
-			templateResult: function(member) {
-				if (member.loading) return member.text;
-				const data = member.member;
-				if (!data) return member.text;
-				console.log(data.photo);
-				const photo = data.photo || '/assets/images/photo_no.png';
-				return $(`
-                    <div class="d-flex align-items-center">
-                        <img src="${photo}" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;" onerror="this.src='/assets/images/photo_no.png'">
-                        <div>
-                            <div>${data.member_name}</div>
-                            <div class="small text-muted">${data.member_phone || ''} ${data.area_name ? '/ ' + data.area_name : ''}</div>
-                        </div>
-                    </div>
-                `);
-			}
-		});
-
-		$('#linkMemberSelect').off('select2:select').on('select2:select', function(e) {
-			const member = e.params.data.member;
-			if (member) {
-				$('#selectedMemberIdx').val(member.member_idx);
-				$('#selectedMemberPhoto').attr('src', member.photo || '/assets/images/photo_no.png');
-				$('#selectedMemberName').text(member.member_name);
-				$('#selectedMemberPhone').text(member.member_phone || '');
-				$('#selectedMemberGroup').text(member.area_name || '');
-				$('#selectedLinkMember').show();
-			}
-		});
-
-		$('#linkMemberSelect').off('select2:clear').on('select2:clear', function() {
-			$('#selectedLinkMember').hide();
-			$('#selectedMemberIdx').val('');
-		});
-	}
 
 	/**
 	 * 기존회원 연결 저장

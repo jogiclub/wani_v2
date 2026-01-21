@@ -2403,10 +2403,10 @@ class Member extends My_Controller
 	}
 
 	/**
-	 * 회원 정보 조회 (간단 버전)
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 회원 기본정보 조회 (가족 탭 등에서 member_idx로 회원 정보 조회)
 	 */
-	public function get_member_info()
-	{
+	public function get_member_info() {
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
@@ -2414,28 +2414,43 @@ class Member extends My_Controller
 		$member_idx = $this->input->post('member_idx');
 		$org_id = $this->input->post('org_id');
 
-		if (!$member_idx || !$org_id) {
-			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+		if (!$member_idx) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보가 필요합니다.'));
 			return;
 		}
 
-		$this->load->model('Member_model');
-
-		// 회원 정보 조회
+		// 회원 기본정보 조회
 		$member = $this->Member_model->get_member_by_idx($member_idx);
 
-		if (!$member || $member['org_id'] != $org_id) {
-			echo json_encode(array('success' => false, 'message' => '회원 정보를 찾을 수 없습니다.'));
+		if (!$member) {
+			echo json_encode(array('success' => false, 'message' => '회원을 찾을 수 없습니다.'));
 			return;
+		}
+
+		// org_id가 전달된 경우 권한 체크
+		if ($org_id && $member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 권한 체크
+		if (!$this->check_org_access($member['org_id'])) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 사진 URL 처리
+		if (!empty($member['photo'])) {
+			if (strpos($member['photo'], '/') !== 0 && strpos($member['photo'], 'http') !== 0) {
+				$member['photo'] = '/uploads/member_photos/' . $member['org_id'] . '/' . $member['photo'];
+			}
+		} else {
+			$member['photo'] = '/assets/images/photo_no.png';
 		}
 
 		echo json_encode(array(
 			'success' => true,
-			'member' => array(
-				'member_idx' => $member['member_idx'],
-				'member_name' => $member['member_name'],
-				'member_phone' => $member['member_phone']
-			)
+			'data' => $member
 		));
 	}
 
