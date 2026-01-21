@@ -218,16 +218,16 @@
                     <span class="family-name fw-bold">${name.trim() || '이름없음'}</span>
                     <span class="badge bg-secondary ms-1">${gender}</span>
                     ${isMe ? '<span class="badge bg-primary ms-1">본인</span>' : ''}
-                    <div class="small text-muted">
-                        ${relation ? '<span class="me-2">' + relation + '</span>' : ''}
+                    ${relation ? '<span class="badge bg-success ms-1">' + relation + '</span>' : ''}
+                    <div class="small text-muted">                        
                         ${birthday ? '<span>' + birthday + '</span>' : ''}
                     </div>
                 </div>
             </div>
             <div class="btn-group btn-group-sm">
                 ${!isMe && linkedMemberIdx ? `
-                    <button type="button" class="btn btn-outline-info btn-family-view" data-member-idx="${linkedMemberIdx}" data-org-id="${linkedOrgId}" title="회원정보 보기">
-                        <i class="bi bi-zoom-in"></i>
+                    <button type="button" class="btn btn-outline-primary btn-family-view" data-member-idx="${linkedMemberIdx}" data-org-id="${linkedOrgId}" title="회원정보 보기">
+                        <i class="bi bi-search"></i>
                     </button>
                 ` : ''}
                 ${!isMe ? `
