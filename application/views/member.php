@@ -53,16 +53,30 @@
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-4 d-flex align-items-center">
+						<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
 						</div>
 
-						<div class="col-12 col-lg-3 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" placeholder="회원명, 휴대폰번호 등" aria-label="Member's name" aria-describedby="button-search">
-								<button class="btn btn-sm btn-outline-secondary" type="button" id="button-search"><i class="bi bi-search"></i> 검색</button>
+								<button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" id="searchFieldBtn">
+									검색필드
+								</button>
+								<ul class="dropdown-menu dropdown-menu-start p-2" id="searchFieldMenu" style="min-width: 180px; max-height: 300px; overflow-y: auto;">
+									<li><div class="form-check"><input class="form-check-input" type="checkbox" value="" id="check1"><label class="form-check-label" for="check1">필드 예시</label></div></li>
+								</ul>
+
+								<input type="text" class="form-control" id="memberSearchInput" placeholder="쉼표로 다중 검색 가능" aria-label="검색어">
+
+								<button class="btn btn-primary" type="button" id="button-search">
+									<i class="bi bi-search"></i> 검색
+								</button>
+
+								<button class="btn btn-outline-secondary" type="button" id="button-search-reset">
+									<i class="bi bi-x-circle"></i> 초기화
+								</button>
 							</div>
 						</div>
 

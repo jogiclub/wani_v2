@@ -40,7 +40,7 @@
 			<!-- 오른쪽: 컨텐츠 -->
 			<div class="split-pane" id="right-pane" style="overflow: auto">
 				<div class="card" style="overflow: auto">
-					<div class="card-body">
+					<div class="card-body position-relative">
 						<div id="contentArea">
 							<div class="text-center text-muted py-5">
 								<i class="bi bi-hand-index display-1"></i>
@@ -123,7 +123,7 @@
 		<div class="mb-3">
 			<label class="form-label mb-1">파일 첨부</label>
 			<div id="dropzoneArea"></div>
-			<input type="hidden" id="uploaded_files" value="">
+			<input type="hidden" id="uploaded_files" value="123">
 		</div>
 
 		<div class="d-flex gap-2">

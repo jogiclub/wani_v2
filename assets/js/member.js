@@ -21,6 +21,8 @@ $(document).ready(function () {
 	let timelineTypes = [];                    // 조직의 타임라인 호칭 목록
 
 	let currentMemberMissionIdx = null;       // 현재 선택된 회원 ID (파송용)
+	let selectedSearchFields = ['member_name', 'member_phone']; // 기본 검색 필드
+
 
 	// 전역으로 함수 노출
 	window.openMemberOffcanvas = openMemberOffcanvas;
@@ -780,12 +782,18 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 	/**
 	 * 회원 검색 이벤트 바인딩
+	 * - 다중 필드 선택 드롭다운 초기화
+	 * - 쉼표 구분 다중 키워드 검색 지원
 	 */
 	function bindMemberSearchEvents() {
-		const searchInput = $('.card-header input[type="text"]');
+		const searchInput = $('#memberSearchInput');
 		const searchButton = $('#button-search');
+		const resetButton = $('#button-search-reset');
 
-		// 검색 버튼 클릭 이벤트만 활성화
+		// 검색 필드 드롭다운 초기화
+		initializeSearchFieldDropdown();
+
+		// 검색 버튼 클릭 이벤트
 		searchButton.on('click', function () {
 			const searchText = searchInput.val().trim();
 			if (searchText) {
@@ -808,6 +816,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			}
 		});
 
+		// 검색 초기화 버튼 클릭 이벤트
+		resetButton.on('click', function () {
+			searchInput.val('');
+			clearMemberGridFilter();
+			showToast('검색이 초기화되었습니다.', 'info');
+		});
+
 		// 입력 필드 초기화 시 필터 해제
 		searchInput.on('input', function () {
 			const searchText = $(this).val().trim();
@@ -817,8 +832,145 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		});
 	}
 
+
 	/**
-	 * 회원 그리드 필터링 (간단한 클라이언트 필터링)
+	 * 검색 필드 선택 드롭다운 초기화
+	 * - pqGrid 컬럼 목록에서 검색 가능한 필드 추출
+	 * - 체크박스 목록 동적 생성
+	 * - 기본값: 이름, 휴대폰번호 체크
+	 */
+	function initializeSearchFieldDropdown() {
+		// 검색 가능한 필드 목록 정의 (dataIndx: 표시명)
+		const searchableFields = {
+			'member_name': '이름',
+			'member_phone': '휴대폰번호',
+			'member_nick': '닉네임',
+			'area_name': '소그룹',
+			'position_name': '직위/직분',
+			'duty_name': '직책',
+			'member_sex': '성별',
+			'member_birth': '생년월일',
+			'member_address': '주소',
+			'member_address_detail': '상세주소',
+			'member_etc': '특이사항'
+		};
+
+		// localStorage에서 이전 선택 상태 복원
+		const savedFields = localStorage.getItem('member-search-fields');
+		if (savedFields) {
+			try {
+				selectedSearchFields = JSON.parse(savedFields);
+			} catch (e) {
+				selectedSearchFields = ['member_name', 'member_phone'];
+			}
+		}
+
+		// 드롭다운 메뉴 생성
+		const $menu = $('#searchFieldMenu');
+		$menu.empty();
+
+		// 전체 선택/해제 버튼 추가
+		$menu.append(`
+        <li class="mb-2 border-bottom pb-2">
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill me-1" id="selectAllFields">전체선택</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary flex-fill" id="deselectAllFields">전체해제</button>
+            </div>
+        </li>
+    `);
+
+		// 각 필드별 체크박스 생성
+		Object.entries(searchableFields).forEach(([fieldKey, fieldName]) => {
+			const isChecked = selectedSearchFields.includes(fieldKey) ? 'checked' : '';
+			$menu.append(`
+            <li>
+                <div class="form-check">
+                    <input class="form-check-input search-field-checkbox" type="checkbox" 
+                           value="${fieldKey}" id="searchField_${fieldKey}" ${isChecked}>
+                    <label class="form-check-label" for="searchField_${fieldKey}">
+                        ${fieldName}
+                    </label>
+                </div>
+            </li>
+        `);
+		});
+
+		// 드롭다운 버튼 텍스트 업데이트
+		updateSearchFieldButtonText();
+
+		// 체크박스 변경 이벤트
+		$(document).off('change', '.search-field-checkbox').on('change', '.search-field-checkbox', function () {
+			updateSelectedSearchFields();
+		});
+
+		// 전체 선택 버튼
+		$(document).off('click', '#selectAllFields').on('click', '#selectAllFields', function (e) {
+			e.stopPropagation();
+			$('.search-field-checkbox').prop('checked', true);
+			updateSelectedSearchFields();
+		});
+
+		// 전체 해제 버튼
+		$(document).off('click', '#deselectAllFields').on('click', '#deselectAllFields', function (e) {
+			e.stopPropagation();
+			$('.search-field-checkbox').prop('checked', false);
+			updateSelectedSearchFields();
+		});
+	}
+
+	/**
+	 * 선택된 검색 필드 업데이트
+	 */
+	function updateSelectedSearchFields() {
+		selectedSearchFields = [];
+		$('.search-field-checkbox:checked').each(function () {
+			selectedSearchFields.push($(this).val());
+		});
+
+		// localStorage에 저장
+		localStorage.setItem('member-search-fields', JSON.stringify(selectedSearchFields));
+
+		// 버튼 텍스트 업데이트
+		updateSearchFieldButtonText();
+	}
+
+	/**
+	 * 검색 필드 버튼 텍스트 업데이트
+	 */
+	function updateSearchFieldButtonText() {
+		const $btn = $('#searchFieldBtn');
+		const count = selectedSearchFields.length;
+
+		if (count === 0) {
+			$btn.text('필드선택');
+		} else if (count === 1) {
+			// 필드명 표시
+			const fieldNames = {
+				'member_name': '이름',
+				'member_phone': '휴대폰번호',
+				'member_nick': '닉네임',
+				'area_name': '소그룹',
+				'position_name': '직위/직분',
+				'duty_name': '직책',
+				'member_sex': '성별',
+				'member_birth': '생년월일',
+				'member_address': '주소',
+				'member_address_detail': '상세주소',
+				'member_etc': '특이사항'
+			};
+			$btn.text(fieldNames[selectedSearchFields[0]] || '1개 선택');
+		} else {
+			$btn.text(count + '개 선택');
+		}
+	}
+
+
+
+	/**
+	 * 회원 그리드 필터링
+	 * - 선택된 필드에서 검색
+	 * - 쉼표(,)로 구분된 다중 키워드 OR 검색 지원
+	 * - 부분 일치 검색 지원
 	 */
 	function filterMemberGrid(searchText) {
 		if (!memberGrid) {
@@ -831,8 +983,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				return;
 			}
 
+			// 선택된 검색 필드가 없으면 경고
+			if (selectedSearchFields.length === 0) {
+				showToast('검색할 필드를 선택해주세요.', 'warning');
+				return;
+			}
 
-			// 그리드 데이터 직접 필터링 방식 사용
+			// 그리드 데이터 가져오기
 			const allData = memberGrid.pqGrid("option", "dataModel.data");
 
 			if (!allData || allData.length === 0) {
@@ -845,25 +1002,42 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				window.originalGridData = JSON.parse(JSON.stringify(allData));
 			}
 
-			// 이름과 휴대폰번호에서 검색
-			const filteredData = window.originalGridData.filter(function (member) {
-				const memberName = (member.member_name || '').toLowerCase();
-				const memberPhone = (member.member_phone || '').toLowerCase();
-				const searchLower = searchText.toLowerCase();
+			// 쉼표로 키워드 분리 및 정리
+			const keywords = searchText.split(',')
+				.map(s => s.trim().toLowerCase())
+				.filter(s => s.length > 0);
 
-				return memberName.includes(searchLower) || memberPhone.includes(searchLower);
+			if (keywords.length === 0) {
+				clearMemberGridFilter();
+				return;
+			}
+
+			// 필터링 수행
+			// 조건: 키워드 중 하나라도 선택된 필드 중 하나에 포함되면 매칭
+			const filteredData = window.originalGridData.filter(function (member) {
+				// 각 키워드에 대해 OR 검색
+				return keywords.some(function (keyword) {
+					// 선택된 필드들에서 검색
+					return selectedSearchFields.some(function (field) {
+						const value = (member[field] || '').toString().toLowerCase();
+						return value.includes(keyword);
+					});
+				});
 			});
 
 			// 필터링된 데이터로 그리드 업데이트
 			memberGrid.pqGrid("option", "dataModel.data", filteredData);
 			memberGrid.pqGrid("refreshDataAndView");
 
+			// 검색 결과 메시지
+			const keywordDisplay = keywords.length > 3
+				? keywords.slice(0, 3).join(', ') + ' 외 ' + (keywords.length - 3) + '개'
+				: keywords.join(', ');
 
-			// 검색 결과에 따른 toast 메시지 표시
 			if (filteredData.length === 0) {
-				showToast(`'${searchText}'에 대한 검색 결과가 없습니다.`, 'info');
+				showToast(`'${keywordDisplay}' 검색 결과가 없습니다.`, 'info');
 			} else {
-				showToast(`'${searchText}' 검색결과: ${filteredData.length}명`, 'info');
+				showToast(`'${keywordDisplay}' 검색결과: ${filteredData.length}명`, 'info');
 			}
 
 		} catch (error) {
@@ -897,7 +1071,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 * 검색 상태 초기화
 	 */
 	function resetMemberSearch() {
-		const searchInput = $('.card-header input[type="text"]');
+		const searchInput = $('#memberSearchInput');
 		searchInput.val('');
 		clearMemberGridFilter();
 

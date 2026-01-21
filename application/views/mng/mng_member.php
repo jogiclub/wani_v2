@@ -48,7 +48,7 @@ $this->load->view('mng/header');
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-4 d-flex align-items-center">
+						<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedNodeName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
@@ -76,21 +76,33 @@ $this->load->view('mng/header');
 							</div>
 						</div>
 
-						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
+						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 align-items-center gap-2">
 
 							<small class="text-muted me-2">선택된 회원 <span id="selectedCount">0</span>명</small>
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-primary" id="btnStatusChange" disabled>
 									<i class="bi bi-arrow-repeat"></i> 관리tag일괄처리
 								</button>
-
+								<button type="button" class="btn btn-sm btn-outline-primary" id="btnOrgChange" disabled>
+									<i class="bi bi-arrow-repeat"></i> 조직일괄변경
+								</button>
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnSendMember" disabled>
 									<i class="bi bi-chat-dots"></i> 선택문자
 								</button>
 
-								<button type="button" class="btn btn-sm btn-outline-success" id="btnExcelDownload">
-									<i class="bi bi-file-spreadsheet"></i> 엑셀다운로드
-								</button>
+
+								<div class="btn-group" role="group">
+									<button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+										더보기
+									</button>
+									<ul class="dropdown-menu">
+										<li><a class="dropdown-item d-block" href="#" id="btnExcelDownload"><i class="bi bi-file-spreadsheet"></i> 엑셀다운로드</a></li>
+									</ul>
+								</div>
+
+
+
+
 							</div>
 
 						</div>

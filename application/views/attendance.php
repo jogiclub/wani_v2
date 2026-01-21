@@ -89,7 +89,9 @@
 						</div>
 
 						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+
 							<!-- 점수재계산 버튼 추가 -->
+
 							<div class="btn-group justify-content-end ">
 								<button class="btn btn-sm btn-outline-warning align-items-center d-none d-lg-flex" type="button" id="btnRecalculateStats">
 									<i class="bi bi-arrow-clockwise"></i> 포인트재계산
@@ -99,6 +101,10 @@
 								</button>
 
 							</div>
+
+
+
+
 						</div>
 					</div>
 				</div>
