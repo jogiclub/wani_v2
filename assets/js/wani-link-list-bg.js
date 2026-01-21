@@ -379,13 +379,7 @@ class WaniLinkListBg {
 		});
 	}
 
-	showToast(message) {
-		if (typeof window.showToast === 'function') {
-			window.showToast(message);
-		} else {
-			alert(message);
-		}
-	}
+
 
 	save() {
 		console.log('WaniLinkListBg 저장:', this.data);

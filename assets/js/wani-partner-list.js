@@ -288,13 +288,7 @@ class WaniPartnerList {
 		});
 	}
 
-	showToast(message) {
-		if (typeof window.showToast === 'function') {
-			window.showToast(message);
-		} else {
-			alert(message);
-		}
-	}
+
 
 	save() {
 		console.log('WaniPartnerList 저장:', this.data);

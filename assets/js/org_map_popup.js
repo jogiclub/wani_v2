@@ -204,15 +204,3 @@ function escapeHtml(text) {
 	return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-/**
- * 역할: Toast 메시지 표시
- */
-function showToast(message, type = 'info') {
-	// 부모 창의 showToast 함수 사용 (있는 경우)
-	if (window.opener && typeof window.opener.showToast === 'function') {
-		window.opener.showToast(message, type);
-	} else {
-		// 간단한 alert 대체
-		alert(message);
-	}
-}

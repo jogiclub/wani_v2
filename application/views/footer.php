@@ -13,7 +13,7 @@
 
 
 <!-- 공통 Toast 컨테이너 -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3 z-3">
+<div class="toast-container position-fixed bottom-0 end-0 p-3 z-5">
 	<div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
 		<div class="toast-header">
 			<strong class="me-auto">알림</strong>
@@ -25,7 +25,7 @@
 
 
 <!-- Toast 알림 -->
-<div class="toast-container position-fixed top-0 end-0 p-3">
+<div class="toast-container position-fixed top-0 end-0 p-3 z-5">
 	<div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
 		<div class="toast-header">
 			<strong class="me-auto">알림</strong>

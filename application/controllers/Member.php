@@ -3013,4 +3013,39 @@ class Member extends My_Controller
 		}
 	}
 
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 가족 회원 접근 권한 확인 API
+	 */
+	public function check_family_member_access()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+		$user_id = $this->session->userdata('user_id');
+
+		if (!$member_idx || !$user_id) {
+			echo json_encode([
+				'success' => false,
+				'message' => '필수 정보가 누락되었습니다.'
+			]);
+			return;
+		}
+
+		// Member_model의 권한 확인 함수 호출
+		$has_access = $this->Member_model->check_member_access_permission($user_id, $member_idx);
+
+		if ($has_access) {
+			echo json_encode(['success' => true]);
+		} else {
+			echo json_encode([
+				'success' => false,
+				'message' => '해당 회원의 정보를 조회할 권한이 없습니다.'
+			]);
+		}
+	}
+
 }

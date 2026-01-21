@@ -68,7 +68,7 @@
 			confirmDeleteFamily(familyId, familyName);
 		});
 
-		// 연결된 회원 보기 버튼 클릭
+		// 연결된 회원 보기 버튼 클릭 (72-92줄 교체)
 		$(document).off('click', '.btn-family-view').on('click', '.btn-family-view', function() {
 			const memberIdx = $(this).data('member-idx');
 			const orgId = $(this).data('org-id');
@@ -78,17 +78,35 @@
 				return;
 			}
 
-			// 현재 offcanvas 닫기
-			const currentOffcanvas = bootstrap.Offcanvas.getInstance($('#memberOffcanvas')[0]);
-			if (currentOffcanvas) {
-				// offcanvas가 완전히 닫힌 후 새 회원 정보 열기
-				$('#memberOffcanvas').one('hidden.bs.offcanvas', function() {
-					openFamilyMemberOffcanvas(memberIdx, orgId);
-				});
-				currentOffcanvas.hide();
-			} else {
-				openFamilyMemberOffcanvas(memberIdx, orgId);
-			}
+			// 권한 확인 AJAX 요청
+			$.ajax({
+				url: '/member/check_family_member_access',
+				type: 'POST',
+				data: {
+					member_idx: memberIdx,
+					org_id: orgId
+				},
+				dataType: 'json',
+				success: function(response) {
+					if (response.success) {
+						// 권한 있음 - 현재 offcanvas 닫고 새 회원 정보 열기
+						const currentOffcanvas = bootstrap.Offcanvas.getInstance($('#memberOffcanvas')[0]);
+						if (currentOffcanvas) {
+							$('#memberOffcanvas').one('hidden.bs.offcanvas', function() {
+								openFamilyMemberOffcanvas(memberIdx, orgId);
+							});
+							currentOffcanvas.hide();
+						} else {
+							openFamilyMemberOffcanvas(memberIdx, orgId);
+						}
+					} else {
+						showToast(response.message || '해당 회원을 조회할 권한이 없습니다.', 'error');
+					}
+				},
+				error: function() {
+					showToast('권한 확인 중 오류가 발생했습니다.', 'error');
+				}
+			});
 		});
 	}
 

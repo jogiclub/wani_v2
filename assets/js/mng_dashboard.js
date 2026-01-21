@@ -262,28 +262,6 @@ function showConfirmModal(message, onConfirm) {
 	modal.show();
 }
 
-function showToast(message, type = 'info') {
-	const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-info';
-	const toastHtml = `
-		<div class="toast align-items-center text-white ${bgClass} border-0" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
-			<div class="d-flex">
-				<div class="toast-body">
-					${escapeHtml(message)}
-				</div>
-				<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-			</div>
-		</div>
-	`;
-
-	$('body').append(toastHtml);
-	const toastElement = $('.toast').last()[0];
-	const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
-	toast.show();
-
-	$(toastElement).on('hidden.bs.toast', function() {
-		$(this).remove();
-	});
-}
 
 function updateMonthDisplay(type, year, month) {
 	$(`#${type}CurrentMonth`).text(`${year}년 ${month}월`);

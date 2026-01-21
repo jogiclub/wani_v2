@@ -401,13 +401,6 @@ class WaniCoverSlide {
 		});
 	}
 
-	showToast(message) {
-		if (typeof window.showToast === 'function') {
-			window.showToast(message);
-		} else {
-			alert(message);
-		}
-	}
 
 	save() {
 		return {

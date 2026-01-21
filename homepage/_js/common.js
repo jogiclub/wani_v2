@@ -1740,12 +1740,7 @@ function updateUploadedFilesList() {
 	console.log('업로드된 파일 목록:', fileBlocks);
 }
 
-// Toast 메시지 표시 함수 (없을 경우 대비)
-if (typeof showToast === 'undefined') {
-	function showToast(message) {
-		alert(message);
-	}
-}
+
 
 
 /**
