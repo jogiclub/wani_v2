@@ -22,6 +22,7 @@ $(document).ready(function () {
 
 	let currentMemberMissionIdx = null;       // 현재 선택된 회원 ID (파송용)
 	let selectedSearchFields = ['member_name', 'member_phone']; // 기본 검색 필드
+	let currentDetailFields = []; // 현재 조직의 상세필드 목록
 
 
 	// 전역으로 함수 노출
@@ -835,13 +836,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 	/**
 	 * 검색 필드 선택 드롭다운 초기화
-	 * - pqGrid 컬럼 목록에서 검색 가능한 필드 추출
+	 * - 기본 필드 + 조직 상세필드 동적 생성
 	 * - 체크박스 목록 동적 생성
 	 * - 기본값: 이름, 휴대폰번호 체크
 	 */
 	function initializeSearchFieldDropdown() {
-		// 검색 가능한 필드 목록 정의 (dataIndx: 표시명)
-		const searchableFields = {
+		// 기본 검색 가능한 필드 목록 정의 (dataIndx: 표시명)
+		const baseSearchableFields = {
 			'member_name': '이름',
 			'member_phone': '휴대폰번호',
 			'member_nick': '닉네임',
@@ -879,8 +880,13 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
         </li>
     `);
 
-		// 각 필드별 체크박스 생성
-		Object.entries(searchableFields).forEach(([fieldKey, fieldName]) => {
+		// 기본 필드 섹션 헤더
+		$menu.append(`
+        <li class="dropdown-header text-muted small py-1">기본 필드</li>
+    `);
+
+		// 각 기본 필드별 체크박스 생성
+		Object.entries(baseSearchableFields).forEach(([fieldKey, fieldName]) => {
 			const isChecked = selectedSearchFields.includes(fieldKey) ? 'checked' : '';
 			$menu.append(`
             <li>
@@ -894,6 +900,37 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
             </li>
         `);
 		});
+
+		// 조직 상세필드가 있으면 추가
+		if (currentDetailFields && currentDetailFields.length > 0) {
+			// 상세필드 섹션 구분선 및 헤더
+			$menu.append(`
+            <li><hr class="dropdown-divider my-2"></li>
+            <li class="dropdown-header text-muted small py-1">상세 필드</li>
+        `);
+
+			// 상세필드 체크박스 생성
+			currentDetailFields.forEach(function(field) {
+				// 활성화된 필드만 표시
+				if (field.is_active === 'Y') {
+					const fieldKey = 'detail_' + field.field_idx;
+					const fieldName = field.field_name;
+					const isChecked = selectedSearchFields.includes(fieldKey) ? 'checked' : '';
+
+					$menu.append(`
+                    <li>
+                        <div class="form-check">
+                            <input class="form-check-input search-field-checkbox" type="checkbox" 
+                                   value="${fieldKey}" id="searchField_${fieldKey}" ${isChecked}>
+                            <label class="form-check-label" for="searchField_${fieldKey}">
+                                ${escapeHtml(fieldName)}
+                            </label>
+                        </div>
+                    </li>
+                `);
+				}
+			});
+		}
 
 		// 드롭다운 버튼 텍스트 업데이트
 		updateSearchFieldButtonText();
@@ -945,7 +982,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			$btn.text('필드선택');
 		} else if (count === 1) {
 			// 필드명 표시
-			const fieldNames = {
+			const baseFieldNames = {
 				'member_name': '이름',
 				'member_phone': '휴대폰번호',
 				'member_nick': '닉네임',
@@ -958,7 +995,19 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				'member_address_detail': '상세주소',
 				'member_etc': '특이사항'
 			};
-			$btn.text(fieldNames[selectedSearchFields[0]] || '1개 선택');
+
+			let fieldName = baseFieldNames[selectedSearchFields[0]];
+
+			// 상세필드인 경우 이름 찾기
+			if (!fieldName && selectedSearchFields[0].startsWith('detail_')) {
+				const fieldIdx = selectedSearchFields[0].replace('detail_', '');
+				const detailField = currentDetailFields.find(f => f.field_idx == fieldIdx);
+				if (detailField) {
+					fieldName = detailField.field_name;
+				}
+			}
+
+			$btn.text(fieldName || '1개 선택');
 		} else {
 			$btn.text(count + '개 선택');
 		}
@@ -2190,6 +2239,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			return;
 		}
 
+		// 상세필드 정보 저장 및 검색 드롭다운 갱신
+		if (response.detail_fields) {
+			currentDetailFields = response.detail_fields;
+			initializeSearchFieldDropdown();
+		}
 
 		// 그리드가 없거나 상세필드 구조가 변경된 경우에만 재생성
 		if (!memberGrid) {
