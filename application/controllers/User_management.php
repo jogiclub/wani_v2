@@ -16,7 +16,10 @@ class User_management extends My_Controller
 		$this->load->model('User_management_model');
 
 		// 메뉴 권한 체크
-		$this->check_menu_access('USER_MANAGEMENT');
+		$method = $this->router->fetch_method();
+		if ($method !== 'return_to_admin') {
+			$this->check_menu_access('USER_MANAGEMENT');
+		}
 
 	}
 

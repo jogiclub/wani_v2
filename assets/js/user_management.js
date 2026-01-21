@@ -922,7 +922,7 @@ $(document).on('click', '.delete-user-btn', function() {
 	);
 });
 
-// 사용자로 로그인 버튼 클릭
+
 
 /**
  * 사용자로 로그인 버튼 클릭 이벤트 (마스터 전용)
@@ -954,7 +954,8 @@ $(document).on('click', '.login-as-user-btn', function() {
 						showToast(response.message, 'success');
 						// 1초 후 페이지 새로고침하여 새로운 사용자 세션 적용
 						setTimeout(function() {
-							location.reload();
+							// location.reload();
+							window.location.href = '/dashboard';
 						}, 1000);
 					} else {
 						showToast(response.message || '로그인 전환에 실패했습니다.', 'error');

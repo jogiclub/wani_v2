@@ -285,34 +285,7 @@
 		return '가족';
 	}
 
-	/**
-	 * 가족 추가 모달 열기
-	 */
-	function openAddFamilyModal() {
-		if ($('#addFamilyModal').length === 0) {
-			createAddFamilyModal();
-		}
 
-		// 관계 대상 선택 옵션 설정
-		const targetSelect = $('#familyTargetId');
-		targetSelect.empty();
-
-		currentFamilyDisplayData.forEach(function(member) {
-			const name = ((member.data && member.data['first name']) || '') + ' ' + ((member.data && member.data['last name']) || '');
-			const isMe = member.id === '0';
-			targetSelect.append(`<option value="${member.id}">${name.trim() || '이름없음'}${isMe ? ' (본인)' : ''}</option>`);
-		});
-
-		// 소그룹 옵션 로드
-		loadAreaOptionsForFamily();
-
-		// 폼 초기화
-		$('#addFamilyForm')[0].reset();
-		$('#familyTargetId').val('0');
-
-		const modal = new bootstrap.Modal(document.getElementById('addFamilyModal'));
-		modal.show();
-	}
 
 	/**
 	 * 가족 추가 모달 생성
@@ -472,6 +445,71 @@
 		});
 	}
 
+
+
+	/**
+	 * 파일 위치: assets/js/member-family.js
+	 * 수정 내용: 가계도에서 선택된 카드(.card-main)를 기준 가족 기본값으로 설정
+	 */
+
+	/**
+	 * 현재 선택된 가계도 카드의 ID 가져오기
+	 * family-chart에서 .card-main 클래스가 적용된 카드가 현재 선택된 카드
+	 */
+	function getSelectedFamilyCardId() {
+		const mainCard = document.querySelector('#FamilyChart .card-main');
+		if (!mainCard) return '0'; // 선택된 카드가 없으면 본인(0) 반환
+
+		// family-chart는 카드에 data-id 또는 다른 방식으로 ID를 저장
+		// SVG 구조에서 카드의 ID를 추출
+		const cardElement = mainCard.closest('[data-id]') || mainCard.closest('g[data-id]');
+		if (cardElement) {
+			return cardElement.getAttribute('data-id') || '0';
+		}
+
+		// f3 라이브러리의 내부 데이터에서 찾기
+		if (familyChart && familyChart.getMainDatum) {
+			const mainDatum = familyChart.getMainDatum();
+			if (mainDatum && mainDatum.data && mainDatum.data.id !== undefined) {
+				return mainDatum.data.id;
+			}
+		}
+
+		return '0';
+	}
+
+	/**
+	 * 가족 추가 모달 열기
+	 */
+	function openAddFamilyModal() {
+		if ($('#addFamilyModal').length === 0) {
+			createAddFamilyModal();
+		}
+
+		// 관계 대상 선택 옵션 설정
+		const targetSelect = $('#familyTargetId');
+		targetSelect.empty();
+
+		currentFamilyDisplayData.forEach(function(member) {
+			const name = ((member.data && member.data['first name']) || '') + ' ' + ((member.data && member.data['last name']) || '');
+			const isMe = member.id === '0';
+			targetSelect.append(`<option value="${member.id}">${name.trim() || '이름없음'}${isMe ? ' (본인)' : ''}</option>`);
+		});
+
+		// 소그룹 옵션 로드
+		loadAreaOptionsForFamily();
+
+		// 폼 초기화
+		$('#addFamilyForm')[0].reset();
+
+		// 가계도에서 선택된 카드를 기준 가족으로 설정
+		const selectedCardId = getSelectedFamilyCardId();
+		$('#familyTargetId').val(selectedCardId);
+
+		const modal = new bootstrap.Modal(document.getElementById('addFamilyModal'));
+		modal.show();
+	}
+
 	/**
 	 * 기존회원 연결 모달 열기
 	 */
@@ -492,9 +530,12 @@
 
 		// 폼 초기화
 		$('#linkMemberForm')[0].reset();
-		$('#linkTargetId').val('0');
 
-		// [변경] Dropdown UI 초기화
+		// 가계도에서 선택된 카드를 기준 가족으로 설정
+		const selectedCardId = getSelectedFamilyCardId();
+		$('#linkTargetId').val(selectedCardId);
+
+		// Dropdown UI 초기화
 		$('#member-search-input').val('');
 		$('#member-search-results').html('<li class="px-3 py-2 text-center text-muted small">검색어를 입력하세요 (2자 이상)</li>');
 
@@ -504,7 +545,7 @@
 		const modal = new bootstrap.Modal(document.getElementById('linkMemberModal'));
 		modal.show();
 
-		// [변경] Select2 대신 Dropdown 검색 기능 초기화
+		// Select2 대신 Dropdown 검색 기능 초기화
 		initMemberSearchDropdown();
 	}
 
