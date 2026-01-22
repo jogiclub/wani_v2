@@ -177,6 +177,104 @@ $this->load->view('mng/header');
 	</div>
 </div>
 
+
+<!-- 조직일괄변경 모달 -->
+<div class="modal fade" id="orgChangeModal" tabindex="-1" aria-labelledby="orgChangeModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="orgChangeModalLabel">조직일괄변경</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<!-- 상단: 그룹 선택 -->
+				<div class="row mb-3">
+					<div class="col-6">
+						<div class="input-group input-group-sm">
+							<input type="text" class="form-control" id="orgChangeMemberSearch" placeholder="이름으로 검색">
+							<button type="button" class="btn btn-outline-secondary" id="btnOrgChangeMemberSearch">
+								<i class="bi bi-search"></i>
+							</button>
+						</div>
+					</div>
+					<div class="col-6">
+						<div class="input-group input-group-sm">
+							<select class="form-select" id="orgChangeTargetCategory">
+								<option value="">그룹을 선택하세요</option>
+							</select>
+							<button type="button" class="btn btn-outline-secondary" id="btnOrgChangeReset" title="초기화">
+								<i class="bi bi-arrow-counterclockwise"></i>
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- 메인: 회원 목록 / 조직 목록 -->
+				<div class="row" style="min-height: 400px;">
+					<!-- 왼쪽: 회원 목록 -->
+					<div class="col-5 border-end">
+						<div class="fw-semibold mb-2 text-muted small">
+							<i class="bi bi-people"></i> 복사할 회원 (<span id="orgChangeMemberCount">0</span>명)
+						</div>
+						<div class="border rounded p-2 bg-light" style="height: 360px; overflow-y: auto;" id="orgChangeMemberList">
+							<!-- 드래그 가능한 회원 목록 -->
+						</div>
+					</div>
+
+					<!-- 오른쪽: 조직 목록 (드롭존) -->
+					<div class="col-7">
+						<div class="fw-semibold mb-2 text-muted small">
+							<i class="bi bi-building"></i> 대상 조직 (<span id="orgChangeOrgCount">0</span>개)
+						</div>
+						<div class="border rounded p-2 bg-white" style="height: 360px; overflow-y: auto;" id="orgChangeOrgList">
+							<div class="text-center text-muted py-5" id="orgChangeOrgPlaceholder">
+								<i class="bi bi-diagram-3 fs-1"></i>
+								<p class="mt-2 mb-0">위에서 그룹을 선택하면<br>해당 그룹의 조직 목록이 표시됩니다</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- 하단: 복사 현황 요약 -->
+				<div class="mt-3 p-2 bg-light rounded" id="orgChangeSummary" style="display: none;">
+					<div class="fw-semibold mb-2"><i class="bi bi-clipboard-check"></i> 복사 현황</div>
+					<div id="orgChangeSummaryContent" class="small"></div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmOrgChangeBtn" disabled>저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 조직변경 확인 모달 -->
+<div class="modal fade" id="orgChangeConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header bg-warning">
+				<h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> 확인</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p class="mb-2"><strong>선택한 회원을 다른 조직으로 복사합니다.</strong></p>
+				<div id="confirmOrgChangeDetail" class="mb-3"></div>
+				<div class="alert alert-warning mb-0">
+					<i class="bi bi-info-circle"></i> <strong>이 작업은 되돌릴 수 없습니다.</strong><br>
+					회원 정보가 복사되며, 원본 조직의 회원 정보는 유지됩니다.<br>
+					복사된 회원은 별도의 회원으로 관리되며, 이후 변경사항은 동기화되지 않습니다.
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-warning" id="executeOrgChangeBtn">복사 실행</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
 <?php $this->load->view('mng/footer'); ?>
 
 <!-- Split.js -->

@@ -196,39 +196,55 @@ class Org_model extends CI_Model {
 
 
 	/**
-	 * 특정 카테고리와 모든 하위 카테고리의 조직 목록 조회
-	 * 수정 사항: user_count 컬럼 추가
+	 * 파일 위치: application/models/Org_model.php
+	 * 역할: 특정 카테고리와 모든 하위 카테고리의 조직 목록 조회 (타입 캐스팅 추가)
 	 */
 	public function get_orgs_by_category_with_children($category_idx)
 	{
+		// category_idx를 정수로 변환
+		$category_idx = intval($category_idx);
+
+		if ($category_idx <= 0) {
+			return array();
+		}
+
 		// 모든 하위 카테고리 ID 조회
 		$this->load->model('Org_category_model');
 		$child_category_ids = $this->Org_category_model->get_all_child_category_ids($category_idx);
 
-		// 현재 카테고리도 포함
-		$category_ids = array_merge(array($category_idx), $child_category_ids);
+		// 현재 카테고리도 포함 (정수 타입으로 통일)
+		$category_ids = array($category_idx);
+
+		if (!empty($child_category_ids)) {
+			foreach ($child_category_ids as $child_id) {
+				$category_ids[] = intval($child_id);
+			}
+		}
+
+		// 디버깅용 로그
+		log_message('debug', 'get_orgs_by_category_with_children - category_ids: ' . print_r($category_ids, true));
 
 		$this->db->select('
-        o.org_id,
-        o.org_code,
-        o.org_name,
-        o.org_type,
-        o.org_desc,
-        o.org_rep,
-        o.org_manager,
-        o.org_phone,
-        o.org_address_postno,
-        o.org_address,
-        o.org_address_detail,
-        o.org_tag,
-        o.org_icon,
-        o.category_idx,
-        o.regi_date,
-        o.modi_date,
-        oc.category_name,
-        COUNT(DISTINCT m.member_idx) as member_count,
-        COUNT(DISTINCT ou.user_id) as user_count
-    ');
+		o.org_id,
+		o.org_code,
+		o.org_name,
+		o.org_type,
+		o.org_desc,
+		o.org_rep,
+		o.org_manager,
+		o.org_phone,
+		o.org_address_postno,
+		o.org_address,
+		o.org_address_detail,
+		o.org_tag,
+		o.org_icon,
+		o.category_idx,
+		o.regi_date,
+		o.modi_date,
+		oc.category_name,
+		COUNT(DISTINCT m.member_idx) as member_count,
+		COUNT(DISTINCT ou.user_id) as user_count
+	');
 
 		$this->db->from('wb_org o');
 		$this->db->join('wb_org_category oc', 'o.category_idx = oc.category_idx', 'left');
@@ -238,9 +254,14 @@ class Org_model extends CI_Model {
 		$this->db->where_in('o.category_idx', $category_ids);
 
 		$this->db->group_by('o.org_id');
-		$this->db->order_by('o.regi_date', 'DESC');
+		$this->db->order_by('oc.category_name', 'ASC');
+		$this->db->order_by('o.org_name', 'ASC');
 
 		$query = $this->db->get();
+
+		// 디버깅용 로그
+		log_message('debug', 'get_orgs_by_category_with_children - SQL: ' . $this->db->last_query());
+
 		return $query->result_array();
 	}
 
@@ -1030,6 +1051,43 @@ class Org_model extends CI_Model {
 		}
 
 		return array_values(array_unique($types));
+	}
+
+	/**
+	 * 파일 위치: application/models/Org_model.php
+	 * 역할: 카테고리와 함께 조직 목록 조회
+	 */
+	public function get_org_list_with_category($visible_categories = array())
+	{
+		$this->db->select('o.org_id, o.org_name, o.category_idx, c.category_name');
+		$this->db->from('wb_org o');
+		$this->db->join('wb_org_category c', 'o.category_idx = c.category_idx', 'left');
+		$this->db->where('o.del_yn', 'N');
+
+		// 권한이 있는 카테고리만 표시
+		if (!empty($visible_categories)) {
+			// 하위 카테고리도 포함
+			$this->load->model('Org_category_model');
+			$all_category_ids = array();
+
+			foreach ($visible_categories as $cat_id) {
+				$all_category_ids[] = $cat_id;
+				$children = $this->Org_category_model->get_all_child_category_ids($cat_id);
+				$all_category_ids = array_merge($all_category_ids, $children);
+			}
+
+			$all_category_ids = array_unique($all_category_ids);
+
+			if (!empty($all_category_ids)) {
+				$this->db->where_in('o.category_idx', $all_category_ids);
+			}
+		}
+
+		$this->db->order_by('c.category_name', 'ASC');
+		$this->db->order_by('o.org_name', 'ASC');
+
+		$query = $this->db->get();
+		return $query->result_array();
 	}
 
 }
