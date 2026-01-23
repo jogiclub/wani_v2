@@ -1,0 +1,7 @@
+.org-drop-card{width: 32%;display: inline-block;margin: 0.5%;}
+@media screen and (max-width: 1200px){
+	.org-drop-card{width: 48%;margin: 1%;}
+}
+@media screen and (max-width: 768px){
+	.org-drop-card{width: 100%;margin: 0;}
+}

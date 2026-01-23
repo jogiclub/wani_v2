@@ -187,18 +187,36 @@ $this->load->view('mng/header');
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
-				<!-- 상단: 그룹 선택 -->
-				<div class="row mb-3">
-					<div class="col-6">
-						<div class="input-group input-group-sm">
+
+
+				<!-- 메인: 회원 목록 / 조직 목록 -->
+				<div class="row" style="min-height: 400px;">
+					<!-- 왼쪽: 회원 목록 -->
+					<div class="col-3 border-end">
+
+						<div class="fw-semibold mb-2 text-muted small">
+							<i class="bi bi-people"></i> 복사할 회원 (<span id="orgChangeMemberCount">0</span>명)
+						</div>
+
+						<div class="input-group input-group-sm mb-2">
 							<input type="text" class="form-control" id="orgChangeMemberSearch" placeholder="이름으로 검색">
 							<button type="button" class="btn btn-outline-secondary" id="btnOrgChangeMemberSearch">
 								<i class="bi bi-search"></i>
 							</button>
 						</div>
+
+						<div class="border rounded p-2 bg-light" style="height: 360px; overflow-y: auto;" id="orgChangeMemberList">
+							<!-- 드래그 가능한 회원 목록 -->
+						</div>
 					</div>
-					<div class="col-6">
-						<div class="input-group input-group-sm">
+
+					<!-- 오른쪽: 조직 목록 (드롭존) -->
+					<div class="col-9">
+						<div class="fw-semibold mb-2 text-muted small">
+							<i class="bi bi-building"></i> 대상 조직 (<span id="orgChangeOrgCount">0</span>개)
+						</div>
+
+						<div class="input-group input-group-sm mb-2">
 							<select class="form-select" id="orgChangeTargetCategory">
 								<option value="">그룹을 선택하세요</option>
 							</select>
@@ -206,26 +224,7 @@ $this->load->view('mng/header');
 								<i class="bi bi-arrow-counterclockwise"></i>
 							</button>
 						</div>
-					</div>
-				</div>
 
-				<!-- 메인: 회원 목록 / 조직 목록 -->
-				<div class="row" style="min-height: 400px;">
-					<!-- 왼쪽: 회원 목록 -->
-					<div class="col-5 border-end">
-						<div class="fw-semibold mb-2 text-muted small">
-							<i class="bi bi-people"></i> 복사할 회원 (<span id="orgChangeMemberCount">0</span>명)
-						</div>
-						<div class="border rounded p-2 bg-light" style="height: 360px; overflow-y: auto;" id="orgChangeMemberList">
-							<!-- 드래그 가능한 회원 목록 -->
-						</div>
-					</div>
-
-					<!-- 오른쪽: 조직 목록 (드롭존) -->
-					<div class="col-7">
-						<div class="fw-semibold mb-2 text-muted small">
-							<i class="bi bi-building"></i> 대상 조직 (<span id="orgChangeOrgCount">0</span>개)
-						</div>
 						<div class="border rounded p-2 bg-white" style="height: 360px; overflow-y: auto;" id="orgChangeOrgList">
 							<div class="text-center text-muted py-5" id="orgChangeOrgPlaceholder">
 								<i class="bi bi-diagram-3 fs-1"></i>

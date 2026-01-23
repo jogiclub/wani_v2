@@ -1899,24 +1899,20 @@
 			const droppedMembers = orgChangeDroppedData[org.org_id] || [];
 			const memberCount = droppedMembers.length;
 
-			const $orgCard = $(`
-			<div class="org-drop-card border rounded p-2 mb-2 bg-light" 
-				 data-org-id="${org.org_id}"
-				 data-org-name="${org.org_name}">
-				<div class="d-flex align-items-center justify-content-between mb-2">
-					<div>
-						<div class="fw-semibold"><i class="bi bi-building"></i> ${org.org_name}</div>
-						<small class="text-muted">${org.category_name || ''} / 기존 ${org.member_count || 0}명</small>
+			const $orgCard = $(`			
+				<div class="org-drop-card border rounded p-2 mb-2 bg-light" data-org-id="${org.org_id}" data-org-name="${org.org_name}">
+					<div class="d-flex align-items-center justify-content-between mb-2">
+						<div class="d-flex align-items-center justify-content-between">
+							<div class="fw-semibold"><i class="bi bi-building"></i> ${org.org_name}</div>
+							<small class="text-muted ms-2">${org.category_name || ''} (기존 ${org.member_count || 0}명)</small>
+						</div>
+						<span class="badge ${memberCount > 0 ? 'bg-primary' : 'bg-secondary'}">${memberCount}명 추가</span>
 					</div>
-					<span class="badge ${memberCount > 0 ? 'bg-primary' : 'bg-secondary'}">${memberCount}명 추가</span>
-				</div>
-				<div class="org-drop-zone border-2 border-dashed rounded p-2 bg-white text-center" 
-					 data-org-id="${org.org_id}"
-					 style="min-height: 60px;">
-					${memberCount > 0 ? '' : '<small class="text-muted">회원을 여기에 드롭하세요</small>'}
-					<div class="dropped-members-list"></div>
-				</div>
-			</div>
+					<div class="org-drop-zone border-2 border-dashed rounded p-2 bg-white text-center" data-org-id="${org.org_id}" style="min-height: 60px;">
+						${memberCount > 0 ? '' : '<small class="text-muted">회원을 여기에 드롭하세요</small>'}
+						<div class="dropped-members-list"></div>
+					</div>
+				</div>			
 		`);
 
 			// 드롭된 회원 목록 표시

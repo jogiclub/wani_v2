@@ -5,7 +5,8 @@
 /* Offcanvas 크기 및 기본 스타일 */
 #memberOffcanvas.offcanvas-end {
 	width: 700px;
-	border-left: 2px solid #0d9af0;
+	border-left: 2px solid #0d9af0!important;
+	box-shadow: 0 0 20px 0 #ccc;
 }
 
 #memberOffcanvas .offcanvas-header {
