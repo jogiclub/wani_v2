@@ -25,6 +25,7 @@
 	let orgChangeDroppedData = {}; // { org_id: [member, member, ...] }
 	let categoryList = [];
 	let currentCategoryOrgs = [];
+	let orgChangeMode = 'move'; // 'move' 또는 'copy'
 
 
 	// DOM 준비 완료 시 초기화
@@ -1589,6 +1590,7 @@
 	 */
 	function executeOrgChange() {
 		const copyData = [];
+		const modeText = orgChangeMode === 'move' ? '이동' : '복사';
 
 		for (const orgId in orgChangeDroppedData) {
 			const members = orgChangeDroppedData[orgId];
@@ -1601,7 +1603,7 @@
 		}
 
 		if (copyData.length === 0) {
-			showToast('복사할 데이터가 없습니다.', 'warning');
+			showToast(modeText + '할 데이터가 없습니다.', 'warning');
 			return;
 		}
 
@@ -1612,11 +1614,12 @@
 			url: '/mng/mng_member/copy_members_to_orgs',
 			type: 'POST',
 			data: {
-				copy_data: JSON.stringify(copyData)
+				copy_data: JSON.stringify(copyData),
+				mode: orgChangeMode  // 'move' 또는 'copy'
 			},
 			dataType: 'json',
 			success: function(response) {
-				$('#executeOrgChangeBtn').prop('disabled', false).html('복사 실행');
+				$('#executeOrgChangeBtn').prop('disabled', false).html(modeText + ' 실행');
 
 				if (response.success) {
 					showToast(response.message, 'success');
@@ -1647,7 +1650,7 @@
 		$('#orgChangeTargetCategory').val('');
 		resetOrgChangeOrgArea();
 		renderOrgChangeMemberList(orgChangeSelectedMembers);
-		$('#orgChangeSummary').hide();
+		$('#orgChangeTotalCount').text('0');
 		$('#confirmOrgChangeBtn').prop('disabled', true);
 	}
 
@@ -1671,13 +1674,17 @@
 	/**
 	 * 파일 위치: assets/js/mng_member.js
 	 * 역할: 조직일괄변경 모달 열기 및 초기화 - 모달 열린 후 데이터 로드
-	 * 위치: openOrgChangeModal 함수 전체 교체
 	 */
 	function openOrgChangeModal(selectedMembers) {
 		// 변수 초기화
 		orgChangeSelectedMembers = selectedMembers.slice();
 		orgChangeDroppedData = {};
 		currentCategoryOrgs = [];
+		orgChangeMode = 'move'; // 기본값: 이동
+
+		// 모드 선택 초기화
+		$('#orgChangeMode').val('move');
+		updateOrgChangeModeUI();
 
 		// 회원 목록 렌더링
 		renderOrgChangeMemberList(orgChangeSelectedMembers);
@@ -1692,8 +1699,8 @@
 		// 저장 버튼 비활성화
 		$('#confirmOrgChangeBtn').prop('disabled', true);
 
-		// 요약 영역 숨김
-		$('#orgChangeSummary').hide();
+		// 총 인원 표시 초기화
+		$('#orgChangeTotalCount').text('0');
 
 		// select 초기화
 		$('#orgChangeTargetCategory').empty().append('<option value="">그룹을 선택하세요</option>');
@@ -1713,7 +1720,23 @@
 				console.log('그룹 선택 변경됨:', $(this).val());
 				handleCategoryChange();
 			});
+
+			// 모드 변경 이벤트 바인딩
+			$('#orgChangeMode').off('change').on('change', function() {
+				orgChangeMode = $(this).val();
+				updateOrgChangeModeUI();
+			});
 		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/mng_member.js
+	 * 역할: 조직변경 모드(이동/복사) UI 업데이트
+	 */
+	function updateOrgChangeModeUI() {
+		const modeText = orgChangeMode === 'move' ? '이동' : '복사';
+		$('#orgChangeMemberLabel').text(modeText);
+		$('#orgChangeModeText').text(modeText);
 	}
 
 	/**
@@ -1743,8 +1766,7 @@
 				<div class="d-flex align-items-center">
 					<i class="bi bi-grip-vertical text-muted me-2 drag-handle"></i>
 					<div class="flex-grow-1">
-						<div class="fw-semibold small">${member.member_name || '이름없음'}</div>
-						<small class="text-muted" style="font-size: 0.75rem;">${member.org_name || '소속없음'}</small>
+						<div class="fw-semibold small">${member.member_name || '이름없음'}<small class="ms-2 text-muted" style="font-size: 0.75rem;">${member.org_name || '소속없음'}</small></div>						
 					</div>
 					${droppedOrgId ? '<span class="badge bg-success" style="font-size: 0.65rem;">추가됨</span>' : ''}
 				</div>
@@ -1777,9 +1799,10 @@
 	 * 역할: 회원이 드롭된 조직 ID 반환
 	 */
 	function getMemberDroppedOrg(memberIdx) {
+		const memberIdxInt = parseInt(memberIdx);
 		for (const orgId in orgChangeDroppedData) {
-			if (orgChangeDroppedData[orgId].some(m => m.member_idx === memberIdx)) {
-				return orgId;
+			if (orgChangeDroppedData[orgId].some(function(m) { return parseInt(m.member_idx) === memberIdxInt; })) {
+				return orgId;  // 문자열 orgId 반환
 			}
 		}
 		return null;
@@ -1879,7 +1902,7 @@
 
 	/**
 	 * 파일 위치: assets/js/mng_member.js
-	 * 역할: 조직 목록 렌더링 (드롭존)
+	 * 역할: 조직 목록 렌더링 (드롭존) - 드롭된 회원도 드래그하여 다른 조직으로 이동 가능
 	 */
 	function renderOrgListForDrop(orgs) {
 		const $container = $('#orgChangeOrgList');
@@ -1887,11 +1910,11 @@
 
 		if (orgs.length === 0) {
 			$container.html(`
-			<div class="text-center text-muted py-5">
-				<i class="bi bi-building-x fs-1"></i>
-				<p class="mt-2 mb-0">선택한 그룹에 조직이 없습니다</p>
-			</div>
-		`);
+		<div class="text-center text-muted py-5">
+			<i class="bi bi-building-x fs-1"></i>
+			<p class="mt-2 mb-0">선택한 그룹에 조직이 없습니다</p>
+		</div>
+	`);
 			return;
 		}
 
@@ -1900,48 +1923,78 @@
 			const memberCount = droppedMembers.length;
 
 			const $orgCard = $(`			
-				<div class="org-drop-card border rounded p-2 mb-2 bg-light" data-org-id="${org.org_id}" data-org-name="${org.org_name}">
-					<div class="d-flex align-items-center justify-content-between mb-2">
-						<div class="d-flex align-items-center justify-content-between">
-							<div class="fw-semibold"><i class="bi bi-building"></i> ${org.org_name}</div>
-							<small class="text-muted ms-2">${org.category_name || ''} (기존 ${org.member_count || 0}명)</small>
-						</div>
-						<span class="badge ${memberCount > 0 ? 'bg-primary' : 'bg-secondary'}">${memberCount}명 추가</span>
+			<div class="org-drop-card border rounded p-2 mb-2 bg-light" data-org-id="${org.org_id}" data-org-name="${org.org_name}">
+				<div class="d-flex align-items-center justify-content-between mb-2">
+					<div class="d-flex align-items-center justify-content-between">
+						<div class="fw-semibold"><i class="bi bi-building"></i> ${org.org_name}</div>						
 					</div>
-					<div class="org-drop-zone border-2 border-dashed rounded p-2 bg-white text-center" data-org-id="${org.org_id}" style="min-height: 60px;">
-						${memberCount > 0 ? '' : '<small class="text-muted">회원을 여기에 드롭하세요</small>'}
-						<div class="dropped-members-list"></div>
-					</div>
-				</div>			
-		`);
+					<span class="badge ${memberCount > 0 ? 'bg-primary' : 'bg-secondary'}">${memberCount}명 추가</span>
+				</div>
+				<div class="org-drop-zone border-2 border-dashed rounded p-2 bg-white text-center" data-org-id="${org.org_id}" style="min-height: 60px;">
+					${memberCount > 0 ? '' : '<small class="text-muted">회원을 여기에 드롭하세요</small>'}
+					<div class="dropped-members-list"></div>
+				</div>
+			</div>			
+	`);
 
-			// 드롭된 회원 목록 표시
+			// 드롭된 회원 목록 표시 (드래그 가능하도록 설정)
 			if (memberCount > 0) {
 				const $droppedList = $orgCard.find('.dropped-members-list');
-				droppedMembers.forEach(function(member, idx) {
-					$droppedList.append(`
-					<div class="d-flex align-items-center justify-content-between p-1 mb-1 bg-success bg-opacity-10 rounded small">
+				droppedMembers.forEach(function(member) {
+					const $memberItem = $(`
+				<div class="dropped-member-in-org d-flex align-items-center justify-content-between p-1 mb-1 bg-success bg-opacity-10 rounded small"
+					 draggable="true"
+					 data-member-idx="${member.member_idx}"
+					 data-member-name="${member.member_name || ''}"
+					 data-member-phone="${member.member_phone || ''}"
+					 data-org-name="${member.org_name || ''}"
+					 data-source-org-id="${org.org_id}"
+					 style="cursor: grab;">
+					<div class="d-flex align-items-center">
+						<i class="bi bi-grip-vertical text-muted me-1"></i>
 						<span>${member.member_name}</span>
-						<button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-from-org" 
-								data-org-id="${org.org_id}" data-member-idx="${member.member_idx}">
-							<i class="bi bi-x"></i>
-						</button>
 					</div>
-				`);
+					<button type="button" class="btn btn-sm btn-link text-danger p-0 btn-remove-from-org" 
+							data-org-id="${org.org_id}" data-member-idx="${member.member_idx}">
+						<i class="bi bi-x"></i>
+					</button>
+				</div>
+			`);
+
+					// 드롭된 회원에게 드래그 이벤트 바인딩 (다른 조직으로 이동 가능)
+					$memberItem.on('dragstart', function(e) {
+						e.originalEvent.dataTransfer.setData('text/plain', JSON.stringify({
+							member_idx: member.member_idx,
+							member_name: member.member_name,
+							member_phone: member.member_phone,
+							org_name: member.org_name,
+							source_org_id: org.org_id  // 현재 드롭되어 있는 조직 ID
+						}));
+						$(this).addClass('dragging opacity-50');
+					});
+
+					$memberItem.on('dragend', function() {
+						$(this).removeClass('dragging opacity-50');
+					});
+
+					$droppedList.append($memberItem);
 				});
 			}
 
 			// 드롭존 이벤트 바인딩
 			initOrgDropZoneEvents($orgCard.find('.org-drop-zone'));
 
-			// 제거 버튼 이벤트
-			$orgCard.find('.btn-remove-from-org').on('click', function() {
-				const orgId = $(this).data('org-id');
-				const memberIdx = $(this).data('member-idx');
-				removeMemberFromOrg(orgId, memberIdx);
-			});
-
 			$container.append($orgCard);
+		});
+
+		// 이벤트 위임 방식으로 삭제 버튼 이벤트 바인딩 (동적 요소에 대응)
+		$container.off('click', '.btn-remove-from-org').on('click', '.btn-remove-from-org', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			const orgId = String($(this).data('org-id'));
+			const memberIdx = parseInt($(this).data('member-idx'));
+			console.log('삭제 버튼 클릭 - orgId:', orgId, 'memberIdx:', memberIdx);
+			removeMemberFromOrg(orgId, memberIdx);
 		});
 	}
 
@@ -1950,12 +2003,21 @@
 	 * 역할: 조직에서 회원 제거
 	 */
 	function removeMemberFromOrg(orgId, memberIdx) {
-		if (orgChangeDroppedData[orgId]) {
-			orgChangeDroppedData[orgId] = orgChangeDroppedData[orgId].filter(m => m.member_idx !== memberIdx);
+		// 타입 변환하여 비교
+		const orgIdStr = String(orgId);
+		const memberIdxInt = parseInt(memberIdx);
+
+		console.log('removeMemberFromOrg 호출 - orgId:', orgIdStr, 'memberIdx:', memberIdxInt);
+		console.log('현재 orgChangeDroppedData:', orgChangeDroppedData);
+
+		if (orgChangeDroppedData[orgIdStr]) {
+			orgChangeDroppedData[orgIdStr] = orgChangeDroppedData[orgIdStr].filter(function(m) {
+				return parseInt(m.member_idx) !== memberIdxInt;
+			});
 
 			// 빈 배열이면 키 삭제
-			if (orgChangeDroppedData[orgId].length === 0) {
-				delete orgChangeDroppedData[orgId];
+			if (orgChangeDroppedData[orgIdStr].length === 0) {
+				delete orgChangeDroppedData[orgIdStr];
 			}
 		}
 
@@ -1971,38 +2033,8 @@
 	 * 역할: 복사 현황 요약 업데이트
 	 */
 	function updateOrgChangeSummary() {
-		const $summary = $('#orgChangeSummary');
-		const $content = $('#orgChangeSummaryContent');
-
 		const totalMembers = getTotalDroppedMemberCount();
-
-		if (totalMembers === 0) {
-			$summary.hide();
-			return;
-		}
-
-		let html = '<div class="row">';
-
-		for (const orgId in orgChangeDroppedData) {
-			const members = orgChangeDroppedData[orgId];
-			if (members.length === 0) continue;
-
-			const org = currentCategoryOrgs.find(o => o.org_id == orgId);
-			const orgName = org ? org.org_name : '알 수 없음';
-
-			html += `
-			<div class="col-6 col-md-4 mb-1">
-				<span class="badge bg-primary">${orgName}</span>
-				<span class="ms-1">${members.length}명</span>
-			</div>
-		`;
-		}
-
-		html += '</div>';
-		html += `<div class="mt-2 fw-semibold">총 ${totalMembers}명 복사 예정</div>`;
-
-		$content.html(html);
-		$summary.show();
+		$('#orgChangeTotalCount').text(totalMembers);
 	}
 
 	/**
@@ -2076,29 +2108,58 @@
 
 	/**
 	 * 파일 위치: assets/js/mng_member.js
-	 * 역할: 조직에 회원 추가
+	 * 역할: 조직에 회원 추가 - 다른 조직에서 드래그해온 경우 기존 조직에서 제거 후 추가
 	 */
 	function addMemberToOrg(orgId, memberData) {
+		// 타입 일관성을 위해 문자열로 변환
+		const orgIdStr = String(orgId);
+		const memberIdxInt = parseInt(memberData.member_idx);
+
 		// 이미 다른 조직에 추가된 회원인지 확인
-		const existingOrgId = getMemberDroppedOrg(memberData.member_idx);
+		const existingOrgId = getMemberDroppedOrg(memberIdxInt);
+
+		// source_org_id가 있으면 드롭된 회원에서 드래그해온 것임
+		const sourceOrgId = memberData.source_org_id;
+
 		if (existingOrgId) {
-			showToast('이미 다른 조직에 추가된 회원입니다.', 'warning');
-			return;
+			// 같은 조직으로 드롭하는 경우 무시
+			if (existingOrgId === orgIdStr) {
+				showToast('이미 해당 조직에 추가된 회원입니다.', 'warning');
+				return;
+			}
+
+			// 다른 조직으로 이동하는 경우: 기존 조직에서 제거
+			if (orgChangeDroppedData[existingOrgId]) {
+				orgChangeDroppedData[existingOrgId] = orgChangeDroppedData[existingOrgId].filter(function(m) {
+					return parseInt(m.member_idx) !== memberIdxInt;
+				});
+
+				// 빈 배열이면 키 삭제
+				if (orgChangeDroppedData[existingOrgId].length === 0) {
+					delete orgChangeDroppedData[existingOrgId];
+				}
+			}
 		}
 
 		// 데이터 구조 초기화
-		if (!orgChangeDroppedData[orgId]) {
-			orgChangeDroppedData[orgId] = [];
+		if (!orgChangeDroppedData[orgIdStr]) {
+			orgChangeDroppedData[orgIdStr] = [];
 		}
 
-		// 이미 같은 조직에 추가되었는지 확인
-		if (orgChangeDroppedData[orgId].some(m => m.member_idx === memberData.member_idx)) {
+		// 이미 같은 조직에 추가되었는지 다시 확인 (이중 방지)
+		if (orgChangeDroppedData[orgIdStr].some(function(m) { return parseInt(m.member_idx) === memberIdxInt; })) {
 			showToast('이미 추가된 회원입니다.', 'warning');
 			return;
 		}
 
-		// 회원 추가
-		orgChangeDroppedData[orgId].push(memberData);
+		// 회원 추가 (source_org_id 제거하고 저장)
+		const memberToAdd = {
+			member_idx: memberIdxInt,
+			member_name: memberData.member_name,
+			member_phone: memberData.member_phone,
+			org_name: memberData.org_name
+		};
+		orgChangeDroppedData[orgIdStr].push(memberToAdd);
 
 		// UI 업데이트
 		renderOrgListForDrop(currentCategoryOrgs);
@@ -2347,10 +2408,22 @@
 	 */
 	function showOrgChangeConfirmModal() {
 		const totalMembers = getTotalDroppedMemberCount();
+		const modeText = orgChangeMode === 'move' ? '이동' : '복사';
 
 		if (totalMembers === 0) {
-			showToast('복사할 회원을 조직에 드롭해주세요.', 'warning');
+			showToast(modeText + '할 회원을 조직에 드롭해주세요.', 'warning');
 			return;
+		}
+
+		// 모드에 따라 확인 모달 제목/내용 변경
+		if (orgChangeMode === 'move') {
+			$('#confirmOrgChangeTitle').text('선택한 회원을 다른 조직으로 이동합니다.');
+			$('#confirmOrgChangeWarningText').html('회원이 기존 조직에서 삭제되고 새 조직으로 이동됩니다.');
+			$('#executeOrgChangeBtn').text('이동 실행');
+		} else {
+			$('#confirmOrgChangeTitle').text('선택한 회원을 다른 조직으로 복사합니다.');
+			$('#confirmOrgChangeWarningText').html('회원 정보가 복사되며, 원본 조직의 회원 정보는 유지됩니다.<br>복사된 회원은 별도의 회원으로 관리되며, 이후 변경사항은 동기화되지 않습니다.');
+			$('#executeOrgChangeBtn').text('복사 실행');
 		}
 
 		// 상세 내용 생성

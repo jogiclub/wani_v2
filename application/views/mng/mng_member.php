@@ -183,7 +183,13 @@ $this->load->view('mng/header');
 	<div class="modal-dialog modal-xl modal-dialog-centered">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="orgChangeModalLabel">조직일괄변경</h5>
+				<h5 class="modal-title d-flex align-items-center" id="orgChangeModalLabel">
+					조직일괄변경
+					<select class="form-select form-select-sm ms-3" id="orgChangeMode" style="width: auto;">
+						<option value="move" selected>이동</option>
+						<option value="copy">복사</option>
+					</select>
+				</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
@@ -195,7 +201,7 @@ $this->load->view('mng/header');
 					<div class="col-3 border-end">
 
 						<div class="fw-semibold mb-2 text-muted small">
-							<i class="bi bi-people"></i> 복사할 회원 (<span id="orgChangeMemberCount">0</span>명)
+							<i class="bi bi-people"></i> <span id="orgChangeMemberLabel">이동</span>할 회원 (<span id="orgChangeMemberCount">0</span>명)
 						</div>
 
 						<div class="input-group input-group-sm mb-2">
@@ -234,15 +240,13 @@ $this->load->view('mng/header');
 					</div>
 				</div>
 
-				<!-- 하단: 복사 현황 요약 -->
-				<div class="mt-3 p-2 bg-light rounded" id="orgChangeSummary" style="display: none;">
-					<div class="fw-semibold mb-2"><i class="bi bi-clipboard-check"></i> 복사 현황</div>
-					<div id="orgChangeSummaryContent" class="small"></div>
-				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-primary" id="confirmOrgChangeBtn" disabled>저장</button>
+			<div class="modal-footer justify-content-between">
+				<div class="text-muted small" id="orgChangeTotalInfo">총 <span id="orgChangeTotalCount">0</span>명 <span id="orgChangeModeText">이동</span> 예정</div>
+				<div>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+					<button type="button" class="btn btn-primary" id="confirmOrgChangeBtn" disabled>저장</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -257,17 +261,16 @@ $this->load->view('mng/header');
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
-				<p class="mb-2"><strong>선택한 회원을 다른 조직으로 복사합니다.</strong></p>
+				<p class="mb-2"><strong id="confirmOrgChangeTitle">선택한 회원을 다른 조직으로 이동합니다.</strong></p>
 				<div id="confirmOrgChangeDetail" class="mb-3"></div>
-				<div class="alert alert-warning mb-0">
+				<div class="alert alert-warning mb-0" id="confirmOrgChangeWarning">
 					<i class="bi bi-info-circle"></i> <strong>이 작업은 되돌릴 수 없습니다.</strong><br>
-					회원 정보가 복사되며, 원본 조직의 회원 정보는 유지됩니다.<br>
-					복사된 회원은 별도의 회원으로 관리되며, 이후 변경사항은 동기화되지 않습니다.
+					<span id="confirmOrgChangeWarningText">회원이 기존 조직에서 삭제되고 새 조직으로 이동됩니다.</span>
 				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-warning" id="executeOrgChangeBtn">복사 실행</button>
+				<button type="button" class="btn btn-warning" id="executeOrgChangeBtn">실행</button>
 			</div>
 		</div>
 	</div>

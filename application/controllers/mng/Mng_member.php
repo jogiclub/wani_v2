@@ -902,11 +902,12 @@ class Mng_member extends CI_Controller
 		}
 
 		$copy_data_json = $this->input->post('copy_data');
+		$mode = $this->input->post('mode'); // 'move' 또는 'copy'
 
 		if (!$copy_data_json) {
 			echo json_encode(array(
 				'success' => false,
-				'message' => '복사할 데이터가 없습니다.'
+				'message' => '처리할 데이터가 없습니다.'
 			));
 			return;
 		}
@@ -921,12 +922,18 @@ class Mng_member extends CI_Controller
 			return;
 		}
 
+		// 기본값은 copy
+		if (empty($mode) || !in_array($mode, array('move', 'copy'))) {
+			$mode = 'copy';
+		}
+
 		// 트랜잭션 시작
 		$this->db->trans_start();
 
 		$total_success = 0;
 		$total_error = 0;
 		$org_results = array();
+		$moved_member_ids = array(); // 이동 모드에서 삭제할 원본 회원 ID 저장
 
 		foreach ($copy_data as $item) {
 			$target_org_id = $item['target_org_id'];
@@ -979,6 +986,11 @@ class Mng_member extends CI_Controller
 
 				if ($result) {
 					$success_count++;
+
+					// 이동 모드인 경우 원본 회원 ID 저장
+					if ($mode === 'move') {
+						$moved_member_ids[] = $member_idx;
+					}
 				} else {
 					$error_count++;
 				}
@@ -992,17 +1004,27 @@ class Mng_member extends CI_Controller
 			}
 		}
 
+		// 이동 모드인 경우 원본 회원 삭제 처리 (del_yn = 'Y', del_date 설정)
+		if ($mode === 'move' && !empty($moved_member_ids)) {
+			$this->db->where_in('member_idx', $moved_member_ids);
+			$this->db->update('wb_member', array(
+				'del_yn' => 'Y',
+				'del_date' => date('Y-m-d H:i:s')
+			));
+		}
+
 		$this->db->trans_complete();
 
 		if ($this->db->trans_status() === FALSE) {
 			echo json_encode(array(
 				'success' => false,
-				'message' => '회원 복사 중 오류가 발생했습니다.'
+				'message' => '회원 처리 중 오류가 발생했습니다.'
 			));
 			return;
 		}
 
-		$message = "총 {$total_success}명의 회원이 복사되었습니다.";
+		$mode_text = ($mode === 'move') ? '이동' : '복사';
+		$message = "총 {$total_success}명의 회원이 {$mode_text}되었습니다.";
 		if (!empty($org_results)) {
 			$message .= ' (' . implode(', ', $org_results) . ')';
 		}
