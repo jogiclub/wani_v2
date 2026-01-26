@@ -2263,6 +2263,11 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		// 데이터 업데이트
 		if (memberGrid) {
 			try {
+				// 검색용 원본 데이터 초기화 (그룹 변경 시 이전 검색 데이터 삭제)
+				window.originalGridData = null;
+
+				// 검색 입력창 초기화
+				$('#memberSearchInput').val('');
 
 				// 먼저 데이터 초기화
 				memberGrid.pqGrid("option", "dataModel.data", []);
