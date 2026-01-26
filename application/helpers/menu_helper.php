@@ -24,7 +24,7 @@ if (!function_exists('get_system_menus')) {
 				'name' => '회원관리',
 				'key' => 'MEMBER_MANAGEMENT',
 				'url' => 'member',
-				'icon' => 'bi bi-people',
+				'icon' => 'bi bi-person-vcard',
 				'level' => 1,
 				'menu_class' => 'menu-21'
 			),
@@ -44,6 +44,22 @@ if (!function_exists('get_system_menus')) {
 				'level' => 1,
 				'menu_class' => 'menu-23'
 			),
+			'EDU_MANAGEMENT' => array(
+				'name' => '교육관리',
+				'key' => 'EDU_MANAGEMENT',
+				'url' => 'edu',
+				'icon' => 'bi bi-mortarboard',
+				'level' => 1,
+				'menu_class' => 'menu-26'
+			),
+			'MOIM_MANAGEMENT' => array(
+				'name' => '소모임',
+				'key' => 'MOIM_MANAGEMENT',
+				'url' => 'moim',
+				'icon' => 'bi bi-people',
+				'level' => 1,
+				'menu_class' => 'menu-27'
+			),
 			'TIMELINE_MANAGEMENT' => array(
 				'name' => '타임라인관리',
 				'key' => 'TIMELINE_MANAGEMENT',
@@ -59,6 +75,14 @@ if (!function_exists('get_system_menus')) {
 				'icon' => 'bi bi-journal-bookmark',
 				'level' => 1,
 				'menu_class' => 'menu-25'
+			),
+			'ACCOUNT_MANAGEMENT' => array(
+				'name' => '계정관리',
+				'key' => 'ACCOUNT_MANAGEMENT',
+				'url' => 'account',
+				'icon' => 'bi bi-tags',
+				'level' => 1,
+				'menu_class' => 'menu-51'
 			),
 			'HOMEPAGE_BASIC' => array(
 				'name' => '홈페이지 기본설정',
@@ -76,22 +100,7 @@ if (!function_exists('get_system_menus')) {
 				'level' => 1,
 				'menu_class' => 'menu-32'
 			),
-			/*'WEEKLY_STATISTICS' => array(
-				'name' => '주별통계',
-				'key' => 'WEEKLY_STATISTICS',
-				'url' => 'statistics/weekly',
-				'icon' => 'bi bi-graph-up-arrow',
-				'level' => 1,
-				'menu_class' => 'menu-51'
-			),
-			'MEMBER_STATISTICS' => array(
-				'name' => '회원별통계',
-				'key' => 'MEMBER_STATISTICS',
-				'url' => 'statistics/member',
-				'icon' => 'bi bi-clipboard-data',
-				'level' => 1,
-				'menu_class' => 'menu-52'
-			),*/
+
 			'ORG_SETTING' => array(
 				'name' => '조직설정',
 				'key' => 'ORG_SETTING',
@@ -131,6 +140,14 @@ if (!function_exists('get_system_menus')) {
 				'icon' => 'bi bi-person-video',
 				'level' => 9,
 				'menu_class' => 'menu-45'
+			),
+			'FEE_MANAGEMENT' => array(
+				'name' => '요금관리',
+				'key' => 'FEE_MANAGEMENT',
+				'url' => 'fee_management',
+				'icon' => 'bi bi-person-video',
+				'level' => 9,
+				'menu_class' => 'menu-46'
 			)
 		);
 	}
@@ -156,6 +173,8 @@ if (!function_exists('get_menu_categories')) {
 					'MEMBER_MANAGEMENT',
 					'ATTENDANCE_MANAGEMENT',
 					'ATTENDANCE_BOARD',
+					'EDU_MANAGEMENT',
+					'MOIM_MANAGEMENT',
 					'TIMELINE_MANAGEMENT',
 					'MEMO_MANAGEMENT'
 				),
@@ -169,11 +188,11 @@ if (!function_exists('get_menu_categories')) {
 				),
 				'show_always' => true
 			),
-			/*'STATICS' => array(
-				'name' => 'STATICS',
-				'menus' => array('WEEKLY_STATISTICS', 'MEMBER_STATISTICS'),
+			'CASH' => array(
+				'name' => 'CASH',
+				'menus' => array('ACCOUNT_MANAGEMENT'),
 				'show_always' => false
-			),*/
+			),
 			'SETTING' => array(
 				'name' => 'SETTING',
 				'menus' => array(
