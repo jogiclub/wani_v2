@@ -14,7 +14,7 @@ var currentFacingMode = "environment"; // 기본값: 후면 카메라
  * 역할: QR출석 화면 JavaScript - 모드 제거 및 최적화된 버전
  */
 
-$(document).ready(function() {
+$(document).ready(function () {
 	// 페이지 로드 시 초기화
 	initializePage();
 
@@ -99,7 +99,7 @@ function loadMembers(orgId, level, initialLoad = true) {
 			level: level
 		},
 		dataType: 'json',
-		success: function(members) {
+		success: function (members) {
 			displayMembers(members);
 
 			// 회원 목록 로드 후 출석 데이터 별도 로드
@@ -107,7 +107,7 @@ function loadMembers(orgId, level, initialLoad = true) {
 				loadCurrentWeekAttendance(orgId);
 			}
 		},
-		error: function(xhr, status, error) {
+		error: function (xhr, status, error) {
 			console.error('회원 로드 실패:', error);
 			handleAjaxError(xhr, '회원 목록을 불러오는 중 오류가 발생했습니다.');
 		}
@@ -135,12 +135,12 @@ function loadCurrentWeekAttendance(orgId) {
 			end_date: sundayDate
 		},
 		dataType: 'json',
-		success: function(attendanceData) {
+		success: function (attendanceData) {
 			updateAttendanceStamps(attendanceData);
 			updateBirthBg(startDate, endDate);
 			updateAttTypeCountFromDOM();
 		},
-		error: function(xhr, status, error) {
+		error: function (xhr, status, error) {
 			console.error('출석 데이터 로드 실패:', error);
 		}
 	});
@@ -153,12 +153,12 @@ function updateAttendanceStamps(attendanceData) {
 	// 기존 출석 스탬프 제거
 	$('.member-card .att-stamp-warp .att-stamp').remove();
 
-	$.each(attendanceData, function(memberIdx, attTypeNicknames) {
+	$.each(attendanceData, function (memberIdx, attTypeNicknames) {
 		var memberCard = $('.member-card[member-idx="' + memberIdx + '"]');
 		var attStampsContainer = memberCard.find('.att-stamp-warp');
 
 		if (attTypeNicknames) {
-			var attStamps = attTypeNicknames.split(',').map(function(attTypeData) {
+			var attStamps = attTypeNicknames.split(',').map(function (attTypeData) {
 				var attTypeArr = attTypeData.split('|');
 				var attTypeNickname = attTypeArr[0].trim();
 				var attTypeIdx = attTypeArr[1].trim();
@@ -189,7 +189,7 @@ function displayMembers(members) {
 	var sortedAreas = sortAreasByOrder(membersByArea);
 
 	// 소그룹별 회원 표시
-	$.each(sortedAreas, function(areaIndex, areaName) {
+	$.each(sortedAreas, function (areaIndex, areaName) {
 		var areaMembers = membersByArea[areaName];
 		var areaIdx = areaMembers[0].area_idx || null;
 		var areaFullPath = areaMembers[0].area_full_path || areaName;
@@ -219,7 +219,7 @@ function displayMembers(members) {
  */
 function groupMembersByArea(members) {
 	var membersByArea = {};
-	$.each(members, function(index, member) {
+	$.each(members, function (index, member) {
 		// 미분류 회원 제외 (area_idx가 없거나 area_name이 없는 경우)
 		if (!member.area_idx || !member.area_name) {
 			return true; // continue
@@ -243,7 +243,7 @@ function sortAreasByOrder(membersByArea) {
 	// 각 area의 정보를 수집
 	var areaInfoList = [];
 
-	$.each(membersByArea, function(areaName, members) {
+	$.each(membersByArea, function (areaName, members) {
 		if (members.length > 0) {
 			var member = members[0];
 			areaInfoList.push({
@@ -254,12 +254,12 @@ function sortAreasByOrder(membersByArea) {
 	});
 
 	// area_sort_path로 정렬
-	areaInfoList.sort(function(a, b) {
+	areaInfoList.sort(function (a, b) {
 		return a.sort_path.localeCompare(b.sort_path);
 	});
 
 	// 정렬된 area 이름 배열 반환
-	return areaInfoList.map(function(item) {
+	return areaInfoList.map(function (item) {
 		return item.name;
 	});
 }
@@ -287,7 +287,7 @@ function addAreaHeader(memberList, areaName, areaIdx, areaFullPath) {
  * 회원 카드들 추가
  */
 function addMemberCards(memberList, areaMembers) {
-	$.each(areaMembers, function(memberIndex, member) {
+	$.each(areaMembers, function (memberIndex, member) {
 		var memberCard = createMemberCard(member);
 		memberList.append(memberCard);
 	});
@@ -379,7 +379,7 @@ function addAttendanceStamps(memberCard, member) {
 	// 새로운 loadCurrentWeekAttendance와 중복되지 않도록 유지
 	if (member.att_type_data) {
 		var attTypeData = member.att_type_data.split('|');
-		var attStamps = attTypeData.map(function(attData) {
+		var attStamps = attTypeData.map(function (attData) {
 			var attDataArr = attData.split(',');
 			var attType = attDataArr[0].trim();
 			var attTypeIdx = attDataArr[1].trim();
@@ -414,7 +414,7 @@ function updateMemberStatistics() {
 function updateAttTypeCountFromDOM() {
 	var attTypeCount = {};
 
-	$('.att-stamp').each(function() {
+	$('.att-stamp').each(function () {
 		var attType = $(this).text().trim();
 		attTypeCount[attType] = (attTypeCount[attType] || 0) + 1;
 	});
@@ -428,11 +428,11 @@ function updateAttTypeCountFromDOM() {
 	}
 
 	// 출석 타입을 순서대로 정렬
-	var sortedAttTypes = Object.keys(attTypeCount).sort(function(a, b) {
-		var attTypeA = attendanceTypes.find(function(type) {
+	var sortedAttTypes = Object.keys(attTypeCount).sort(function (a, b) {
+		var attTypeA = attendanceTypes.find(function (type) {
 			return type.att_type_nickname === a;
 		});
-		var attTypeB = attendanceTypes.find(function(type) {
+		var attTypeB = attendanceTypes.find(function (type) {
 			return type.att_type_nickname === b;
 		});
 
@@ -440,8 +440,8 @@ function updateAttTypeCountFromDOM() {
 		return attTypeA.att_type_order - attTypeB.att_type_order;
 	});
 
-	sortedAttTypes.forEach(function(attType) {
-		var attTypeInfo = attendanceTypes.find(function(type) {
+	sortedAttTypes.forEach(function (attType) {
+		var attTypeInfo = attendanceTypes.find(function (type) {
 			return type.att_type_nickname === attType;
 		});
 		var attTypeColor = attTypeInfo ? attTypeInfo.att_type_color : 'CB3227';
@@ -549,7 +549,7 @@ function handleSaveNewMember() {
 			area_idx: area_idx
 		},
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			if (response.status == 'success') {
 				$('#newMemberModal').modal('hide');
 				$('#member_name').val('');
@@ -562,7 +562,7 @@ function handleSaveNewMember() {
 				showToast(response.message || '회원 추가에 실패했습니다.', 'error');
 			}
 		},
-		error: function(xhr, status, error) {
+		error: function (xhr, status, error) {
 			handleAjaxError(xhr, '회원 추가 중 오류가 발생했습니다.');
 		}
 	});
@@ -583,7 +583,7 @@ function handleSaveAttendance() {
 	var attDate = (formattedToday >= startDate && formattedToday <= endDate) ? formattedToday : startDate;
 
 	// 체크된 모든 checkbox의 값을 수집
-	$('#attendanceTypes input[type="checkbox"]:checked').each(function() {
+	$('#attendanceTypes input[type="checkbox"]:checked').each(function () {
 		var selectedValue = $(this).val();
 		if (selectedValue) {
 			attendanceData.push(selectedValue);
@@ -604,7 +604,7 @@ function handleSaveAttendance() {
 		method: 'POST',
 		data: requestData,
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			if (response.status === 'success') {
 				$('#attendanceModal').modal('hide');
 
@@ -621,8 +621,8 @@ function handleSaveAttendance() {
 				showToast('출석 정보 저장에 실패했습니다.', 'error');
 			}
 		},
-		error: function(xhr, status, error) {
-			console.error('AJAX 요청 실패:', {status: status, error: error, responseText: xhr.responseText});
+		error: function (xhr, status, error) {
+			console.error('AJAX 요청 실패:', { status: status, error: error, responseText: xhr.responseText });
 			showToast('출석 정보 저장 중 오류가 발생했습니다.', 'error');
 		}
 	});
@@ -718,7 +718,7 @@ function saveAttendance(memberIdx, attTypeIdx, selectedValue) {
 			selected_value: selectedValue
 		},
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			if (response.status === 'success') {
 				// 기존에 추가된 스탬프에 배경색 적용
 				applyStampBackgroundColor(memberIdx, attTypeIdx);
@@ -739,14 +739,14 @@ function applyStampBackgroundColor(memberIdx, attTypeIdx) {
 	if (memberCard.length === 0) return;
 
 	// 해당 출석 타입 정보 찾기
-	var attTypeInfo = attendanceTypes.find(function(type) {
+	var attTypeInfo = attendanceTypes.find(function (type) {
 		return type.att_type_idx == attTypeIdx;
 	});
 
 	if (!attTypeInfo) return;
 
 	// 기존에 추가된 스탬프 중 배경색이 없는 것에만 스타일 적용
-	var existingStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]').filter(function() {
+	var existingStamp = memberCard.find('.att-stamp[data-att-type-idx="' + attTypeIdx + '"]').filter(function () {
 		return !$(this).attr('style') || $(this).attr('style').indexOf('background-color') === -1;
 	}).first();
 
@@ -763,7 +763,7 @@ function updateAttendanceStampInUI(memberIdx, attTypeIdx) {
 	if (memberCard.length === 0) return;
 
 	// 해당 출석 타입 정보 찾기
-	var attTypeInfo = attendanceTypes.find(function(type) {
+	var attTypeInfo = attendanceTypes.find(function (type) {
 		return type.att_type_idx == attTypeIdx;
 	});
 
@@ -820,13 +820,13 @@ function updateInputSearchState() {
  * 검색 기능
  */
 function searchMembers(searchText) {
-	$('.grid-item').each(function() {
+	$('.grid-item').each(function () {
 		var memberName = $(this).find('.member-wrap').text().trim();
 		$(this).toggle(memberName.includes(searchText));
 	});
 
 	// Masonry 레이아웃 업데이트
-	setTimeout(function() {
+	setTimeout(function () {
 		if ($('.grid').data('masonry')) {
 			$('.grid').masonry('layout');
 		}
@@ -837,7 +837,7 @@ function resetMemberList() {
 	$('.grid-item').show();
 
 	// Masonry 레이아웃 업데이트
-	setTimeout(function() {
+	setTimeout(function () {
 		if ($('.grid').data('masonry')) {
 			$('.grid').masonry('layout');
 		}
@@ -848,7 +848,7 @@ function resetMemberList() {
  * 생일 배경 업데이트
  */
 function updateBirthBg(startDate, endDate) {
-	$('.member-card').each(function() {
+	$('.member-card').each(function () {
 		var memberCard = $(this);
 		var memberBirthDate = memberCard.data('birth');
 
@@ -890,7 +890,7 @@ function loadMemberAttendance(memberIdx, startDate, endDate) {
 			end_date: endDate
 		},
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			var attendanceData = response.attendance_data;
 			loadAttendanceTypes(memberIdx, attendanceData);
 		}
@@ -958,19 +958,25 @@ function initializePastoralGrid() {
 			width: 180,
 			minWidth: 120,
 			maxWidth: 250,
-			editable: true,
+			editable: false,
 			align: "left",
 			resizable: true,
-			editor: {
-				type: "textbox",
-				attr: "placeholder='메모 입력...'"
+			render: function (ui) {
+				var memoValue = ui.cellData || '';
+				var escapedValue = escapeHtml(memoValue);
+				return '<input type="text" class="form-control form-control-sm memo-textbox" ' +
+					'value="' + escapedValue + '" ' +
+					'placeholder="메모 입력..." ' +
+					'data-row-indx="' + ui.rowIndx + '" ' +
+					'data-member-idx="' + ui.rowData.member_idx + '" ' +
+					'style="width: 100%; border: 1px solid #ced4da; background: #fff;">';
 			}
 		}
 	];
 
 	// 출석타입별 컬럼 동적 추가
 	if (attendanceTypes && attendanceTypes.length > 0) {
-		attendanceTypes.forEach(function(attType) {
+		attendanceTypes.forEach(function (attType) {
 			var columnConfig = {
 				title: attType.att_type_name,
 				dataIndx: "att_type_" + attType.att_type_idx,
@@ -983,27 +989,28 @@ function initializePastoralGrid() {
 
 			if (attType.att_type_input === 'check') {
 				columnConfig.editable = false;
-				columnConfig.render = function(ui) {
+				columnConfig.render = function (ui) {
 					const isChecked = ui.cellData === true || ui.cellData === 'Y' || ui.cellData === 1;
 					const checkedAttr = isChecked ? 'checked' : '';
 
 					// pq-row-indx 속성 사용하여 정확한 행 인덱스 전달
 					const checkboxId = 'checkbox_' + ui.rowIndx + '_' + attType.att_type_idx;
 
-					return '<div style="text-align: center; padding: 8px;">' +
+					// label로 감싸서 모바일 터치 영역 확대
+					return '<label for="' + checkboxId + '" style="display: block; text-align: center; padding: 8px; margin: 0; cursor: pointer;">' +
 						'<input type="checkbox" ' + checkedAttr + ' ' +
 						'id="' + checkboxId + '" ' +
 						'class="pastoral-checkbox" ' +
 						'data-row-indx="' + ui.rowIndx + '" ' +
 						'data-att-type-idx="' + attType.att_type_idx + '" ' +
 						'data-member-idx="' + ui.rowData.member_idx + '" ' +
-						'style="transform: scale(1.3); cursor: pointer; pointer-events: all;">' +
-						'</div>';
+						'style="width: 20px; height: 20px; cursor: pointer;">' +
+						'</label>';
 				};
 			} else {
 				columnConfig.editable = true;
 				var options = [];
-				options.push({value: '', text: '-'});
+				options.push({ value: '', text: '-' });
 				options.push({
 					value: attType.att_type_idx,
 					text: attType.att_type_nickname
@@ -1013,9 +1020,9 @@ function initializePastoralGrid() {
 					type: "select",
 					options: options
 				};
-				columnConfig.render = function(ui) {
+				columnConfig.render = function (ui) {
 					if (!ui.cellData) return '-';
-					var selectedType = attendanceTypes.find(function(type) {
+					var selectedType = attendanceTypes.find(function (type) {
 						return type.att_type_idx == ui.cellData;
 					});
 					return selectedType ? selectedType.att_type_nickname : '-';
@@ -1053,10 +1060,11 @@ function initializePastoralGrid() {
 			clicksToEdit: 2,
 			saveKey: $.ui.keyCode.ENTER
 		},
-		complete: function() {
+		complete: function () {
 			// 그리드 렌더링 완료 후 이벤트 바인딩 (지연 실행으로 안정성 확보)
-			setTimeout(function() {
+			setTimeout(function () {
 				bindPastoralCheckboxEvents();
+				bindMemoTextboxEvents();
 			}, 200);
 		}
 	};
@@ -1065,79 +1073,88 @@ function initializePastoralGrid() {
 }
 
 /**
- * 그룹출석 체크박스 이벤트 바인딩 - PC/모바일 통합 개선
+ * 직접 터치 이벤트 바인딩 - ParamQuery Grid 우회 (attendance.js 방식 적용)
  */
 function bindPastoralCheckboxEvents() {
 	// 기존 이벤트 제거
-	$(document).off('change.pastoral click.pastoral touchend.pastoral', '.pastoral-checkbox');
+	$('#pastoralAttendanceGrid').off('touchend.pastoral click.pastoral');
 
-	// 다중 이벤트 바인딩으로 모바일 호환성 개선
-	$(document).on('change.pastoral click.pastoral touchend.pastoral', '.pastoral-checkbox', function(e) {
+	// 그리드 컨테이너에 직접 터치/클릭 이벤트 바인딩
+	$('#pastoralAttendanceGrid').on('touchend.pastoral click.pastoral', 'td', function (e) {
+		e.preventDefault();
 		e.stopPropagation();
 
-		const $checkbox = $(this);
-		const $row = $checkbox.closest('tr');
+		const $cell = $(this);
+		const $row = $cell.closest('tr');
 
-		// pqgrid 속성에서 정확한 행 인덱스 가져오기
-		let rowIndx = parseInt($row.attr('pq-row-indx'));
-
-		// pq-row-indx가 없으면 data 속성 사용
-		if (isNaN(rowIndx)) {
-			rowIndx = parseInt($checkbox.data('row-indx'));
-		}
-
-		const memberIdx = $checkbox.data('member-idx');
-		const attTypeIdx = $checkbox.data('att-type-idx');
-
-		// 행 인덱스 유효성 검증
-		if (isNaN(rowIndx) || rowIndx < 0) {
-			console.error('유효하지 않은 행 인덱스:', rowIndx);
+		// 헤더 행 제외
+		if ($row.hasClass('pq-grid-header') || $row.find('th').length > 0) {
 			return;
 		}
 
-		// PC/모바일 이벤트 타입별 처리
-		let shouldProcess = false;
-		let checked = $checkbox.is(':checked');
+		// pqgrid의 데이터 속성을 사용하여 정확한 행/열 인덱스 찾기
+		const dataRowIndex = $row.attr('pq-row-indx');
+		const dataCellIndex = $cell.attr('pq-col-indx');
 
-		if (e.type === 'change') {
-			// PC: change 이벤트
-			shouldProcess = true;
-		} else if (e.type === 'touchend') {
-			// 모바일: touchend 이벤트
-			e.preventDefault();
-			shouldProcess = true;
-			checked = !checked; // 터치 이벤트는 상태를 토글
-		} else if (e.type === 'click' && !e.originalEvent?.isTrusted) {
-			// 프로그래매틱 클릭은 무시
+		if (dataRowIndex === undefined || dataCellIndex === undefined) {
 			return;
 		}
 
-		if (shouldProcess) {
-			// 체크박스 상태 직접 변경 (터치 이벤트용)
-			if (e.type === 'touchend') {
-				setTimeout(function() {
-					$checkbox.prop('checked', checked);
-				}, 10);
-			}
+		const rowIndex = parseInt(dataRowIndex);
+		const cellIndex = parseInt(dataCellIndex);
 
-			try {
-				var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
-				if (gridData && gridData[rowIndx]) {
-					gridData[rowIndx]["att_type_" + attTypeIdx] = checked;
-					pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+		if (rowIndex < 0 || cellIndex < 0 || isNaN(rowIndex) || isNaN(cellIndex)) {
+			return;
+		}
 
-					// 그리드 새로고침 (모바일에서 UI 업데이트 보장)
-					setTimeout(function() {
-						pastoralGrid.pqGrid("refreshDataAndView");
-					}, 50);
-				}
-			} catch (error) {
-				console.error('체크박스 데이터 업데이트 실패:', error);
-			}
+		// 셀 내부의 체크박스 확인
+		const $checkbox = $cell.find('.pastoral-checkbox');
+		if ($checkbox.length > 0) {
+			const checked = !$checkbox.is(':checked');
+			$checkbox.prop('checked', checked);
+			updatePastoralCheckboxData($checkbox, checked);
+			return;
+		}
+
+		// 셀 내부의 메모 텍스트박스 확인
+		const $textbox = $cell.find('.memo-textbox');
+		if ($textbox.length > 0) {
+			$textbox.focus();
+			return;
 		}
 	});
+}
 
-	console.log('Pastoral checkbox events bound for PC/Mobile');
+/**
+ * 체크박스 데이터 업데이트 함수
+ */
+function updatePastoralCheckboxData($checkbox, checked) {
+	const $row = $checkbox.closest('tr');
+
+	// pqgrid 속성에서 정확한 행 인덱스 가져오기
+	let rowIndx = parseInt($row.attr('pq-row-indx'));
+
+	// pq-row-indx가 없으면 data 속성 사용
+	if (isNaN(rowIndx)) {
+		rowIndx = parseInt($checkbox.data('row-indx'));
+	}
+
+	const attTypeIdx = $checkbox.data('att-type-idx');
+
+	// 행 인덱스 유효성 검증
+	if (isNaN(rowIndx) || rowIndx < 0) {
+		return;
+	}
+
+	try {
+		var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
+		if (gridData && gridData[rowIndx]) {
+			gridData[rowIndx]["att_type_" + attTypeIdx] = checked;
+			pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+		}
+	} catch (error) {
+		console.error('체크박스 데이터 업데이트 실패:', error);
+	}
 }
 
 /**
@@ -1150,7 +1167,7 @@ function preparePastoralGridData(members, attTypes) {
 		return gridData;
 	}
 
-	members.forEach(function(member) {
+	members.forEach(function (member) {
 		var rowData = {
 			member_idx: member.member_idx,
 			member_name: member.member_name,
@@ -1158,13 +1175,13 @@ function preparePastoralGridData(members, attTypes) {
 		};
 
 		if (attTypes && attTypes.length > 0) {
-			attTypes.forEach(function(attType) {
+			attTypes.forEach(function (attType) {
 				var dataIndx = "att_type_" + attType.att_type_idx;
 				var selectedValue = null;
 
 				if (member.attendance) {
 					var attendanceArr = member.attendance.split('|');
-					attendanceArr.forEach(function(attendance) {
+					attendanceArr.forEach(function (attendance) {
 						var attData = attendance.split(',');
 						var attTypeIdx = attData[0].trim();
 
@@ -1212,7 +1229,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 			end_date: endDate
 		},
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			if (response.status === 'success') {
 				var members = response.members;
 				var attTypes = response.att_types;
@@ -1248,7 +1265,7 @@ function loadAreaMembersForDetailedManagement(areaIdx, areaName, orgId) {
 				showToast(errorMessage, 'error');
 			}
 		},
-		error: function(xhr, status, error) {
+		error: function (xhr, status, error) {
 			handleAjaxError(xhr, '회원 정보 조회 중 오류가 발생했습니다.');
 		}
 	});
@@ -1284,14 +1301,14 @@ function saveAttendanceAndMemoFromGrid() {
 	var attendanceData = [];
 	var memoData = [];
 
-	gridData.forEach(function(row) {
+	gridData.forEach(function (row) {
 		var memberIdx = row.member_idx;
 		var memoContent = row.memo_content ? row.memo_content.trim() : '';
 
 		var hasAttendanceData = false;
 
 		if (attendanceTypes && attendanceTypes.length > 0) {
-			attendanceTypes.forEach(function(attType) {
+			attendanceTypes.forEach(function (attType) {
 				var dataIndx = "att_type_" + attType.att_type_idx;
 				var cellValue = row[dataIndx];
 
@@ -1346,7 +1363,7 @@ function saveAttendanceAndMemoFromGrid() {
 			att_date: sundayDate
 		},
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			if (response.status === 'success') {
 				saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBtn, originalText);
 			} else {
@@ -1354,7 +1371,7 @@ function saveAttendanceAndMemoFromGrid() {
 				showToast('출석 정보 저장에 실패했습니다.', 'error');
 			}
 		},
-		error: function(xhr, status, error) {
+		error: function (xhr, status, error) {
 			console.error('출석 저장 오류:', xhr.responseText);
 			$saveBtn.prop('disabled', false).text(originalText);
 			showToast('출석 정보 저장 중 오류가 발생했습니다.', 'error');
@@ -1380,7 +1397,7 @@ function saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBt
 			org_id: activeOrgId
 		},
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			if (response.status === 'success') {
 				$('#attendanceOffcanvas').offcanvas('hide');
 
@@ -1393,11 +1410,11 @@ function saveMemoDataFromGrid(memoData, activeOrgId, startDate, endDate, $saveBt
 				showToast(response.message || '메모 저장에 실패했습니다.', 'error');
 			}
 		},
-		error: function(xhr, status, error) {
+		error: function (xhr, status, error) {
 			console.error('메모 저장 오류:', xhr.responseText);
 			showToast('메모 저장 중 오류가 발생했습니다.', 'error');
 		},
-		complete: function() {
+		complete: function () {
 			$saveBtn.prop('disabled', false).text(originalText);
 		}
 	});
@@ -1436,7 +1453,7 @@ function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
 		method: 'POST',
 		data: requestData,
 		dataType: 'json',
-		success: function(response) {
+		success: function (response) {
 			if (response.status === 'success') {
 				var attendanceData = response.attendance_data;
 				var attTypes = response.att_types;
@@ -1452,7 +1469,7 @@ function loadLastWeekData(memberIdx, orgId, areaIdx, memberName) {
 				showToast(errorMessage, 'error');
 			}
 		},
-		error: function(xhr, status, error) {
+		error: function (xhr, status, error) {
 			handleAjaxError(xhr, '지난주 데이터 조회 중 오류가 발생했습니다.');
 		}
 	});
@@ -1473,12 +1490,12 @@ function updateAttendanceSelectboxForGrid(attendanceData, attTypes) {
 			return;
 		}
 
-		gridData.forEach(function(row, index) {
+		gridData.forEach(function (row, index) {
 			var memberIdx = row.member_idx;
 			var memberAttendance = attendanceData[memberIdx] || [];
 
 			if (attTypes && attTypes.length > 0) {
-				attTypes.forEach(function(attType) {
+				attTypes.forEach(function (attType) {
 					var dataIndx = "att_type_" + attType.att_type_idx;
 					var hasAttendance = false;
 
@@ -1538,7 +1555,7 @@ function initializeMasonry() {
 	}
 
 	// DOM 렌더링 완료를 위한 지연 실행
-	setTimeout(function() {
+	setTimeout(function () {
 		// Masonry 초기화
 		$grid.masonry({
 			itemSelector: '.grid-item',
@@ -1550,18 +1567,18 @@ function initializeMasonry() {
 
 		// 이미지 로딩 완료 후 재배치
 		if (typeof $.fn.imagesLoaded !== 'undefined') {
-			$grid.imagesLoaded(function() {
+			$grid.imagesLoaded(function () {
 				$grid.masonry('layout');
 			});
 		}
 
 		// 추가 안전장치: 한번 더 재배치
-		setTimeout(function() {
+		setTimeout(function () {
 			$grid.masonry('layout');
 		}, 200);
 
 		// 한 번 더 안전장치 (총 3번 시도)
-		setTimeout(function() {
+		setTimeout(function () {
 			$grid.masonry('layout');
 		}, 500);
 	}, 100);
@@ -1899,7 +1916,7 @@ function onQrScanSuccess(decodedText, decodedResult) {
 	$('#btn-submit').click();
 
 	// 입력란 초기화 (다음 스캔 준비)
-	setTimeout(function() {
+	setTimeout(function () {
 		$('#input-search').val('');
 	}, 1000);
 }
@@ -1984,12 +2001,56 @@ function bindQrCameraOffcanvasEvents() {
 	});
 
 	// offcanvas의 X 버튼 클릭 시에도 체크박스 해제
-	$('#qrCameraOffcanvas .btn-close').on('click', function() {
+	$('#qrCameraOffcanvas .btn-close').on('click', function () {
 		$('#switchCheckCamera').prop('checked', false);
 	});
 
 	// 카메라 전환 토글 이벤트
-	$('#switchCameraFacing').on('change', function() {
+	$('#switchCameraFacing').on('change', function () {
 		switchCamera();
+	});
+}
+
+/**
+ * HTML 특수문자 이스케이프 함수
+ */
+function escapeHtml(text) {
+	if (!text) return '';
+	var map = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#039;'
+	};
+	return text.replace(/[&<>"']/g, function (m) { return map[m]; });
+}
+
+/**
+ * 메모 textbox 이벤트 바인딩
+ */
+function bindMemoTextboxEvents() {
+	// 기존 이벤트 제거
+	$(document).off('input.memo blur.memo', '.memo-textbox');
+
+	// 메모 입력 시 실시간 데이터 업데이트
+	$(document).on('input.memo blur.memo', '.memo-textbox', function (e) {
+		var $textbox = $(this);
+		var rowIndx = parseInt($textbox.data('row-indx'));
+		var memoValue = $textbox.val();
+
+		if (isNaN(rowIndx) || rowIndx < 0) {
+			return;
+		}
+
+		try {
+			var gridData = pastoralGrid.pqGrid("option", "dataModel.data");
+			if (gridData && gridData[rowIndx]) {
+				gridData[rowIndx]['memo_content'] = memoValue;
+				pastoralGrid.pqGrid("option", "dataModel.data", gridData);
+			}
+		} catch (error) {
+			console.error('메모 데이터 업데이트 실패:', error);
+		}
 	});
 }
