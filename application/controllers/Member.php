@@ -618,11 +618,53 @@ class Member extends My_Controller
 		}
 	}
 
+
+	public function get_revisions()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$member_idx = $this->input->post('member_idx');
+		$org_id = $this->input->post('org_id');
+		$offset = $this->input->post('offset') ?: 0;
+		$limit = 10;
+
+		if (!$member_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Revision_model');
+
+		$revisions = $this->Revision_model->get_revisions($member_idx, $org_id, $limit, $offset);
+		$total_count = $this->Revision_model->count_revisions($member_idx, $org_id);
+
+		// revision_json 파싱
+		foreach ($revisions as &$revision) {
+			$revision['changes'] = json_decode($revision['revision_json'], true);
+			$revision['regi_date_formatted'] = date('Y-m-d H:i', strtotime($revision['regi_date']));
+			unset($revision['revision_json']);
+		}
+
+		$has_more = ($offset + $limit) < $total_count;
+
+		echo json_encode(array(
+			'success' => true,
+			'data' => $revisions,
+			'total_count' => $total_count,
+			'has_more' => $has_more,
+			'next_offset' => $offset + $limit
+		));
+	}
+
 	/**
-	 * 회원 정보 수정 (상세필드 포함)
-	 */
-	/**
-	 * 회원 정보 수정 (상세필드 포함)
+	 * 역할: 회원 정보 수정 (수정내역 저장 기능 추가)
 	 */
 	public function update_member() {
 		if (!$this->input->is_ajax_request()) {
@@ -638,8 +680,16 @@ class Member extends My_Controller
 		}
 
 		$this->load->model('Member_model');
+		$this->load->model('Revision_model');
 
-		// 기본 회원 정보 업데이트
+		// 기존 회원 정보 조회 (수정내역 비교용)
+		$old_member = $this->Member_model->get_member_by_idx($member_idx);
+		if (!$old_member || $old_member['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '회원 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 기본 회원 정보 업데이트 데이터
 		$update_data = array(
 			'member_name' => $this->input->post('member_name'),
 			'member_sex' => $this->input->post('member_sex') ?: null,
@@ -657,34 +707,29 @@ class Member extends My_Controller
 			'modi_date' => date('Y-m-d H:i:s')
 		);
 
-		// 사진 처리 (수정된 부분)
+		// 사진 처리
 		if ($this->input->post('delete_photo') === 'Y') {
-			// 사진 삭제
 			$update_data['photo'] = '';
 		} elseif (!empty($_FILES['member_photo']['name']) && $_FILES['member_photo']['size'] > 0) {
-			// 사진 업로드
 			$upload_result = $this->handleCroppedImageUpload($member_idx, $org_id);
 
 			if ($upload_result['success']) {
 				$update_data['photo'] = $upload_result['file_name'];
 			} else {
-				// 사진 업로드 실패 시 JSON 응답하고 종료
 				echo json_encode(array(
 					'success' => false,
 					'message' => $upload_result['message']
 				));
-				return; // 중요! 여기서 중단
+				return;
 			}
 		}
 
 		// 상세필드 데이터 처리
 		$detail_data = $this->input->post('detail_field');
 		if (!empty($detail_data)) {
-			// JSON 문자열로 전달된 경우 디코딩
 			if (is_string($detail_data)) {
 				$detail_array = json_decode($detail_data, true);
 				if (json_last_error() === JSON_ERROR_NONE && is_array($detail_array)) {
-					// 빈 값들을 제거
 					$filtered_detail = array();
 					foreach ($detail_array as $field_idx => $value) {
 						if ($value !== '' && $value !== null) {
@@ -697,9 +742,7 @@ class Member extends My_Controller
 						$update_data['member_detail'] = null;
 					}
 				}
-			}
-			// 배열로 전달된 경우
-			elseif (is_array($detail_data)) {
+			} elseif (is_array($detail_data)) {
 				$filtered_detail = array();
 				foreach ($detail_data as $field_idx => $value) {
 					if ($value !== '' && $value !== null) {
@@ -714,12 +757,59 @@ class Member extends My_Controller
 			}
 		}
 
+		// 수정내역 비교를 위한 필드 라벨
+		$field_labels = array(
+			'member_name' => '이름',
+			'member_sex' => '성별',
+			'member_nick' => '세례명',
+			'position_name' => '직위',
+			'duty_name' => '직책',
+			'member_phone' => '연락처',
+			'member_birth' => '생년월일',
+			'member_address' => '주소',
+			'member_address_detail' => '상세주소',
+			'member_etc' => '비고',
+			'area_idx' => '소그룹',
+			'leader_yn' => '리더여부',
+			'new_yn' => '새가족여부',
+			'photo' => '사진'
+		);
+
+		// 기본필드 변경사항 비교
+		$basic_changes = $this->Revision_model->compare_changes($old_member, $update_data, $field_labels);
+
+		// 상세필드 변경사항 비교
+		$old_detail = isset($old_member['member_detail']) ? $old_member['member_detail'] : null;
+		$new_detail = isset($update_data['member_detail']) ? $update_data['member_detail'] : null;
+		$detail_changes = $this->Revision_model->compare_detail_changes($old_detail, $new_detail, $org_id);
+
+		// 모든 변경사항 병합
+		$all_changes = array();
+		if (!empty($basic_changes)) {
+			$all_changes = array_merge($all_changes, $basic_changes);
+		}
+		if (!empty($detail_changes)) {
+			$all_changes = array_merge($all_changes, $detail_changes);
+		}
+
 		// DB 업데이트
 		$this->db->where('member_idx', $member_idx);
 		$this->db->where('org_id', $org_id);
 		$result = $this->db->update('wb_member', $update_data);
 
 		if ($result) {
+			// 변경사항이 있는 경우에만 수정내역 저장
+			if (!empty($all_changes)) {
+				$revision_data = array(
+					'member_idx' => $member_idx,
+					'org_id' => $org_id,
+					'revision_json' => json_encode($all_changes, JSON_UNESCAPED_UNICODE),
+					'regi_date' => date('Y-m-d H:i:s'),
+					'user_id' => $this->session->userdata('user_id')
+				);
+				$this->Revision_model->add_revision($revision_data);
+			}
+
 			echo json_encode(array(
 				'success' => true,
 				'message' => '회원 정보가 수정되었습니다.'

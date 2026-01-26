@@ -24,6 +24,18 @@ $(document).ready(function () {
 	let selectedSearchFields = ['member_name', 'member_phone']; // 기본 검색 필드
 	let currentDetailFields = []; // 현재 조직의 상세필드 목록
 
+	// ===== 수정내역 관련 전역 변수 =====
+	let revisionOffset = 0;
+	let revisionLoading = false;
+	let revisionHasMore = true;
+	let currentRevisionMemberIdx = null;
+
+
+	/**
+	 * 역할: 초기화 시 수정내역 탭 이벤트 바인딩 추가
+	 */
+	bindRevisionTabEvents();
+
 
 	// 전역으로 함수 노출
 	window.openMemberOffcanvas = openMemberOffcanvas;
@@ -5216,5 +5228,144 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 
 		return `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
 	}
+
+
+	/**
+	 * 수정내역 탭 이벤트 바인딩
+	 */
+	function bindRevisionTabEvents() {
+		$('#editing-tab').off('shown.bs.tab').on('shown.bs.tab', function() {
+			var memberIdx = $('#member_idx').val();
+			if (memberIdx && selectedOrgId) {
+				currentRevisionMemberIdx = memberIdx;
+				resetRevisionList();
+				loadRevisions();
+			}
+		});
+
+		// 무한 스크롤 이벤트
+		$('#revisionListContainer').off('scroll').on('scroll', function() {
+			var container = $(this);
+			var scrollTop = container.scrollTop();
+			var scrollHeight = container[0].scrollHeight;
+			var containerHeight = container.height();
+
+			// 스크롤이 하단에서 100px 이내에 도달하면 추가 로드
+			if (scrollTop + containerHeight >= scrollHeight - 100) {
+				if (!revisionLoading && revisionHasMore) {
+					loadRevisions();
+				}
+			}
+		});
+	}
+
+	/**
+	 * 수정내역 목록 초기화
+	 */
+	function resetRevisionList() {
+		revisionOffset = 0;
+		revisionHasMore = true;
+		$('#revisionList').empty();
+		$('#revisionEmpty').addClass('d-none');
+	}
+
+	/**
+	 * 수정내역 로드
+	 */
+	function loadRevisions() {
+		if (revisionLoading || !revisionHasMore) {
+			return;
+		}
+
+		revisionLoading = true;
+
+		// 로딩 표시
+		if (revisionOffset === 0) {
+			$('#revisionLoading').removeClass('d-none');
+		} else {
+			$('#revisionLoadMore').removeClass('d-none');
+		}
+
+		$.ajax({
+			url: '/member/get_revisions',
+			type: 'POST',
+			data: {
+				member_idx: currentRevisionMemberIdx,
+				org_id: selectedOrgId,
+				offset: revisionOffset
+			},
+			dataType: 'json',
+			success: function(response) {
+				$('#revisionLoading').addClass('d-none');
+				$('#revisionLoadMore').addClass('d-none');
+
+				if (response.success) {
+					if (response.data.length > 0) {
+						renderRevisions(response.data);
+						revisionHasMore = response.has_more;
+						revisionOffset = response.next_offset;
+					} else if (revisionOffset === 0) {
+						$('#revisionEmpty').removeClass('d-none');
+					}
+				} else {
+					showToast(response.message || '수정내역을 불러오는데 실패했습니다.', 'error');
+				}
+
+				revisionLoading = false;
+			},
+			error: function() {
+				$('#revisionLoading').addClass('d-none');
+				$('#revisionLoadMore').addClass('d-none');
+				showToast('수정내역을 불러오는 중 오류가 발생했습니다.', 'error');
+				revisionLoading = false;
+			}
+		});
+	}
+
+	/**
+	 * 수정내역 렌더링
+	 */
+	function renderRevisions(revisions) {
+		var container = $('#revisionList');
+
+		revisions.forEach(function(revision) {
+			var changesHtml = '';
+
+			if (revision.changes && revision.changes.length > 0) {
+				revision.changes.forEach(function(change) {
+					var oldVal = change.old_value || '(없음)';
+					var newVal = change.new_value || '(없음)';
+
+					// 긴 텍스트 처리
+					if (oldVal.length > 30) {
+						oldVal = oldVal.substring(0, 30) + '...';
+					}
+					if (newVal.length > 30) {
+						newVal = newVal.substring(0, 30) + '...';
+					}
+
+					changesHtml += '<div class="revision-change-row d-flex py-1">';
+					changesHtml += '<div class="revision-field-name text-muted" style="width: 100px; flex-shrink: 0;">' + escapeHtml(change.label) + '</div>';
+					changesHtml += '<div class="revision-old-value text-danger text-decoration-line-through" style="width: 120px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + escapeHtml(change.old_value || '') + '">' + escapeHtml(oldVal) + '</div>';
+					changesHtml += '<div class="revision-arrow text-muted px-2" style="flex-shrink: 0;"><i class="bi bi-arrow-right"></i></div>';
+					changesHtml += '<div class="revision-new-value text-success" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + escapeHtml(change.new_value || '') + '">' + escapeHtml(newVal) + '</div>';
+					changesHtml += '</div>';
+				});
+			}
+
+			var userName = revision.user_name || '알 수 없음';
+
+			var revisionHtml = '<div class="revision-item border-bottom pb-3 mb-3">';
+			revisionHtml += '<div class="revision-changes mb-2">' + changesHtml + '</div>';
+			revisionHtml += '<div class="revision-meta text-end">';
+			revisionHtml += '<small class="text-muted">' + escapeHtml(revision.regi_date_formatted) + ', ' + escapeHtml(userName) + '</small>';
+			revisionHtml += '</div>';
+			revisionHtml += '</div>';
+
+			container.append(revisionHtml);
+		});
+	}
+
+
 
 });

@@ -156,7 +156,7 @@
 					<button class="nav-link" id="mission-tab" data-bs-toggle="tab" data-bs-target="#mission-tab-pane" type="button" role="tab" aria-controls="mission-tab-pane" aria-selected="false">파송</button>
 				</li>
 				<li class="nav-item" role="presentation">
-					<button class="nav-link" id="editing-tab" data-bs-toggle="tab" data-bs-target="#editing-tab-pane" type="button" role="tab" aria-controls="timeline-tab-pane" aria-selected="false">수정내역 <span class="badge badge-sm text-bg-warning">준비중</span></button>
+					<button class="nav-link" id="editing-tab" data-bs-toggle="tab" data-bs-target="#editing-tab-pane" type="button" role="tab" aria-controls="editing-tab-pane" aria-selected="false">수정내역</button>
 				</li>
 
 			</ul>
@@ -426,10 +426,37 @@
 				</div>
 
 
+				<!-- 수정된 코드 -->
 				<div class="tab-pane fade" id="editing-tab-pane" role="tabpanel" aria-labelledby="editing-tab" tabindex="0">
 					<div class="row mt-3">
 						<div class="col-12">
-							수정내역
+							<!-- 수정내역 로딩 표시 -->
+							<div id="revisionLoading" class="text-center py-4 d-none">
+								<div class="spinner-border spinner-border-sm text-primary" role="status">
+									<span class="visually-hidden">로딩중...</span>
+								</div>
+								<span class="ms-2 text-muted">수정내역을 불러오는 중...</span>
+							</div>
+
+							<!-- 수정내역 없음 표시 -->
+							<div id="revisionEmpty" class="text-center py-5 d-none">
+								<i class="bi bi-clock-history fs-1 text-muted"></i>
+								<p class="text-muted mt-2 mb-0">수정내역이 없습니다.</p>
+							</div>
+
+							<!-- 수정내역 목록 컨테이너 -->
+							<div id="revisionListContainer" style="max-height: 500px; overflow-y: auto;">
+								<div id="revisionList">
+									<!-- 동적으로 생성됨 -->
+								</div>
+
+								<!-- 더보기 로딩 표시 -->
+								<div id="revisionLoadMore" class="text-center py-3 d-none">
+									<div class="spinner-border spinner-border-sm text-secondary" role="status">
+										<span class="visually-hidden">로딩중...</span>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
