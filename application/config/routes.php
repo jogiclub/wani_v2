@@ -126,6 +126,10 @@ $route['week/(:any)'] = 'week/index/$1';
 $route['week/(:any)/(:num)'] = 'week/index/$1/$2';
 $route['week/(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
 
+$route['income'] = 'income';
+$route['income'] = 'income/index';
+
+
 // 직접 group_code/year/week 형식으로 접근하는 경우도 처리
 $route['(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
 
