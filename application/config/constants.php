@@ -86,6 +86,6 @@ defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest auto
 
 
 
-define('WB_VERSION', '20260126_03');
-//define('WB_VERSION', date('YmdHis'));
+//define('WB_VERSION', '20260126_03');
+define('WB_VERSION', date('YmdHis'));
 
