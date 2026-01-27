@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="/assets/css/weekly_statics.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS -->
-<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
 
 <!-- Fancytree CSS -->
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">

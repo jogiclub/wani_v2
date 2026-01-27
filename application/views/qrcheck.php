@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="/assets/css/qrcheck.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS 및 JavaScript 추가 -->
-<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
 
 <div class="pt-3">
 	<div class="container-fluid">

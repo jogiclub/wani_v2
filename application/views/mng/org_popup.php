@@ -1,7 +1,7 @@
 <?php
 include APPPATH . 'views/header_noframe.php';
 ?>
-<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
 <style>
 	#bulkEditOrgGrid {
 		width: 100%;

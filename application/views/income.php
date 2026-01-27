@@ -1,7 +1,7 @@
 <?php
 $this->load->view('header');
 ?>
-<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
 
 
@@ -18,16 +18,14 @@ $this->load->view('header');
 		<h3 class="page-title mb-0">수입/지출</h3>
 		<!-- 장부 선택 -->
 		<div class="">
-			<select id="selectBook" class="form-select">
-				<option value="">장부를 선택하세요</option>
-			</select>
+			<div id="bookSelectContainer">
+				<!-- 동적으로 selectbox 또는 라벨이 렌더링됩니다 -->
+			</div>
 		</div>
 	</div>
 
 	<div class="card">
-		<div class="card-body pt-3">
-
-
+		<div class="card-header pt-3">
 			<!-- 검색 영역 -->
 			<div class="row g-2 mb-3" id="searchArea" style="display:none;">
 				<!-- 구분 -->
@@ -99,9 +97,10 @@ $this->load->view('header');
 					</div>
 				</div>
 			</div>
-
+		</div>
+		<div class="card-body card-height p-0 position-relative">
 			<!-- pqGrid -->
-			<div id="incomeGrid" style="height: 500px;"></div>
+			<div id="incomeGrid"></div>
 		</div>
 	</div>
 </div>
@@ -195,4 +194,4 @@ $this->load->view('header');
 		orgId: '<?= $current_org['org_id'] ?? '' ?>'
 	};
 </script>
-<script src="<?= base_url('assets/js/income.js') ?>"></script>
+<script src="/assets/js/income.js?<?php echo WB_VERSION; ?>"></script>

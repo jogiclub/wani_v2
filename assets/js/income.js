@@ -28,25 +28,19 @@ function initPage() {
 }
 
 /**
- * 이벤트 바인딩
+ * 파일 위치: assets/js/income.js
+ * 역할: 이벤트 바인딩
  */
 function bindEvents() {
-	// 장부 선택
-	$('#selectBook').on('change', function() {
-		selectedBookIdx = $(this).val();
-		if (selectedBookIdx) {
-			$('#searchArea').show();
-			loadBanks();
-			loadAccounts();
-			loadTags();
-			loadGridData();
-		} else {
-			$('#searchArea').hide();
-			if (incomeGrid) {
-				incomeGrid.pqGrid('option', 'dataModel.data', []);
-				incomeGrid.pqGrid('refreshDataAndView');
-			}
-		}
+	// 전체 선택 체크박스
+	$(document).on('change', '#selectAllCheckbox', function() {
+		var isChecked = $(this).prop('checked');
+		$('.income-checkbox').prop('checked', isChecked);
+	});
+
+	// 개별 체크박스
+	$(document).on('change', '.income-checkbox', function() {
+		updateSelectAllCheckbox();
 	});
 
 	// 검색 버튼
@@ -136,18 +130,24 @@ function initDateRangePicker() {
 }
 
 /**
- * pqGrid 초기화
+ * 파일 위치: assets/js/income.js
+ * 역할: pqGrid 초기화 - 체크박스 직접 렌더링 방식
  */
 function initGrid() {
 	var colModel = [
 		{
-			title: '',
-			dataIndx: 'cb',
-			width: 30,
-			type: 'checkBoxSelection',
-			cls: 'pq-text-center',
+			title: '<input type="checkbox" id="selectAllCheckbox" />',
+			dataIndx: 'pq_selected',
+			width: 40,
+			align: 'center',
+			resizable: false,
 			sortable: false,
-			cb: { all: true }
+			editable: false,
+			menuIcon: false,
+			render: function(ui) {
+				var checkboxId = 'income-checkbox-' + ui.rowData.idx;
+				return '<input type="checkbox" class="income-checkbox" id="' + checkboxId + '" data-idx="' + ui.rowData.idx + '" />';
+			}
 		},
 		{
 			title: '구분',
@@ -218,26 +218,74 @@ function initGrid() {
 		{ title: '수정자', dataIndx: 'modi_user_name', width: 80, align: 'center' }
 	];
 
-	incomeGrid = $('#incomeGrid').pqGrid({
+	incomeGrid = pq.grid('#incomeGrid', {
 		width: '100%',
-		height: 500,
+		height: "100%",
 		colModel: colModel,
 		dataModel: { data: [] },
-		selectionModel: { type: 'row', mode: 'range' },
-		scrollModel: { autoFit: true },
-		numberCell: { show: true },
-		stripeRows: true,
+		editable: false,
+		selectionModel: { type: 'row', mode: 'block' },
+		numberCell: { show: false },
 		wrap: false,
-		hwrap: false,
 		resizable: true,
-		columnBorders: true,
-		rowBorders: true,
-		freezeCols: 2,
+		showTitle: false,
+		showToolbar: false,
+		showBottom: false,
+		showHeader: true,
+		freezeCols: 5,
+		strNoRows: '조회된 데이터가 없습니다.',
+		cellClick: function(event, ui) {
+			if (ui.dataIndx === 'pq_selected') {
+				handleCheckboxClick(event, ui.rowData.idx);
+			}
+		},
 		rowDblClick: function(event, ui) {
 			var rowData = ui.rowData;
 			openEntryOffcanvas(rowData.income_type, rowData);
 		}
 	});
+}
+
+/**
+ * 파일 위치: assets/js/income.js
+ * 역할: 체크박스 클릭 핸들러
+ */
+function handleCheckboxClick(event, idx) {
+	var isDirectCheckboxClick = $(event.target).hasClass('income-checkbox') ||
+		$(event.originalEvent?.target).hasClass('income-checkbox');
+
+	if (!isDirectCheckboxClick) {
+		var checkbox = $('.income-checkbox[data-idx="' + idx + '"]').first();
+		if (checkbox.length > 0) {
+			var isCurrentlyChecked = checkbox.is(':checked');
+			checkbox.prop('checked', !isCurrentlyChecked);
+		}
+	}
+
+	updateSelectAllCheckbox();
+}
+
+/**
+ * 파일 위치: assets/js/income.js
+ * 역할: 전체 선택 체크박스 상태 업데이트
+ */
+function updateSelectAllCheckbox() {
+	var totalCheckboxes = $('.income-checkbox').length;
+	var checkedCheckboxes = $('.income-checkbox:checked').length;
+
+	if (totalCheckboxes === 0) {
+		$('#selectAllCheckbox').prop('checked', false);
+		$('#selectAllCheckbox').prop('indeterminate', false);
+	} else if (checkedCheckboxes === 0) {
+		$('#selectAllCheckbox').prop('checked', false);
+		$('#selectAllCheckbox').prop('indeterminate', false);
+	} else if (checkedCheckboxes === totalCheckboxes) {
+		$('#selectAllCheckbox').prop('checked', true);
+		$('#selectAllCheckbox').prop('indeterminate', false);
+	} else {
+		$('#selectAllCheckbox').prop('checked', false);
+		$('#selectAllCheckbox').prop('indeterminate', true);
+	}
 }
 
 /**
@@ -263,16 +311,67 @@ function loadBookList() {
 }
 
 /**
- * 장부 목록 렌더링
+ * 파일 위치: assets/js/income.js
+ * 역할: 장부 목록 렌더링 - 1개면 라벨, 2개 이상이면 selectbox
  */
 function renderBookList(books) {
-	var $select = $('#selectBook');
-	$select.find('option:not(:first)').remove();
+	var $container = $('#bookSelectContainer');
+	$container.empty();
 
-	if (books && books.length > 0) {
-		books.forEach(function(book) {
-			$select.append('<option value="' + book.book_idx + '">' + book.book_name + '</option>');
+	if (!books || books.length === 0) {
+		$container.append('<span class="text-muted">등록된 장부가 없습니다</span>');
+		return;
+	}
+
+	if (books.length === 1) {
+		// 장부가 1개면 라벨로 표시
+		var book = books[0];
+		$container.append('<span class="form-control-plaintext fw-bold">' + book.book_name + '</span>');
+		$container.append('<input type="hidden" id="selectBook" value="' + book.book_idx + '">');
+
+		// 자동으로 해당 장부 선택
+		selectedBookIdx = book.book_idx;
+		$('#searchArea').show();
+		loadBanks();
+		loadAccounts();
+		loadTags();
+		loadGridData();
+	} else {
+		// 장부가 2개 이상이면 selectbox
+		var $select = $('<select id="selectBook" class="form-select"></select>');
+
+		books.forEach(function(book, index) {
+			var selected = index === 0 ? ' selected' : '';
+			$select.append('<option value="' + book.book_idx + '"' + selected + '>' + book.book_name + '</option>');
 		});
+
+		$container.append($select);
+
+		// 이벤트 바인딩
+		$select.on('change', function() {
+			selectedBookIdx = $(this).val();
+			if (selectedBookIdx) {
+				$('#searchArea').show();
+				loadBanks();
+				loadAccounts();
+				loadTags();
+				loadGridData();
+			} else {
+				$('#searchArea').hide();
+				if (incomeGrid) {
+					incomeGrid.pqGrid('option', 'dataModel.data', []);
+					incomeGrid.pqGrid('refreshDataAndView');
+				}
+			}
+		});
+
+		// 첫 번째 장부 자동 선택
+		selectedBookIdx = books[0].book_idx;
+		$('#searchArea').show();
+		loadBanks();
+		loadAccounts();
+		loadTags();
+		loadGridData();
 	}
 }
 
@@ -479,7 +578,8 @@ function updateSelectedTags() {
 }
 
 /**
- * 그리드 데이터 로드
+ * 파일 위치: assets/js/income.js
+ * 역할: 그리드 데이터 로드
  */
 function loadGridData() {
 	if (!selectedBookIdx) return;
@@ -511,8 +611,8 @@ function loadGridData() {
 		dataType: 'json',
 		success: function(response) {
 			if (response.success) {
-				incomeGrid.pqGrid('option', 'dataModel.data', response.data);
-				incomeGrid.pqGrid('refreshDataAndView');
+				incomeGrid.option('dataModel.data', response.data);
+				incomeGrid.refreshDataAndView();
 			} else {
 				showToast(response.message || '데이터를 불러오는데 실패했습니다.', 'error');
 			}
@@ -677,28 +777,36 @@ function saveEntry() {
 	});
 }
 
+
 /**
- * 선택 삭제
+ * 파일 위치: assets/js/income.js
+ * 역할: 선택 삭제 - 체크박스 기반
  */
 function deleteSelected() {
-	var selectedRows = incomeGrid.pqGrid('selection', { type: 'row', method: 'getSelection' });
+	var selectedIdxs = [];
+	$('.income-checkbox:checked').each(function() {
+		selectedIdxs.push($(this).data('idx'));
+	});
 
-	if (!selectedRows || selectedRows.length === 0) {
+	if (selectedIdxs.length === 0) {
 		showToast('삭제할 항목을 선택해주세요.', 'warning');
 		return;
 	}
 
-	$('#deleteConfirmMessage').text(selectedRows.length + '개 항목을 삭제하시겠습니까?');
+	$('#deleteConfirmMessage').text(selectedIdxs.length + '개 항목을 삭제하시겠습니까?');
 	var modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
 	modal.show();
 }
 
 /**
- * 삭제 확인
+ * 파일 위치: assets/js/income.js
+ * 역할: 삭제 확인 - 체크박스 기반
  */
 function confirmDelete() {
-	var selectedRows = incomeGrid.pqGrid('selection', { type: 'row', method: 'getSelection' });
-	var idxList = selectedRows.map(function(row) { return row.rowData.idx; });
+	var idxList = [];
+	$('.income-checkbox:checked').each(function() {
+		idxList.push($(this).data('idx'));
+	});
 
 	$.ajax({
 		url: window.incomePageData.baseUrl + 'income/delete',
@@ -720,6 +828,7 @@ function confirmDelete() {
 		}
 	});
 }
+
 
 /**
  * 숫자 포맷

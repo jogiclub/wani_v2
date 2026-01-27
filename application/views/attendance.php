@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="/assets/css/attendance.css?<?php echo WB_VERSION; ?>">
 
 <!-- ParamQuery CSS -->
-<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css?<?php echo WB_VERSION; ?>">
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.fix.css?<?php echo WB_VERSION; ?>">
 
 <!-- Fancytree CSS -->
