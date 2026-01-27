@@ -114,7 +114,7 @@ function renderBookList(books) {
 	books.forEach(function(book) {
 		var fiscalText = book.fiscal_base_month == 1 ? '1월 기준' : '12월 기준';
 		var $item = $('<button class="list-group-item list-group-item-action book-list-item" type="button" data-book-idx="' + book.book_idx + '">' +
-			'<div class="book-name">' + escapeHtml(book.book_name) + '</div>' +
+			'<div class="book-name fs-bold">' + escapeHtml(book.book_name) + '</div>' +
 			'<small class="book-info">' + fiscalText + '</small>' +
 			'</button>');
 
@@ -151,6 +151,10 @@ function selectBook(book) {
 	$('.book-list-item').removeClass('active');
 	$('.book-list-item[data-book-idx="' + book.book_idx + '"]').addClass('active');
 
+	// 기존 트리 인스턴스 초기화
+	destroyAllTrees();
+
+	// 트리 로드
 	loadAccountTree('income');
 	loadAccountTree('expense');
 
@@ -158,6 +162,27 @@ function selectBook(book) {
 	$('#accountTabsContent').show();
 
 	clearAccountSelection();
+}
+
+/**
+ * 모든 트리 인스턴스 파괴
+ */
+function destroyAllTrees() {
+	if (incomeTreeInstance) {
+		try {
+			$('#incomeTree').fancytree('destroy');
+		} catch (e) {}
+		incomeTreeInstance = null;
+	}
+	if (expenseTreeInstance) {
+		try {
+			$('#expenseTree').fancytree('destroy');
+		} catch (e) {}
+		expenseTreeInstance = null;
+	}
+	// DOM 초기화
+	$('#incomeTree').empty().removeClass('fancytree-container ui-fancytree');
+	$('#expenseTree').empty().removeClass('fancytree-container ui-fancytree');
 }
 
 /**
@@ -187,18 +212,48 @@ function loadAccountTree(accountType) {
  * 현재 탭의 트리만 새로고침
  */
 function refreshCurrentTree() {
-	loadAccountTree(currentAccountType);
+	var treeId = currentAccountType === 'income' ? '#incomeTree' : '#expenseTree';
+	var treeInstance = currentAccountType === 'income' ? incomeTreeInstance : expenseTreeInstance;
+
+	$.ajax({
+		url: window.accountPageData.baseUrl + 'account/get_account_tree',
+		method: 'POST',
+		data: {
+			book_idx: selectedBookIdx,
+			account_type: currentAccountType
+		},
+		dataType: 'json',
+		success: function(response) {
+			if (treeInstance) {
+				// 기존 트리가 있으면 reload 사용
+				treeInstance.reload(response).done(function() {
+					treeInstance.expandAll();
+				});
+			} else {
+				// 트리가 없으면 새로 초기화
+				initFancytree(treeId, response, currentAccountType);
+			}
+		},
+		error: function() {
+			showToast('계정 목록을 불러오는데 실패했습니다.', 'error');
+		}
+	});
 }
 
 /**
  * Fancytree 초기화
  */
 function initFancytree(treeId, treeData, accountType) {
-	if ($(treeId).hasClass('fancytree-container')) {
-		$(treeId).fancytree('destroy');
+	// 이미 초기화된 경우 먼저 파괴
+	var $tree = $(treeId);
+	if ($tree.hasClass('fancytree-container') || $tree.hasClass('ui-fancytree')) {
+		try {
+			$tree.fancytree('destroy');
+		} catch (e) {}
+		$tree.empty().removeClass('fancytree-container ui-fancytree');
 	}
 
-	$(treeId).fancytree({
+	$tree.fancytree({
 		source: treeData,
 		extensions: ['wide'],
 		activate: function(event, data) {
@@ -215,14 +270,14 @@ function initFancytree(treeId, treeData, accountType) {
 		},
 		init: function(event, data) {
 			data.tree.expandAll();
+			// 트리 인스턴스 저장
+			if (accountType === 'income') {
+				incomeTreeInstance = data.tree;
+			} else {
+				expenseTreeInstance = data.tree;
+			}
 		}
 	});
-
-	if (accountType === 'income') {
-		incomeTreeInstance = $(treeId).fancytree('getTree');
-	} else {
-		expenseTreeInstance = $(treeId).fancytree('getTree');
-	}
 }
 
 /**
@@ -589,16 +644,14 @@ function loadMoveTargetAccounts() {
 	$select.empty();
 	$select.append('<option value="">최상위로 이동 (관)</option>');
 
-	// 현재 트리에서 계정 목록 추출
-	var treeId = currentAccountType === 'income' ? '#incomeTree' : '#expenseTree';
-	var tree = $.ui.fancytree.getTree(treeId);
+	// 현재 트리 인스턴스 사용
+	var tree = currentAccountType === 'income' ? incomeTreeInstance : expenseTreeInstance;
 
 	if (!tree) {
 		return;
 	}
 
 	var currentId = selectedAccountData.id;
-	var currentLevel = selectedAccountData.level;
 
 	// 트리를 순회하며 이동 가능한 계정 목록 생성
 	tree.visit(function(node) {

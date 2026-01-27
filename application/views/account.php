@@ -32,7 +32,7 @@
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<h6 class="mb-0">장부 선택</h6>
 					<button type="button" class="btn btn-sm btn-primary" id="btnAddBook">
-						<i class="bi bi-plus-lg"></i> 추가
+						<i class="bi bi-plus-lg"></i> 장부추가
 					</button>
 				</div>
 				<div class="card-body p-0">
@@ -50,8 +50,8 @@
 		<!-- 계정 트리 -->
 		<div class="col-lg-6 col-md-5">
 			<div class="card">
-				<div class="card-header">
-					<ul class="nav nav-tabs card-header-tabs" id="accountTabs" role="tablist">
+				<div class="card-header py-2 px-4">
+					<ul class="nav nav-tabs card-header-tabs " id="accountTabs" role="tablist">
 						<li class="nav-item" role="presentation">
 							<button class="nav-link active" id="income-tab" data-bs-toggle="tab"
 									data-bs-target="#incomePane" type="button" role="tab"
@@ -97,7 +97,7 @@
 						<div id="selectedAccountName" class="fw-bold"></div>
 						<small id="selectedAccountLevel" class="text-muted"></small>
 					</div>
-					<div class="action-buttons d-grid gap-2">
+					<div class="action-buttons btn-group-vertical d-flex justify-content-center align-items-center">
 						<button type="button" class="btn btn-primary" id="btnAddSubAccount" disabled>
 							<i class="bi bi-plus-circle"></i> 하위계정 생성
 						</button>
