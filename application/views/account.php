@@ -16,13 +16,13 @@
 	<nav aria-label="breadcrumb">
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="/">홈</a></li>
-			<li class="breadcrumb-item"><a href="#">CASH</a></li>
-			<li class="breadcrumb-item active">계정관리</li>
+			<li class="breadcrumb-item"><a href="#">SETTING</a></li>
+			<li class="breadcrumb-item active">수입/지출계정</li>
 		</ol>
 	</nav>
 
 	<div class="d-flex align-items-center justify-content-between mb-3 mt-2">
-		<h3 class="page-title mb-0">계정관리</h3>
+		<h3 class="page-title mb-0">수입/지출계정</h3>
 	</div>
 
 	<div class="row">
