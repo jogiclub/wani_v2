@@ -182,12 +182,12 @@ function initGrid() {
 		{ title: '계정코드', dataIndx: 'account_code', width: 80, align: 'center' },
 		{ title: '계정명', dataIndx: 'account_name', width: 120 },
 		{ title: '날짜', dataIndx: 'transaction_date_fmt', width: 100, align: 'center' },
-		{ title: '건수', dataIndx: 'transaction_cnt', width: 50, align: 'right' },
+		{ title: '건수', dataIndx: 'transaction_cnt', width: 50, align: 'center' },
 		{
 			title: '금액',
 			dataIndx: 'amount',
 			width: 120,
-			align: 'right',
+			align: 'center',
 			render: function(ui) {
 				var rowData = ui.rowData;
 				var cls = rowData.income_type === 'income' ? 'income-cell' : 'expense-cell';
