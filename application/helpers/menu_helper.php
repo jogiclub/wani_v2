@@ -76,14 +76,15 @@ if (!function_exists('get_system_menus')) {
 				'level' => 1,
 				'menu_class' => 'menu-25'
 			),
-			'ACCOUNT_MANAGEMENT' => array(
-				'name' => '계정관리',
-				'key' => 'ACCOUNT_MANAGEMENT',
-				'url' => 'account',
-				'icon' => 'bi bi-tags',
+			'INCOME_MANAGEMENT' => array(
+				'name' => '수입/지출',
+				'key' => 'INCOME_MANAGEMENT',
+				'url' => 'income',
+				'icon' => 'bi bi-cash-coin',
 				'level' => 1,
 				'menu_class' => 'menu-51'
 			),
+
 			'HOMEPAGE_BASIC' => array(
 				'name' => '홈페이지 기본설정',
 				'key' => 'HOMEPAGE_BASIC',
@@ -148,7 +149,15 @@ if (!function_exists('get_system_menus')) {
 				'icon' => 'bi bi-person-video',
 				'level' => 9,
 				'menu_class' => 'menu-46'
-			)
+			),
+			'ACCOUNT_MANAGEMENT' => array(
+				'name' => '수입/지출계정',
+				'key' => 'ACCOUNT_MANAGEMENT',
+				'url' => 'account',
+				'icon' => 'bi bi-tags',
+				'level' => 1,
+				'menu_class' => 'menu-47'
+		)
 		);
 	}
 }
@@ -190,7 +199,7 @@ if (!function_exists('get_menu_categories')) {
 			),
 			'CASH' => array(
 				'name' => 'CASH',
-				'menus' => array('ACCOUNT_MANAGEMENT'),
+				'menus' => array('INCOME_MANAGEMENT'),
 				'show_always' => false
 			),
 			'SETTING' => array(
@@ -200,7 +209,8 @@ if (!function_exists('get_menu_categories')) {
 					'GROUP_SETTING',
 					'DETAIL_FIELD_SETTING',
 					'ATTENDANCE_SETTING',
-					'USER_MANAGEMENT'
+					'USER_MANAGEMENT',
+					'ACCOUNT_MANAGEMENT'
 				),
 				'show_always' => false
 			)

@@ -27,7 +27,7 @@
 
 	<div class="row">
 		<!-- 장부 목록 -->
-		<div class="col-lg-3 col-md-4">
+		<div class="col-12 col-lg-3 col-xl-2">
 			<div class="card">
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<h6 class="mb-0">장부 선택</h6>
@@ -48,7 +48,7 @@
 		</div>
 
 		<!-- 계정 트리 -->
-		<div class="col-lg-6 col-md-5">
+		<div class="col-12 col-lg-6 col-xl-8">
 			<div class="card">
 				<div class="card-header py-2 px-4">
 					<ul class="nav nav-tabs card-header-tabs " id="accountTabs" role="tablist">
@@ -86,7 +86,7 @@
 		</div>
 
 		<!-- 관리 버튼 -->
-		<div class="col-lg-3 col-md-3">
+		<div class="col-12 col-lg-3 col-xl-2">
 			<div class="card">
 				<div class="card-header">
 					<h6 class="mb-0">계정 관리</h6>
@@ -107,7 +107,7 @@
 						<button type="button" class="btn btn-danger" id="btnDeleteAccount" disabled>
 							<i class="bi bi-trash"></i> 계정 삭제
 						</button>
-						<button type="button" class="btn btn-info" id="btnMoveAccount" disabled>
+						<button type="button" class="btn btn-success" id="btnMoveAccount" disabled>
 							<i class="bi bi-arrows-move"></i> 계정 이동
 						</button>
 					</div>
