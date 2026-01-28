@@ -1547,14 +1547,7 @@ $(document).ready(function () {
 		});
 	}
 
-	/**
-	 * 역할: HTML 이스케이프 처리 함수
-	 */
-	function escapeHtml(text) {
-		const div = document.createElement('div');
-		div.textContent = text;
-		return div.innerHTML;
-	}
+
 
 	/**
 	 * 그리드 필터링

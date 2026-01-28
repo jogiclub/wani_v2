@@ -2011,20 +2011,7 @@ function bindQrCameraOffcanvasEvents() {
 	});
 }
 
-/**
- * HTML 특수문자 이스케이프 함수
- */
-function escapeHtml(text) {
-	if (!text) return '';
-	var map = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		"'": '&#039;'
-	};
-	return text.replace(/[&<>"']/g, function (m) { return map[m]; });
-}
+
 
 /**
  * 메모 textbox 이벤트 바인딩

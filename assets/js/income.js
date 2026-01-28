@@ -112,16 +112,21 @@ function bindEvents() {
 
 /**
  * 파일 위치: assets/js/income.js
- * 역할: 회원 검색 셀렉트 초기화 (Select2 스타일)
+ * 역할: 검색 가능 셀렉트 초기화 (계좌, 이름, 계정)
  */
 function initMemberSearchSelect() {
 	// 계좌 검색
 	initSearchableSelect('#entryBank', '#entryBankSearch', function(keyword) {
 		return allBanks.filter(function(bank) {
-			return bank.name.toLowerCase().indexOf(keyword.toLowerCase()) > -1;
+			var searchText = bank.name + (bank.account_number || '');
+			return searchText.toLowerCase().indexOf(keyword.toLowerCase()) > -1;
 		});
 	}, function(item) {
-		return { value: item.name, text: item.name };
+		var displayText = item.name;
+		if (item.account_number) {
+			displayText += ' (' + item.account_number + ')';
+		}
+		return { value: item.name, text: displayText };
 	});
 
 	// 이름(회원) 검색
@@ -135,11 +140,38 @@ function initMemberSearchSelect() {
 	});
 }
 
+
+/**
+ * 파일 위치: assets/js/income.js
+ * 역할: 계정 검색 셀렉트 초기화
+ */
+function initAccountSearchSelect(type) {
+	var accounts = type === 'income' ? allIncomeAccounts : allExpenseAccounts;
+
+	initSearchableSelect('#entryAccount', '#entryAccountSearch', function(keyword) {
+		return accounts.filter(function(account) {
+			var searchText = account.code + ' ' + account.name;
+			return searchText.toLowerCase().indexOf(keyword.toLowerCase()) > -1;
+		});
+	}, function(item) {
+		return {
+			value: item.code,
+			text: item.display,
+			extra: { name: item.name }
+		};
+	}, function(value, text, extra) {
+		// 계정 선택 시 계정명도 함께 저장
+		if (extra && extra.name) {
+			$('#entryAccountName').val(extra.name);
+		}
+	});
+}
+
 /**
  * 파일 위치: assets/js/income.js
  * 역할: 검색 가능한 셀렉트박스 공통 초기화
  */
-function initSearchableSelect(selectId, searchInputId, filterFn, mapFn) {
+function initSearchableSelect(selectId, searchInputId, filterFn, mapFn, onSelectCallback) {
 	var $select = $(selectId);
 	var $searchInput = $(searchInputId);
 	var $dropdown = $select.closest('.searchable-select-wrapper').find('.dropdown-menu');
@@ -157,22 +189,30 @@ function initSearchableSelect(selectId, searchInputId, filterFn, mapFn) {
 		} else {
 			filteredItems.slice(0, 50).forEach(function(item) {
 				var mapped = mapFn(item);
-				$optionList.append('<li class="dropdown-item option-item" data-value="' + escapeHtml(mapped.value) + '">' + escapeHtml(mapped.text) + '</li>');
+				var extraData = mapped.extra ? ' data-extra=\'' + JSON.stringify(mapped.extra) + '\'' : '';
+				$optionList.append('<li class="dropdown-item option-item" data-value="' + escapeHtml(mapped.value) + '"' + extraData + '>' + escapeHtml(mapped.text) + '</li>');
 			});
 		}
 	});
 
 	// 옵션 선택 이벤트
-	$dropdown.on('click', '.option-item', function() {
+	$dropdown.off('click', '.option-item').on('click', '.option-item', function() {
 		var value = $(this).data('value');
 		var text = $(this).text();
+		var extraData = $(this).data('extra');
+
 		$select.val(value);
 		$select.closest('.searchable-select-wrapper').find('.selected-text').text(text || '선택');
 		$dropdown.removeClass('show');
+
+		// 콜백 실행
+		if (typeof onSelectCallback === 'function') {
+			onSelectCallback(value, text, extraData);
+		}
 	});
 
 	// 드롭다운 열 때 검색어 초기화 및 전체 목록 표시
-	$select.closest('.searchable-select-wrapper').find('.dropdown-toggle').on('click', function() {
+	$select.closest('.searchable-select-wrapper').find('.dropdown-toggle').off('click').on('click', function() {
 		$searchInput.val('');
 		$searchInput.trigger('input');
 		setTimeout(function() {
@@ -882,6 +922,8 @@ function openEntryOffcanvas(type, data) {
 	$('#entryBank').val('');
 	$('#entryBankText').text('선택');
 	$('#entryAccount').val('');
+	$('#entryAccountName').val('');
+	$('#entryAccountText').text('선택');
 	$('#entryName').val('');
 	$('#entryNameText').text('선택');
 	$('#entryAmount').val('');
@@ -890,8 +932,8 @@ function openEntryOffcanvas(type, data) {
 	// 항목 데이터 초기화
 	entryItemData = [];
 
-	// 계정 셀렉트 로드
-	loadEntryAccountSelect(type);
+	// 계정 검색 셀렉트 초기화
+	initAccountSearchSelect(type);
 
 	// 수정 모드인 경우 데이터 로드
 	if (data) {
@@ -909,10 +951,13 @@ function openEntryOffcanvas(type, data) {
 			}
 		}
 
-		// 계정 선택은 셀렉트 로드 후 설정
-		setTimeout(function() {
+		// 계정 선택 설정
+		if (data.account_code) {
 			$('#entryAccount').val(data.account_code);
-		}, 100);
+			$('#entryAccountName').val(data.account_name || '');
+			var accountDisplay = data.account_code + ' ' + (data.account_name || '');
+			$('#entryAccountText').text(accountDisplay);
+		}
 
 		// details 데이터 로드
 		if (data.details) {
@@ -944,7 +989,6 @@ function openEntryOffcanvas(type, data) {
 	var offcanvas = new bootstrap.Offcanvas(document.getElementById('offcanvasEntry'));
 	offcanvas.show();
 }
-
 /**
  * 입력 폼 계좌 셀렉트 렌더링
  */
@@ -957,18 +1001,7 @@ function renderEntryBankSelect() {
 	});
 }
 
-/**
- * 입력 폼 계정 셀렉트 로드
- */
-function loadEntryAccountSelect(type) {
-	var accounts = type === 'income' ? allIncomeAccounts : allExpenseAccounts;
-	var $select = $('#entryAccount');
-	$select.find('option:not(:first)').remove();
 
-	accounts.forEach(function(account) {
-		$select.append('<option value="' + account.code + '" data-name="' + account.name + '">' + account.display + '</option>');
-	});
-}
 
 /**
  * 파일 위치: assets/js/income.js
@@ -980,7 +1013,7 @@ function saveEntry() {
 	var transactionDate = $('#entryDate').val();
 	var bankName = $('#entryBank').val();
 	var accountCode = $('#entryAccount').val();
-	var accountName = $('#entryAccount option:selected').data('name') || '';
+	var accountName = $('#entryAccountName').val();
 
 	// 유효성 검사
 	if (!transactionDate) {
@@ -1105,26 +1138,3 @@ function formatNumber(num) {
 	return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-/**
- * HTML 이스케이프
- */
-function escapeHtml(str) {
-	if (!str) return '';
-	return str.toString()
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#039;');
-}
-
-/**
- * Toast 메시지 표시
- */
-function showToast(message, type) {
-	if (typeof window.showToast === 'function') {
-		window.showToast(message, type);
-	} else {
-		alert(message);
-	}
-}

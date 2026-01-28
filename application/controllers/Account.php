@@ -134,6 +134,46 @@ class Account extends My_Controller
 		}
 	}
 
+
+	/**
+	 * 계좌 목록 조회
+	 */
+	public function get_banks()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$book_idx = $this->input->post('book_idx');
+		if (!$book_idx) {
+			echo json_encode(array('success' => false, 'data' => array()));
+			return;
+		}
+
+		$book = $this->Cash_book_model->get_book($book_idx);
+		if (!$book || empty($book['bank_accounts'])) {
+			echo json_encode(array('success' => true, 'data' => array()));
+			return;
+		}
+
+		$banks_raw = json_decode($book['bank_accounts'], true);
+
+		// 클라이언트에서 사용하는 형식으로 매핑 (bank_name -> name)
+		$banks = array();
+		if (is_array($banks_raw)) {
+			foreach ($banks_raw as $bank) {
+				$banks[] = array(
+					'idx' => isset($bank['idx']) ? $bank['idx'] : '',
+					'name' => isset($bank['bank_name']) ? $bank['bank_name'] : '',
+					'account_number' => isset($bank['account_number']) ? $bank['account_number'] : '',
+					'account_desc' => isset($bank['account_desc']) ? $bank['account_desc'] : ''
+				);
+			}
+		}
+
+		echo json_encode(array('success' => true, 'data' => $banks));
+	}
+
 	/**
 	 * 장부 수정
 	 */

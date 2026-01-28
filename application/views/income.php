@@ -107,8 +107,7 @@ $this->load->view('header');
 
 
 <!-- 수입/지출 입력 Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEntry" aria-labelledby="offcanvasEntryLabel"
-	 style="width: 500px;">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEntry" aria-labelledby="offcanvasEntryLabel" style="width: 700px;">
 	<div class="offcanvas-header border-bottom">
 		<h5 class="offcanvas-title" id="offcanvasEntryLabel">수입 입력</h5>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -144,9 +143,22 @@ $this->load->view('header');
 				</div>
 				<div class="col-4">
 					<label class="form-label small mb-1">계정 <span class="text-danger">*</span></label>
-					<select class="form-select form-select-sm" id="entryAccount" name="account_code" required>
-						<option value="">선택</option>
-					</select>
+					<div class="searchable-select-wrapper dropdown">
+						<button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="selected-text" id="entryAccountText">선택</span>
+						</button>
+						<input type="hidden" id="entryAccount" name="account_code">
+						<input type="hidden" id="entryAccountName" name="account_name">
+						<ul class="dropdown-menu w-100 p-2">
+							<li class="mb-2">
+								<input type="text" class="form-control form-control-sm" id="entryAccountSearch" placeholder="계정 검색...">
+							</li>
+							<li><hr class="dropdown-divider my-1"></li>
+							<div class="option-list" style="max-height: 200px; overflow-y: auto;">
+								<!-- 동적으로 채워짐 -->
+							</div>
+						</ul>
+					</div>
 				</div>
 			</div>
 		</div>

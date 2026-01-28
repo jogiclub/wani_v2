@@ -825,15 +825,6 @@ function getCookie(name) {
 	if (parts.length == 2) return parts.pop().split(";").shift();
 }
 
-/**
- * HTML 이스케이프 처리
- */
-function escapeHtml(text) {
-	if (!text) return '';
-	const div = document.createElement('div');
-	div.textContent = text;
-	return div.innerHTML;
-}
 
 
 

@@ -693,3 +693,18 @@ function openSendPopup(selectedMembers) {
 		}
 	}, 1000);
 }
+
+
+
+/**
+ * HTML 이스케이프
+ */
+function escapeHtml(str) {
+	if (!str) return '';
+	return str.toString()
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#039;');
+}

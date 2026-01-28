@@ -4191,22 +4191,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 
-	/**
-	 * HTML 이스케이프 함수
-	 */
-	function escapeHtml(text) {
-		if (!text) return '';
-		const map = {
-			'&': '&amp;',
-			'<': '&lt;',
-			'>': '&gt;',
-			'"': '&quot;',
-			"'": '&#039;'
-		};
-		return text.toString().replace(/[&<>"']/g, function (m) {
-			return map[m];
-		});
-	}
+
 
 
 	/**

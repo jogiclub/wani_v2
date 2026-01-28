@@ -1030,18 +1030,6 @@ function confirmDeleteBankAccount() {
 	});
 }
 
-// ========== HTML 이스케이프 유틸리티 ==========
-function escapeHtml(text) {
-	if (!text) return '';
-	var map = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		"'": '&#039;'
-	};
-	return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-}
 
 
 

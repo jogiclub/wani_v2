@@ -2252,20 +2252,7 @@ function deleteTemplate(templateIdx) {
 	);
 }
 
-/**
- * 역할: HTML 이스케이프 처리
- */
-function escapeHtml(text) {
-	if (!text) return '';
-	const map = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		"'": '&#039;'
-	};
-	return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
-}
+
 
 /**
  * 역할: 메시지 템플릿 목록 로드
