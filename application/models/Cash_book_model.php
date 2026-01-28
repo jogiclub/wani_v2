@@ -710,4 +710,176 @@ class Cash_book_model extends CI_Model
 			)
 		);
 	}
+
+
+	/**
+	 * 계좌 추가
+	 */
+	public function add_bank_account($book_idx, $bank_name, $account_number, $account_desc, $user_id)
+	{
+		$book = $this->get_book($book_idx);
+		if (!$book) {
+			return array('success' => false, 'message' => '장부를 찾을 수 없습니다.');
+		}
+
+		$accounts = array();
+		if (!empty($book['bank_accounts'])) {
+			$accounts = json_decode($book['bank_accounts'], true);
+			if (!is_array($accounts)) {
+				$accounts = array();
+			}
+		}
+
+		// 새 인덱스 생성
+		$max_idx = 0;
+		foreach ($accounts as $acc) {
+			if (isset($acc['idx']) && $acc['idx'] > $max_idx) {
+				$max_idx = $acc['idx'];
+			}
+		}
+
+		$new_account = array(
+			'idx' => $max_idx + 1,
+			'bank_name' => $bank_name,
+			'account_number' => $account_number,
+			'account_desc' => $account_desc
+		);
+		$accounts[] = $new_account;
+
+		$update_data = array(
+			'bank_accounts' => json_encode($accounts, JSON_UNESCAPED_UNICODE),
+			'modi_user_id' => $user_id
+		);
+
+		$this->db->where('book_idx', $book_idx);
+		$this->db->update('wb_cash_book', $update_data);
+
+		return array('success' => true);
+	}
+
+	/**
+	 * 계좌 수정
+	 */
+	public function update_bank_account($book_idx, $account_idx, $bank_name, $account_number, $account_desc, $user_id)
+	{
+		$book = $this->get_book($book_idx);
+		if (!$book) {
+			return array('success' => false, 'message' => '장부를 찾을 수 없습니다.');
+		}
+
+		if (empty($book['bank_accounts'])) {
+			return array('success' => false, 'message' => '계좌 정보가 없습니다.');
+		}
+
+		$accounts = json_decode($book['bank_accounts'], true);
+		if (!is_array($accounts)) {
+			return array('success' => false, 'message' => '계좌 정보가 잘못되었습니다.');
+		}
+
+		$found = false;
+		foreach ($accounts as &$acc) {
+			if ($acc['idx'] == $account_idx) {
+				$acc['bank_name'] = $bank_name;
+				$acc['account_number'] = $account_number;
+				$acc['account_desc'] = $account_desc;
+				$found = true;
+				break;
+			}
+		}
+
+		if (!$found) {
+			return array('success' => false, 'message' => '계좌를 찾을 수 없습니다.');
+		}
+
+		$update_data = array(
+			'bank_accounts' => json_encode($accounts, JSON_UNESCAPED_UNICODE),
+			'modi_user_id' => $user_id
+		);
+
+		$this->db->where('book_idx', $book_idx);
+		$this->db->update('wb_cash_book', $update_data);
+
+		return array('success' => true);
+	}
+
+	/**
+	 * 계좌 삭제
+	 */
+	public function delete_bank_account($book_idx, $account_idx, $user_id)
+	{
+		$book = $this->get_book($book_idx);
+		if (!$book) {
+			return array('success' => false, 'message' => '장부를 찾을 수 없습니다.');
+		}
+
+		if (empty($book['bank_accounts'])) {
+			return array('success' => false, 'message' => '계좌 정보가 없습니다.');
+		}
+
+		$accounts = json_decode($book['bank_accounts'], true);
+		if (!is_array($accounts)) {
+			return array('success' => false, 'message' => '계좌 정보가 잘못되었습니다.');
+		}
+
+		$new_accounts = array();
+		foreach ($accounts as $acc) {
+			if ($acc['idx'] != $account_idx) {
+				$new_accounts[] = $acc;
+			}
+		}
+
+		$update_data = array(
+			'bank_accounts' => json_encode($new_accounts, JSON_UNESCAPED_UNICODE),
+			'modi_user_id' => $user_id
+		);
+
+		$this->db->where('book_idx', $book_idx);
+		$this->db->update('wb_cash_book', $update_data);
+
+		return array('success' => true);
+	}
+
+	/**
+	 * 계좌 순서 변경
+	 */
+	public function reorder_bank_accounts($book_idx, $order, $user_id)
+	{
+		$book = $this->get_book($book_idx);
+		if (!$book) {
+			return array('success' => false, 'message' => '장부를 찾을 수 없습니다.');
+		}
+
+		if (empty($book['bank_accounts'])) {
+			return array('success' => false, 'message' => '계좌 정보가 없습니다.');
+		}
+
+		$accounts = json_decode($book['bank_accounts'], true);
+		if (!is_array($accounts)) {
+			return array('success' => false, 'message' => '계좌 정보가 잘못되었습니다.');
+		}
+
+		// order 배열 순서대로 재정렬
+		$indexed_accounts = array();
+		foreach ($accounts as $acc) {
+			$indexed_accounts[$acc['idx']] = $acc;
+		}
+
+		$reordered = array();
+		foreach ($order as $idx) {
+			if (isset($indexed_accounts[$idx])) {
+				$reordered[] = $indexed_accounts[$idx];
+			}
+		}
+
+		$update_data = array(
+			'bank_accounts' => json_encode($reordered, JSON_UNESCAPED_UNICODE),
+			'modi_user_id' => $user_id
+		);
+
+		$this->db->where('book_idx', $book_idx);
+		$this->db->update('wb_cash_book', $update_data);
+
+		return array('success' => true);
+	}
+
 }

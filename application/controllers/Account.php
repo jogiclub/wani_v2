@@ -68,7 +68,7 @@ class Account extends My_Controller
 	}
 
 	/**
-	 * 장부 추가
+	 * 장부 추가 (수정)
 	 */
 	public function add_book()
 	{
@@ -77,18 +77,42 @@ class Account extends My_Controller
 		}
 
 		$user_id = $this->session->userdata('user_id');
+
+		// org_id 가져오기 - 우선순위: POST > 쿠키 > 세션
 		$org_id = $this->input->post('org_id');
+		if (!$org_id) {
+			$org_id = $this->input->cookie('activeOrg');
+		}
+		if (!$org_id) {
+			$org_id = $this->session->userdata('current_org_id');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
 		$book_name = $this->input->post('book_name');
 		$fiscal_base_month = $this->input->post('fiscal_base_month');
 
-		if (!$org_id || !$book_name || !$fiscal_base_month) {
+		if (!$book_name || !$fiscal_base_month) {
 			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
 			return;
 		}
 
-		// 기본 계정과목 생성
+		// 기본 수입/지출 계정과목 생성
 		$income_accounts = $this->Cash_book_model->get_default_income_accounts();
 		$expense_accounts = $this->Cash_book_model->get_default_expense_accounts();
+
+		// 기본 계좌 (현금) 설정
+		$default_bank_accounts = array(
+			array(
+				'idx' => 1,
+				'bank_name' => '현금',
+				'account_number' => '',
+				'account_desc' => ''
+			)
+		);
 
 		$data = array(
 			'org_id' => $org_id,
@@ -96,7 +120,9 @@ class Account extends My_Controller
 			'fiscal_base_month' => $fiscal_base_month,
 			'income_accounts' => json_encode($income_accounts, JSON_UNESCAPED_UNICODE),
 			'expense_accounts' => json_encode($expense_accounts, JSON_UNESCAPED_UNICODE),
-			'regi_user_id' => $user_id
+			'bank_accounts' => json_encode($default_bank_accounts, JSON_UNESCAPED_UNICODE),
+			'regi_user_id' => $user_id,
+			'regi_date' => date('Y-m-d H:i:s')
 		);
 
 		$book_idx = $this->Cash_book_model->add_book($data);
@@ -319,4 +345,145 @@ class Account extends My_Controller
 			echo json_encode(array('success' => false, 'message' => $result['message']));
 		}
 	}
+
+
+	/**
+	 * 계좌 목록 조회
+	 */
+	public function get_bank_accounts()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$book_idx = $this->input->post('book_idx');
+		if (!$book_idx) {
+			echo json_encode(array('success' => false, 'data' => array()));
+			return;
+		}
+
+		$book = $this->Cash_book_model->get_book($book_idx);
+		if (!$book || empty($book['bank_accounts'])) {
+			echo json_encode(array('success' => true, 'data' => array()));
+			return;
+		}
+
+		$accounts = json_decode($book['bank_accounts'], true);
+		echo json_encode(array('success' => true, 'data' => $accounts ? $accounts : array()));
+	}
+
+	/**
+	 * 계좌 추가
+	 */
+	public function add_bank_account()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$book_idx = $this->input->post('book_idx');
+		$bank_name = $this->input->post('bank_name');
+		$account_number = $this->input->post('account_number');
+		$account_desc = $this->input->post('account_desc');
+
+		if (!$book_idx || !$bank_name || !$account_number) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$result = $this->Cash_book_model->add_bank_account($book_idx, $bank_name, $account_number, $account_desc, $user_id);
+
+		if ($result['success']) {
+			echo json_encode(array('success' => true, 'message' => '계좌가 등록되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => $result['message']));
+		}
+	}
+
+	/**
+	 * 계좌 수정
+	 */
+	public function update_bank_account()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$book_idx = $this->input->post('book_idx');
+		$account_idx = $this->input->post('account_idx');
+		$bank_name = $this->input->post('bank_name');
+		$account_number = $this->input->post('account_number');
+		$account_desc = $this->input->post('account_desc');
+
+		if (!$book_idx || !$account_idx || !$bank_name || !$account_number) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$result = $this->Cash_book_model->update_bank_account($book_idx, $account_idx, $bank_name, $account_number, $account_desc, $user_id);
+
+		if ($result['success']) {
+			echo json_encode(array('success' => true, 'message' => '계좌가 수정되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => $result['message']));
+		}
+	}
+
+	/**
+	 * 계좌 삭제
+	 */
+	public function delete_bank_account()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$book_idx = $this->input->post('book_idx');
+		$account_idx = $this->input->post('account_idx');
+
+		if (!$book_idx || !$account_idx) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$result = $this->Cash_book_model->delete_bank_account($book_idx, $account_idx, $user_id);
+
+		if ($result['success']) {
+			echo json_encode(array('success' => true, 'message' => '계좌가 삭제되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => $result['message']));
+		}
+	}
+
+	/**
+	 * 계좌 순서 변경
+	 */
+	public function reorder_bank_accounts()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$book_idx = $this->input->post('book_idx');
+		$order = $this->input->post('order');
+
+		if (!$book_idx || !$order) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$result = $this->Cash_book_model->reorder_bank_accounts($book_idx, $order, $user_id);
+
+		if ($result['success']) {
+			echo json_encode(array('success' => true, 'message' => '순서가 변경되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => $result['message']));
+		}
+	}
+
+
 }

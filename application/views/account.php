@@ -27,7 +27,7 @@
 
 	<div class="row">
 		<!-- 장부 목록 -->
-		<div class="col-12 col-lg-3 col-xl-2">
+		<div class="col-12 col-lg-2">
 			<div class="card">
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<h6 class="mb-0">장부 선택</h6>
@@ -48,7 +48,7 @@
 		</div>
 
 		<!-- 계정 트리 -->
-		<div class="col-12 col-lg-5 col-xl-7">
+		<div class="col-12 col-lg-5">
 
 				<div class="card ">
 					<div class="card-header py-2 px-4">
@@ -112,16 +112,34 @@
 		</div>
 
 		<!-- 관리 버튼 -->
-		<div class="col-12 col-lg-4 col-xl-3">
+		<div class="col-12 col-lg-5">
 			<div class="card">
 				<div class="card-header d-flex justify-content-between align-items-center">
 					<h6 class="mb-0">계좌관리</h6>
-					<button type="button" class="btn btn-sm btn-primary" id="btnAddBook">
-						<i class="bi bi-plus-lg"></i> 계좌저장
+					<button type="button" class="btn btn-sm btn-primary" id="btnAddBankAccount" disabled>
+						<i class="bi bi-plus-lg"></i> 추가
 					</button>
 				</div>
-				<div class="card-body">
-
+				<div class="card-body p-3">
+					<div id="bankAccountList" class="table-responsive">
+						<table class="table table-hover table-sm mb-0">
+							<thead class="table-light">
+							<tr>
+								<th style="width: 30px;"></th>
+								<th>은행명</th>
+								<th>계좌번호</th>
+								<th>설명</th>
+								<th style="width: 90px;">관리</th>
+							</tr>
+							</thead>
+							<tbody id="bankAccountBody">
+							</tbody>
+						</table>
+					</div>
+					<div id="noBankAccountMessage" class="text-center py-4 text-muted">
+						<i class="bi bi-bank fs-1"></i>
+						<p class="mb-0 mt-2">장부를 선택해주세요.</p>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -267,9 +285,65 @@
 	</div>
 </div>
 
+
+<!-- 계좌 추가/수정 모달 -->
+<div class="modal fade" id="bankAccountModal" tabindex="-1" aria-labelledby="bankAccountModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="bankAccountModalLabel">계좌 추가</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="bankAccountForm">
+					<input type="hidden" id="bank_account_idx" name="account_idx">
+					<div class="mb-3">
+						<label for="bank_name" class="form-label">은행명 <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="bank_name" name="bank_name" required placeholder="예: 왔니은행">
+					</div>
+					<div class="mb-3">
+						<label for="bank_account_number" class="form-label">계좌번호 <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="bank_account_number" name="account_number" required placeholder="예: 000-00-0000000">
+					</div>
+					<div class="mb-3">
+						<label for="bank_account_desc" class="form-label">설명</label>
+						<input type="text" class="form-control" id="bank_account_desc" name="account_desc" placeholder="예: 헌금계좌">
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnSaveBankAccount">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 계좌 삭제 확인 모달 -->
+<div class="modal fade" id="deleteBankAccountModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">계좌 삭제 확인</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p id="deleteBankAccountMessage">선택한 계좌를 삭제하시겠습니까?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="btnConfirmDeleteBankAccount">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
 <?php $this->load->view('footer'); ?>
 
-<!-- Fancytree -->
+
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="/assets/js/custom/jquery.fancytree-all-deps.min.js"></script>
 <script src="/assets/js/account.js?<?php echo WB_VERSION; ?>"></script>
 <script>

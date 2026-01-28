@@ -9,7 +9,12 @@ var selectedAccountData = null;
 var currentAccountType = 'income';
 var incomeTreeInstance = null;
 var expenseTreeInstance = null;
-var allAccountsFlat = []; // 이동 모달용 계정 목록
+var allAccountsFlat = [];
+var bankAccountSortable = null;
+var deleteBankAccountIdx = null;
+var STORAGE_KEY_BOOK = 'account_selected_book_idx';
+
+
 
 $(document).ready(function() {
 	initPage();
@@ -21,6 +26,7 @@ $(document).ready(function() {
 function initPage() {
 	loadBookList();
 	bindEvents();
+	initBankAccountModule();
 }
 
 /**
@@ -130,14 +136,22 @@ function renderBookList(books) {
 		$bookList.append($item);
 	});
 
-	if (books.length > 0 && !selectedBookIdx) {
-		selectBook(books[0]);
-	} else if (selectedBookIdx) {
-		// 기존 선택된 장부 유지
-		var selectedBook = books.find(function(b) { return b.book_idx == selectedBookIdx; });
-		if (selectedBook) {
-			$('.book-list-item[data-book-idx="' + selectedBookIdx + '"]').addClass('active');
-		}
+	// 로컬스토리지에서 저장된 장부 복원
+	var savedBookIdx = localStorage.getItem(STORAGE_KEY_BOOK);
+	var bookToSelect = null;
+
+	if (savedBookIdx) {
+		// 저장된 장부가 현재 목록에 있는지 확인
+		bookToSelect = books.find(function(b) { return b.book_idx == savedBookIdx; });
+	}
+
+	// 저장된 장부가 없거나 목록에 없으면 첫 번째 장부 선택
+	if (!bookToSelect && books.length > 0) {
+		bookToSelect = books[0];
+	}
+
+	if (bookToSelect) {
+		selectBook(bookToSelect);
 	}
 }
 
@@ -147,6 +161,9 @@ function renderBookList(books) {
 function selectBook(book) {
 	selectedBookIdx = book.book_idx;
 	selectedBookData = book;
+
+	// 로컬스토리지에 선택된 장부 저장
+	localStorage.setItem(STORAGE_KEY_BOOK, book.book_idx);
 
 	$('.book-list-item').removeClass('active');
 	$('.book-list-item[data-book-idx="' + book.book_idx + '"]').addClass('active');
@@ -162,6 +179,9 @@ function selectBook(book) {
 	$('#accountTabsContent').show();
 
 	clearAccountSelection();
+
+	// 장부 선택 시 계좌 목록 로드
+	loadBankAccounts();
 }
 
 /**
@@ -719,11 +739,309 @@ function moveAccount() {
 	});
 }
 
-/**
- * HTML 이스케이프
- */
-function escapeHtml(text) {
-	var div = document.createElement('div');
-	div.appendChild(document.createTextNode(text));
-	return div.innerHTML;
+
+
+
+function initBankAccountModule() {
+	// 계좌 추가 버튼 - 모달 없이 바로 추가
+	$('#btnAddBankAccount').on('click', function() {
+		if (!selectedBookIdx) {
+			showToast('장부를 먼저 선택해주세요.', 'warning');
+			return;
+		}
+		addDefaultBankAccount();
+	});
+
+	// 계좌 저장 버튼
+	$('#btnSaveBankAccount').on('click', function() {
+		saveBankAccount();
+	});
+
+	// 계좌 삭제 확인 버튼
+	$('#btnConfirmDeleteBankAccount').on('click', function() {
+		confirmDeleteBankAccount();
+	});
+
+	// 모달 닫힐 때 폼 초기화
+	$('#bankAccountModal').on('hidden.bs.modal', function() {
+		$('#bankAccountForm')[0].reset();
+		$('#bank_account_idx').val('');
+	});
 }
+
+// ========== 기본 계좌 바로 추가 (새 함수) ==========
+function addDefaultBankAccount() {
+	$.ajax({
+		url: window.accountPageData.baseUrl + 'account/add_bank_account',
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			book_idx: selectedBookIdx,
+			bank_name: '왔니은행',
+			account_number: '000-00-0000000',
+			account_desc: ''
+		},
+		success: function(response) {
+			if (response.success) {
+				showToast('계좌가 추가되었습니다.', 'success');
+				loadBankAccounts();
+			} else {
+				showToast(response.message || '추가 실패', 'error');
+			}
+		},
+		error: function() {
+			showToast('서버 통신 오류', 'error');
+		}
+	});
+}
+
+// ========== 계좌 목록 조회 ==========
+function loadBankAccounts() {
+	if (!selectedBookIdx) {
+		$('#bankAccountBody').empty();
+		$('#noBankAccountMessage').show();
+		$('#bankAccountList').hide();
+		$('#btnAddBankAccount').prop('disabled', true);
+		return;
+	}
+
+	$.ajax({
+		url: window.accountPageData.baseUrl + 'account/get_bank_accounts',
+		type: 'POST',
+		dataType: 'json',
+		data: { book_idx: selectedBookIdx },
+		success: function(response) {
+			if (response.success) {
+				renderBankAccounts(response.data);
+			} else {
+				showToast('계좌 목록 조회 실패', 'error');
+			}
+		},
+		error: function() {
+			showToast('서버 통신 오류', 'error');
+		}
+	});
+}
+
+// ========== 계좌 목록 렌더링 ==========
+function renderBankAccounts(accounts) {
+	var $tbody = $('#bankAccountBody');
+	$tbody.empty();
+
+	$('#btnAddBankAccount').prop('disabled', false);
+
+	if (!accounts || accounts.length === 0) {
+		$('#noBankAccountMessage').html(
+			'<i class="bi bi-bank fs-1"></i>' +
+			'<p class="mb-0 mt-2">등록된 계좌가 없습니다.</p>'
+		).show();
+		$('#bankAccountList').hide();
+		return;
+	}
+
+	$('#noBankAccountMessage').hide();
+	$('#bankAccountList').show();
+
+	accounts.forEach(function(account) {
+		var $row = $('<tr data-idx="' + account.idx + '">' +
+			'<td class="text-center drag-handle" style="cursor: move;"><i class="bi bi-grip-vertical text-muted"></i></td>' +
+			'<td>' + escapeHtml(account.bank_name) + '</td>' +
+			'<td>' + escapeHtml(account.account_number) + '</td>' +
+			'<td>' + escapeHtml(account.account_desc || '') + '</td>' +
+			'<td class="text-center">' +
+			'<button type="button" class="btn btn-xs btn-outline-secondary btn-edit-bank me-1" title="수정">' +
+			'<i class="bi bi-pencil"></i>' +
+			'</button>' +
+			'<button type="button" class="btn btn-xs btn-outline-danger btn-delete-bank" title="삭제">' +
+			'<i class="bi bi-trash"></i>' +
+			'</button>' +
+			'</td>' +
+			'</tr>');
+
+		// 수정 버튼 이벤트
+		$row.find('.btn-edit-bank').on('click', function() {
+			openBankAccountModal(account);
+		});
+
+		// 삭제 버튼 이벤트
+		$row.find('.btn-delete-bank').on('click', function() {
+			openDeleteBankAccountModal(account);
+		});
+
+		$tbody.append($row);
+	});
+
+	// Sortable 초기화
+	initBankAccountSortable();
+}
+
+// ========== Sortable 초기화 ==========
+function initBankAccountSortable() {
+	var el = document.getElementById('bankAccountBody');
+	if (!el) return;
+
+	if (bankAccountSortable) {
+		bankAccountSortable.destroy();
+	}
+
+	bankAccountSortable = new Sortable(el, {
+		animation: 150,
+		handle: '.drag-handle',
+		ghostClass: 'table-primary',
+		onEnd: function() {
+			saveBankAccountOrder();
+		}
+	});
+}
+
+// ========== 계좌 순서 저장 ==========
+function saveBankAccountOrder() {
+	var order = [];
+	$('#bankAccountBody tr').each(function() {
+		order.push($(this).data('idx'));
+	});
+
+	$.ajax({
+		url: window.accountPageData.baseUrl + 'account/reorder_bank_accounts',
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			book_idx: selectedBookIdx,
+			order: order
+		},
+		success: function(response) {
+			if (!response.success) {
+				showToast(response.message || '순서 변경 실패', 'error');
+				loadBankAccounts();
+			}
+		},
+		error: function() {
+			showToast('서버 통신 오류', 'error');
+			loadBankAccounts();
+		}
+	});
+}
+
+// ========== 계좌 추가/수정 모달 열기 ==========
+function openBankAccountModal(account) {
+	if (!account) return;
+
+	// 수정 모드만 지원
+	$('#bankAccountModalLabel').text('계좌 수정');
+	$('#bank_account_idx').val(account.idx);
+	$('#bank_name').val(account.bank_name);
+	$('#bank_account_number').val(account.account_number);
+	$('#bank_account_desc').val(account.account_desc || '');
+
+	var modal = new bootstrap.Modal(document.getElementById('bankAccountModal'));
+	modal.show();
+}
+
+// ========== 계좌 저장 ==========
+function saveBankAccount() {
+	var accountIdx = $('#bank_account_idx').val();
+	var bankName = $('#bank_name').val().trim();
+	var accountNumber = $('#bank_account_number').val().trim();
+	var accountDesc = $('#bank_account_desc').val().trim();
+
+	if (!bankName) {
+		showToast('은행명을 입력해주세요.', 'warning');
+		$('#bank_name').focus();
+		return;
+	}
+
+	if (!accountNumber) {
+		showToast('계좌번호를 입력해주세요.', 'warning');
+		$('#bank_account_number').focus();
+		return;
+	}
+
+	var url = accountIdx
+		? window.accountPageData.baseUrl + 'account/update_bank_account'
+		: window.accountPageData.baseUrl + 'account/add_bank_account';
+
+	var data = {
+		book_idx: selectedBookIdx,
+		bank_name: bankName,
+		account_number: accountNumber,
+		account_desc: accountDesc
+	};
+
+	if (accountIdx) {
+		data.account_idx = accountIdx;
+	}
+
+	$.ajax({
+		url: url,
+		type: 'POST',
+		dataType: 'json',
+		data: data,
+		success: function(response) {
+			if (response.success) {
+				showToast(response.message, 'success');
+				bootstrap.Modal.getInstance(document.getElementById('bankAccountModal')).hide();
+				loadBankAccounts();
+			} else {
+				showToast(response.message || '저장 실패', 'error');
+			}
+		},
+		error: function() {
+			showToast('서버 통신 오류', 'error');
+		}
+	});
+}
+
+// ========== 계좌 삭제 모달 열기 ==========
+function openDeleteBankAccountModal(account) {
+	deleteBankAccountIdx = account.idx;
+	$('#deleteBankAccountMessage').html(
+		'<strong>' + escapeHtml(account.bank_name) + ' (' + escapeHtml(account.account_number) + ')</strong> 계좌를 삭제하시겠습니까?'
+	);
+	var modal = new bootstrap.Modal(document.getElementById('deleteBankAccountModal'));
+	modal.show();
+}
+
+// ========== 계좌 삭제 확인 ==========
+function confirmDeleteBankAccount() {
+	if (!deleteBankAccountIdx) return;
+
+	$.ajax({
+		url: window.accountPageData.baseUrl + 'account/delete_bank_account',
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			book_idx: selectedBookIdx,
+			account_idx: deleteBankAccountIdx
+		},
+		success: function(response) {
+			if (response.success) {
+				showToast(response.message, 'success');
+				bootstrap.Modal.getInstance(document.getElementById('deleteBankAccountModal')).hide();
+				loadBankAccounts();
+			} else {
+				showToast(response.message || '삭제 실패', 'error');
+			}
+			deleteBankAccountIdx = null;
+		},
+		error: function() {
+			showToast('서버 통신 오류', 'error');
+			deleteBankAccountIdx = null;
+		}
+	});
+}
+
+// ========== HTML 이스케이프 유틸리티 ==========
+function escapeHtml(text) {
+	if (!text) return '';
+	var map = {
+		'&': '&amp;',
+		'<': '&lt;',
+		'>': '&gt;',
+		'"': '&quot;',
+		"'": '&#039;'
+	};
+	return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
+
+
