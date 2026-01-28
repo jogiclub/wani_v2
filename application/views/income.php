@@ -2,8 +2,8 @@
 $this->load->view('header');
 ?>
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
-
 
 <div class="container-fluid pt-2 pb-2">
 	<nav class="mb-1" aria-label="breadcrumb">
@@ -166,34 +166,24 @@ $this->load->view('header');
 		<!-- 항목 입력 영역 -->
 		<div class="p-3 border-bottom">
 			<div class="row g-2 mb-2">
-				<div class="col-4">
-					<label class="form-label small mb-1">이름</label>
-					<div class="searchable-select-wrapper dropdown">
-						<button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-							<span class="selected-text" id="entryNameText">선택</span>
-						</button>
-						<input type="hidden" id="entryName" name="name">
-						<ul class="dropdown-menu w-100 p-2">
-							<li class="mb-2">
-								<input type="text" class="form-control form-control-sm" id="entryNameSearch" placeholder="이름/연락처 검색...">
-							</li>
-							<li><hr class="dropdown-divider my-1"></li>
-							<div class="option-list" style="max-height: 200px; overflow-y: auto;">
-								<!-- 동적으로 채워짐 -->
-							</div>
-						</ul>
-					</div>
+				<div class="col-12">
+					<label class="form-label small mb-1">이름 <span class="text-muted">(여러명 선택 가능, 쉼표로 구분)</span></label>
+					<select class="form-select form-select-sm" id="entryName" name="entry_name[]" multiple="multiple" style="width:100%;">
+					</select>
 				</div>
-				<div class="col-4">
+			</div>
+			<div class="row g-2 mb-2">
+				<div class="col-6">
 					<label class="form-label small mb-1">금액</label>
 					<input type="text" class="form-control form-control-sm text-end" id="entryAmount" name="amount" placeholder="0">
 				</div>
-				<div class="col-4">
+				<div class="col-6">
 					<label class="form-label small mb-1">적요</label>
 					<input type="text" class="form-control form-control-sm" id="entryMemo" name="memo" placeholder="적요">
 				</div>
 			</div>
-			<div class="d-flex justify-content-end">
+			<div class="d-flex justify-content-between align-items-center">
+				<small class="text-muted"><i class="bi bi-info-circle me-1"></i>금액/적요에서 Enter 키로 추가</small>
 				<button type="button" class="btn btn-outline-primary btn-sm" id="btnAddEntryItem">
 					<i class="bi bi-plus-lg me-1"></i>추가
 				</button>
@@ -246,6 +236,9 @@ $this->load->view('header');
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
+
 <script>
 	window.incomePageData = {
 		baseUrl: '<?= base_url() ?>',

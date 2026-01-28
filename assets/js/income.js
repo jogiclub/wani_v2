@@ -16,6 +16,12 @@ var allUsedTags = [];
 var allMembers = [];
 var entryItemData = [];
 
+// 로컬스토리지 키
+var STORAGE_KEY_BANK = 'income_last_bank';
+var STORAGE_KEY_ACCOUNT_INCOME = 'income_last_account_income';
+var STORAGE_KEY_ACCOUNT_EXPENSE = 'income_last_account_expense';
+
+
 $(document).ready(function() {
 	initPage();
 });
@@ -76,9 +82,12 @@ function bindEvents() {
 		confirmDelete();
 	});
 
-	// 항목 추가 버튼
-	$('#btnAddEntryItem').on('click', function() {
-		addEntryItem();
+	// 금액/적요 입력 필드에서 Enter 키로 항목 추가
+	$('#entryAmount, #entryMemo').on('keypress', function(e) {
+		if (e.which === 13) {
+			e.preventDefault();
+			addEntryItem();
+		}
 	});
 
 	// 적용 버튼 (저장)
@@ -112,7 +121,7 @@ function bindEvents() {
 
 /**
  * 파일 위치: assets/js/income.js
- * 역할: 검색 가능 셀렉트 초기화 (계좌, 이름, 계정)
+ * 역할: 검색 가능 셀렉트 초기화 (계좌)
  */
 function initMemberSearchSelect() {
 	// 계좌 검색
@@ -127,26 +136,73 @@ function initMemberSearchSelect() {
 			displayText += ' (' + item.account_number + ')';
 		}
 		return { value: item.name, text: displayText };
-	});
-
-	// 이름(회원) 검색
-	initSearchableSelect('#entryName', '#entryNameSearch', function(keyword) {
-		return allMembers.filter(function(member) {
-			return member.member_name.toLowerCase().indexOf(keyword.toLowerCase()) > -1 ||
-				(member.member_phone && member.member_phone.indexOf(keyword) > -1);
-		});
-	}, function(item) {
-		return { value: item.member_name, text: item.member_name + (item.member_phone ? ' (' + item.member_phone + ')' : '') };
+	}, function(value, text, extra) {
+		// 계좌 선택 시 로컬스토리지에 저장
+		localStorage.setItem(STORAGE_KEY_BANK, value);
 	});
 }
 
 
 /**
  * 파일 위치: assets/js/income.js
- * 역할: 계정 검색 셀렉트 초기화
+ * 역할: 이름 Select2 초기화 (tags 스타일)
+ */
+function initNameSelect2() {
+	// 기존 Select2 인스턴스 제거
+	if ($('#entryName').hasClass('select2-hidden-accessible')) {
+		$('#entryName').select2('destroy');
+	}
+
+	$('#entryName').empty();
+
+	// 회원 목록을 옵션으로 추가
+	allMembers.forEach(function(member) {
+		var text = member.member_name;
+		if (member.member_phone) {
+			text += ' (' + member.member_phone + ')';
+		}
+		var option = new Option(text, member.member_name, false, false);
+		$('#entryName').append(option);
+	});
+
+	// Select2 초기화
+	$('#entryName').select2({
+		width: '100%',
+		placeholder: '이름을 입력하거나 선택하세요',
+		tags: true,
+		allowClear: true,
+		tokenSeparators: [','],
+		dropdownParent: $('#offcanvasEntry'),
+		createTag: function(params) {
+			var term = $.trim(params.term);
+			if (term === '') {
+				return null;
+			}
+			return {
+				id: term,
+				text: term,
+				newTag: true
+			};
+		},
+		language: {
+			noResults: function() {
+				return '검색 결과가 없습니다';
+			},
+			searching: function() {
+				return '검색 중...';
+			}
+		}
+	});
+}
+
+
+/**
+ * 파일 위치: assets/js/income.js
+ * 역할: 계정 검색 셀렉트 초기화 (로컬스토리지 저장 포함)
  */
 function initAccountSearchSelect(type) {
 	var accounts = type === 'income' ? allIncomeAccounts : allExpenseAccounts;
+	var storageKey = type === 'income' ? STORAGE_KEY_ACCOUNT_INCOME : STORAGE_KEY_ACCOUNT_EXPENSE;
 
 	initSearchableSelect('#entryAccount', '#entryAccountSearch', function(keyword) {
 		return accounts.filter(function(account) {
@@ -164,6 +220,8 @@ function initAccountSearchSelect(type) {
 		if (extra && extra.name) {
 			$('#entryAccountName').val(extra.name);
 		}
+		// 로컬스토리지에 저장
+		localStorage.setItem(storageKey, JSON.stringify({ code: value, name: extra ? extra.name : '', display: text }));
 	});
 }
 
@@ -396,7 +454,7 @@ function initEntryItemGrid() {
 			title: '금액',
 			dataIndx: 'amount',
 			width: 100,
-			align: 'right',
+			align: 'center',
 			render: function(ui) {
 				return formatNumber(ui.cellData);
 			}
@@ -420,8 +478,11 @@ function initEntryItemGrid() {
 
 	entryItemGrid = pq.grid('#entryItemGrid', {
 		width: '100%',
-		height: 200,
+		height: 500,
 		colModel: colModel,
+
+
+
 		dataModel: { data: entryItemData },
 		editable: false,
 		selectionModel: { type: 'row', mode: 'single' },
@@ -446,16 +507,16 @@ function initEntryItemGrid() {
 
 /**
  * 파일 위치: assets/js/income.js
- * 역할: 항목 추가
+ * 역할: 항목 추가 (다중 이름 지원)
  */
 function addEntryItem() {
-	var name = $('#entryName').val().trim();
+	var selectedNames = $('#entryName').val(); // Select2 다중선택 값 (배열)
 	var amount = $('#entryAmount').val().replace(/[^\d]/g, '');
 	var memo = $('#entryMemo').val().trim();
 
-	if (!name) {
-		showToast('이름을 입력해주세요.', 'warning');
-		$('#entryName').focus();
+	if (!selectedNames || selectedNames.length === 0) {
+		showToast('이름을 선택해주세요.', 'warning');
+		$('#entryName').select2('open');
 		return;
 	}
 
@@ -465,24 +526,35 @@ function addEntryItem() {
 		return;
 	}
 
-	entryItemData.push({
-		name: name,
-		amount: parseInt(amount),
-		memo: memo
+	var amountValue = parseInt(amount);
+
+	// 선택된 이름 수만큼 항목 추가
+	selectedNames.forEach(function(name) {
+		entryItemData.push({
+			name: name,
+			amount: amountValue,
+			memo: memo
+		});
 	});
 
 	// 그리드 갱신
 	entryItemGrid.option('dataModel.data', entryItemData);
 	entryItemGrid.refreshDataAndView();
 
-	// 입력 필드 초기화
-	$('#entryName').val('');
-	$('#entryNameText').text('선택');
+	// 입력 필드 초기화 (금액, 적요, 이름)
+	$('#entryName').val(null).trigger('change');
 	$('#entryAmount').val('');
 	$('#entryMemo').val('');
-	$('#entryName').focus();
+
+	// 금액 필드로 포커스
+	$('#entryAmount').focus();
 
 	updateEntryItemCount();
+
+	// 추가 완료 메시지 (2명 이상일 경우만)
+	if (selectedNames.length > 1) {
+		showToast(selectedNames.length + '명이 추가되었습니다.', 'success');
+	}
 }
 
 /**
@@ -636,7 +708,7 @@ function loadBanks() {
 			if (response.success) {
 				allBanks = response.data || [];
 				renderBankDropdown();
-				renderEntryBankSelect();
+				// renderEntryBankSelect();
 			}
 		}
 	});
@@ -907,9 +979,13 @@ function resetSearch() {
 	loadGridData();
 }
 
+
+
+
+
 /**
  * 파일 위치: assets/js/income.js
- * 역할: 입력 Offcanvas 열기 (새로운 UI)
+ * 역할: 입력 Offcanvas 열기 (로컬스토리지 연동)
  */
 function openEntryOffcanvas(type, data) {
 	var title = type === 'income' ? '수입 입력' : '지출 입력';
@@ -924,8 +1000,6 @@ function openEntryOffcanvas(type, data) {
 	$('#entryAccount').val('');
 	$('#entryAccountName').val('');
 	$('#entryAccountText').text('선택');
-	$('#entryName').val('');
-	$('#entryNameText').text('선택');
 	$('#entryAmount').val('');
 	$('#entryMemo').val('');
 
@@ -934,6 +1008,9 @@ function openEntryOffcanvas(type, data) {
 
 	// 계정 검색 셀렉트 초기화
 	initAccountSearchSelect(type);
+
+	// 이름 Select2 초기화
+	initNameSelect2();
 
 	// 수정 모드인 경우 데이터 로드
 	if (data) {
@@ -979,6 +1056,9 @@ function openEntryOffcanvas(type, data) {
 				memo: data.memo || ''
 			});
 		}
+	} else {
+		// 신규 입력 시 로컬스토리지에서 마지막 선택값 불러오기
+		loadLastSelections(type);
 	}
 
 	// 입력 항목 그리드 초기화
@@ -989,19 +1069,44 @@ function openEntryOffcanvas(type, data) {
 	var offcanvas = new bootstrap.Offcanvas(document.getElementById('offcanvasEntry'));
 	offcanvas.show();
 }
+
 /**
- * 입력 폼 계좌 셀렉트 렌더링
+ * 파일 위치: assets/js/income.js
+ * 역할: 로컬스토리지에서 마지막 선택값 불러오기
  */
-function renderEntryBankSelect() {
-	var $select = $('#entryBank');
-	$select.find('option:not(:first)').remove();
+function loadLastSelections(type) {
+	// 계좌 불러오기
+	var lastBank = localStorage.getItem(STORAGE_KEY_BANK);
+	if (lastBank && allBanks.length > 0) {
+		var bankExists = allBanks.some(function(bank) {
+			return bank.name === lastBank;
+		});
+		if (bankExists) {
+			$('#entryBank').val(lastBank);
+			$('#entryBankText').text(lastBank);
+		}
+	}
 
-	allBanks.forEach(function(bank) {
-		$select.append('<option value="' + bank.name + '">' + bank.name + '</option>');
-	});
+	// 계정 불러오기
+	var storageKey = type === 'income' ? STORAGE_KEY_ACCOUNT_INCOME : STORAGE_KEY_ACCOUNT_EXPENSE;
+	var lastAccountStr = localStorage.getItem(storageKey);
+	if (lastAccountStr) {
+		try {
+			var lastAccount = JSON.parse(lastAccountStr);
+			var accounts = type === 'income' ? allIncomeAccounts : allExpenseAccounts;
+			var accountExists = accounts.some(function(account) {
+				return account.code === lastAccount.code;
+			});
+			if (accountExists) {
+				$('#entryAccount').val(lastAccount.code);
+				$('#entryAccountName').val(lastAccount.name);
+				$('#entryAccountText').text(lastAccount.display);
+			}
+		} catch(e) {
+			// 무시
+		}
+	}
 }
-
-
 
 /**
  * 파일 위치: assets/js/income.js
