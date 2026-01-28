@@ -529,20 +529,18 @@ class Member_model extends CI_Model
 
 
 
-	public function get_members_for_select($org_id, $search = '')
+	/**
+	 * 셀렉트박스용 회원 목록 조회
+	 * @param int $org_id 조직 ID
+	 * @return array 회원 목록 (member_idx, member_name, member_phone)
+	 */
+	public function get_members_for_select($org_id)
 	{
-		$this->db->select('member_idx, member_name');
+		$this->db->select('member_idx, member_name, member_phone');
 		$this->db->from('wb_member');
 		$this->db->where('org_id', $org_id);
 		$this->db->where('del_yn', 'N');
-		$this->db->where('area_idx IS NOT NULL');
-
-		if (!empty($search)) {
-			$this->db->like('member_name', $search);
-		}
-
 		$this->db->order_by('member_name', 'ASC');
-//		$this->db->limit(50);
 
 		$query = $this->db->get();
 		return $query->result_array();

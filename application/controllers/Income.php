@@ -100,86 +100,8 @@ class Income extends My_Controller
 		}
 	}
 
-	/**
-	 * 수입지출 등록
-	 */
-	public function add()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
 
-		$user_id = $this->session->userdata('user_id');
-		$user_name = $this->session->userdata('user_name');
 
-		$data = array(
-			'book_idx' => $this->input->post('book_idx'),
-			'org_id' => $this->input->post('org_id'),
-			'income_type' => $this->input->post('income_type'),
-			'bank' => $this->input->post('bank'),
-			'account_code' => $this->input->post('account_code'),
-			'account_name' => $this->input->post('account_name'),
-			'transaction_date' => $this->input->post('transaction_date'),
-			'transaction_cnt' => $this->input->post('transaction_cnt') ?: 1,
-			'amount' => $this->input->post('amount'),
-			'tags' => $this->input->post('tags'),
-			'memo' => $this->input->post('memo'),
-			'regi_user_id' => $user_id,
-			'regi_user_name' => $user_name
-		);
-
-		if (!$data['book_idx'] || !$data['org_id'] || !$data['income_type'] ||
-			!$data['account_code'] || !$data['transaction_date'] || !$data['amount']) {
-			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
-			return;
-		}
-
-		$idx = $this->Income_expense_model->add($data);
-		if ($idx) {
-			echo json_encode(array('success' => true, 'message' => '등록되었습니다.', 'idx' => $idx));
-		} else {
-			echo json_encode(array('success' => false, 'message' => '등록에 실패했습니다.'));
-		}
-	}
-
-	/**
-	 * 수입지출 수정
-	 */
-	public function update()
-	{
-		if (!$this->input->is_ajax_request()) {
-			show_404();
-		}
-
-		$user_id = $this->session->userdata('user_id');
-		$user_name = $this->session->userdata('user_name');
-		$idx = $this->input->post('idx');
-
-		if (!$idx) {
-			echo json_encode(array('success' => false, 'message' => '항목 정보가 누락되었습니다.'));
-			return;
-		}
-
-		$data = array(
-			'bank' => $this->input->post('bank'),
-			'account_code' => $this->input->post('account_code'),
-			'account_name' => $this->input->post('account_name'),
-			'transaction_date' => $this->input->post('transaction_date'),
-			'transaction_cnt' => $this->input->post('transaction_cnt') ?: 1,
-			'amount' => $this->input->post('amount'),
-			'tags' => $this->input->post('tags'),
-			'memo' => $this->input->post('memo'),
-			'modi_user_id' => $user_id,
-			'modi_user_name' => $user_name
-		);
-
-		$result = $this->Income_expense_model->update($idx, $data);
-		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '수정되었습니다.'));
-		} else {
-			echo json_encode(array('success' => false, 'message' => '수정에 실패했습니다.'));
-		}
-	}
 
 	/**
 	 * 수입지출 삭제 (단건/복수)
@@ -307,4 +229,125 @@ class Income extends My_Controller
 		$tags = $this->Income_expense_model->get_used_tags($book_idx, $org_id);
 		echo json_encode(array('success' => true, 'data' => $tags));
 	}
+
+
+	/**
+	 * 파일 위치: application/controllers/Income.php
+	 * 역할: 회원 목록 조회 (수입/지출 입력용)
+	 * 기존 Income 컨트롤러에 아래 메서드 추가
+	 */
+
+	/**
+	 * 회원 목록 조회 (수입/지출 입력용)
+	 */
+	public function get_members()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$org_id = $this->input->post('org_id');
+
+		if (!$org_id) {
+			$org_id = $this->input->cookie('activeOrg');
+		}
+
+		if (!$org_id) {
+			echo json_encode(array('success' => false, 'message' => '조직 정보가 없습니다.'));
+			return;
+		}
+
+		$this->load->model('Member_model');
+		$members = $this->Member_model->get_members_for_select($org_id);
+
+		echo json_encode(array('success' => true, 'data' => $members));
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Income.php
+	 * 역할: 수입지출 등록 (details 필드 추가)
+	 * 기존 add 메서드 수정
+	 */
+	public function add()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_name = $this->session->userdata('user_name');
+
+		$data = array(
+			'book_idx' => $this->input->post('book_idx'),
+			'org_id' => $this->input->post('org_id'),
+			'income_type' => $this->input->post('income_type'),
+			'bank' => $this->input->post('bank'),
+			'account_code' => $this->input->post('account_code'),
+			'account_name' => $this->input->post('account_name'),
+			'transaction_date' => $this->input->post('transaction_date'),
+			'transaction_cnt' => $this->input->post('transaction_cnt') ?: 1,
+			'amount' => $this->input->post('amount'),
+			'details' => $this->input->post('details'),
+			'tags' => $this->input->post('tags'),
+			'memo' => $this->input->post('memo'),
+			'regi_user_id' => $user_id,
+			'regi_user_name' => $user_name
+		);
+
+		if (!$data['book_idx'] || !$data['org_id'] || !$data['income_type'] ||
+			!$data['account_code'] || !$data['transaction_date'] || !$data['amount']) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$idx = $this->Income_expense_model->add($data);
+		if ($idx) {
+			echo json_encode(array('success' => true, 'message' => '등록되었습니다.', 'idx' => $idx));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '등록에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Income.php
+	 * 역할: 수입지출 수정 (details 필드 추가)
+	 * 기존 update 메서드 수정
+	 */
+	public function update()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$user_name = $this->session->userdata('user_name');
+		$idx = $this->input->post('idx');
+
+		if (!$idx) {
+			echo json_encode(array('success' => false, 'message' => '항목 정보가 누락되었습니다.'));
+			return;
+		}
+
+		$data = array(
+			'bank' => $this->input->post('bank'),
+			'account_code' => $this->input->post('account_code'),
+			'account_name' => $this->input->post('account_name'),
+			'transaction_date' => $this->input->post('transaction_date'),
+			'transaction_cnt' => $this->input->post('transaction_cnt') ?: 1,
+			'amount' => $this->input->post('amount'),
+			'details' => $this->input->post('details'),
+			'tags' => $this->input->post('tags'),
+			'memo' => $this->input->post('memo'),
+			'modi_user_id' => $user_id,
+			'modi_user_name' => $user_name
+		);
+
+		$result = $this->Income_expense_model->update($idx, $data);
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '수정되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '수정에 실패했습니다.'));
+		}
+	}
+
 }

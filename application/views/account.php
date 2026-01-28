@@ -48,72 +48,85 @@
 		</div>
 
 		<!-- 계정 트리 -->
-		<div class="col-12 col-lg-6 col-xl-8">
+		<div class="col-12 col-lg-5 col-xl-7">
+
+				<div class="card ">
+					<div class="card-header py-2 px-4">
+						<ul class="nav nav-tabs card-header-tabs " id="accountTabs" role="tablist">
+							<li class="nav-item" role="presentation">
+								<button class="nav-link active" id="income-tab" data-bs-toggle="tab" data-bs-target="#incomePane" type="button" role="tab" aria-controls="incomePane" aria-selected="true">수입</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="expense-tab" data-bs-toggle="tab" data-bs-target="#expensePane" type="button" role="tab" aria-controls="expensePane" aria-selected="false">지출</button>
+							</li>
+						</ul>
+					</div>
+					<div class="card-body">
+
+						<div class="row">
+						<div class="col-8">
+							<div class="tab-content" id="accountTabsContent">
+								<div class="tab-pane fade show active" id="incomePane" role="tabpanel" aria-labelledby="income-tab">
+									<div class="account-tree-container">
+										<div id="incomeTree"></div>
+									</div>
+								</div>
+								<div class="tab-pane fade" id="expensePane" role="tabpanel" aria-labelledby="expense-tab">
+									<div class="account-tree-container">
+										<div id="expenseTree"></div>
+									</div>
+								</div>
+							</div>
+							<div id="noAccountMessage" class="text-center py-5 text-muted">
+								<i class="bi bi-diagram-3 fs-1"></i>
+								<p class="mb-0 mt-2">장부를 선택해주세요.</p>
+							</div>
+						</div>
+							<div class="col-4">
+								<div id="selectedAccountInfo" class="mb-3 p-3 bg-light rounded" style="display: none;">
+									<small class="text-muted">선택된 계정</small>
+									<div id="selectedAccountName" class="fw-bold"></div>
+									<small id="selectedAccountLevel" class="text-muted"></small>
+								</div>
+								<div class="action-buttons btn-group-vertical d-flex justify-content-center align-items-center">
+									<button type="button" class="btn btn-primary" id="btnAddSubAccount" disabled>
+										<i class="bi bi-plus-circle"></i> 하위계정 생성
+									</button>
+									<button type="button" class="btn btn-secondary" id="btnRenameAccount" disabled>
+										<i class="bi bi-pencil"></i> 계정명 변경
+									</button>
+									<button type="button" class="btn btn-danger" id="btnDeleteAccount" disabled>
+										<i class="bi bi-trash"></i> 계정 삭제
+									</button>
+									<button type="button" class="btn btn-success" id="btnMoveAccount" disabled>
+										<i class="bi bi-arrows-move"></i> 계정 이동
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+
+		</div>
+
+		<!-- 관리 버튼 -->
+		<div class="col-12 col-lg-4 col-xl-3">
 			<div class="card">
-				<div class="card-header py-2 px-4">
-					<ul class="nav nav-tabs card-header-tabs " id="accountTabs" role="tablist">
-						<li class="nav-item" role="presentation">
-							<button class="nav-link active" id="income-tab" data-bs-toggle="tab"
-									data-bs-target="#incomePane" type="button" role="tab"
-									aria-controls="incomePane" aria-selected="true">수입</button>
-						</li>
-						<li class="nav-item" role="presentation">
-							<button class="nav-link" id="expense-tab" data-bs-toggle="tab"
-									data-bs-target="#expensePane" type="button" role="tab"
-									aria-controls="expensePane" aria-selected="false">지출</button>
-						</li>
-					</ul>
+				<div class="card-header d-flex justify-content-between align-items-center">
+					<h6 class="mb-0">계좌관리</h6>
+					<button type="button" class="btn btn-sm btn-primary" id="btnAddBook">
+						<i class="bi bi-plus-lg"></i> 계좌저장
+					</button>
 				</div>
 				<div class="card-body">
-					<div class="tab-content" id="accountTabsContent">
-						<div class="tab-pane fade show active" id="incomePane" role="tabpanel" aria-labelledby="income-tab">
-							<div class="account-tree-container">
-								<div id="incomeTree"></div>
-							</div>
-						</div>
-						<div class="tab-pane fade" id="expensePane" role="tabpanel" aria-labelledby="expense-tab">
-							<div class="account-tree-container">
-								<div id="expenseTree"></div>
-							</div>
-						</div>
-					</div>
-					<div id="noAccountMessage" class="text-center py-5 text-muted">
-						<i class="bi bi-diagram-3 fs-1"></i>
-						<p class="mb-0 mt-2">장부를 선택해주세요.</p>
-					</div>
+
 				</div>
 			</div>
 		</div>
 
-		<!-- 관리 버튼 -->
-		<div class="col-12 col-lg-3 col-xl-2">
-			<div class="card">
-				<div class="card-header">
-					<h6 class="mb-0">계정 관리</h6>
-				</div>
-				<div class="card-body">
-					<div id="selectedAccountInfo" class="mb-3 p-3 bg-light rounded" style="display: none;">
-						<small class="text-muted">선택된 계정</small>
-						<div id="selectedAccountName" class="fw-bold"></div>
-						<small id="selectedAccountLevel" class="text-muted"></small>
-					</div>
-					<div class="action-buttons btn-group-vertical d-flex justify-content-center align-items-center">
-						<button type="button" class="btn btn-primary" id="btnAddSubAccount" disabled>
-							<i class="bi bi-plus-circle"></i> 하위계정 생성
-						</button>
-						<button type="button" class="btn btn-secondary" id="btnRenameAccount" disabled>
-							<i class="bi bi-pencil"></i> 계정명 변경
-						</button>
-						<button type="button" class="btn btn-danger" id="btnDeleteAccount" disabled>
-							<i class="bi bi-trash"></i> 계정 삭제
-						</button>
-						<button type="button" class="btn btn-success" id="btnMoveAccount" disabled>
-							<i class="bi bi-arrows-move"></i> 계정 이동
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
+
 	</div>
 </div>
 

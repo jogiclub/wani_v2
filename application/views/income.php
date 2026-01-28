@@ -105,62 +105,108 @@ $this->load->view('header');
 	</div>
 </div>
 
+
 <!-- 수입/지출 입력 Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEntry" aria-labelledby="offcanvasEntryLabel"
-	 style="width: 450px;">
-	<div class="offcanvas-header">
+	 style="width: 500px;">
+	<div class="offcanvas-header border-bottom">
 		<h5 class="offcanvas-title" id="offcanvasEntryLabel">수입 입력</h5>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
-	<div class="offcanvas-body">
-		<form id="entryForm">
-			<input type="hidden" id="entryIdx" name="idx">
-			<input type="hidden" id="entryType" name="income_type">
+	<div class="offcanvas-body p-0">
+		<input type="hidden" id="entryIdx" name="idx">
+		<input type="hidden" id="entryType" name="income_type">
 
-			<div class="mb-3">
-				<label class="form-label">거래일 <span class="text-danger">*</span></label>
-				<input type="date" class="form-control" id="entryDate" name="transaction_date" required>
-			</div>
-
-			<div class="mb-3">
-				<label class="form-label">계좌</label>
-				<select class="form-select" id="entryBank" name="bank">
-					<option value="">선택</option>
-				</select>
-			</div>
-
-			<div class="mb-3">
-				<label class="form-label">계정 <span class="text-danger">*</span></label>
-				<select class="form-select" id="entryAccount" name="account_code" required>
-					<option value="">선택</option>
-				</select>
-			</div>
-
-			<div class="row mb-3">
+		<!-- 공통 정보 영역 -->
+		<div class="p-3 bg-light border-bottom">
+			<div class="row g-2 mb-2">
 				<div class="col-4">
-					<label class="form-label">건수</label>
-					<input type="number" class="form-control" id="entryCnt" name="transaction_cnt" value="1" min="1">
+					<label class="form-label small mb-1">거래일 <span class="text-danger">*</span></label>
+					<input type="date" class="form-control form-control-sm" id="entryDate" name="transaction_date" required>
 				</div>
-				<div class="col-8">
-					<label class="form-label">금액 <span class="text-danger">*</span></label>
-					<input type="text" class="form-control text-end" id="entryAmount" name="amount" required>
+				<div class="col-4">
+					<label class="form-label small mb-1">계좌</label>
+					<div class="searchable-select-wrapper dropdown">
+						<button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="selected-text" id="entryBankText">선택</span>
+						</button>
+						<input type="hidden" id="entryBank" name="bank">
+						<ul class="dropdown-menu w-100 p-2">
+							<li class="mb-2">
+								<input type="text" class="form-control form-control-sm" id="entryBankSearch" placeholder="계좌 검색...">
+							</li>
+							<li><hr class="dropdown-divider my-1"></li>
+							<div class="option-list" style="max-height: 200px; overflow-y: auto;">
+								<!-- 동적으로 채워짐 -->
+							</div>
+						</ul>
+					</div>
+				</div>
+				<div class="col-4">
+					<label class="form-label small mb-1">계정 <span class="text-danger">*</span></label>
+					<select class="form-select form-select-sm" id="entryAccount" name="account_code" required>
+						<option value="">선택</option>
+					</select>
 				</div>
 			</div>
+		</div>
 
-			<div class="mb-3">
-				<label class="form-label">TAG</label>
-				<input type="text" class="form-control" id="entryTags" name="tags" placeholder="쉼표로 구분하여 입력">
+		<!-- 항목 입력 영역 -->
+		<div class="p-3 border-bottom">
+			<div class="row g-2 mb-2">
+				<div class="col-4">
+					<label class="form-label small mb-1">이름</label>
+					<div class="searchable-select-wrapper dropdown">
+						<button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100 text-start" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+							<span class="selected-text" id="entryNameText">선택</span>
+						</button>
+						<input type="hidden" id="entryName" name="name">
+						<ul class="dropdown-menu w-100 p-2">
+							<li class="mb-2">
+								<input type="text" class="form-control form-control-sm" id="entryNameSearch" placeholder="이름/연락처 검색...">
+							</li>
+							<li><hr class="dropdown-divider my-1"></li>
+							<div class="option-list" style="max-height: 200px; overflow-y: auto;">
+								<!-- 동적으로 채워짐 -->
+							</div>
+						</ul>
+					</div>
+				</div>
+				<div class="col-4">
+					<label class="form-label small mb-1">금액</label>
+					<input type="text" class="form-control form-control-sm text-end" id="entryAmount" name="amount" placeholder="0">
+				</div>
+				<div class="col-4">
+					<label class="form-label small mb-1">적요</label>
+					<input type="text" class="form-control form-control-sm" id="entryMemo" name="memo" placeholder="적요">
+				</div>
 			</div>
+			<div class="d-flex justify-content-end">
+				<button type="button" class="btn btn-outline-primary btn-sm" id="btnAddEntryItem">
+					<i class="bi bi-plus-lg me-1"></i>추가
+				</button>
+			</div>
+		</div>
 
-			<div class="mb-3">
-				<label class="form-label">메모</label>
-				<textarea class="form-control" id="entryMemo" name="memo" rows="3"></textarea>
+		<!-- 항목 목록 (pqGrid) -->
+		<div class="p-3">
+			<div class="d-flex justify-content-between align-items-center mb-2">
+				<span class="fw-bold small">항목 목록</span>
+				<span class="text-muted small">
+					<span id="entryItemCount">0건</span> /
+					<span class="fw-bold" id="entryTotalAmount">0원</span>
+				</span>
 			</div>
+			<div id="entryItemGrid" style="height: 200px;"></div>
+		</div>
+	</div>
 
-			<div class="d-grid gap-2">
-				<button type="submit" class="btn btn-primary" id="btnSaveEntry">저장</button>
-			</div>
-		</form>
+	<!-- 하단 버튼 영역 -->
+	<div class="offcanvas-footer border-top p-3 bg-white">
+		<div class="d-flex gap-2">
+			<button type="button" class="btn btn-secondary flex-fill" id="btnCancelEntry">취소</button>
+			<button type="button" class="btn btn-primary flex-fill" id="btnApplyEntry">적용</button>
+		</div>
 	</div>
 </div>
 
