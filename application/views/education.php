@@ -1,0 +1,421 @@
+<?php
+/**
+ * 파일 위치: application/views/education.php
+ * 역할: 교육관리 화면 레이아웃
+ */
+$this->load->view('header');
+?>
+
+<!-- Education CSS -->
+<link rel="stylesheet" href="/assets/css/education.css?<?php echo WB_VERSION; ?>">
+
+<!-- ParamQuery CSS -->
+<link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
+
+<!-- Fancytree CSS -->
+<link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
+
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+<div class="container-fluid pt-2 pb-2">
+	<nav class="mb-1" aria-label="breadcrumb">
+		<ol class="breadcrumb mb-0">
+			<li class="breadcrumb-item"><a href="#!">홈</a></li>
+			<li class="breadcrumb-item"><a href="#!">EDUCATION</a></li>
+			<li class="breadcrumb-item active">교육관리</li>
+		</ol>
+	</nav>
+	<div class="row align-items-center justify-content-between g-3 mb-3">
+		<div class="col-12 my-1 d-flex align-items-center justify-content-between">
+			<h3 class="page-title mb-0">교육관리</h3>
+			<div class="d-flex gap-2">
+				<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">
+					<i class="bi bi-folder"></i> 카테고리 관리
+				</button>
+				<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
+					<i class="bi bi-plus-lg"></i> 교육 등록
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Split.js를 위한 단일 컨테이너 -->
+	<div class="split-container">
+		<!-- 왼쪽: 카테고리 트리 -->
+		<div class="split-pane" id="left-pane">
+			<div class="card">
+				<div class="card-body card-height p-0 position-relative">
+					<!-- 트리 스피너 -->
+					<div id="treeSpinner" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
+						<div class="text-center">
+							<div class="spinner-border text-primary mb-2" role="status">
+								<span class="visually-hidden">로딩 중...</span>
+							</div>
+							<div class="small text-muted">카테고리 로딩 중...</div>
+						</div>
+					</div>
+					<div id="categoryTree" class="tree-container"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- 오른쪽: 교육 목록 -->
+		<div class="split-pane" id="right-pane">
+			<div class="card">
+				<div class="card-header">
+					<div class="row flex-column flex-lg-row">
+						<div class="col-12 col-lg-6 d-flex align-items-center">
+							<h5 class="mb-0 text-truncate" id="selectedCategoryName">
+								<i class="bi bi-list-ul"></i> 카테고리를 선택해주세요
+							</h5>
+							<small class="ms-3 text-muted">총 <span id="totalEduCount">0</span>개</small>
+						</div>
+
+						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+							<div class="input-group input-group-sm" style="max-width: 300px;">
+								<input type="text" class="form-control" placeholder="교육명 검색" id="searchKeyword">
+								<button class="btn btn-sm btn-outline-secondary" type="button" id="btnSearch">
+									<i class="bi bi-search"></i> 검색
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="card-body card-height p-0 position-relative">
+					<!-- 그리드 스피너 -->
+					<div id="gridSpinner" class="d-none justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
+						<div class="text-center">
+							<div class="spinner-border text-primary mb-2" role="status">
+								<span class="visually-hidden">로딩 중...</span>
+							</div>
+							<div class="small text-muted">교육 목록 로딩 중...</div>
+						</div>
+					</div>
+					<!-- ParamQuery Grid가 여기에 렌더링됩니다 -->
+					<div id="eduGrid"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 교육 등록/수정 Modal -->
+<div class="modal fade" id="eduModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="eduModalTitle">교육 등록</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="eduForm">
+					<input type="hidden" id="eduIdx" name="edu_idx">
+					<input type="hidden" id="eduOrgId" name="org_id">
+
+					<div class="row mb-3">
+						<div class="col-md-6">
+							<label class="form-label">교육카테고리 <span class="text-danger">*</span></label>
+							<select class="form-select" id="eduCategoryCode" name="category_code" required>
+								<option value="">카테고리 선택</option>
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label class="form-label">교육명 <span class="text-danger">*</span></label>
+							<input type="text" class="form-control" id="eduName" name="edu_name" placeholder="예: 하나님께 받는 복" required>
+						</div>
+					</div>
+
+					<div class="row mb-3">
+						<div class="col-md-12">
+							<label class="form-label">교육지역</label>
+							<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
+						</div>
+					</div>
+
+					<div class="row mb-3">
+						<div class="col-md-6">
+							<label class="form-label">교육 시작일</label>
+							<input type="text" class="form-control" id="eduStartDate" name="edu_start_date" placeholder="시작일 선택">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label">교육 종료일</label>
+							<input type="text" class="form-control" id="eduEndDate" name="edu_end_date" placeholder="종료일 선택">
+						</div>
+					</div>
+
+					<div class="row mb-3">
+						<div class="col-md-6">
+							<label class="form-label">요일</label>
+							<div class="dropdown w-100">
+								<button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="eduDaysDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+									<span id="eduDaysText">요일 선택</span>
+								</button>
+								<ul class="dropdown-menu w-100" aria-labelledby="eduDaysDropdown" id="eduDaysMenu">
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-day-checkbox" id="day_mon" value="월요일">
+											<label class="form-check-label" for="day_mon">월요일</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-day-checkbox" id="day_tue" value="화요일">
+											<label class="form-check-label" for="day_tue">화요일</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-day-checkbox" id="day_wed" value="수요일">
+											<label class="form-check-label" for="day_wed">수요일</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-day-checkbox" id="day_thu" value="목요일">
+											<label class="form-check-label" for="day_thu">목요일</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-day-checkbox" id="day_fri" value="금요일">
+											<label class="form-check-label" for="day_fri">금요일</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-day-checkbox" id="day_sat" value="토요일">
+											<label class="form-check-label" for="day_sat">토요일</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-day-checkbox" id="day_sun" value="일요일">
+											<label class="form-check-label" for="day_sun">일요일</label>
+										</div>
+									</li>
+								</ul>
+							</div>
+							<input type="hidden" id="eduDays" name="edu_days">
+						</div>
+						<div class="col-md-6">
+							<label class="form-label">시간대</label>
+							<div class="dropdown w-100">
+								<button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="eduTimesDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+									<span id="eduTimesText">시간대 선택</span>
+								</button>
+								<ul class="dropdown-menu w-100" aria-labelledby="eduTimesDropdown" id="eduTimesMenu" style="max-height: 300px; overflow-y: auto;">
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_06" value="06시">
+											<label class="form-check-label" for="time_06">06시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_07" value="07시">
+											<label class="form-check-label" for="time_07">07시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_08" value="08시">
+											<label class="form-check-label" for="time_08">08시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_09" value="09시">
+											<label class="form-check-label" for="time_09">09시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_10" value="10시">
+											<label class="form-check-label" for="time_10">10시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_11" value="11시">
+											<label class="form-check-label" for="time_11">11시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_12" value="12시">
+											<label class="form-check-label" for="time_12">12시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_13" value="13시">
+											<label class="form-check-label" for="time_13">13시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_14" value="14시">
+											<label class="form-check-label" for="time_14">14시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_15" value="15시">
+											<label class="form-check-label" for="time_15">15시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_16" value="16시">
+											<label class="form-check-label" for="time_16">16시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_17" value="17시">
+											<label class="form-check-label" for="time_17">17시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_18" value="18시">
+											<label class="form-check-label" for="time_18">18시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_19" value="19시">
+											<label class="form-check-label" for="time_19">19시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_20" value="20시">
+											<label class="form-check-label" for="time_20">20시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_21" value="21시">
+											<label class="form-check-label" for="time_21">21시</label>
+										</div>
+									</li>
+									<li>
+										<div class="dropdown-item">
+											<input type="checkbox" class="form-check-input me-2 edu-time-checkbox" id="time_22" value="22시">
+											<label class="form-check-label" for="time_22">22시</label>
+										</div>
+									</li>
+								</ul>
+							</div>
+							<input type="hidden" id="eduTimes" name="edu_times">
+						</div>
+					</div>
+
+					<div class="row mb-3">
+						<div class="col-md-4">
+							<label class="form-label">인도자</label>
+							<input type="text" class="form-control" id="eduLeader" name="edu_leader" placeholder="예: 손용일 집사">
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">인도자 연령대</label>
+							<select class="form-select" id="eduLeaderAge" name="edu_leader_age">
+								<option value="">선택</option>
+								<option value="10s">10대</option>
+								<option value="20s">20대</option>
+								<option value="30s">30대</option>
+								<option value="40s">40대</option>
+								<option value="50s">50대</option>
+							</select>
+						</div>
+						<div class="col-md-4">
+							<label class="form-label">인도자 성별</label>
+							<select class="form-select" id="eduLeaderGender" name="edu_leader_gender">
+								<option value="">선택</option>
+								<option value="male">남</option>
+								<option value="female">여</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="row mb-3">
+						<div class="col-md-12">
+							<label class="form-label">교육 설명</label>
+							<textarea class="form-control" id="eduDesc" name="edu_desc" rows="4" placeholder="교육에 대한 상세 설명을 입력하세요"></textarea>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnSaveEdu">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 카테고리 관리 Modal -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">카테고리 관리</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-info">
+					<i class="bi bi-info-circle"></i> 카테고리는 JSON 형태로 관리됩니다. 아래 예시를 참고하여 수정하세요.
+				</div>
+				<textarea class="form-control font-monospace" id="categoryJson" rows="15" placeholder='{"categories": []}'></textarea>
+				<div class="mt-3">
+					<strong>예시:</strong>
+					<pre class="bg-light p-2 rounded"><code>{
+  "categories": [
+    {
+      "code": "EDU001",
+      "name": "성경공부",
+      "order": 1,
+      "children": [
+        {
+          "code": "EDU001-001",
+          "name": "신약성경",
+          "order": 1
+        }
+      ]
+    }
+  ]
+}</code></pre>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnSaveCategory">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<?php $this->load->view('footer'); ?>
+
+<!-- Split.js -->
+<script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
+
+<!-- Fancytree -->
+<script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
+
+<!-- ParamQuery -->
+<script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
+
+<!-- Flatpickr -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+
+<script>
+	window.educationPageData = {
+		baseUrl: '<?php echo base_url(); ?>',
+		currentOrgId: <?php echo isset($current_org['org_id']) ? $current_org['org_id'] : 0; ?>
+	};
+</script>
+
+<script src="/assets/js/education.js?<?php echo WB_VERSION; ?>"></script>

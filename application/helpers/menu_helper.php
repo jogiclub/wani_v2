@@ -47,7 +47,7 @@ if (!function_exists('get_system_menus')) {
 			'EDU_MANAGEMENT' => array(
 				'name' => '교육관리',
 				'key' => 'EDU_MANAGEMENT',
-				'url' => 'edu',
+				'url' => 'education',
 				'icon' => 'bi bi-mortarboard',
 				'level' => 1,
 				'menu_class' => 'menu-26'
