@@ -1,55 +1,6 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/*
-| -------------------------------------------------------------------------
-| URI ROUTING
-| -------------------------------------------------------------------------
-| This file lets you re-map URI requests to specific controller functions.
-|
-| Typically there is a one-to-one relationship between a URL string
-| and its corresponding controller class/method. The segments in a
-| URL normally follow this pattern:
-|
-|	example.com/class/method/id/
-|
-| In some instances, however, you may want to remap this relationship
-| so that a different class/function is called than the one
-| corresponding to the URL.
-|
-| Please see the user guide for complete details:
-|
-|	https://codeigniter.com/userguide3/general/routing.html
-|
-| -------------------------------------------------------------------------
-| RESERVED ROUTES
-| -------------------------------------------------------------------------
-|
-| There are three reserved routes:
-|
-|	$route['default_controller'] = 'welcome';
-|
-| This route indicates which controller class should be loaded if the
-| URI contains no data. In the above example, the "welcome" class
-| would be loaded.
-|
-|	$route['404_override'] = 'errors/page_missing';
-|
-| This route will tell the Router which controller/method to use if those
-| provided in the URL cannot be matched to a valid route.
-|
-|	$route['translate_uri_dashes'] = FALSE;
-|
-| This is not exactly a route, but allows you to automatically route
-| controller and method names that contain dashes. '-' isn't a valid
-| class or method name character, so it requires translation.
-| When you set this option to TRUE, it will replace ALL dashes in the
-| controller and method URI segments.
-|
-| Examples:	my-controller/index	-> my_controller/index
-|		my-controller/my-method	-> my_controller/my_method
-*/
-
 $route['default_controller'] = 'login/logout';
 $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
@@ -117,7 +68,7 @@ $route['member/print_selected_qr'] = 'member/print_selected_qr';
 $route['member/member_popup'] = 'member/member_popup';
 $route['member/save_member_popup'] = 'member/save_member_popup';
 
-// ... (나머지 라우트들은 기존 그대로)
+
 
 // Week 컨트롤러 관련 라우팅 (넓은 범위의 라우트는 하단에 배치)
 $route['week'] = 'week';
@@ -129,8 +80,17 @@ $route['week/(:any)/(:num)/(:num)'] = 'week/index/$1/$2/$3';
 $route['income'] = 'income';
 $route['income'] = 'income/index';
 
-$route['edu'] = 'edu';
-$route['edu'] = 'edu/index';
+// Education 컨트롤러 관련 라우팅 (기존 코드 교체)
+$route['education'] = 'education/index';
+$route['education/index'] = 'education/index';
+$route['education/get_category_tree'] = 'education/get_category_tree';
+$route['education/get_edu_list'] = 'education/get_edu_list';
+$route['education/get_edu_detail'] = 'education/get_edu_detail';
+$route['education/insert_edu'] = 'education/insert_edu';
+$route['education/update_edu'] = 'education/update_edu';
+$route['education/delete_edu'] = 'education/delete_edu';
+$route['education/delete_multiple_edu'] = 'education/delete_multiple_edu';
+$route['education/save_category'] = 'education/save_category';
 
 
 // 직접 group_code/year/week 형식으로 접근하는 경우도 처리

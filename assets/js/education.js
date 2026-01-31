@@ -1,8 +1,3 @@
-/**
- * 파일 위치: assets/js/education.js
- * 역할: 교육관리 화면 프론트엔드 로직
- */
-
 'use strict'
 
 $(document).ready(function () {
@@ -13,6 +8,7 @@ $(document).ready(function () {
 	let selectedType = null;          // 선택된 타입 ('org', 'category')
 	let splitInstance = null;         // Split.js 인스턴스
 	let categoryData = [];            // 카테고리 데이터
+	let categoryMap = {};             // 카테고리 코드-이름 매핑
 	let flatpickrStartInstance = null; // 시작일 Flatpickr 인스턴스
 	let flatpickrEndInstance = null;   // 종료일 Flatpickr 인스턴스
 
@@ -134,6 +130,9 @@ $(document).ready(function () {
 					return;
 				}
 
+				// 카테고리 맵 생성
+				buildCategoryMap(treeData);
+
 				setupFancytreeInstance(treeData);
 				hideTreeSpinner();
 			},
@@ -141,6 +140,22 @@ $(document).ready(function () {
 				console.error('트리 데이터 로드 실패:', error);
 				hideTreeSpinner();
 				showToast('카테고리 정보를 불러오는데 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 카테고리 맵 구축 (코드 -> 이름 매핑)
+	 */
+	function buildCategoryMap(nodes) {
+		nodes.forEach(function(node) {
+			if (node.data && node.data.type === 'category') {
+				// 괄호 안의 개수 정보 제거하고 순수 카테고리명만 저장
+				const categoryName = node.title.split(' (')[0];
+				categoryMap[node.data.category_code] = categoryName;
+			}
+			if (node.children && node.children.length > 0) {
+				buildCategoryMap(node.children);
 			}
 		});
 	}
@@ -254,8 +269,22 @@ $(document).ready(function () {
 				dataModel: { data: [] },
 				colModel: [
 					{
+						title: '<input type="checkbox" id="selectAllCheckbox" />',
+						dataIndx: "checkbox",
+						width: 40,
+						align: "center",
+						resizable: false,
+						sortable: false,
+						editable: false,
+						menuIcon: false,
+						render: function(ui) {
+							var checkboxId = 'edu-checkbox-' + ui.rowData.edu_idx;
+							return '<input type="checkbox" class="edu-checkbox" id="' + checkboxId + '" data-edu-idx="' + ui.rowData.edu_idx + '" />';
+						}
+					},
+					{
 						title: "교육카테고리",
-						dataIndx: "category_code",
+						dataIndx: "category_name",
 						width: 120,
 						align: "center"
 					},
@@ -305,34 +334,23 @@ $(document).ready(function () {
 						dataIndx: "edu_leader_gender_str",
 						width: 100,
 						align: "center"
-					},
-					{
-						title: "관리",
-						dataIndx: "edu_idx",
-						width: 120,
-						align: "center",
-						render: function(ui) {
-							return `
-								<button type="button" class="btn btn-sm btn-outline-primary btn-edit-edu" data-edu-idx="${ui.cellData}">
-									<i class="bi bi-pencil"></i>
-								</button>
-								<button type="button" class="btn btn-sm btn-outline-danger btn-delete-edu" data-edu-idx="${ui.cellData}">
-									<i class="bi bi-trash"></i>
-								</button>
-							`;
-						}
 					}
 				],
 				strNoRows: '교육 정보가 없습니다',
-				selectionModel: { type: 'row', mode: 'single' },
-				numberCell: { show: true },
+				selectionModel: { type: 'row', mode: 'block' },
+				numberCell: { show: false },
 				title: false,
 				resizable: true,
 				sortable: true,
 				hoverMode: 'row',
 				wrap: false,
 				columnBorders: true,
-				rowBorders: true
+				rowBorders: true,
+				cellClick: function(event, ui) {
+					if (ui.dataIndx === 'checkbox') {
+						handleCheckboxClick(event, ui.rowData.edu_idx);
+					}
+				}
 			});
 
 			// 그리드 이벤트 바인딩
@@ -354,22 +372,48 @@ $(document).ready(function () {
 		$(document).on('click', '.edu-name-link', function(e) {
 			e.preventDefault();
 			const eduIdx = $(this).data('edu-idx');
-			openEduDetailModal(eduIdx);
+			openEduEditOffcanvas(eduIdx);
 		});
+	}
 
-		// 수정 버튼 클릭
-		$(document).on('click', '.btn-edit-edu', function(e) {
-			e.preventDefault();
-			const eduIdx = $(this).data('edu-idx');
-			openEduEditModal(eduIdx);
-		});
+	/**
+	 * 체크박스 클릭 핸들러
+	 */
+	function handleCheckboxClick(event, eduIdx) {
+		var isDirectCheckboxClick = $(event.target).hasClass('edu-checkbox') ||
+			$(event.originalEvent?.target).hasClass('edu-checkbox');
 
-		// 삭제 버튼 클릭
-		$(document).on('click', '.btn-delete-edu', function(e) {
-			e.preventDefault();
-			const eduIdx = $(this).data('edu-idx');
-			confirmDeleteEdu(eduIdx);
-		});
+		if (!isDirectCheckboxClick) {
+			var checkbox = $('.edu-checkbox[data-edu-idx="' + eduIdx + '"]').first();
+			if (checkbox.length > 0) {
+				var isCurrentlyChecked = checkbox.is(':checked');
+				checkbox.prop('checked', !isCurrentlyChecked);
+			}
+		}
+
+		updateSelectAllCheckbox();
+	}
+
+	/**
+	 * 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateSelectAllCheckbox() {
+		var totalCheckboxes = $('.edu-checkbox').length;
+		var checkedCheckboxes = $('.edu-checkbox:checked').length;
+
+		if (totalCheckboxes === 0) {
+			$('#selectAllCheckbox').prop('checked', false);
+			$('#selectAllCheckbox').prop('indeterminate', false);
+		} else if (checkedCheckboxes === 0) {
+			$('#selectAllCheckbox').prop('checked', false);
+			$('#selectAllCheckbox').prop('indeterminate', false);
+		} else if (checkedCheckboxes === totalCheckboxes) {
+			$('#selectAllCheckbox').prop('checked', true);
+			$('#selectAllCheckbox').prop('indeterminate', false);
+		} else {
+			$('#selectAllCheckbox').prop('checked', false);
+			$('#selectAllCheckbox').prop('indeterminate', true);
+		}
 	}
 
 	/**
@@ -398,7 +442,6 @@ $(document).ready(function () {
 			}
 		});
 	}
-
 
 	/**
 	 * 정리 이벤트 설정
@@ -449,7 +492,13 @@ $(document).ready(function () {
 				hideGridSpinner();
 
 				if (response.success) {
-					updateGrid(response.data);
+					// 카테고리명 추가
+					const dataWithCategoryName = response.data.map(function(item) {
+						item.category_name = categoryMap[item.category_code] || item.category_code;
+						return item;
+					});
+
+					updateGrid(dataWithCategoryName);
 					$('#totalEduCount').text(response.total_count);
 				} else {
 					showToast(response.message || '교육 목록을 불러오는데 실패했습니다.', 'error');
@@ -526,12 +575,24 @@ $(document).ready(function () {
 		}
 	}
 
+	/**
+	 * 교육 등록 Offcanvas 열기
+	 */
+	function openEduAddOffcanvas() {
+		resetEduForm();
+		loadCategoryOptions();
+		$('#eduOffcanvasTitle').text('교육 등록');
+		$('#eduIdx').val('');
+		$('#eduOrgId').val(selectedOrgId || window.educationPageData.currentOrgId);
 
+		const offcanvas = new bootstrap.Offcanvas('#eduOffcanvas');
+		offcanvas.show();
+	}
 
 	/**
-	 * 교육 수정 모달 열기
+	 * 교육 수정 Offcanvas 열기
 	 */
-	function openEduEditModal(eduIdx) {
+	function openEduEditOffcanvas(eduIdx) {
 		showSpinner();
 
 		$.ajax({
@@ -544,8 +605,10 @@ $(document).ready(function () {
 
 				if (response.success) {
 					fillEduForm(response.data);
-					$('#eduModalTitle').text('교육 수정');
-					$('#eduModal').modal('show');
+					$('#eduOffcanvasTitle').text('교육 수정');
+
+					const offcanvas = new bootstrap.Offcanvas('#eduOffcanvas');
+					offcanvas.show();
 				} else {
 					showToast(response.message || '교육 정보를 불러오는데 실패했습니다.', 'error');
 				}
@@ -559,12 +622,66 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 상세 모달 열기
+	 * 교육 폼 채우기
 	 */
-	function openEduDetailModal(eduIdx) {
-		openEduEditModal(eduIdx);
+	function fillEduForm(eduData) {
+		$('#eduIdx').val(eduData.edu_idx);
+		$('#eduOrgId').val(eduData.org_id);
+		$('#eduName').val(eduData.edu_name);
+		$('#eduLocation').val(eduData.edu_location);
+		$('#eduLeader').val(eduData.edu_leader);
+		$('#eduLeaderAge').val(eduData.edu_leader_age);
+		$('#eduLeaderGender').val(eduData.edu_leader_gender);
+		$('#eduDesc').val(eduData.edu_desc);
+
+		// 카테고리 옵션 로드 후 선택
+		loadCategoryOptions(eduData.category_code);
+
+		// 날짜 설정
+		if (flatpickrStartInstance && eduData.edu_start_date) {
+			flatpickrStartInstance.setDate(eduData.edu_start_date);
+		}
+		if (flatpickrEndInstance && eduData.edu_end_date) {
+			flatpickrEndInstance.setDate(eduData.edu_end_date);
+		}
+
+		// 요일 체크박스 설정
+		$('.edu-day-checkbox').prop('checked', false);
+		if (eduData.edu_days && Array.isArray(eduData.edu_days)) {
+			eduData.edu_days.forEach(function(day) {
+				$('.edu-day-checkbox[value="' + day + '"]').prop('checked', true);
+			});
+			updateDaysDisplay();
+		}
+
+		// 시간대 체크박스 설정
+		$('.edu-time-checkbox').prop('checked', false);
+		if (eduData.edu_times && Array.isArray(eduData.edu_times)) {
+			eduData.edu_times.forEach(function(time) {
+				$('.edu-time-checkbox[value="' + time + '"]').prop('checked', true);
+			});
+			updateTimesDisplay();
+		}
 	}
 
+	/**
+	 * 교육 폼 초기화
+	 */
+	function resetEduForm() {
+		$('#eduForm')[0].reset();
+		$('#eduIdx').val('');
+		$('.edu-day-checkbox').prop('checked', false);
+		$('.edu-time-checkbox').prop('checked', false);
+		$('#eduDaysText').text('요일 선택');
+		$('#eduTimesText').text('시간대 선택');
+
+		if (flatpickrStartInstance) {
+			flatpickrStartInstance.clear();
+		}
+		if (flatpickrEndInstance) {
+			flatpickrEndInstance.clear();
+		}
+	}
 
 	/**
 	 * 카테고리 옵션 로드
@@ -595,15 +712,18 @@ $(document).ready(function () {
 		}
 	}
 
-
 	/**
-	 * 파일 위치: assets/js/education.js - 전역 이벤트 바인딩 함수에 추가
-	 * 역할: 요일/시간대 체크박스 이벤트 바인딩 추가
+	 * 전역 이벤트 바인딩
 	 */
 	function bindGlobalEvents() {
 		// 교육 등록 버튼
 		$('#btnAddEdu').off('click').on('click', function() {
-			openEduAddModal();
+			openEduAddOffcanvas();
+		});
+
+		// 선택 삭제 버튼
+		$('#btnDeleteSelected').off('click').on('click', function() {
+			deleteSelectedEdu();
 		});
 
 		// 카테고리 관리 버튼
@@ -642,257 +762,123 @@ $(document).ready(function () {
 		// 시간대 체크박스 이벤트
 		bindTimeCheckboxEvents();
 
+		// 전체 선택 체크박스
+		$(document).on('change', '#selectAllCheckbox', function() {
+			var isChecked = $(this).prop('checked');
+			$('.edu-checkbox').prop('checked', isChecked);
+		});
+
+		// 개별 체크박스
+		$(document).on('change', '.edu-checkbox', function() {
+			updateSelectAllCheckbox();
+		});
+
 		// 윈도우 리사이즈
 		$(window).off('resize.education').on('resize.education', debounce(function() {
 			if (eduGrid) {
 				try {
 					eduGrid.pqGrid("refresh");
 				} catch (error) {
-					console.error('윈도우 리사이즈 시 그리드 리프레시 실패:', error);
+					console.error('그리드 리사이즈 실패:', error);
 				}
 			}
 		}, 250));
 	}
 
 	/**
-	 * 파일 위치: assets/js/education.js
-	 * 역할: 요일 체크박스 이벤트 바인딩
+	 * 요일 체크박스 이벤트 바인딩
 	 */
 	function bindDayCheckboxEvents() {
-		// 체크박스 변경 이벤트
-		$(document).off('change', '.edu-day-checkbox').on('change', '.edu-day-checkbox', function() {
-			updateDaySelection();
-		});
-
-		// 드롭다운 아이템 클릭 시 닫히지 않도록 방지
-		$('#eduDaysMenu .dropdown-item').off('click').on('click', function(e) {
-			e.stopPropagation();
+		$('.edu-day-checkbox').off('change').on('change', function() {
+			updateDaysDisplay();
 		});
 	}
 
 	/**
-	 * 파일 위치: assets/js/education.js
-	 * 역할: 시간대 체크박스 이벤트 바인딩
+	 * 시간대 체크박스 이벤트 바인딩
 	 */
 	function bindTimeCheckboxEvents() {
-		// 체크박스 변경 이벤트
-		$(document).off('change', '.edu-time-checkbox').on('change', '.edu-time-checkbox', function() {
-			updateTimeSelection();
-		});
-
-		// 드롭다운 아이템 클릭 시 닫히지 않도록 방지
-		$('#eduTimesMenu .dropdown-item').off('click').on('click', function(e) {
-			e.stopPropagation();
+		$('.edu-time-checkbox').off('change').on('change', function() {
+			updateTimesDisplay();
 		});
 	}
 
 	/**
-	 * 파일 위치: assets/js/education.js
-	 * 역할: 선택된 요일 업데이트
+	 * 요일 선택 표시 업데이트
 	 */
-	function updateDaySelection() {
+	function updateDaysDisplay() {
 		const selectedDays = [];
 		$('.edu-day-checkbox:checked').each(function() {
 			selectedDays.push($(this).val());
 		});
 
-		// hidden input에 배열로 저장
-		$('#eduDays').val(JSON.stringify(selectedDays));
-
-		// 버튼 텍스트 업데이트
-		let displayText = '요일 선택';
 		if (selectedDays.length > 0) {
-			if (selectedDays.length === 1) {
-				displayText = selectedDays[0];
-			} else {
-				displayText = selectedDays[0] + ' 외 ' + (selectedDays.length - 1) + '개';
-			}
+			$('#eduDaysText').text(selectedDays.join(', '));
+			$('#eduDays').val(JSON.stringify(selectedDays));
+		} else {
+			$('#eduDaysText').text('요일 선택');
+			$('#eduDays').val('');
 		}
-		$('#eduDaysText').text(displayText);
 	}
 
 	/**
-	 * 파일 위치: assets/js/education.js
-	 * 역할: 선택된 시간대 업데이트
+	 * 시간대 선택 표시 업데이트
 	 */
-	function updateTimeSelection() {
+	function updateTimesDisplay() {
 		const selectedTimes = [];
 		$('.edu-time-checkbox:checked').each(function() {
 			selectedTimes.push($(this).val());
 		});
 
-		// hidden input에 배열로 저장
-		$('#eduTimes').val(JSON.stringify(selectedTimes));
-
-		// 버튼 텍스트 업데이트
-		let displayText = '시간대 선택';
 		if (selectedTimes.length > 0) {
-			if (selectedTimes.length === 1) {
-				displayText = selectedTimes[0];
-			} else if (selectedTimes.length <= 3) {
-				displayText = selectedTimes.join(', ');
-			} else {
-				displayText = selectedTimes[0] + ' 외 ' + (selectedTimes.length - 1) + '개';
-			}
+			$('#eduTimesText').text(selectedTimes.join(', '));
+			$('#eduTimes').val(JSON.stringify(selectedTimes));
+		} else {
+			$('#eduTimesText').text('시간대 선택');
+			$('#eduTimes').val('');
 		}
-		$('#eduTimesText').text(displayText);
 	}
 
 	/**
-	 * 파일 위치: assets/js/education.js - openEduAddModal() 함수 수정
-	 * 역할: 교육 등록 모달 열기 (체크박스 초기화 추가)
-	 */
-	function openEduAddModal() {
-		$('#eduModalTitle').text('교육 등록');
-		$('#eduForm')[0].reset();
-		$('#eduIdx').val('');
-		$('#eduOrgId').val(selectedOrgId);
-
-		// 카테고리 옵션 로드
-		loadCategoryOptions();
-
-		// 날짜 초기화
-		if (flatpickrStartInstance) {
-			flatpickrStartInstance.clear();
-			flatpickrStartInstance.set('minDate', null);
-			flatpickrStartInstance.set('maxDate', null);
-		}
-		if (flatpickrEndInstance) {
-			flatpickrEndInstance.clear();
-			flatpickrEndInstance.set('minDate', null);
-			flatpickrEndInstance.set('maxDate', null);
-		}
-
-		// 요일/시간대 체크박스 초기화
-		$('.edu-day-checkbox').prop('checked', false);
-		$('.edu-time-checkbox').prop('checked', false);
-		$('#eduDaysText').text('요일 선택');
-		$('#eduTimesText').text('시간대 선택');
-		$('#eduDays').val('');
-		$('#eduTimes').val('');
-
-		$('#eduModal').modal('show');
-	}
-
-	/**
-	 * 파일 위치: assets/js/education.js - fillEduForm() 함수 수정
-	 * 역할: 교육 폼 채우기 (체크박스 상태 설정 추가)
-	 */
-	function fillEduForm(eduData) {
-		$('#eduIdx').val(eduData.edu_idx);
-		$('#eduOrgId').val(eduData.org_id);
-
-		// 카테고리 옵션 로드 후 선택
-		loadCategoryOptions(eduData.category_code);
-
-		$('#eduName').val(eduData.edu_name);
-		$('#eduLocation').val(eduData.edu_location);
-
-		// 날짜 설정
-		if (flatpickrStartInstance && eduData.edu_start_date) {
-			flatpickrStartInstance.setDate(eduData.edu_start_date);
-		}
-		if (flatpickrEndInstance && eduData.edu_end_date) {
-			flatpickrEndInstance.setDate(eduData.edu_end_date);
-		}
-
-		// 요일 체크박스 설정
-		$('.edu-day-checkbox').prop('checked', false);
-		if (eduData.edu_days && Array.isArray(eduData.edu_days)) {
-			eduData.edu_days.forEach(function(day) {
-				$('.edu-day-checkbox[value="' + day + '"]').prop('checked', true);
-			});
-		}
-		updateDaySelection();
-
-		// 시간대 체크박스 설정
-		$('.edu-time-checkbox').prop('checked', false);
-		if (eduData.edu_times && Array.isArray(eduData.edu_times)) {
-			eduData.edu_times.forEach(function(time) {
-				$('.edu-time-checkbox[value="' + time + '"]').prop('checked', true);
-			});
-		}
-		updateTimeSelection();
-
-		$('#eduLeader').val(eduData.edu_leader);
-		$('#eduLeaderAge').val(eduData.edu_leader_age);
-		$('#eduLeaderGender').val(eduData.edu_leader_gender);
-		$('#eduDesc').val(eduData.edu_desc);
-	}
-
-	/**
-	 * 파일 위치: assets/js/education.js - saveEdu() 함수 수정
-	 * 역할: 교육 저장 (요일/시간대 데이터 파싱)
+	 * 교육 저장
 	 */
 	function saveEdu() {
-		const eduIdx = $('#eduIdx').val();
-
-		// 요일/시간대 hidden input에서 JSON 파싱
-		let eduDays = [];
-		let eduTimes = [];
-
-		try {
-			const daysJson = $('#eduDays').val();
-			if (daysJson) {
-				eduDays = JSON.parse(daysJson);
-			}
-		} catch (error) {
-			console.error('요일 데이터 파싱 오류:', error);
-		}
-
-		try {
-			const timesJson = $('#eduTimes').val();
-			if (timesJson) {
-				eduTimes = JSON.parse(timesJson);
-			}
-		} catch (error) {
-			console.error('시간대 데이터 파싱 오류:', error);
-		}
-
-		const formData = {
-			edu_idx: eduIdx,
-			org_id: $('#eduOrgId').val(),
-			category_code: $('#eduCategoryCode').val(),
-			edu_name: $('#eduName').val(),
-			edu_location: $('#eduLocation').val(),
-			edu_start_date: $('#eduStartDate').val(),
-			edu_end_date: $('#eduEndDate').val(),
-			edu_days: eduDays,
-			edu_times: eduTimes,
-			edu_leader: $('#eduLeader').val(),
-			edu_leader_age: $('#eduLeaderAge').val(),
-			edu_leader_gender: $('#eduLeaderGender').val(),
-			edu_desc: $('#eduDesc').val()
-		};
-
 		// 필수값 검증
-		if (!formData.category_code) {
-			showToast('교육 카테고리를 선택해주세요.', 'warning');
+		if (!$('#eduCategoryCode').val()) {
+			showToast('교육카테고리를 선택해주세요.', 'warning');
 			return;
 		}
 
-		if (!formData.edu_name) {
+		if (!$('#eduName').val().trim()) {
 			showToast('교육명을 입력해주세요.', 'warning');
 			return;
 		}
 
-		showSpinner();
+		const eduIdx = $('#eduIdx').val();
+		const url = eduIdx ?
+			window.educationPageData.baseUrl + 'education/update_edu' :
+			window.educationPageData.baseUrl + 'education/insert_edu';
 
-		const url = eduIdx
-			? window.educationPageData.baseUrl + 'education/update_edu'
-			: window.educationPageData.baseUrl + 'education/add_edu';
+		showSpinner();
 
 		$.ajax({
 			url: url,
 			method: 'POST',
-			data: formData,
+			data: $('#eduForm').serialize(),
 			dataType: 'json',
 			success: function(response) {
 				hideSpinner();
 
 				if (response.success) {
 					showToast(response.message, 'success');
-					$('#eduModal').modal('hide');
+
+					// Offcanvas 닫기
+					const offcanvasElement = document.getElementById('eduOffcanvas');
+					const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+					if (offcanvas) {
+						offcanvas.hide();
+					}
+
 					loadEduList();
 					refreshCategoryTree();
 				} else {
@@ -907,30 +893,44 @@ $(document).ready(function () {
 		});
 	}
 
-
 	/**
-	 * 교육 삭제 확인
+	 * 선택된 교육 삭제
 	 */
-	function confirmDeleteEdu(eduIdx) {
+	function deleteSelectedEdu() {
+		// 선택된 체크박스에서 교육 인덱스 수집
+		var eduIndexes = [];
+		$('.edu-checkbox:checked').each(function() {
+			var eduIdx = $(this).data('edu-idx');
+			if (eduIdx) {
+				eduIndexes.push(eduIdx);
+			}
+		});
+
+		if (eduIndexes.length === 0) {
+			showToast('삭제할 교육을 선택해주세요.', 'warning');
+			return;
+		}
+
+		// 삭제 확인 모달
 		showConfirmModal(
 			'교육 삭제',
-			'정말로 이 교육을 삭제하시겠습니까?',
+			'선택한 ' + eduIndexes.length + '개의 교육을 삭제하시겠습니까?',
 			function() {
-				deleteEdu(eduIdx);
+				deleteMultipleEdu(eduIndexes);
 			}
 		);
 	}
 
 	/**
-	 * 교육 삭제
+	 * 여러 교육 삭제
 	 */
-	function deleteEdu(eduIdx) {
+	function deleteMultipleEdu(eduIndexes) {
 		showSpinner();
 
 		$.ajax({
-			url: window.educationPageData.baseUrl + 'education/delete_edu',
+			url: window.educationPageData.baseUrl + 'education/delete_multiple_edu',
 			method: 'POST',
-			data: { edu_idx: eduIdx },
+			data: { edu_indexes: eduIndexes },
 			dataType: 'json',
 			success: function(response) {
 				hideSpinner();
@@ -947,6 +947,43 @@ $(document).ready(function () {
 				console.error('교육 삭제 실패:', error);
 				hideSpinner();
 				showToast('교육 삭제 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 카테고리 트리 새로고침
+	 */
+	function refreshCategoryTree() {
+		showTreeSpinner();
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/get_category_tree',
+			method: 'POST',
+			dataType: 'json',
+			success: function (treeData) {
+				hideTreeSpinner();
+
+				if (!treeData || treeData.length === 0) {
+					return;
+				}
+
+				// 카테고리 맵 재구성
+				categoryMap = {};
+				buildCategoryMap(treeData);
+
+				// 트리 다시 로드
+				const tree = $("#categoryTree").fancytree("getTree");
+				if (tree) {
+					tree.reload(treeData);
+
+					// 이전 선택 복원
+					restorePreviousSelection();
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error('트리 새로고침 실패:', error);
+				hideTreeSpinner();
 			}
 		});
 	}
@@ -1025,7 +1062,7 @@ $(document).ready(function () {
 				return;
 			}
 		} catch (error) {
-			showToast('JSON 형식이 올바르지 않습니다.', 'error');
+			showToast('JSON 형식이 올바르지 않습니다.', 'warning');
 			return;
 		}
 
@@ -1059,113 +1096,79 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 카테고리 트리 새로고침
+	 * 스피너 표시
 	 */
-	function refreshCategoryTree() {
-		showTreeSpinner();
-
-		$.ajax({
-			url: window.educationPageData.baseUrl + 'education/get_category_tree',
-			method: 'POST',
-			dataType: 'json',
-			success: function(treeData) {
-				hideTreeSpinner();
-
-				if (treeData && treeData.length > 0) {
-					const tree = $("#categoryTree").fancytree("getTree");
-					tree.reload(treeData);
-
-					// 이전 선택 복원
-					restorePreviousSelection() || selectFirstNode();
-				}
-			},
-			error: function(xhr, status, error) {
-				console.error('트리 새로고침 실패:', error);
-				hideTreeSpinner();
-			}
-		});
+	function showSpinner() {
+		if (typeof window.showSpinner === 'function') {
+			window.showSpinner();
+		}
 	}
 
 	/**
-	 * 스피너 표시 함수들
+	 * 스피너 숨김
+	 */
+	function hideSpinner() {
+		if (typeof window.hideSpinner === 'function') {
+			window.hideSpinner();
+		}
+	}
+
+	/**
+	 * 모든 스피너 표시
 	 */
 	function showAllSpinners() {
 		showTreeSpinner();
 		showGridSpinner();
 	}
 
+	/**
+	 * 모든 스피너 숨김
+	 */
 	function hideAllSpinners() {
 		hideTreeSpinner();
 		hideGridSpinner();
 	}
 
+	/**
+	 * 트리 스피너 표시
+	 */
 	function showTreeSpinner() {
 		$('#treeSpinner').removeClass('d-none').addClass('d-flex');
 	}
 
+	/**
+	 * 트리 스피너 숨김
+	 */
 	function hideTreeSpinner() {
 		$('#treeSpinner').removeClass('d-flex').addClass('d-none');
 	}
 
+	/**
+	 * 그리드 스피너 표시
+	 */
 	function showGridSpinner() {
 		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
 	}
 
+	/**
+	 * 그리드 스피너 숨김
+	 */
 	function hideGridSpinner() {
 		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
 	}
 
-	function showSpinner() {
-		// 전역 스피너가 있다면 표시
-		if ($('.global-spinner').length > 0) {
-			$('.global-spinner').show();
-		}
-	}
-
-	function hideSpinner() {
-		if ($('.global-spinner').length > 0) {
-			$('.global-spinner').hide();
-		}
-	}
-
 	/**
-	 * Toast 메시지 표시
-	 */
-	function showToast(message, type) {
-		type = type || 'info';
-
-		if (typeof window.showToast === 'function') {
-			window.showToast(message, type);
-		} else {
-			alert(message);
-		}
-	}
-
-	/**
-	 * Confirm 모달 표시
-	 */
-	function showConfirmModal(title, message, confirmCallback) {
-		if (typeof window.showConfirmModal === 'function') {
-			window.showConfirmModal(title, message, confirmCallback);
-		} else {
-			if (confirm(message)) {
-				confirmCallback();
-			}
-		}
-	}
-
-	/**
-	 * Debounce 함수
+	 * 디바운스 유틸리티
 	 */
 	function debounce(func, wait) {
 		let timeout;
-		return function() {
-			const context = this;
-			const args = arguments;
+		return function executedFunction(...args) {
+			const later = () => {
+				clearTimeout(timeout);
+				func(...args);
+			};
 			clearTimeout(timeout);
-			timeout = setTimeout(function() {
-				func.apply(context, args);
-			}, wait);
+			timeout = setTimeout(later, wait);
 		};
 	}
 });

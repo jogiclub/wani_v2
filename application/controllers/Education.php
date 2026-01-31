@@ -257,10 +257,8 @@ class Education extends My_Controller
 		));
 	}
 
-	/**
-	 * 교육 등록 API
-	 */
-	public function add_edu()
+	// 기존 add_edu 메서드를 insert_edu로 변경
+	public function insert_edu()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -391,6 +389,61 @@ class Education extends My_Controller
 
 		if ($result) {
 			echo json_encode(array('success' => true, 'message' => '교육이 삭제되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '교육 삭제에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 여러 교육 삭제 API
+	 */
+	public function delete_multiple_edu()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$edu_indexes = $this->input->post('edu_indexes');
+
+		if (!$edu_indexes || !is_array($edu_indexes)) {
+			echo json_encode(array('success' => false, 'message' => '삭제할 교육 정보가 필요합니다.'));
+			return;
+		}
+
+		$success_count = 0;
+		$fail_count = 0;
+
+		foreach ($edu_indexes as $edu_idx) {
+			// 교육 정보 조회
+			$existing_edu = $this->Education_model->get_edu_by_idx($edu_idx);
+
+			if (!$existing_edu) {
+				$fail_count++;
+				continue;
+			}
+
+			// 권한 확인
+			if (!$this->check_org_access($existing_edu['org_id'])) {
+				$fail_count++;
+				continue;
+			}
+
+			// 삭제 실행
+			$result = $this->Education_model->delete_edu($edu_idx);
+
+			if ($result) {
+				$success_count++;
+			} else {
+				$fail_count++;
+			}
+		}
+
+		if ($success_count > 0) {
+			$message = $success_count . '개의 교육이 삭제되었습니다.';
+			if ($fail_count > 0) {
+				$message .= ' (' . $fail_count . '개 실패)';
+			}
+			echo json_encode(array('success' => true, 'message' => $message));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '교육 삭제에 실패했습니다.'));
 		}

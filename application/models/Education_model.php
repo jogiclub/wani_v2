@@ -102,44 +102,70 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 교육 목록 데이터 가공
+	 * 파일 위치: application/models/Education_model.php
+	 * 역할: 교육 목록 데이터 가공 - implode 오류 수정
 	 */
+
 	private function process_edu_list($edu_list)
 	{
 		foreach ($edu_list as &$edu) {
 			// JSON 필드 파싱
-			$edu['edu_days'] = !empty($edu['edu_days']) ? json_decode($edu['edu_days'], true) : array();
-			$edu['edu_times'] = !empty($edu['edu_times']) ? json_decode($edu['edu_times'], true) : array();
+			if (!empty($edu['edu_days'])) {
+				$parsed_days = json_decode($edu['edu_days'], true);
+				$edu['edu_days'] = is_array($parsed_days) ? $parsed_days : array();
+			} else {
+				$edu['edu_days'] = array();
+			}
+
+			if (!empty($edu['edu_times'])) {
+				$parsed_times = json_decode($edu['edu_times'], true);
+				$edu['edu_times'] = is_array($parsed_times) ? $parsed_times : array();
+			} else {
+				$edu['edu_times'] = array();
+			}
 
 			// 요일 문자열 생성
-			$edu['edu_days_str'] = !empty($edu['edu_days']) ? implode(', ', $edu['edu_days']) : '';
+			$edu['edu_days_str'] = !empty($edu['edu_days']) && is_array($edu['edu_days'])
+				? implode(', ', $edu['edu_days'])
+				: '';
 
 			// 시간대 문자열 생성
-			$edu['edu_times_str'] = !empty($edu['edu_times']) ? implode(', ', $edu['edu_times']) : '';
+			$edu['edu_times_str'] = !empty($edu['edu_times']) && is_array($edu['edu_times'])
+				? implode(', ', $edu['edu_times'])
+				: '';
 
-			// 교육기간 문자열 생성
-			if (!empty($edu['edu_start_date']) && !empty($edu['edu_end_date'])) {
-				$edu['edu_period_str'] = $edu['edu_start_date'] . ' ~ ' . $edu['edu_end_date'];
+			// 교육 기간 문자열 생성
+			if (!empty($edu['edu_start_date']) && $edu['edu_start_date'] != '0000-00-00') {
+				$start_date = $edu['edu_start_date'];
+				$end_date = !empty($edu['edu_end_date']) && $edu['edu_end_date'] != '0000-00-00'
+					? $edu['edu_end_date']
+					: $start_date;
+				$edu['edu_period_str'] = $start_date . ' ~ ' . $end_date;
 			} else {
 				$edu['edu_period_str'] = '';
 			}
 
-			// 인도자 연령대 한글 변환
+			// 인도자 연령대 문자열 변환
 			$age_map = array(
 				'10s' => '10대',
 				'20s' => '20대',
 				'30s' => '30대',
 				'40s' => '40대',
-				'50s' => '50대'
+				'50s' => '50대',
+				'60s' => '60대'
 			);
-			$edu['edu_leader_age_str'] = isset($age_map[$edu['edu_leader_age']]) ? $age_map[$edu['edu_leader_age']] : '';
+			$edu['edu_leader_age_str'] = isset($age_map[$edu['edu_leader_age']])
+				? $age_map[$edu['edu_leader_age']]
+				: '';
 
-			// 인도자 성별 한글 변환
+			// 인도자 성별 문자열 변환
 			$gender_map = array(
 				'male' => '남',
 				'female' => '여'
 			);
-			$edu['edu_leader_gender_str'] = isset($gender_map[$edu['edu_leader_gender']]) ? $gender_map[$edu['edu_leader_gender']] : '';
+			$edu['edu_leader_gender_str'] = isset($gender_map[$edu['edu_leader_gender']])
+				? $gender_map[$edu['edu_leader_gender']]
+				: '';
 		}
 
 		return $edu_list;
