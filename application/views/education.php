@@ -6,9 +6,6 @@
 $this->load->view('header');
 ?>
 
-<!-- Education CSS -->
-<link rel="stylesheet" href="/assets/css/education.css?<?php echo WB_VERSION; ?>">
-
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
 
@@ -29,14 +26,7 @@ $this->load->view('header');
 
 		<div class="col-12 my-1 d-flex align-items-center justify-content-between">
 			<h3 class="page-title mb-0">교육관리</h3>
-			<div class="d-flex gap-2">
-				<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">
-					<i class="bi bi-folder"></i> 카테고리 관리
-				</button>
-				<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
-					<i class="bi bi-plus-lg"></i> 교육 등록
-				</button>
-			</div>
+
 		</div>
 
 
@@ -65,23 +55,37 @@ $this->load->view('header');
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-6 d-flex align-items-center">
+						<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedCategoryName">
 								<i class="bi bi-list-ul"></i> 카테고리를 선택해주세요
 							</h5>
 							<small class="ms-3 text-muted">총 <span id="totalEduCount">0</span>개</small>
 						</div>
 
-						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
-							<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelected">
-								<i class="bi bi-trash"></i> 선택 삭제
-							</button>
+
+						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
+
 							<div class="input-group input-group-sm" style="max-width: 300px;">
 								<input type="text" class="form-control" placeholder="교육명 검색" id="searchKeyword">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="btnSearch">
 									<i class="bi bi-search"></i> 검색
 								</button>
 							</div>
+						</div>
+
+						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
+							<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelected">
+								<i class="bi bi-trash"></i> 선택 삭제
+							</button>
+
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">
+									<i class="bi bi-folder"></i> 카테고리 관리
+								</button>
+								<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
+									<i class="bi bi-plus-lg"></i> 교육 등록
+								</button>
+
+
 						</div>
 					</div>
 				</div>

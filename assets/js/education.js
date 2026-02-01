@@ -281,6 +281,7 @@ $(document).ready(function () {
 							var checkboxId = 'edu-checkbox-' + ui.rowData.edu_idx;
 							return '<input type="checkbox" class="edu-checkbox" id="' + checkboxId + '" data-edu-idx="' + ui.rowData.edu_idx + '" />';
 						}
+
 					},
 					{
 						title: "교육카테고리",
@@ -346,6 +347,12 @@ $(document).ready(function () {
 				wrap: false,
 				columnBorders: true,
 				rowBorders: true,
+				rowInit: function (ui) {
+					var style = "height: 40px;";
+					return {
+						style: style,
+					};
+				},
 				cellClick: function(event, ui) {
 					if (ui.dataIndx === 'checkbox') {
 						handleCheckboxClick(event, ui.rowData.edu_idx);
