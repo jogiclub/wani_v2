@@ -633,22 +633,25 @@ $(document).ready(function () {
 						title: "교육카테고리",
 						dataIndx: "category_name",
 						width: 120,
+						editable: false,
 						align: "center"
 					},
 					{
 						title: "교육명",
 						dataIndx: "edu_name",
+						editable: false,
 						width: 200
 					},
 					{
 						title: "교육지역",
 						dataIndx: "edu_location",
+						editable: false,
 						width: 150
 					},
 					{
 						title: "교육기간",
 						dataIndx: "edu_period_str",
-						width: 200,
+						width: 300,
 						align: "center"
 					},
 					{
@@ -665,7 +668,7 @@ $(document).ready(function () {
 						title: "수강료",
 						dataIndx: "edu_fee",
 						width: 100,
-						align: "right",
+						align: "center",
 						render: function(ui) {
 							var fee = parseInt(ui.cellData) || 0;
 							return fee === 0 ? '무료' : formatNumber(fee) + '원';

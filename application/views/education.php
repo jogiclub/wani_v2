@@ -117,6 +117,7 @@ $this->load->view('header');
 		<form id="eduForm">
 			<input type="hidden" id="eduIdx" name="edu_idx">
 			<input type="hidden" id="eduOrgId" name="org_id">
+			<input type="hidden" id="removePosterFlag" value="0">
 
 
 			<div class="row mb-3">
@@ -147,11 +148,8 @@ $this->load->view('header');
 			</div>
 
 			<div class="row mb-3">
-				<div class="col-4">
-					<label class="form-label">교육지역</label>
-					<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
-				</div>
-				<div class="col-4">
+
+				<div class="col-6">
 					<label class="form-label">요일</label>
 					<div class="dropdown w-100">
 						<button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="eduDaysDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
@@ -204,7 +202,7 @@ $this->load->view('header');
 					</div>
 					<input type="hidden" id="eduDays" name="edu_days">
 				</div>
-				<div class="col-4">
+				<div class="col-6">
 					<label class="form-label">시간대</label>
 					<div class="dropdown w-100">
 						<button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="eduTimesDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
@@ -319,25 +317,35 @@ $this->load->view('header');
 				</div>
 			</div>
 
-			<div class="mb-3">
-				<label class="form-label">수강료</label>
-				<div class="input-group">
-					<input type="text" class="form-control" id="eduFee" name="edu_fee" placeholder="0" value="0">
-					<span class="input-group-text">원</span>
+			<div class="row mb-3">
+				<div class="col-6">
+					<label class="form-label">수강료</label>
+					<div class="input-group">
+						<input type="text" class="form-control" id="eduFee" name="edu_fee" placeholder="0" value="0">
+						<span class="input-group-text">원</span>
+					</div>
+					<div class="form-text">수강료를 입력하세요 (무료인 경우 0)</div>
 				</div>
-				<div class="form-text">수강료를 입력하세요 (무료인 경우 0)</div>
+
+
+				<div class="col-6">
+					<label class="form-label">교육지역</label>
+					<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
+				</div>
 			</div>
 
 			<div class="row mb-3">
-				<div class="col-3">
+				<div class="col-6">
 					<label class="form-label">인도자</label>
 					<input type="text" class="form-control" id="eduLeader" name="edu_leader" placeholder="예: 손용일 집사">
 				</div>
-				<div class="col-3">
+				<div class="col-6">
 					<label class="form-label">인도자 연락처</label>
 					<input type="text" class="form-control" id="eduLeaderPhone" name="edu_leader_phone" placeholder="010-1234-5678">
 				</div>
-				<div class="col-3">
+			</div>
+			<div class="row mb-3">
+				<div class="col-6">
 					<label class="form-label">인도자 연령대</label>
 					<select class="form-select" id="eduLeaderAge" name="edu_leader_age">
 						<option value="">선택</option>
@@ -349,7 +357,7 @@ $this->load->view('header');
 						<option value="60s">60대</option>
 					</select>
 				</div>
-				<div class="col-3">
+				<div class="col-6">
 					<label class="form-label">인도자 성별</label>
 					<select class="form-select" id="eduLeaderGender" name="edu_leader_gender">
 						<option value="">선택</option>
