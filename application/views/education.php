@@ -85,6 +85,9 @@ $this->load->view('header');
 								<button type="button" class="btn btn-sm btn-outline-success" id="btnManageApplicant">
 									<i class="bi bi-people"></i> 신청자 관리
 								</button>
+								<button type="button" class="btn btn-sm btn-outline-info" id="btnExternalUrl">
+									<i class="bi bi-link-45deg"></i> 외부URL
+								</button>
 							</div>
 
 						</div>
@@ -502,9 +505,6 @@ $this->load->view('header');
 
 				<button type="button" class="btn btn-sm btn-outline-secondary" id="btnChangeStatusBulk">
 					<i class="bi bi-arrow-repeat"></i> 선택 상태변경
-				</button>
-				<button type="button" class="btn btn-sm btn-outline-info" id="btnExternalUrl">
-					<i class="bi bi-link-45deg"></i> 외부URL
 				</button>
 			</div>
 		</div>

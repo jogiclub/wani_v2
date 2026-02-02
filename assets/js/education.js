@@ -2051,7 +2051,7 @@ $(document).ready(function () {
 				title: '연락처',
 				dataIndx: 'applicant_phone',
 				dataType: 'string',
-				width: 120,
+				width: 140,
 				align: 'center',
 				render: function (ui) {
 					return ui.rowData.applicant_phone || '-';
