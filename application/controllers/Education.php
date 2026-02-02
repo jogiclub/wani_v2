@@ -337,6 +337,16 @@ class Education extends My_Controller
 		echo json_encode(array('success' => true, 'data' => $members));
 	}
 
+
+
+
+
+
+	/**
+	 * 파일 위치: application/controllers/Education.php
+	 * 역할: 신청자 관리 API 함수들
+	 */
+
 	/**
 	 * 신청자 목록 조회
 	 */
@@ -347,13 +357,29 @@ class Education extends My_Controller
 		}
 
 		$edu_idx = $this->input->post('edu_idx');
+
+		if (!$edu_idx) {
+			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			return;
+		}
+
+		// 교육 정보 조회하여 권한 확인
+		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		if (!$edu || !$this->check_org_access($edu['org_id'])) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
 		$applicants = $this->Education_model->get_applicant_list($edu_idx);
 
-		echo json_encode(array('success' => true, 'data' => $applicants));
+		echo json_encode(array(
+			'success' => true,
+			'data' => $applicants
+		));
 	}
 
 	/**
-	 * 신청자 추가
+	 * 신청자 추가 (다중)
 	 */
 	public function add_applicants()
 	{
@@ -361,20 +387,24 @@ class Education extends My_Controller
 			show_404();
 		}
 
-		$user_id = $this->session->userdata('user_id');
 		$edu_idx = $this->input->post('edu_idx');
 		$applicants_json = $this->input->post('applicants');
 
-		// 교육 정보 조회
+		if (!$edu_idx || !$applicants_json) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 교육 정보 조회하여 권한 확인
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
-		if (!$edu) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+		if (!$edu || !$this->check_org_access($edu['org_id'])) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
 			return;
 		}
 
 		$applicants = json_decode($applicants_json, true);
-		if (!$applicants || !is_array($applicants)) {
-			echo json_encode(array('success' => false, 'message' => '신청자 정보가 올바르지 않습니다.'));
+		if (!is_array($applicants)) {
+			echo json_encode(array('success' => false, 'message' => '잘못된 데이터 형식입니다.'));
 			return;
 		}
 
@@ -382,12 +412,11 @@ class Education extends My_Controller
 		foreach ($applicants as $applicant) {
 			$data = array(
 				'edu_idx' => $edu_idx,
-				'org_id' => $edu['org_id'],
-				'member_idx' => !empty($applicant['member_idx']) && is_numeric($applicant['member_idx']) ? $applicant['member_idx'] : null,
+				'member_idx' => isset($applicant['member_idx']) ? $applicant['member_idx'] : null,
 				'applicant_name' => $applicant['name'],
-				'applicant_phone' => $applicant['phone'] ?: null,
+				'applicant_phone' => isset($applicant['phone']) ? $applicant['phone'] : '',
 				'status' => '신청',
-				'user_id' => $user_id
+				'del_yn' => 'N'
 			);
 
 			if ($this->Education_model->add_applicant($data)) {
@@ -395,7 +424,14 @@ class Education extends My_Controller
 			}
 		}
 
-		echo json_encode(array('success' => true, 'message' => $success_count . '명의 신청자가 추가되었습니다.'));
+		if ($success_count > 0) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => $success_count . '명의 신청자가 추가되었습니다.'
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '신청자 추가에 실패했습니다.'));
+		}
 	}
 
 	/**
@@ -408,10 +444,19 @@ class Education extends My_Controller
 		}
 
 		$applicant_idx = $this->input->post('applicant_idx');
+		$applicant_name = $this->input->post('applicant_name');
+		$applicant_phone = $this->input->post('applicant_phone');
+		$status = $this->input->post('status');
+
+		if (!$applicant_idx) {
+			echo json_encode(array('success' => false, 'message' => '신청자 정보가 필요합니다.'));
+			return;
+		}
+
 		$data = array(
-			'applicant_name' => $this->input->post('applicant_name'),
-			'applicant_phone' => $this->input->post('applicant_phone'),
-			'status' => $this->input->post('status')
+			'applicant_name' => $applicant_name,
+			'applicant_phone' => $applicant_phone,
+			'status' => $status
 		);
 
 		$result = $this->Education_model->update_applicant($applicant_idx, $data);
@@ -424,7 +469,7 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 신청자 삭제
+	 * 신청자 삭제 (단일)
 	 */
 	public function delete_applicant()
 	{
@@ -433,6 +478,12 @@ class Education extends My_Controller
 		}
 
 		$applicant_idx = $this->input->post('applicant_idx');
+
+		if (!$applicant_idx) {
+			echo json_encode(array('success' => false, 'message' => '신청자 정보가 필요합니다.'));
+			return;
+		}
+
 		$result = $this->Education_model->delete_applicant($applicant_idx);
 
 		if ($result) {
@@ -443,7 +494,46 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 상태 일괄변경
+	 * 신청자 다중 삭제
+	 */
+	public function delete_applicants()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$applicant_idx_list_json = $this->input->post('applicant_idx_list');
+
+		if (!$applicant_idx_list_json) {
+			echo json_encode(array('success' => false, 'message' => '삭제할 신청자 정보가 필요합니다.'));
+			return;
+		}
+
+		$applicant_idx_list = json_decode($applicant_idx_list_json, true);
+		if (!is_array($applicant_idx_list) || empty($applicant_idx_list)) {
+			echo json_encode(array('success' => false, 'message' => '잘못된 데이터 형식입니다.'));
+			return;
+		}
+
+		$success_count = 0;
+		foreach ($applicant_idx_list as $applicant_idx) {
+			if ($this->Education_model->delete_applicant($applicant_idx)) {
+				$success_count++;
+			}
+		}
+
+		if ($success_count > 0) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => $success_count . '명의 신청자가 삭제되었습니다.'
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '신청자 삭제에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 신청자 상태 일괄변경
 	 */
 	public function bulk_update_status()
 	{
@@ -452,16 +542,46 @@ class Education extends My_Controller
 		}
 
 		$edu_idx = $this->input->post('edu_idx');
+		$applicant_idx_list_json = $this->input->post('applicant_idx_list');
 		$status = $this->input->post('status');
 
-		$result = $this->Education_model->bulk_update_applicant_status($edu_idx, $status);
+		if (!$edu_idx || !$applicant_idx_list_json || !$status) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
 
-		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '상태가 일괄 변경되었습니다.'));
+		// 교육 정보 조회하여 권한 확인
+		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		if (!$edu || !$this->check_org_access($edu['org_id'])) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		$applicant_idx_list = json_decode($applicant_idx_list_json, true);
+		if (!is_array($applicant_idx_list) || empty($applicant_idx_list)) {
+			echo json_encode(array('success' => false, 'message' => '잘못된 데이터 형식입니다.'));
+			return;
+		}
+
+		// 선택된 신청자들만 상태 변경
+		$success_count = 0;
+		foreach ($applicant_idx_list as $applicant_idx) {
+			$data = array('status' => $status);
+			if ($this->Education_model->update_applicant($applicant_idx, $data)) {
+				$success_count++;
+			}
+		}
+
+		if ($success_count > 0) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => $success_count . '명의 신청자 상태가 변경되었습니다.'
+			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '상태 변경에 실패했습니다.'));
 		}
 	}
+
 
 	/**
 	 * 파일 위치: application/controllers/Education.php

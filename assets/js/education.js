@@ -3,6 +3,7 @@
 $(document).ready(function () {
 	// 전역 변수 영역
 	let eduGrid;                      // ParamQuery Grid 인스턴스
+	let applicantGrid;                // 신청자 ParamQuery Grid 인스턴스
 	let selectedOrgId = null;         // 선택된 조직 ID
 	let selectedCategoryCode = null;  // 선택된 카테고리 코드
 	let selectedType = null;          // 선택된 타입 ('org', 'category')
@@ -658,11 +659,11 @@ $(document).ready(function () {
 							var capacity = ui.rowData.edu_capacity || 0;
 							var text = '';
 							if (capacity > 0) {
-								text = applicantCount + '명 / ' + capacity + '명';
+								text = applicantCount + '명 | ' + capacity + '명';
 							} else {
 								text = applicantCount + '명';
 							}
-							return '<span class="text-primary" style="cursor:pointer;">' + text + '</span>';
+							return '<span class="text-success" style="cursor:pointer;">' + text + '</span>';
 						}
 					},
 					{
@@ -1526,6 +1527,11 @@ $(document).ready(function () {
 
 		// 상태 일괄변경 버튼
 		$('#btnChangeStatusBulk').on('click', function () {
+			var selectedApplicants = getSelectedApplicants();
+			if (selectedApplicants.length === 0) {
+				showToast('상태를 변경할 신청자를 선택해주세요.', 'warning');
+				return;
+			}
 			$('#bulkStatusModal').modal('show');
 		});
 
@@ -1537,6 +1543,16 @@ $(document).ready(function () {
 		// 삭제 확인 버튼
 		$('#btnConfirmDeleteApplicant').on('click', function () {
 			confirmDeleteApplicant();
+		});
+
+		// 선택 삭제 버튼
+		$('#btnDeleteSelectedApplicant').on('click', function () {
+			var selectedApplicants = getSelectedApplicants();
+			if (selectedApplicants.length === 0) {
+				showToast('삭제할 신청자를 선택해주세요.', 'warning');
+				return;
+			}
+			openDeleteSelectedApplicantsModal(selectedApplicants);
 		});
 
 		// Select2 초기화
@@ -1614,82 +1630,93 @@ $(document).ready(function () {
 
 		$('#applicantOffcanvasTitle').text(eduName + ' 신청자 관리');
 
-		// 신청자 목록 로드
-		loadApplicantList(eduIdx);
-
 		const offcanvas = new bootstrap.Offcanvas('#applicantOffcanvas');
 		offcanvas.show();
+
+		// Offcanvas가 표시된 후 그리드 초기화
+		$('#applicantOffcanvas').one('shown.bs.offcanvas', function () {
+			initApplicantGrid();
+			loadApplicantList(eduIdx);
+		});
 	}
+
 
 	/**
 	 * 신청자 목록 로드
 	 */
 	function loadApplicantList(eduIdx) {
+		showApplicantGridSpinner();
+
 		$.ajax({
 			url: window.educationPageData.baseUrl + 'education/get_applicant_list',
 			method: 'POST',
 			data: { edu_idx: eduIdx },
 			dataType: 'json',
 			success: function (response) {
+				hideApplicantGridSpinner();
+
 				if (response.success) {
-					renderApplicantList(response.data);
+					updateApplicantGrid(response.data);
 				} else {
 					showToast(response.message || '신청자 목록 조회 실패', 'error');
 				}
 			},
 			error: function () {
+				hideApplicantGridSpinner();
 				showToast('신청자 목록을 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		});
 	}
 
+
+
 	/**
-	 * 신청자 목록 렌더링
+	 * 신청자 인덱스로 데이터 찾기
 	 */
-	function renderApplicantList(applicants) {
-		var $tbody = $('#applicantTableBody');
-		$tbody.empty();
+	function findApplicantByIdx(applicantIdx) {
+		if (!applicantGrid) return null;
 
-		if (!applicants || applicants.length === 0) {
-			$('#applicantTable').hide();
-			$('#noApplicantMessage').removeClass('d-none');
-			return;
+		var data = applicantGrid.pqGrid('option', 'dataModel.data');
+		for (var i = 0; i < data.length; i++) {
+			if (data[i].applicant_idx == applicantIdx) {
+				return data[i];
+			}
 		}
+		return null;
+	}
 
-		$('#applicantTable').show();
-		$('#noApplicantMessage').addClass('d-none');
+	/**
+	 * 전체 선택/해제
+	 */
+	function toggleAllApplicantSelection(isChecked) {
+		if (!applicantGrid) return;
 
-		applicants.forEach(function (applicant) {
-			var statusBadge = getStatusBadge(applicant.status);
-			var regiDate = applicant.regi_date ? applicant.regi_date.substring(0, 16).replace('T', ' ') : '';
-
-			var $row = $('<tr data-idx="' + applicant.applicant_idx + '">' +
-				'<td>' + regiDate + '</td>' +
-				'<td>' + escapeHtml(applicant.applicant_name) + '</td>' +
-				'<td>' + escapeHtml(applicant.applicant_phone || '-') + '</td>' +
-				'<td>' + statusBadge + '</td>' +
-				'<td class="text-center">' +
-				'<button type="button" class="btn btn-xs btn-outline-secondary btn-edit-applicant me-1" title="수정">' +
-				'<i class="bi bi-pencil"></i>' +
-				'</button>' +
-				'<button type="button" class="btn btn-xs btn-outline-danger btn-delete-applicant" title="삭제">' +
-				'<i class="bi bi-trash"></i>' +
-				'</button>' +
-				'</td>' +
-				'</tr>');
-
-			// 수정 버튼 이벤트
-			$row.find('.btn-edit-applicant').on('click', function () {
-				openEditApplicantModal(applicant);
+		var data = applicantGrid.pqGrid('option', 'dataModel.data');
+		data.forEach(function (row, index) {
+			applicantGrid.pqGrid('updateRow', {
+				rowIndx: index,
+				row: { pq_selected: isChecked }
 			});
-
-			// 삭제 버튼 이벤트
-			$row.find('.btn-delete-applicant').on('click', function () {
-				openDeleteApplicantModal(applicant.applicant_idx);
-			});
-
-			$tbody.append($row);
 		});
+		applicantGrid.pqGrid('refresh');
+	}
+
+
+
+
+
+	/**
+	 * 신청자 그리드 스피너 표시
+	 */
+	function showApplicantGridSpinner() {
+		$('#applicantGridSpinner').removeClass('d-none').addClass('d-flex');
+	}
+
+	/**
+	 * 신청자 그리드 스피너 숨김
+	 */
+	function hideApplicantGridSpinner() {
+		$('#applicantGridSpinner').removeClass('d-flex').addClass('d-none');
 	}
 
 	/**
@@ -1834,19 +1861,29 @@ $(document).ready(function () {
 	}
 
 	var deleteApplicantIdx = null;
+	var deleteSelectedApplicantsList = [];
 
 	/**
 	 * 신청자 삭제 모달 열기
 	 */
 	function openDeleteApplicantModal(applicantIdx) {
 		deleteApplicantIdx = applicantIdx;
+		deleteSelectedApplicantsList = [];
+		$('#deleteApplicantModal .modal-body p').text('선택한 신청자를 삭제하시겠습니까?');
 		$('#deleteApplicantModal').modal('show');
 	}
 
 	/**
-	 * 신청자 삭제 확인
+	 * 신청자 삭제 확인 (단일 및 다중 삭제 통합)
 	 */
 	function confirmDeleteApplicant() {
+		// 선택 삭제인 경우
+		if (deleteSelectedApplicantsList && deleteSelectedApplicantsList.length > 0) {
+			confirmDeleteSelectedApplicants();
+			return;
+		}
+
+		// 단일 삭제인 경우
 		if (!deleteApplicantIdx) return;
 
 		$.ajax({
@@ -1858,8 +1895,9 @@ $(document).ready(function () {
 				if (response.success) {
 					showToast('신청자가 삭제되었습니다.', 'success');
 					$('#deleteApplicantModal').modal('hide');
+					deleteApplicantIdx = null;
 					loadApplicantList(currentApplicantEduIdx);
-					loadEduList(); // 그리드 갱신
+					loadEduList();
 				} else {
 					showToast(response.message || '신청자 삭제 실패', 'error');
 				}
@@ -1875,18 +1913,29 @@ $(document).ready(function () {
 	 */
 	function applyBulkStatus() {
 		var status = $('#bulkStatusSelect').val();
+		var selectedApplicants = getSelectedApplicants();
+
+		if (selectedApplicants.length === 0) {
+			showToast('상태를 변경할 신청자를 선택해주세요.', 'warning');
+			return;
+		}
+
+		var applicantIdxList = selectedApplicants.map(function (item) {
+			return item.applicant_idx;
+		});
 
 		$.ajax({
 			url: window.educationPageData.baseUrl + 'education/bulk_update_status',
 			method: 'POST',
 			data: {
 				edu_idx: currentApplicantEduIdx,
+				applicant_idx_list: JSON.stringify(applicantIdxList),
 				status: status
 			},
 			dataType: 'json',
 			success: function (response) {
 				if (response.success) {
-					showToast('상태가 일괄 변경되었습니다.', 'success');
+					showToast('선택한 신청자의 상태가 변경되었습니다.', 'success');
 					$('#bulkStatusModal').modal('hide');
 					loadApplicantList(currentApplicantEduIdx);
 				} else {
@@ -1898,4 +1947,241 @@ $(document).ready(function () {
 			}
 		});
 	}
+
+	/**
+	 * 선택 삭제 모달 열기
+	 */
+	function openDeleteSelectedApplicantsModal(selectedApplicants) {
+		deleteSelectedApplicantsList = selectedApplicants;
+		$('#deleteApplicantModal .modal-body p').text(selectedApplicants.length + '명의 신청자를 삭제하시겠습니까?');
+		$('#deleteApplicantModal').modal('show');
+	}
+
+	/**
+	 * 선택 삭제 확인
+	 */
+	function confirmDeleteSelectedApplicants() {
+		if (deleteSelectedApplicantsList.length === 0) return;
+
+		var applicantIdxList = deleteSelectedApplicantsList.map(function (item) {
+			return item.applicant_idx;
+		});
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/delete_applicants',
+			method: 'POST',
+			data: { applicant_idx_list: JSON.stringify(applicantIdxList) },
+			dataType: 'json',
+			success: function (response) {
+				if (response.success) {
+					showToast(applicantIdxList.length + '명의 신청자가 삭제되었습니다.', 'success');
+					$('#deleteApplicantModal').modal('hide');
+					deleteSelectedApplicantsList = [];
+					loadApplicantList(currentApplicantEduIdx);
+					loadEduList();
+				} else {
+					showToast(response.message || '신청자 삭제 실패', 'error');
+				}
+			},
+			error: function () {
+				showToast('신청자 삭제 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 신청자 그리드 초기화 함수 수정
+	 * - 체크박스 방식을 교육관리 pqGrid 방식으로 변경
+	 * - 전체 체크박스 추가
+	 * - 관리 필드 제거
+	 * - 신청자명에 text-primary 적용 및 클릭 시 수정 모달 표시
+	 */
+
+	/**
+	 * 신청자 그리드 초기화
+	 */
+	function initApplicantGrid() {
+		// 기존 그리드 제거
+		if (applicantGrid) {
+			try {
+				applicantGrid.pqGrid('destroy');
+			} catch (e) {
+				console.log('그리드 제거 오류:', e);
+			}
+			applicantGrid = null;
+		}
+
+		var colModel = [
+			{
+				title: '<input type="checkbox" id="applicantSelectAllCheckbox" />',
+				dataIndx: 'checkbox',
+				width: 40,
+				align: 'center',
+				sortable: false,
+				editable: false,
+				render: function (ui) {
+					return '<input type="checkbox" class="applicant-checkbox" data-idx="' + ui.rowData.applicant_idx + '" />';
+				}
+			},
+			{
+				title: '신청일',
+				dataIndx: 'regi_date',
+				dataType: 'string',
+				width: 240,
+				align: 'center',
+				render: function (ui) {
+					if (ui.rowData.regi_date) {
+						return ui.rowData.regi_date.substring(0, 16).replace('T', ' ');
+					}
+					return '';
+				}
+			},
+			{
+				title: '신청자',
+				dataIndx: 'applicant_name',
+				dataType: 'string',
+				width: 100,
+				align: 'center',
+				render: function (ui) {
+					return '<span class="text-primary cursor-pointer applicant-name-link" data-idx="' + ui.rowData.applicant_idx + '">' + ui.rowData.applicant_name + '</span>';
+				}
+			},
+			{
+				title: '연락처',
+				dataIndx: 'applicant_phone',
+				dataType: 'string',
+				width: 120,
+				align: 'center',
+				render: function (ui) {
+					return ui.rowData.applicant_phone || '-';
+				}
+			},
+			{
+				title: '상태',
+				dataIndx: 'status',
+				dataType: 'string',
+				width: 80,
+				align: 'center',
+				render: function (ui) {
+					return getStatusBadge(ui.rowData.status);
+				}
+			}
+		];
+
+		applicantGrid = $('#applicantGrid').pqGrid({
+			width: '100%',
+			height: '700',
+			showTitle: false,
+			showHeader: true,
+			showTop: false,
+			showBottom: true,
+			numberCell: { show: false },
+			stripeRows: true,
+			selectionModel: { type: 'row', mode: 'range' },
+			scrollModel: { autoFit: true },
+			colModel: colModel,
+			dataModel: { data: [] },
+			strNoRows: '신청자 정보가 없습니다',
+			rowInit: function (ui) {
+				var style = "height: 40px;";
+				return {
+					style: style,
+				};
+			},
+			refresh: function () {
+				updateApplicantSelectAllCheckbox();
+			}
+		});
+
+		// 이벤트 바인딩
+		bindApplicantGridEvents();
+	}
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 신청자 그리드 이벤트 바인딩
+	 */
+	function bindApplicantGridEvents() {
+		// 전체 선택 체크박스
+		$(document).off('change', '#applicantSelectAllCheckbox').on('change', '#applicantSelectAllCheckbox', function () {
+			var isChecked = $(this).prop('checked');
+			$('.applicant-checkbox').prop('checked', isChecked);
+		});
+
+		// 개별 체크박스
+		$(document).off('change', '.applicant-checkbox').on('change', '.applicant-checkbox', function () {
+			updateApplicantSelectAllCheckbox();
+		});
+
+		// 신청자명 클릭 시 수정 모달
+		$(document).off('click', '.applicant-name-link').on('click', '.applicant-name-link', function () {
+			var applicantIdx = $(this).data('idx');
+			var rowData = findApplicantByIdx(applicantIdx);
+			if (rowData) {
+				openEditApplicantModal(rowData);
+			}
+		});
+	}
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateApplicantSelectAllCheckbox() {
+		const totalCheckboxes = $('.applicant-checkbox').length;
+		const checkedCount = $('.applicant-checkbox:checked').length;
+		const selectAllCheckbox = $('#applicantSelectAllCheckbox');
+
+		if (totalCheckboxes === 0 || checkedCount === 0) {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else if (checkedCount === totalCheckboxes) {
+			selectAllCheckbox.prop('checked', true);
+			selectAllCheckbox.prop('indeterminate', false);
+		} else {
+			selectAllCheckbox.prop('checked', false);
+			selectAllCheckbox.prop('indeterminate', true);
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 선택된 신청자 목록 반환 (수정됨)
+	 */
+	function getSelectedApplicants() {
+		var selectedApplicants = [];
+
+		$('.applicant-checkbox:checked').each(function () {
+			var applicantIdx = $(this).data('idx');
+			var rowData = findApplicantByIdx(applicantIdx);
+			if (rowData) {
+				selectedApplicants.push(rowData);
+			}
+		});
+
+		return selectedApplicants;
+	}
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 신청자 그리드 데이터 업데이트 (수정됨)
+	 */
+	function updateApplicantGrid(applicants) {
+		if (!applicantGrid) {
+			return;
+		}
+
+		var data = applicants || [];
+		applicantGrid.pqGrid('option', 'dataModel.data', data);
+		applicantGrid.pqGrid('refreshDataAndView');
+
+		// 총 인원 수 업데이트
+		$('#applicantTotalCount').text(data.length);
+
+		// 전체 선택 체크박스 초기화
+		$('#applicantSelectAllCheckbox').prop('checked', false);
+		$('#applicantSelectAllCheckbox').prop('indeterminate', false);
+	}
+
 });

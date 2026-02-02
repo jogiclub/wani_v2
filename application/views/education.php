@@ -25,10 +25,10 @@ $this->load->view('header');
 		</ol>
 	</nav>
 
-		<div class="col-12 my-1 d-flex align-items-center justify-content-between">
-			<h3 class="page-title mb-0">교육관리</h3>
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between">
+		<h3 class="page-title mb-0">교육관리</h3>
 
-		</div>
+	</div>
 
 
 	<!-- Split.js를 위한 단일 컨테이너 -->
@@ -75,20 +75,17 @@ $this->load->view('header');
 						</div>
 
 						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
-							<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelected">
-								<i class="bi bi-trash"></i> 선택 삭제
-							</button>
-
-<!--								<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">-->
-<!--									<i class="bi bi-folder"></i> 카테고리 관리-->
-<!--								</button>-->
+							<div class="btn-group">
 								<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
 									<i class="bi bi-plus-lg"></i> 교육 등록
 								</button>
-							<button type="button" class="btn btn-sm btn-outline-primary" id="btnManageApplicant">
-								<i class="bi bi-people"></i> 신청자 관리
-							</button>
-
+								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelected">
+									<i class="bi bi-trash"></i> 선택 삭제
+								</button>
+								<button type="button" class="btn btn-sm btn-outline-success" id="btnManageApplicant">
+									<i class="bi bi-people"></i> 신청자 관리
+								</button>
+							</div>
 
 						</div>
 					</div>
@@ -486,41 +483,41 @@ $this->load->view('header');
 
 
 <!-- 신청자 관리 Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="applicantOffcanvas" aria-labelledby="applicantOffcanvasLabel" style="width: 700px;">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="applicantOffcanvas" aria-labelledby="applicantOffcanvasLabel" style="width: 750px;">
 	<div class="offcanvas-header">
 		<h5 class="offcanvas-title" id="applicantOffcanvasTitle">신청자 관리</h5>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">
-		<div class="d-flex justify-content-end gap-2 mb-3">
-			<button type="button" class="btn btn-sm btn-primary" id="btnAddApplicant">
-				<i class="bi bi-plus-lg"></i> 신청자 추가
-			</button>
-			<button type="button" class="btn btn-sm btn-outline-secondary" id="btnChangeStatusBulk">
-				<i class="bi bi-arrow-repeat"></i> 상태변경
-			</button>
-			<button type="button" class="btn btn-sm btn-outline-info" id="btnExternalUrl">
-				<i class="bi bi-link-45deg"></i> 외부URL
-			</button>
+		<div class="d-flex justify-content-between align-items-center pb-2">
+			<small class="text-muted">총 <span id="applicantTotalCount">0</span>명</small>
+			<div class="btn-group">
+
+				<button type="button" class="btn btn-sm btn-primary" id="btnAddApplicant">
+					<i class="bi bi-plus-lg"></i> 신청자 추가
+				</button>
+				<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelectedApplicant">
+					<i class="bi bi-trash"></i> 선택 삭제
+				</button>
+
+				<button type="button" class="btn btn-sm btn-outline-secondary" id="btnChangeStatusBulk">
+					<i class="bi bi-arrow-repeat"></i> 선택 상태변경
+				</button>
+				<button type="button" class="btn btn-sm btn-outline-info" id="btnExternalUrl">
+					<i class="bi bi-link-45deg"></i> 외부URL
+				</button>
+			</div>
 		</div>
-		<div class="table-responsive">
-			<table class="table table-sm table-hover" id="applicantTable">
-				<thead>
-				<tr>
-					<th style="width: 150px;">신청일</th>
-					<th style="width: 100px;">신청자</th>
-					<th style="width: 130px;">연락처</th>
-					<th style="width: 80px;">상태</th>
-					<th style="width: 100px;">관리</th>
-				</tr>
-				</thead>
-				<tbody id="applicantTableBody">
-				</tbody>
-			</table>
-		</div>
-		<div id="noApplicantMessage" class="text-center text-muted py-5 d-none">
-			<i class="bi bi-people fs-1"></i>
-			<p class="mb-0 mt-2">신청자가 없습니다.</p>
+		<div class="flex-grow-1 position-relative">
+			<div id="applicantGridSpinner" class="d-none justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
+				<div class="text-center">
+					<div class="spinner-border text-primary mb-2" role="status">
+						<span class="visually-hidden">로딩 중...</span>
+					</div>
+					<div class="small text-muted">신청자 목록 로딩 중...</div>
+				</div>
+			</div>
+			<div id="applicantGrid" style="height: 100%;"></div>
 		</div>
 	</div>
 </div>
