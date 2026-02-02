@@ -319,6 +319,15 @@ $this->load->view('header');
 				</div>
 			</div>
 
+			<div class="mb-3">
+				<label class="form-label">수강료</label>
+				<div class="input-group">
+					<input type="text" class="form-control" id="eduFee" name="edu_fee" placeholder="0" value="0">
+					<span class="input-group-text">원</span>
+				</div>
+				<div class="form-text">수강료를 입력하세요 (무료인 경우 0)</div>
+			</div>
+
 			<div class="row mb-3">
 				<div class="col-3">
 					<label class="form-label">인도자</label>
@@ -372,6 +381,24 @@ $this->load->view('header');
 				<label class="form-label">유튜브 URL</label>
 				<input type="url" class="form-control" id="eduYoutubeUrl" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
 				<div class="form-text">유튜브 동영상 링크를 입력하세요</div>
+			</div>
+
+
+			<div class="mb-3">
+				<label class="form-label">포스터 이미지</label>
+				<div class="border rounded p-3 text-center" style="min-height: 200px; background-color: #f8f9fa;">
+					<div id="posterPlaceholder">
+						<i class="bi bi-image" style="font-size: 3rem; color: #dee2e6;"></i>
+						<p class="text-muted mb-0">포스터 이미지를 선택하세요</p>
+						<p class="text-muted small">권장 크기: 가로 1200px (자동 리사이징)</p>
+					</div>
+					<img id="posterPreview" src="" class="img-fluid" style="max-height: 300px; display: none;" alt="포스터 미리보기">
+				</div>
+				<input type="file" class="form-control mt-2" id="eduPosterImg" name="poster_img" accept="image/*">
+				<button type="button" class="btn btn-sm btn-outline-danger mt-2" id="btnRemovePoster" style="display: none;">
+					<i class="bi bi-trash"></i> 이미지 제거
+				</button>
+				<div class="form-text">JPG, PNG 형식 지원 (최대 10MB)</div>
 			</div>
 
 			<div class="mb-3">

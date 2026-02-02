@@ -505,13 +505,106 @@ $(document).ready(function () {
 		});
 	}
 
+
+
+
+
+
+
+	/**
+	 * 카테고리 옵션 로드
+	 */
+	function loadCategoryOptions(selectedCode) {
+		const $select = $('#eduCategoryCode');
+		$select.empty();
+		$select.append('<option value="">카테고리 선택</option>');
+
+		// 카테고리 트리에서 옵션 생성
+		const tree = $("#categoryTree").fancytree("getTree");
+		if (tree) {
+			tree.visit(function(node) {
+				if (node.data.type === 'category') {
+					const level = node.getLevel() - 1; // org 레벨 제외
+					const indent = '&nbsp;'.repeat(level * 4);
+					$select.append(
+						$('<option></option>')
+							.val(node.data.category_code)
+							.html(indent + node.title.split(' (')[0])
+					);
+				}
+			});
+		}
+
+		if (selectedCode) {
+			$select.val(selectedCode);
+		}
+	}
+
+
+
+	/**
+	 * 요일 체크박스 이벤트 바인딩
+	 */
+	function bindDayCheckboxEvents() {
+		$('.edu-day-checkbox').off('change').on('change', function() {
+			updateDaysDisplay();
+		});
+	}
+
+	/**
+	 * 시간대 체크박스 이벤트 바인딩
+	 */
+	function bindTimeCheckboxEvents() {
+		$('.edu-time-checkbox').off('change').on('change', function() {
+			updateTimesDisplay();
+		});
+	}
+
+	/**
+	 * 요일 선택 표시 업데이트
+	 */
+	function updateDaysDisplay() {
+		const selectedDays = [];
+		$('.edu-day-checkbox:checked').each(function() {
+			selectedDays.push($(this).val());
+		});
+
+		if (selectedDays.length > 0) {
+			$('#eduDaysText').text(selectedDays.join(', '));
+			// JSON.stringify 제거 - 배열을 직접 저장
+			$('#eduDays').val(selectedDays.join(','));
+		} else {
+			$('#eduDaysText').text('요일 선택');
+			$('#eduDays').val('');
+		}
+	}
+
+	/**
+	 * 시간대 선택 표시 업데이트
+	 */
+	function updateTimesDisplay() {
+		const selectedTimes = [];
+		$('.edu-time-checkbox:checked').each(function() {
+			selectedTimes.push($(this).val());
+		});
+
+		if (selectedTimes.length > 0) {
+			$('#eduTimesText').text(selectedTimes.join(', '));
+			// JSON.stringify 제거 - 배열을 직접 저장
+			$('#eduTimes').val(selectedTimes.join(','));
+		} else {
+			$('#eduTimesText').text('시간대 선택');
+			$('#eduTimes').val('');
+		}
+	}
+
 	/**
 	 * 파일 위치: assets/js/education.js
-	 * 역할: 교육관리 화면 - 셀 클릭 이벤트 및 필드 추가
+	 * 역할: 수강료, 포스터 필드 추가
 	 */
 
 	/**
-	 * ParamQuery Grid 초기화 - 수정
+	 * ParamQuery Grid 초기화 - 수강료 컬럼 추가
 	 */
 	function initializeParamQuery() {
 		showGridSpinner();
@@ -555,7 +648,7 @@ $(document).ready(function () {
 					{
 						title: "교육기간",
 						dataIndx: "edu_period_str",
-						width: 240,
+						width: 200,
 						align: "center"
 					},
 					{
@@ -567,6 +660,16 @@ $(document).ready(function () {
 						title: "시간대",
 						dataIndx: "edu_times_str",
 						width: 150
+					},
+					{
+						title: "수강료",
+						dataIndx: "edu_fee",
+						width: 100,
+						align: "right",
+						render: function(ui) {
+							var fee = parseInt(ui.cellData) || 0;
+							return fee === 0 ? '무료' : formatNumber(fee) + '원';
+						}
 					},
 					{
 						title: "인도자",
@@ -649,118 +752,8 @@ $(document).ready(function () {
 		}
 	}
 
-
-
-
 	/**
-	 * 교육 폼 채우기 - 필드 추가
-	 */
-	function fillEduForm(eduData) {
-		$('#eduIdx').val(eduData.edu_idx);
-		$('#eduOrgId').val(eduData.org_id);
-		$('#eduName').val(eduData.edu_name);
-		$('#eduLocation').val(eduData.edu_location);
-		$('#eduLeader').val(eduData.edu_leader);
-		$('#eduLeaderPhone').val(eduData.edu_leader_phone);
-		$('#eduLeaderAge').val(eduData.edu_leader_age);
-		$('#eduLeaderGender').val(eduData.edu_leader_gender);
-		$('#eduDesc').val(eduData.edu_desc);
-
-		// 외부공개 여부
-		$('#eduPublicYn').val(eduData.public_yn || 'N');
-
-		// 온라인 가능 여부
-		$('#eduOnlineYn').val(eduData.online_yn || 'N');
-
-		// 유튜브 URL
-		$('#eduYoutubeUrl').val(eduData.youtube_url || '');
-
-		// 카테고리 옵션 로드 후 선택
-		loadCategoryOptions(eduData.category_code);
-
-		// 날짜 설정
-		if (flatpickrStartInstance && eduData.edu_start_date) {
-			flatpickrStartInstance.setDate(eduData.edu_start_date);
-		}
-		if (flatpickrEndInstance && eduData.edu_end_date) {
-			flatpickrEndInstance.setDate(eduData.edu_end_date);
-		}
-
-		// 요일 체크박스 설정
-		$('.edu-day-checkbox').prop('checked', false);
-		if (eduData.edu_days && Array.isArray(eduData.edu_days)) {
-			eduData.edu_days.forEach(function(day) {
-				$('.edu-day-checkbox[value="' + day + '"]').prop('checked', true);
-			});
-			updateDaysDisplay();
-		}
-
-		// 시간대 체크박스 설정
-		$('.edu-time-checkbox').prop('checked', false);
-		if (eduData.edu_times && Array.isArray(eduData.edu_times)) {
-			eduData.edu_times.forEach(function(time) {
-				$('.edu-time-checkbox[value="' + time + '"]').prop('checked', true);
-			});
-			updateTimesDisplay();
-		}
-	}
-
-	/**
-	 * 교육 폼 초기화 - 필드 추가
-	 */
-	function resetEduForm() {
-		$('#eduForm')[0].reset();
-		$('#eduIdx').val('');
-		$('.edu-day-checkbox').prop('checked', false);
-		$('.edu-time-checkbox').prop('checked', false);
-		$('#eduDaysText').text('요일 선택');
-		$('#eduTimesText').text('시간대 선택');
-
-		// 새로 추가된 필드 초기화
-		$('#eduPublicYn').val('N');
-		$('#eduOnlineYn').val('N');
-		$('#eduYoutubeUrl').val('');
-		$('#eduLeaderPhone').val('');
-
-		if (flatpickrStartInstance) {
-			flatpickrStartInstance.clear();
-		}
-		if (flatpickrEndInstance) {
-			flatpickrEndInstance.clear();
-		}
-	}
-
-	/**
-	 * 카테고리 옵션 로드
-	 */
-	function loadCategoryOptions(selectedCode) {
-		const $select = $('#eduCategoryCode');
-		$select.empty();
-		$select.append('<option value="">카테고리 선택</option>');
-
-		// 카테고리 트리에서 옵션 생성
-		const tree = $("#categoryTree").fancytree("getTree");
-		if (tree) {
-			tree.visit(function(node) {
-				if (node.data.type === 'category') {
-					const level = node.getLevel() - 1; // org 레벨 제외
-					const indent = '&nbsp;'.repeat(level * 4);
-					$select.append(
-						$('<option></option>')
-							.val(node.data.category_code)
-							.html(indent + node.title.split(' (')[0])
-					);
-				}
-			});
-		}
-
-		if (selectedCode) {
-			$select.val(selectedCode);
-		}
-	}
-
-	/**
-	 * 전역 이벤트 바인딩
+	 * 전역 이벤트 바인딩 - 수강료 포맷팅 이벤트 추가
 	 */
 	function bindGlobalEvents() {
 		// 교육 등록 버튼
@@ -803,6 +796,22 @@ $(document).ready(function () {
 			}
 		});
 
+		// 수강료 입력 포맷팅
+		$('#eduFee').off('input').on('input', function() {
+			var val = $(this).val().replace(/[^\d]/g, '');
+			$(this).val(formatNumber(val));
+		});
+
+		// 포스터 이미지 선택
+		$('#eduPosterImg').off('change').on('change', function(e) {
+			handlePosterImageSelect(e);
+		});
+
+		// 포스터 이미지 삭제
+		$('#btnRemovePoster').off('click').on('click', function() {
+			removePosterImage();
+		});
+
 		// 요일 체크박스 이벤트
 		bindDayCheckboxEvents();
 
@@ -833,63 +842,153 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 요일 체크박스 이벤트 바인딩
+	 * 포스터 이미지 선택 처리
 	 */
-	function bindDayCheckboxEvents() {
-		$('.edu-day-checkbox').off('change').on('change', function() {
+	function handlePosterImageSelect(e) {
+		const file = e.target.files[0];
+		if (!file) {
+			return;
+		}
+
+		// 이미지 파일 검증
+		if (!file.type.match('image.*')) {
+			showToast('이미지 파일만 업로드 가능합니다.', 'warning');
+			$('#eduPosterImg').val('');
+			return;
+		}
+
+		// 파일 크기 검증 (10MB)
+		if (file.size > 10 * 1024 * 1024) {
+			showToast('파일 크기는 10MB 이하만 가능합니다.', 'warning');
+			$('#eduPosterImg').val('');
+			return;
+		}
+
+		// 미리보기 표시
+		const reader = new FileReader();
+		reader.onload = function(e) {
+			$('#posterPreview').attr('src', e.target.result).show();
+			$('#posterPlaceholder').hide();
+			$('#btnRemovePoster').show();
+		};
+		reader.readAsDataURL(file);
+	}
+
+	/**
+	 * 포스터 이미지 제거
+	 */
+	function removePosterImage() {
+		$('#eduPosterImg').val('');
+		$('#posterPreview').attr('src', '').hide();
+		$('#posterPlaceholder').show();
+		$('#btnRemovePoster').hide();
+		$('#removePosterFlag').val('1');
+	}
+
+	/**
+	 * 교육 폼 채우기 - 수강료, 포스터 추가
+	 */
+	function fillEduForm(eduData) {
+		$('#eduIdx').val(eduData.edu_idx);
+		$('#eduOrgId').val(eduData.org_id);
+		$('#eduName').val(eduData.edu_name);
+		$('#eduLocation').val(eduData.edu_location);
+		$('#eduLeader').val(eduData.edu_leader);
+		$('#eduLeaderPhone').val(eduData.edu_leader_phone);
+		$('#eduLeaderAge').val(eduData.edu_leader_age);
+		$('#eduLeaderGender').val(eduData.edu_leader_gender);
+		$('#eduDesc').val(eduData.edu_desc);
+
+		// 수강료
+		var fee = parseInt(eduData.edu_fee) || 0;
+		$('#eduFee').val(fee > 0 ? formatNumber(fee) : '0');
+
+		// 외부공개 여부
+		$('#eduPublicYn').val(eduData.public_yn || 'N');
+
+		// 온라인 가능 여부
+		$('#eduOnlineYn').val(eduData.online_yn || 'N');
+
+		// 유튜브 URL
+		$('#eduYoutubeUrl').val(eduData.youtube_url || '');
+
+		// 포스터 이미지
+		$('#removePosterFlag').val('0');
+		if (eduData.poster_img) {
+			$('#posterPreview').attr('src', window.educationPageData.baseUrl + eduData.poster_img).show();
+			$('#posterPlaceholder').hide();
+			$('#btnRemovePoster').show();
+		} else {
+			$('#posterPreview').attr('src', '').hide();
+			$('#posterPlaceholder').show();
+			$('#btnRemovePoster').hide();
+		}
+
+		// 카테고리 옵션 로드 후 선택
+		loadCategoryOptions(eduData.category_code);
+
+		// 날짜 설정
+		if (flatpickrStartInstance && eduData.edu_start_date) {
+			flatpickrStartInstance.setDate(eduData.edu_start_date);
+		}
+		if (flatpickrEndInstance && eduData.edu_end_date) {
+			flatpickrEndInstance.setDate(eduData.edu_end_date);
+		}
+
+		// 요일 체크박스 설정
+		$('.edu-day-checkbox').prop('checked', false);
+		if (eduData.edu_days && Array.isArray(eduData.edu_days)) {
+			eduData.edu_days.forEach(function(day) {
+				$('.edu-day-checkbox[value="' + day + '"]').prop('checked', true);
+			});
 			updateDaysDisplay();
-		});
-	}
+		}
 
-	/**
-	 * 시간대 체크박스 이벤트 바인딩
-	 */
-	function bindTimeCheckboxEvents() {
-		$('.edu-time-checkbox').off('change').on('change', function() {
+		// 시간대 체크박스 설정
+		$('.edu-time-checkbox').prop('checked', false);
+		if (eduData.edu_times && Array.isArray(eduData.edu_times)) {
+			eduData.edu_times.forEach(function(time) {
+				$('.edu-time-checkbox[value="' + time + '"]').prop('checked', true);
+			});
 			updateTimesDisplay();
-		});
-	}
-
-	/**
-	 * 요일 선택 표시 업데이트
-	 */
-	function updateDaysDisplay() {
-		const selectedDays = [];
-		$('.edu-day-checkbox:checked').each(function() {
-			selectedDays.push($(this).val());
-		});
-
-		if (selectedDays.length > 0) {
-			$('#eduDaysText').text(selectedDays.join(', '));
-			// JSON.stringify 제거 - 배열을 직접 저장
-			$('#eduDays').val(selectedDays.join(','));
-		} else {
-			$('#eduDaysText').text('요일 선택');
-			$('#eduDays').val('');
 		}
 	}
 
 	/**
-	 * 시간대 선택 표시 업데이트
+	 * 교육 폼 초기화 - 수강료, 포스터 추가
 	 */
-	function updateTimesDisplay() {
-		const selectedTimes = [];
-		$('.edu-time-checkbox:checked').each(function() {
-			selectedTimes.push($(this).val());
-		});
+	function resetEduForm() {
+		$('#eduForm')[0].reset();
+		$('#eduIdx').val('');
+		$('.edu-day-checkbox').prop('checked', false);
+		$('.edu-time-checkbox').prop('checked', false);
+		$('#eduDaysText').text('요일 선택');
+		$('#eduTimesText').text('시간대 선택');
 
-		if (selectedTimes.length > 0) {
-			$('#eduTimesText').text(selectedTimes.join(', '));
-			// JSON.stringify 제거 - 배열을 직접 저장
-			$('#eduTimes').val(selectedTimes.join(','));
-		} else {
-			$('#eduTimesText').text('시간대 선택');
-			$('#eduTimes').val('');
+		// 새로 추가된 필드 초기화
+		$('#eduPublicYn').val('N');
+		$('#eduOnlineYn').val('N');
+		$('#eduYoutubeUrl').val('');
+		$('#eduLeaderPhone').val('');
+		$('#eduFee').val('0');
+
+		// 포스터 이미지 초기화
+		$('#eduPosterImg').val('');
+		$('#posterPreview').attr('src', '').hide();
+		$('#posterPlaceholder').show();
+		$('#btnRemovePoster').hide();
+		$('#removePosterFlag').val('0');
+
+		if (flatpickrStartInstance) {
+			flatpickrStartInstance.clear();
+		}
+		if (flatpickrEndInstance) {
+			flatpickrEndInstance.clear();
 		}
 	}
 
 	/**
-	 * 교육 저장
+	 * 교육 저장 - FormData로 변경
 	 */
 	function saveEdu() {
 		// 필수값 검증
@@ -908,12 +1007,47 @@ $(document).ready(function () {
 			window.educationPageData.baseUrl + 'education/update_edu' :
 			window.educationPageData.baseUrl + 'education/insert_edu';
 
+		// FormData 생성
+		var formData = new FormData();
+
+		// 기본 필드
+		if (eduIdx) formData.append('edu_idx', eduIdx);
+		formData.append('org_id', $('#eduOrgId').val());
+		formData.append('category_code', $('#eduCategoryCode').val());
+		formData.append('edu_name', $('#eduName').val());
+		formData.append('edu_location', $('#eduLocation').val());
+		formData.append('edu_start_date', $('#eduStartDate').val());
+		formData.append('edu_end_date', $('#eduEndDate').val());
+		formData.append('edu_days', $('#eduDays').val());
+		formData.append('edu_times', $('#eduTimes').val());
+		formData.append('edu_leader', $('#eduLeader').val());
+		formData.append('edu_leader_phone', $('#eduLeaderPhone').val());
+		formData.append('edu_leader_age', $('#eduLeaderAge').val());
+		formData.append('edu_leader_gender', $('#eduLeaderGender').val());
+		formData.append('edu_desc', $('#eduDesc').val());
+		formData.append('public_yn', $('#eduPublicYn').val());
+		formData.append('online_yn', $('#eduOnlineYn').val());
+		formData.append('youtube_url', $('#eduYoutubeUrl').val());
+
+		// 수강료 (숫자만 추출)
+		var feeValue = $('#eduFee').val().replace(/[^\d]/g, '');
+		formData.append('edu_fee', feeValue || '0');
+
+		// 포스터 이미지
+		var posterFile = $('#eduPosterImg')[0].files[0];
+		if (posterFile) {
+			formData.append('poster_img', posterFile);
+		}
+		formData.append('remove_poster', $('#removePosterFlag').val());
+
 		showSpinner();
 
 		$.ajax({
 			url: url,
 			method: 'POST',
-			data: $('#eduForm').serialize(),
+			data: formData,
+			processData: false,
+			contentType: false,
 			dataType: 'json',
 			success: function(response) {
 				hideSpinner();
@@ -941,6 +1075,15 @@ $(document).ready(function () {
 			}
 		});
 	}
+
+	/**
+	 * 숫자 포맷팅 함수 (천단위 콤마)
+	 */
+	function formatNumber(num) {
+		if (!num) return '0';
+		return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+	}
+
 
 	/**
 	 * 선택된 교육 삭제

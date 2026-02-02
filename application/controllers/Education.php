@@ -258,14 +258,10 @@ class Education extends My_Controller
 	}
 
 
-	/**
-	 * 파일 위치: application/controllers/Education.php
-	 * 역할: insert_edu, update_edu 메서드에 새 필드 추가
-	 */
 
 	/**
 	 * 파일 위치: application/controllers/Education.php
-	 * 역할: insert_edu, update_edu 메서드 수정 - 요일/시간 저장 방식 변경
+	 * 역할: insert_edu, update_edu 메서드 수정 - 파일명 변경 및 이미지 삭제 처리
 	 */
 
 	public function insert_edu()
@@ -287,7 +283,6 @@ class Education extends My_Controller
 		$edu_days_input = $this->input->post('edu_days');
 		$edu_days = null;
 		if ($edu_days_input) {
-			// 쉼표로 구분된 문자열을 배열로 변환
 			$days_array = explode(',', $edu_days_input);
 			$edu_days = json_encode($days_array, JSON_UNESCAPED_UNICODE);
 		}
@@ -296,7 +291,6 @@ class Education extends My_Controller
 		$edu_times_input = $this->input->post('edu_times');
 		$edu_times = null;
 		if ($edu_times_input) {
-			// 쉼표로 구분된 문자열을 배열로 변환
 			$times_array = explode(',', $edu_times_input);
 			$edu_times = json_encode($times_array, JSON_UNESCAPED_UNICODE);
 		}
@@ -310,6 +304,7 @@ class Education extends My_Controller
 			'edu_end_date' => $this->input->post('edu_end_date'),
 			'edu_days' => $edu_days,
 			'edu_times' => $edu_times,
+			'edu_fee' => $this->input->post('edu_fee') ?: 0,
 			'edu_leader' => $this->input->post('edu_leader'),
 			'edu_leader_phone' => $this->input->post('edu_leader_phone'),
 			'edu_leader_age' => $this->input->post('edu_leader_age'),
@@ -318,16 +313,26 @@ class Education extends My_Controller
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
 			'online_yn' => $this->input->post('online_yn') ?: 'N',
 			'youtube_url' => $this->input->post('youtube_url'),
+			'poster_img' => null, // 먼저 null로 저장
 			'user_id' => $user_id
 		);
 
-		$result = $this->Education_model->insert_edu($edu_data);
+		// DB에 먼저 저장하여 edu_idx 얻기
+		$edu_idx = $this->Education_model->insert_edu($edu_data);
 
-		if ($result) {
+		if ($edu_idx) {
+			// edu_idx를 얻은 후 이미지 업로드
+			$poster_img = $this->upload_poster_image($org_id, $edu_idx);
+
+			if ($poster_img) {
+				// 이미지 경로 업데이트
+				$this->Education_model->update_edu($edu_idx, array('poster_img' => $poster_img));
+			}
+
 			echo json_encode(array(
 				'success' => true,
 				'message' => '교육이 등록되었습니다.',
-				'edu_idx' => $result
+				'edu_idx' => $edu_idx
 			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '교육 등록에 실패했습니다.'));
@@ -365,7 +370,6 @@ class Education extends My_Controller
 		$edu_days_input = $this->input->post('edu_days');
 		$edu_days = null;
 		if ($edu_days_input) {
-			// 쉼표로 구분된 문자열을 배열로 변환
 			$days_array = explode(',', $edu_days_input);
 			$edu_days = json_encode($days_array, JSON_UNESCAPED_UNICODE);
 		}
@@ -374,9 +378,36 @@ class Education extends My_Controller
 		$edu_times_input = $this->input->post('edu_times');
 		$edu_times = null;
 		if ($edu_times_input) {
-			// 쉼표로 구분된 문자열을 배열로 변환
 			$times_array = explode(',', $edu_times_input);
 			$edu_times = json_encode($times_array, JSON_UNESCAPED_UNICODE);
+		}
+
+		// 포스터 이미지 처리
+		$poster_img = $existing_edu['poster_img']; // 기존 이미지 유지
+
+		// 이미지 삭제 요청 확인
+		if ($this->input->post('remove_poster') == '1') {
+			if ($poster_img) {
+				// 기존 파일 삭제
+				$file_path = FCPATH . $poster_img;
+				if (file_exists($file_path)) {
+					unlink($file_path);
+				}
+				$poster_img = null;
+			}
+		}
+
+		// 새 이미지 업로드 확인
+		if (!empty($_FILES['poster_img']['name'])) {
+			// 기존 파일 삭제 (있다면)
+			if ($poster_img) {
+				$file_path = FCPATH . $poster_img;
+				if (file_exists($file_path)) {
+					unlink($file_path);
+				}
+			}
+			// 새 파일 업로드
+			$poster_img = $this->upload_poster_image($existing_edu['org_id'], $edu_idx);
 		}
 
 		$edu_data = array(
@@ -387,6 +418,7 @@ class Education extends My_Controller
 			'edu_end_date' => $this->input->post('edu_end_date'),
 			'edu_days' => $edu_days,
 			'edu_times' => $edu_times,
+			'edu_fee' => $this->input->post('edu_fee') ?: 0,
 			'edu_leader' => $this->input->post('edu_leader'),
 			'edu_leader_phone' => $this->input->post('edu_leader_phone'),
 			'edu_leader_age' => $this->input->post('edu_leader_age'),
@@ -394,7 +426,8 @@ class Education extends My_Controller
 			'edu_desc' => $this->input->post('edu_desc'),
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
 			'online_yn' => $this->input->post('online_yn') ?: 'N',
-			'youtube_url' => $this->input->post('youtube_url')
+			'youtube_url' => $this->input->post('youtube_url'),
+			'poster_img' => $poster_img
 		);
 
 		$result = $this->Education_model->update_edu($edu_idx, $edu_data);
@@ -406,9 +439,94 @@ class Education extends My_Controller
 		}
 	}
 
+	/**
+	 * 포스터 이미지 업로드 및 리사이징 - edu_idx 파라미터 추가
+	 */
+	private function upload_poster_image($org_id, $edu_idx)
+	{
+		if (empty($_FILES['poster_img']['name'])) {
+			return null;
+		}
+
+		$this->load->library('upload');
+		$this->load->library('image_lib');
+
+		// 업로드 디렉토리 설정
+		$upload_path = './uploads/edu_img/' . $org_id . '/';
+
+		// 디렉토리가 없으면 생성
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0755, true);
+		}
+
+		// 기존 파일 확장자 확인
+		$original_name = $_FILES['poster_img']['name'];
+		$file_extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+		$allowed_extensions = array('jpg', 'jpeg', 'png', 'gif');
+
+		if (!in_array($file_extension, $allowed_extensions)) {
+			return null;
+		}
+
+		// 파일명을 edu_{edu_idx}.{확장자} 형식으로 설정
+		$new_filename = 'edu_' . $edu_idx . '.' . $file_extension;
+
+		// 같은 edu_idx의 기존 이미지 파일들 삭제 (확장자가 다를 수 있으므로)
+		$existing_files = glob($upload_path . 'edu_' . $edu_idx . '.*');
+		foreach ($existing_files as $existing_file) {
+			if (file_exists($existing_file)) {
+				unlink($existing_file);
+			}
+		}
+
+		// 업로드 설정
+		$config['upload_path'] = $upload_path;
+		$config['allowed_types'] = 'jpg|jpeg|png|gif';
+		$config['max_size'] = 10240; // 10MB
+		$config['file_name'] = 'edu_' . $edu_idx;
+		$config['overwrite'] = TRUE; // 같은 이름 파일 덮어쓰기
+
+		$this->upload->initialize($config);
+
+		// 파일 업로드
+		if (!$this->upload->do_upload('poster_img')) {
+			log_message('error', '포스터 이미지 업로드 실패: ' . $this->upload->display_errors());
+			return null;
+		}
+
+		$upload_data = $this->upload->data();
+		$uploaded_file_path = $upload_data['full_path'];
+		$file_name = $upload_data['file_name'];
+
+		// 이미지 크기 확인 및 리사이징
+		$image_info = getimagesize($uploaded_file_path);
+		if ($image_info) {
+			$original_width = $image_info[0];
+
+			// 가로 1200px 초과 시 리사이징
+			if ($original_width > 1200) {
+				$resize_config['image_library'] = 'gd2';
+				$resize_config['source_image'] = $uploaded_file_path;
+				$resize_config['maintain_ratio'] = TRUE;
+				$resize_config['width'] = 1200;
+				$resize_config['quality'] = 90;
+
+				$this->image_lib->initialize($resize_config);
+
+				if (!$this->image_lib->resize()) {
+					log_message('error', '이미지 리사이징 실패: ' . $this->image_lib->display_errors());
+				}
+
+				$this->image_lib->clear();
+			}
+		}
+
+		// 상대 경로 반환
+		return 'uploads/edu_img/' . $org_id . '/' . $file_name;
+	}
 
 	/**
-	 * 교육 삭제 API
+	 * 교육 삭제 시 이미지도 함께 삭제하도록 수정
 	 */
 	public function delete_edu()
 	{
@@ -437,6 +555,14 @@ class Education extends My_Controller
 			return;
 		}
 
+		// 포스터 이미지 삭제
+		if (!empty($existing_edu['poster_img'])) {
+			$file_path = FCPATH . $existing_edu['poster_img'];
+			if (file_exists($file_path)) {
+				unlink($file_path);
+			}
+		}
+
 		$result = $this->Education_model->delete_edu($edu_idx);
 
 		if ($result) {
@@ -447,7 +573,7 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 여러 교육 삭제 API
+	 * 여러 교육 삭제 - 이미지도 함께 삭제
 	 */
 	public function delete_multiple_edu()
 	{
@@ -480,6 +606,14 @@ class Education extends My_Controller
 				continue;
 			}
 
+			// 포스터 이미지 삭제
+			if (!empty($existing_edu['poster_img'])) {
+				$file_path = FCPATH . $existing_edu['poster_img'];
+				if (file_exists($file_path)) {
+					unlink($file_path);
+				}
+			}
+
 			// 삭제 실행
 			$result = $this->Education_model->delete_edu($edu_idx);
 
@@ -500,6 +634,9 @@ class Education extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '교육 삭제에 실패했습니다.'));
 		}
 	}
+
+
+
 
 	/**
 	 * 카테고리 저장 API
