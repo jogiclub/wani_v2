@@ -656,11 +656,13 @@ $(document).ready(function () {
 						render: function (ui) {
 							var applicantCount = ui.rowData.applicant_count || 0;
 							var capacity = ui.rowData.edu_capacity || 0;
+							var text = '';
 							if (capacity > 0) {
-								return applicantCount + '명 / ' + capacity + '명';
+								text = applicantCount + '명 / ' + capacity + '명';
 							} else {
-								return applicantCount + '명';
+								text = applicantCount + '명';
 							}
+							return '<span class="text-primary" style="cursor:pointer;">' + text + '</span>';
 						}
 					},
 					{
@@ -762,6 +764,11 @@ $(document).ready(function () {
 					// 교육명 컬럼 클릭 시에만 수정 offcanvas 열기
 					else if (ui.dataIndx === 'edu_name') {
 						openEduEditOffcanvas(ui.rowData.edu_idx);
+					}
+					// 신청자 컬럼 클릭 시 신청자 관리 offcanvas 열기
+					else if (ui.dataIndx === 'applicant_count_str') {
+						currentApplicantEduIdx = ui.rowData.edu_idx;
+						openApplicantOffcanvas(ui.rowData.edu_idx);
 					}
 					// 다른 컬럼 클릭 시에는 아무 동작 안 함
 				}
