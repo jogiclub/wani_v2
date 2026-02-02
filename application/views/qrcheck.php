@@ -85,7 +85,7 @@
 
 
 <footer>
-	<button class="input-group-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>
+<!--	<button class="input-group-text btn-new" id="basic-addon2" data-bs-toggle="modal" data-bs-target="#newMemberModal"><i class="bi bi-person-plus"></i></button>-->
 </footer>
 
 <!-- 출석 체크 모달 -->
