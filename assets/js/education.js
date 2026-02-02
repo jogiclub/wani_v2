@@ -2044,7 +2044,7 @@ $(document).ready(function () {
 				title: '신청일',
 				dataIndx: 'regi_date',
 				dataType: 'string',
-				width: 240,
+				width: 160,
 				align: 'center',
 				render: function (ui) {
 					if (ui.rowData.regi_date) {
@@ -2200,26 +2200,7 @@ $(document).ready(function () {
 		$('#applicantSelectAllCheckbox').prop('indeterminate', false);
 	}
 
-	/**
-	 * 외부 URL 모달 열기
-	 */
-	function openExternalUrlModal() {
-		if (!currentApplicantEduIdx) {
-			showToast('교육 정보가 없습니다.', 'warning');
-			return;
-		}
 
-		// 외부 공개 여부 확인
-		var eduInfo = getEduInfoByIdx(currentApplicantEduIdx);
-		if (eduInfo.public_yn !== 'Y') {
-			showToast('외부 공개로 설정된 교육만 URL을 생성할 수 있습니다.', 'warning');
-			return;
-		}
-
-		currentExternalEduIdx = currentApplicantEduIdx;
-		generateExternalUrl();
-		$('#externalUrlModal').modal('show');
-	}
 
 	function getEduInfoByIdx(eduIdx) {
 		if (!eduGrid) return null;
@@ -2253,8 +2234,64 @@ $(document).ready(function () {
 		return data[selectedRow.rowIndx];
 	}
 
+
+
+	// 파일 위치: assets/js/education.js
+// 역할: 외부 URL 모달 열기 - 기존 URL 조회 후 모달 표시
+
 	/**
-	 * 외부 URL 생성
+	 * 외부 URL 모달 열기
+	 */
+	function openExternalUrlModal() {
+		if (!currentApplicantEduIdx) {
+			showToast('교육 정보가 없습니다.', 'warning');
+			return;
+		}
+
+		// 외부 공개 여부 확인
+		var eduInfo = getEduInfoByIdx(currentApplicantEduIdx);
+		if (eduInfo.public_yn !== 'Y') {
+			showToast('외부 공개로 설정된 교육만 URL을 생성할 수 있습니다.', 'warning');
+			return;
+		}
+
+		currentExternalEduIdx = currentApplicantEduIdx;
+
+		// 기존 URL 조회 (생성하지 않음)
+		loadExistingExternalUrl();
+
+		$('#externalUrlModal').modal('show');
+	}
+
+	/**
+	 * 기존 외부 URL 조회
+	 */
+	function loadExistingExternalUrl() {
+		if (!currentExternalEduIdx) {
+			$('#externalUrlInput').val('외부 URL이 생성되지 않았습니다. 갱신 버튼을 클릭하세요.');
+			return;
+		}
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/get_existing_external_url',
+			method: 'POST',
+			data: { edu_idx: currentExternalEduIdx },
+			dataType: 'json',
+			success: function (response) {
+				if (response.success && response.url) {
+					$('#externalUrlInput').val(response.url);
+				} else {
+					$('#externalUrlInput').val('외부 URL이 생성되지 않았습니다. 갱신 버튼을 클릭하세요.');
+				}
+			},
+			error: function () {
+				$('#externalUrlInput').val('외부 URL 조회 중 오류가 발생했습니다.');
+			}
+		});
+	}
+
+	/**
+	 * 외부 URL 생성/갱신
 	 */
 	function generateExternalUrl() {
 		if (!currentExternalEduIdx) {

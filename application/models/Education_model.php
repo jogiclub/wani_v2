@@ -351,11 +351,22 @@ class Education_model extends CI_Model
 	 */
 	public function add_applicant($data)
 	{
-		$insert_data = array_merge($data, array(
-			'regi_date' => date('Y-m-d H:i:s')
-		));
+		// regi_date가 없으면 현재 시간으로 설정
+		if (!isset($data['regi_date'])) {
+			$data['regi_date'] = date('Y-m-d H:i:s');
+		}
 
-		return $this->db->insert('wb_edu_applicant', $insert_data);
+		// status가 없으면 기본값 '신청'으로 설정
+		if (!isset($data['status']) || empty($data['status'])) {
+			$data['status'] = '신청';
+		}
+
+		// del_yn이 없으면 기본값 'N'으로 설정
+		if (!isset($data['del_yn'])) {
+			$data['del_yn'] = 'N';
+		}
+
+		return $this->db->insert('wb_edu_applicant', $data);
 	}
 
 	/**

@@ -292,7 +292,7 @@ class Education extends My_Controller
 			'edu_leader_gender' => $this->input->post('edu_leader_gender'),
 			'edu_desc' => $this->input->post('edu_desc'),
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
-			'zoom_url' => $this->input->post('zoom_url') ?: 'N',
+			'zoom_url' => $this->input->post('zoom_url') ?: '',
 			'youtube_url' => $this->input->post('youtube_url'),
 			'edu_fee' => intval($this->input->post('edu_fee')),
 			'edu_capacity' => intval($this->input->post('edu_capacity')),
@@ -616,7 +616,7 @@ class Education extends My_Controller
 			'edu_leader_gender' => $this->input->post('edu_leader_gender'),
 			'edu_desc' => $this->input->post('edu_desc'),
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
-			'zoom_url' => $this->input->post('zoom_url') ?: 'N',
+			'zoom_url' => $this->input->post('zoom_url') ?: '',
 			'youtube_url' => $this->input->post('youtube_url'),
 			'edu_fee' => intval($this->input->post('edu_fee')),
 			'edu_capacity' => intval($this->input->post('edu_capacity')),
@@ -1155,5 +1155,54 @@ class Education extends My_Controller
 
 
 
+
+	/**
+	 * 기존 외부 URL 조회
+	 */
+	public function get_existing_external_url()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$edu_idx = $this->input->post('edu_idx');
+
+		if (!$edu_idx) {
+			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			return;
+		}
+
+		// 교육 정보 조회
+		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		if (!$edu) {
+			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($edu['org_id'])) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 기존 URL 조회
+		$url_info = $this->Education_model->get_external_url_by_edu($edu_idx);
+
+		if ($url_info) {
+			$external_url = base_url('education/apply/' . $edu['org_id'] . '/' . $edu_idx . '/' . $url_info['access_code']);
+
+			echo json_encode(array(
+				'success' => true,
+				'url' => $external_url,
+				'access_code' => $url_info['access_code'],
+				'expired_at' => $url_info['expired_at']
+			));
+		} else {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '생성된 URL이 없습니다.'
+			));
+		}
+	}
 
 }

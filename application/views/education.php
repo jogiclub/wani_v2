@@ -340,17 +340,28 @@ $this->load->view('header');
 					</div>
 					<div class="form-text">수강료를 입력하세요 (무료인 경우 0)</div>
 				</div>
-				<div class="mb-3">
-					<label class="form-label">계좌정보</label>
-					<div class="input-group mb-2">
-						<input type="text" class="form-control" id="eduBankName" placeholder="은행명">
-						<input type="text" class="form-control" id="eduAccountNumber" placeholder="계좌번호">
-					</div>
-					<input type="hidden" id="eduBankAccount" name="bank_account">
+
+				<div class="col-6">
+					<label class="form-label">외부 공개</label>
+					<select class="form-select" id="eduPublicYn" name="public_yn">
+						<option value="N">비공개</option>
+						<option value="Y">공개</option>
+					</select>
 				</div>
+
+
 			</div>
 
-
+<div class="row mb-3">
+	<div class="mb-3">
+		<label class="form-label">계좌정보</label>
+		<div class="input-group mb-2">
+			<input type="text" class="form-control" id="eduBankName" placeholder="은행명">
+			<input type="text" class="form-control" id="eduAccountNumber" placeholder="계좌번호">
+		</div>
+		<input type="hidden" id="eduBankAccount" name="bank_account">
+	</div>
+</div>
 
 
 			<div class="row mb-3">
@@ -389,24 +400,19 @@ $this->load->view('header');
 			<!-- 새로 추가되는 필드들 -->
 			<div class="row mb-3">
 				<div class="col-6">
-					<label class="form-label">외부 공개</label>
-					<select class="form-select" id="eduPublicYn" name="public_yn">
-						<option value="N">비공개</option>
-						<option value="Y">공개</option>
-					</select>
-				</div>
-				<div class="col-6">
-					<label class="form-label">ZOOM 주소</label>
+					<label class="form-label">ZOOM URL</label>
 					<input type="text" class="form-control" id="eduZoomUrl" name="zoom_url" placeholder="https://zoom.us/j/...">
 					<div class="form-text">온라인 교육 시 ZOOM 링크를 입력하세요</div>
 				</div>
+
+				<div class="col-6">
+					<label class="form-label">유튜브 URL</label>
+					<input type="url" class="form-control" id="eduYoutubeUrl" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+					<div class="form-text">유튜브 동영상 링크를 입력하세요</div>
+				</div>
 			</div>
 
-			<div class="mb-3">
-				<label class="form-label">유튜브 URL</label>
-				<input type="url" class="form-control" id="eduYoutubeUrl" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
-				<div class="form-text">유튜브 동영상 링크를 입력하세요</div>
-			</div>
+
 
 
 			<div class="mb-3">
@@ -482,7 +488,7 @@ $this->load->view('header');
 
 
 <!-- 신청자 관리 Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="applicantOffcanvas" aria-labelledby="applicantOffcanvasLabel" style="width: 750px;">
+<div class="offcanvas offcanvas-end" tabindex="-1" id="applicantOffcanvas" aria-labelledby="applicantOffcanvasLabel" style="width: 600px;">
 	<div class="offcanvas-header">
 		<h5 class="offcanvas-title" id="applicantOffcanvasTitle">신청자 관리</h5>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>

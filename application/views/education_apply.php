@@ -65,9 +65,10 @@
 			border-bottom: none;
 		}
 		.info-label {
-			font-weight: 600;
-			color: #495057;
+			font-weight: 500;
+			color: #999;
 			margin-bottom: 0.25rem;
+			font-size: 14px;
 		}
 		.info-value {
 			color: #212529;
@@ -138,27 +139,30 @@
 					<h2 class="mb-4"><?php echo htmlspecialchars($edu['edu_name']); ?></h2>
 
 					<!-- 교육 정보 -->
-					<div class="mb-4">
+					<div class="row mb-4">
 						<!-- 교육 기간 -->
 						<?php if (!empty($edu['edu_start_date']) || !empty($edu['edu_end_date'])): ?>
-							<div class="info-row">
-								<div class="info-label"><i class="bi bi-calendar-range"></i> 교육 기간</div>
-								<div class="info-value">
-									<?php
-									if ($edu['edu_start_date'] && $edu['edu_end_date']) {
-										echo date('Y-m-d', strtotime($edu['edu_start_date'])) . ' ~ ' . date('Y-m-d', strtotime($edu['edu_end_date']));
-									} else if ($edu['edu_start_date']) {
-										echo date('Y-m-d', strtotime($edu['edu_start_date'])) . ' ~';
-									} else if ($edu['edu_end_date']) {
-										echo '~ ' . date('Y-m-d', strtotime($edu['edu_end_date']));
-									}
-									?>
+							<div class="col-12 col-lg-6">
+								<div class="info-row">
+									<div class="info-label"><i class="bi bi-calendar-range"></i> 교육 기간</div>
+									<div class="info-value">
+										<?php
+										if ($edu['edu_start_date'] && $edu['edu_end_date']) {
+											echo date('Y-m-d', strtotime($edu['edu_start_date'])) . ' ~ ' . date('Y-m-d', strtotime($edu['edu_end_date']));
+										} else if ($edu['edu_start_date']) {
+											echo date('Y-m-d', strtotime($edu['edu_start_date'])) . ' ~';
+										} else if ($edu['edu_end_date']) {
+											echo '~ ' . date('Y-m-d', strtotime($edu['edu_end_date']));
+										}
+										?>
+									</div>
 								</div>
 							</div>
 						<?php endif; ?>
 
 						<!-- 요일 및 시간대 -->
 						<?php if (!empty($edu['edu_days_display']) || !empty($edu['edu_times_display'])): ?>
+						<div class="col-12 col-lg-6">
 							<div class="info-row">
 								<div class="info-label"><i class="bi bi-clock"></i> 요일 / 시간대</div>
 								<div class="info-value">
@@ -174,43 +178,54 @@
 									?>
 								</div>
 							</div>
+						</div>
 						<?php endif; ?>
 
 						<!-- 교육 지역 -->
 						<?php if (!empty($edu['edu_location'])): ?>
+						<div class="col-12 col-lg-6">
 							<div class="info-row">
 								<div class="info-label"><i class="bi bi-geo-alt"></i> 교육 지역</div>
 								<div class="info-value"><?php echo htmlspecialchars($edu['edu_location']); ?></div>
 							</div>
+						</div>
 						<?php endif; ?>
 
 						<!-- 신청자 / 정원 -->
-						<div class="info-row">
-							<div class="info-label"><i class="bi bi-people"></i> 신청 현황</div>
-							<div class="info-value">
-								현재 <?php echo $applicant_count; ?>명
-								<?php if ($edu['edu_capacity'] > 0): ?>
-									/ 정원 <?php echo number_format($edu['edu_capacity']); ?>명
-								<?php endif; ?>
+						<div class="col-12 col-lg-6">
+							<div class="info-row">
+								<div class="info-label"><i class="bi bi-people"></i> 신청 현황</div>
+								<div class="info-value">
+									현재 <?php echo $applicant_count; ?>명
+									<?php if ($edu['edu_capacity'] > 0): ?>
+										/ 정원 <?php echo number_format($edu['edu_capacity']); ?>명
+									<?php endif; ?>
+								</div>
 							</div>
 						</div>
 
 						<!-- 수강료 및 계좌정보 -->
 						<?php if ($edu['edu_fee'] > 0): ?>
+						<div class="col-12 col-lg-6">
 							<div class="info-row">
 								<div class="info-label"><i class="bi bi-credit-card"></i> 수강료</div>
 								<div class="info-value"><?php echo number_format($edu['edu_fee']); ?>원</div>
 							</div>
+						</div>
 							<?php if (!empty($edu['bank_account'])): ?>
+							<div class="col-12 col-lg-6">
 								<div class="info-row">
 									<div class="info-label"><i class="bi bi-bank"></i> 계좌정보</div>
 									<div class="info-value"><?php echo htmlspecialchars($edu['bank_account']); ?></div>
 								</div>
+							</div>
 							<?php endif; ?>
+
 						<?php endif; ?>
 
 						<!-- 인도자 정보 -->
 						<?php if (!empty($edu['edu_leader'])): ?>
+						<div class="col-12 col-lg-6">
 							<div class="info-row">
 								<div class="info-label"><i class="bi bi-person-badge"></i> 인도자</div>
 								<div class="info-value">
@@ -220,6 +235,7 @@
 									<?php endif; ?>
 								</div>
 							</div>
+						</div>
 						<?php endif; ?>
 
 						<!-- ZOOM 주소 (교육 중이고 해당 요일/시간대인 경우만 표시) -->
@@ -332,6 +348,8 @@
 								</div>
 							</div>
 						<?php endif; ?>
+
+
 					</div>
 
 					<!-- YouTube 영상 (교육 중이고 해당 요일/시간대인 경우만 표시) -->
