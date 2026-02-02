@@ -152,7 +152,7 @@ $(document).ready(function () {
 	 * 카테고리 맵 구축 (코드 -> 이름 매핑)
 	 */
 	function buildCategoryMap(nodes) {
-		nodes.forEach(function(node) {
+		nodes.forEach(function (node) {
 			if (node.data && node.data.type === 'category') {
 				// 괄호 안의 개수 정보 제거하고 순수 카테고리명만 저장
 				const categoryName = node.title.split(' (')[0];
@@ -313,7 +313,7 @@ $(document).ready(function () {
 		flatpickrStartInstance = flatpickr("#eduStartDate", {
 			dateFormat: "Y-m-d",
 			locale: "ko",
-			onChange: function(selectedDates, dateStr) {
+			onChange: function (selectedDates, dateStr) {
 				if (flatpickrEndInstance && dateStr) {
 					flatpickrEndInstance.set('minDate', dateStr);
 				}
@@ -323,7 +323,7 @@ $(document).ready(function () {
 		flatpickrEndInstance = flatpickr("#eduEndDate", {
 			dateFormat: "Y-m-d",
 			locale: "ko",
-			onChange: function(selectedDates, dateStr) {
+			onChange: function (selectedDates, dateStr) {
 				if (flatpickrStartInstance && dateStr) {
 					flatpickrStartInstance.set('maxDate', dateStr);
 				}
@@ -335,7 +335,7 @@ $(document).ready(function () {
 	 * 정리 이벤트 설정
 	 */
 	function setupCleanupEvents() {
-		$(window).on('beforeunload', function() {
+		$(window).on('beforeunload', function () {
 			if (splitInstance) {
 				try {
 					splitInstance.destroy();
@@ -376,12 +376,12 @@ $(document).ready(function () {
 				type: selectedType
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				hideGridSpinner();
 
 				if (response.success) {
 					// 카테고리명 추가
-					const dataWithCategoryName = response.data.map(function(item) {
+					const dataWithCategoryName = response.data.map(function (item) {
 						item.category_name = categoryMap[item.category_code] || item.category_code;
 						return item;
 					});
@@ -392,7 +392,7 @@ $(document).ready(function () {
 					showToast(response.message || '교육 목록을 불러오는데 실패했습니다.', 'error');
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('교육 목록 로드 실패:', error);
 				hideGridSpinner();
 				showToast('교육 목록을 불러오는 중 오류가 발생했습니다.', 'error');
@@ -488,7 +488,7 @@ $(document).ready(function () {
 			method: 'POST',
 			data: { edu_idx: eduIdx },
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				hideSpinner();
 
 				if (response.success) {
@@ -501,7 +501,7 @@ $(document).ready(function () {
 					showToast(response.message || '교육 정보를 불러오는데 실패했습니다.', 'error');
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('교육 정보 로드 실패:', error);
 				hideSpinner();
 				showToast('교육 정보를 불러오는 중 오류가 발생했습니다.', 'error');
@@ -526,7 +526,7 @@ $(document).ready(function () {
 		// 카테고리 트리에서 옵션 생성
 		const tree = $("#categoryTree").fancytree("getTree");
 		if (tree) {
-			tree.visit(function(node) {
+			tree.visit(function (node) {
 				if (node.data.type === 'category') {
 					const level = node.getLevel() - 1; // org 레벨 제외
 					const indent = '&nbsp;'.repeat(level * 4);
@@ -550,7 +550,7 @@ $(document).ready(function () {
 	 * 요일 체크박스 이벤트 바인딩
 	 */
 	function bindDayCheckboxEvents() {
-		$('.edu-day-checkbox').off('change').on('change', function() {
+		$('.edu-day-checkbox').off('change').on('change', function () {
 			updateDaysDisplay();
 		});
 	}
@@ -559,7 +559,7 @@ $(document).ready(function () {
 	 * 시간대 체크박스 이벤트 바인딩
 	 */
 	function bindTimeCheckboxEvents() {
-		$('.edu-time-checkbox').off('change').on('change', function() {
+		$('.edu-time-checkbox').off('change').on('change', function () {
 			updateTimesDisplay();
 		});
 	}
@@ -569,7 +569,7 @@ $(document).ready(function () {
 	 */
 	function updateDaysDisplay() {
 		const selectedDays = [];
-		$('.edu-day-checkbox:checked').each(function() {
+		$('.edu-day-checkbox:checked').each(function () {
 			selectedDays.push($(this).val());
 		});
 
@@ -588,7 +588,7 @@ $(document).ready(function () {
 	 */
 	function updateTimesDisplay() {
 		const selectedTimes = [];
-		$('.edu-time-checkbox:checked').each(function() {
+		$('.edu-time-checkbox:checked').each(function () {
 			selectedTimes.push($(this).val());
 		});
 
@@ -625,7 +625,7 @@ $(document).ready(function () {
 						sortable: false,
 						editable: false,
 						menuIcon: false,
-						render: function(ui) {
+						render: function (ui) {
 							var checkboxId = 'edu-checkbox-' + ui.rowData.edu_idx;
 							return '<input type="checkbox" class="edu-checkbox" id="' + checkboxId + '" data-edu-idx="' + ui.rowData.edu_idx + '" />';
 						}
@@ -643,7 +643,7 @@ $(document).ready(function () {
 						editable: false,
 						width: 200,
 						cls: 'pq-edu-name-cell',
-						render: function(ui) {
+						render: function (ui) {
 							return '<span class="text-primary" style="cursor:pointer;">' + escapeHtml(ui.cellData || '') + '</span>';
 						}
 					},
@@ -653,7 +653,7 @@ $(document).ready(function () {
 						width: 100,
 						align: "center",
 						editable: false,
-						render: function(ui) {
+						render: function (ui) {
 							var applicantCount = ui.rowData.applicant_count || 0;
 							var capacity = ui.rowData.edu_capacity || 0;
 							if (capacity > 0) {
@@ -690,7 +690,7 @@ $(document).ready(function () {
 						dataIndx: "edu_fee",
 						width: 100,
 						align: "center",
-						render: function(ui) {
+						render: function (ui) {
 							var fee = parseInt(ui.cellData) || 0;
 							return fee === 0 ? '무료' : formatNumber(fee) + '원';
 						}
@@ -704,7 +704,7 @@ $(document).ready(function () {
 					{
 						title: "인도자연락처",
 						dataIndx: "edu_leader_phone",
-						width: 120,
+						width: 140,
 						align: "center"
 					},
 					{
@@ -724,7 +724,7 @@ $(document).ready(function () {
 						dataIndx: "public_yn",
 						width: 80,
 						align: "center",
-						render: function(ui) {
+						render: function (ui) {
 							return ui.cellData === 'Y' ? '공개' : '비공개';
 						}
 					},
@@ -733,7 +733,7 @@ $(document).ready(function () {
 						dataIndx: "online_yn",
 						width: 80,
 						align: "center",
-						render: function(ui) {
+						render: function (ui) {
 							return ui.cellData === 'Y' ? '가능' : '-';
 						}
 					}
@@ -754,7 +754,7 @@ $(document).ready(function () {
 						style: style,
 					};
 				},
-				cellClick: function(event, ui) {
+				cellClick: function (event, ui) {
 					// 체크박스 컬럼 클릭 시
 					if (ui.dataIndx === 'checkbox') {
 						handleCheckboxClick(event, ui.rowData.edu_idx);
@@ -780,38 +780,38 @@ $(document).ready(function () {
 	 */
 	function bindGlobalEvents() {
 		// 교육 등록 버튼
-		$('#btnAddEdu').off('click').on('click', function() {
+		$('#btnAddEdu').off('click').on('click', function () {
 			openEduAddOffcanvas();
 		});
 
 		// 선택 삭제 버튼
-		$('#btnDeleteSelected').off('click').on('click', function() {
+		$('#btnDeleteSelected').off('click').on('click', function () {
 			deleteSelectedEdu();
 		});
 
 		// 카테고리 관리 버튼
-		$('#btnManageCategory').off('click').on('click', function() {
+		$('#btnManageCategory').off('click').on('click', function () {
 			openCategoryModal();
 		});
 
 		// 교육 저장 버튼
-		$('#btnSaveEdu').off('click').on('click', function() {
+		$('#btnSaveEdu').off('click').on('click', function () {
 			saveEdu();
 		});
 
 		// 카테고리 저장 버튼
-		$('#btnSaveCategory').off('click').on('click', function() {
+		$('#btnSaveCategory').off('click').on('click', function () {
 			saveCategory();
 		});
 
 		// 검색 버튼
-		$('#btnSearch').off('click').on('click', function() {
+		$('#btnSearch').off('click').on('click', function () {
 			const keyword = $('#searchKeyword').val().trim();
 			filterGrid(keyword);
 		});
 
 		// 검색 엔터키
-		$('#searchKeyword').off('keypress').on('keypress', function(e) {
+		$('#searchKeyword').off('keypress').on('keypress', function (e) {
 			if (e.which === 13) {
 				e.preventDefault();
 				const keyword = $(this).val().trim();
@@ -820,18 +820,18 @@ $(document).ready(function () {
 		});
 
 		// 수강료 입력 포맷팅
-		$('#eduFee').off('input').on('input', function() {
+		$('#eduFee').off('input').on('input', function () {
 			var val = $(this).val().replace(/[^\d]/g, '');
 			$(this).val(formatNumber(val));
 		});
 
 		// 포스터 이미지 선택
-		$('#eduPosterImg').off('change').on('change', function(e) {
+		$('#eduPosterImg').off('change').on('change', function (e) {
 			handlePosterImageSelect(e);
 		});
 
 		// 포스터 이미지 삭제
-		$('#btnRemovePoster').off('click').on('click', function() {
+		$('#btnRemovePoster').off('click').on('click', function () {
 			removePosterImage();
 		});
 
@@ -842,18 +842,18 @@ $(document).ready(function () {
 		bindTimeCheckboxEvents();
 
 		// 전체 선택 체크박스
-		$(document).on('change', '#selectAllCheckbox', function() {
+		$(document).on('change', '#selectAllCheckbox', function () {
 			var isChecked = $(this).prop('checked');
 			$('.edu-checkbox').prop('checked', isChecked);
 		});
 
 		// 개별 체크박스
-		$(document).on('change', '.edu-checkbox', function() {
+		$(document).on('change', '.edu-checkbox', function () {
 			updateSelectAllCheckbox();
 		});
 
 		// 윈도우 리사이즈
-		$(window).off('resize.education').on('resize.education', debounce(function() {
+		$(window).off('resize.education').on('resize.education', debounce(function () {
 			if (eduGrid) {
 				try {
 					eduGrid.pqGrid("refresh");
@@ -889,7 +889,7 @@ $(document).ready(function () {
 
 		// 미리보기 표시
 		const reader = new FileReader();
-		reader.onload = function(e) {
+		reader.onload = function (e) {
 			$('#posterPreview').attr('src', e.target.result).show();
 			$('#posterPlaceholder').hide();
 			$('#btnRemovePoster').show();
@@ -942,7 +942,7 @@ $(document).ready(function () {
 				var bankInfo = JSON.parse(data.bank_account);
 				$('#eduBankName').val(bankInfo.bank_name || '');
 				$('#eduAccountNumber').val(bankInfo.account_number || '');
-			} catch(e) {
+			} catch (e) {
 				$('#eduBankName').val('');
 				$('#eduAccountNumber').val('');
 			}
@@ -954,7 +954,7 @@ $(document).ready(function () {
 		// 요일 체크박스 설정
 		$('.edu-day-checkbox').prop('checked', false);
 		if (data.edu_days && Array.isArray(data.edu_days)) {
-			data.edu_days.forEach(function(day) {
+			data.edu_days.forEach(function (day) {
 				$('.edu-day-checkbox[value="' + day + '"]').prop('checked', true);
 			});
 		}
@@ -963,7 +963,7 @@ $(document).ready(function () {
 		// 시간대 체크박스 설정
 		$('.edu-time-checkbox').prop('checked', false);
 		if (data.edu_times && Array.isArray(data.edu_times)) {
-			data.edu_times.forEach(function(time) {
+			data.edu_times.forEach(function (time) {
 				$('.edu-time-checkbox[value="' + time + '"]').prop('checked', true);
 			});
 		}
@@ -971,10 +971,22 @@ $(document).ready(function () {
 
 		// 포스터 이미지 미리보기
 		$('#posterPreview').hide();
+		$('#posterPlaceholder').show();
+		$('#btnRemovePoster').hide();
 		$('#removePosterFlag').val('0');
+
 		if (data.poster_img) {
-			$('#posterPreviewImage').attr('src', data.poster_img);
-			$('#posterPreview').show();
+			// 이미지 경로에 base url 추가
+			var imgSrc = data.poster_img;
+			if (imgSrc.indexOf('http') !== 0 && window.educationPageData && window.educationPageData.baseUrl) {
+				imgSrc = window.educationPageData.baseUrl + imgSrc;
+			}
+
+			$('#posterPreview').attr('src', imgSrc).show();
+			$('#posterPlaceholder').hide();
+			$('#btnRemovePoster').show();
+		} else {
+			$('#posterPreview').attr('src', '');
 		}
 
 		loadCategoryOptions(data.category_code);
@@ -1028,94 +1040,148 @@ $(document).ready(function () {
 			return;
 		}
 
-		const eduIdx = $('#eduIdx').val();
-		const url = eduIdx ?
-			window.educationPageData.baseUrl + 'education/update_edu' :
-			window.educationPageData.baseUrl + 'education/insert_edu';
+		// 파일 처리 후 실행할 콜백 함수
+		var processFormData = function (posterBlob) {
+			const eduIdx = $('#eduIdx').val();
+			const url = eduIdx ?
+				window.educationPageData.baseUrl + 'education/update_edu' :
+				window.educationPageData.baseUrl + 'education/insert_edu';
 
-		// FormData 생성
-		var formData = new FormData();
+			// FormData 생성
+			var formData = new FormData();
 
-		// 기본 필드
-		if (eduIdx) formData.append('edu_idx', eduIdx);
-		formData.append('org_id', $('#eduOrgId').val());
-		formData.append('category_code', $('#eduCategoryCode').val());
-		formData.append('edu_name', $('#eduName').val());
-		formData.append('edu_location', $('#eduLocation').val());
-		formData.append('edu_start_date', $('#eduStartDate').val());
-		formData.append('edu_end_date', $('#eduEndDate').val());
-		formData.append('edu_days', $('#eduDays').val());
-		formData.append('edu_times', $('#eduTimes').val());
-		formData.append('edu_leader', $('#eduLeader').val());
-		formData.append('edu_leader_phone', $('#eduLeaderPhone').val());
-		formData.append('edu_leader_age', $('#eduLeaderAge').val());
-		formData.append('edu_leader_gender', $('#eduLeaderGender').val());
-		formData.append('edu_desc', $('#eduDesc').val());
-		formData.append('public_yn', $('#eduPublicYn').val());
-		formData.append('online_yn', $('#eduOnlineYn').val());
-		formData.append('youtube_url', $('#eduYoutubeUrl').val());
+			// 기본 필드
+			if (eduIdx) formData.append('edu_idx', eduIdx);
+			formData.append('org_id', $('#eduOrgId').val());
+			formData.append('category_code', $('#eduCategoryCode').val());
+			formData.append('edu_name', $('#eduName').val());
+			formData.append('edu_location', $('#eduLocation').val());
+			formData.append('edu_start_date', $('#eduStartDate').val());
+			formData.append('edu_end_date', $('#eduEndDate').val());
+			formData.append('edu_days', $('#eduDays').val());
+			formData.append('edu_times', $('#eduTimes').val());
+			formData.append('edu_leader', $('#eduLeader').val());
+			formData.append('edu_leader_phone', $('#eduLeaderPhone').val());
+			formData.append('edu_leader_age', $('#eduLeaderAge').val());
+			formData.append('edu_leader_gender', $('#eduLeaderGender').val());
+			formData.append('edu_desc', $('#eduDesc').val());
+			formData.append('public_yn', $('#eduPublicYn').val());
+			formData.append('online_yn', $('#eduOnlineYn').val());
+			formData.append('youtube_url', $('#eduYoutubeUrl').val());
 
-		// 수강료 (숫자만 추출)
-		var feeValue = $('#eduFee').val().replace(/[^\d]/g, '');
-		formData.append('edu_fee', feeValue || '0');
+			// 수강료 (숫자만 추출)
+			var feeValue = $('#eduFee').val().replace(/[^\d]/g, '');
+			formData.append('edu_fee', feeValue || '0');
 
-		// 정원
-		formData.append('edu_capacity', $('#eduCapacity').val() || '0');
+			// 정원
+			formData.append('edu_capacity', $('#eduCapacity').val() || '0');
 
-		// 계좌정보
-		var bankName = $('#eduBankName').val().trim();
-		var accountNumber = $('#eduAccountNumber').val().trim();
-		if (bankName || accountNumber) {
-			var bankAccount = JSON.stringify({
-				bank_name: bankName,
-				account_number: accountNumber
+			// 계좌정보
+			var bankName = $('#eduBankName').val().trim();
+			var accountNumber = $('#eduAccountNumber').val().trim();
+			if (bankName || accountNumber) {
+				var bankAccount = JSON.stringify({
+					bank_name: bankName,
+					account_number: accountNumber
+				});
+				formData.append('bank_account', bankAccount);
+			} else {
+				formData.append('bank_account', '');
+			}
+
+			// 포스터 이미지
+			if (posterBlob) {
+				// Blob을 파일로 변환 (파일명 지정 필요)
+				var fileName = 'poster.jpg';
+				// 원본 파일명이 있다면 확장자 유지
+				var originalFile = $('#eduPosterImg')[0].files[0];
+				if (originalFile && originalFile.name) {
+					var ext = originalFile.name.split('.').pop();
+					fileName = 'poster.' + ext;
+				}
+				formData.append('poster_img', posterBlob, fileName);
+			}
+			formData.append('remove_poster', $('#removePosterFlag').val());
+
+			showSpinner();
+
+			$.ajax({
+				url: url,
+				method: 'POST',
+				data: formData,
+				processData: false,
+				contentType: false,
+				dataType: 'json',
+				success: function (response) {
+					hideSpinner();
+
+					if (response.success) {
+						showToast(response.message, 'success');
+
+						// Offcanvas 닫기
+						const offcanvasElement = document.getElementById('eduOffcanvas');
+						const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+						if (offcanvas) {
+							offcanvas.hide();
+						}
+
+						loadEduList();
+						refreshCategoryTree();
+					} else {
+						showToast(response.message || '교육 저장에 실패했습니다.', 'error');
+					}
+				},
+				error: function (xhr, status, error) {
+					console.error('교육 저장 실패:', error);
+					hideSpinner();
+					showToast('교육 저장 중 오류가 발생했습니다.', 'error');
+				}
 			});
-			formData.append('bank_account', bankAccount);
-		} else {
-			formData.append('bank_account', '');
-		}
+		};
 
-		// 포스터 이미지
+		// 이미지 리사이징 처리
 		var posterFile = $('#eduPosterImg')[0].files[0];
 		if (posterFile) {
-			formData.append('poster_img', posterFile);
+			resizeImage(posterFile, 1200, function (resizedBlob) {
+				processFormData(resizedBlob);
+			});
+		} else {
+			processFormData(null);
 		}
-		formData.append('remove_poster', $('#removePosterFlag').val());
+	}
 
-		showSpinner();
+	/**
+	 * 이미지 리사이징 함수
+	 * @param {File} file 원본 파일
+	 * @param {number} maxWidth 최대 너비
+	 * @param {function} callback 콜백 함수 (Blob 반환)
+	 */
+	function resizeImage(file, maxWidth, callback) {
+		var reader = new FileReader();
+		reader.readAsDataURL(file);
+		reader.onload = function (event) {
+			var img = new Image();
+			img.src = event.target.result;
+			img.onload = function () {
+				var width = img.width;
+				var height = img.height;
 
-		$.ajax({
-			url: url,
-			method: 'POST',
-			data: formData,
-			processData: false,
-			contentType: false,
-			dataType: 'json',
-			success: function(response) {
-				hideSpinner();
-
-				if (response.success) {
-					showToast(response.message, 'success');
-
-					// Offcanvas 닫기
-					const offcanvasElement = document.getElementById('eduOffcanvas');
-					const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
-					if (offcanvas) {
-						offcanvas.hide();
-					}
-
-					loadEduList();
-					refreshCategoryTree();
-				} else {
-					showToast(response.message || '교육 저장에 실패했습니다.', 'error');
+				if (width > maxWidth) {
+					height = Math.round(height * (maxWidth / width));
+					width = maxWidth;
 				}
-			},
-			error: function(xhr, status, error) {
-				console.error('교육 저장 실패:', error);
-				hideSpinner();
-				showToast('교육 저장 중 오류가 발생했습니다.', 'error');
-			}
-		});
+
+				var canvas = document.createElement('canvas');
+				canvas.width = width;
+				canvas.height = height;
+				var ctx = canvas.getContext('2d');
+				ctx.drawImage(img, 0, 0, width, height);
+
+				canvas.toBlob(function (blob) {
+					callback(blob);
+				}, file.type, 0.9); // 품질 0.9
+			};
+		};
 	}
 
 	/**
@@ -1133,7 +1199,7 @@ $(document).ready(function () {
 	function deleteSelectedEdu() {
 		// 선택된 체크박스에서 교육 인덱스 수집
 		var eduIndexes = [];
-		$('.edu-checkbox:checked').each(function() {
+		$('.edu-checkbox:checked').each(function () {
 			var eduIdx = $(this).data('edu-idx');
 			if (eduIdx) {
 				eduIndexes.push(eduIdx);
@@ -1149,7 +1215,7 @@ $(document).ready(function () {
 		showConfirmModal(
 			'교육 삭제',
 			'선택한 ' + eduIndexes.length + '개의 교육을 삭제하시겠습니까?',
-			function() {
+			function () {
 				deleteMultipleEdu(eduIndexes);
 			}
 		);
@@ -1166,7 +1232,7 @@ $(document).ready(function () {
 			method: 'POST',
 			data: { edu_indexes: eduIndexes },
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				hideSpinner();
 
 				if (response.success) {
@@ -1177,7 +1243,7 @@ $(document).ready(function () {
 					showToast(response.message || '교육 삭제에 실패했습니다.', 'error');
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('교육 삭제 실패:', error);
 				hideSpinner();
 				showToast('교육 삭제 중 오류가 발생했습니다.', 'error');
@@ -1232,7 +1298,7 @@ $(document).ready(function () {
 			url: window.educationPageData.baseUrl + 'education/get_category_tree',
 			method: 'POST',
 			dataType: 'json',
-			success: function(treeData) {
+			success: function (treeData) {
 				hideSpinner();
 
 				// 조직 노드 제외하고 카테고리만 추출
@@ -1248,7 +1314,7 @@ $(document).ready(function () {
 				$('#categoryJson').val(JSON.stringify(categoryJson, null, 2));
 				$('#categoryModal').modal('show');
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('카테고리 정보 로드 실패:', error);
 				hideSpinner();
 				showToast('카테고리 정보를 불러오는 중 오류가 발생했습니다.', 'error');
@@ -1262,7 +1328,7 @@ $(document).ready(function () {
 	function extractCategories(nodes) {
 		const categories = [];
 
-		nodes.forEach(function(node) {
+		nodes.forEach(function (node) {
 			if (node.data && node.data.type === 'category') {
 				const category = {
 					code: node.data.category_code,
@@ -1310,7 +1376,7 @@ $(document).ready(function () {
 				category_json: categoryJsonStr
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				hideSpinner();
 
 				if (response.success) {
@@ -1321,7 +1387,7 @@ $(document).ready(function () {
 					showToast(response.message || '카테고리 저장에 실패했습니다.', 'error');
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
 				console.error('카테고리 저장 실패:', error);
 				hideSpinner();
 				showToast('카테고리 저장 중 오류가 발생했습니다.', 'error');
@@ -1412,10 +1478,10 @@ $(document).ready(function () {
 	 */
 	function bindApplicantEvents() {
 		// 신청자 관리 버튼 클릭
-		$('#btnManageApplicant').on('click', function() {
+		$('#btnManageApplicant').on('click', function () {
 			// 체크된 교육 확인
 			var checkedEdu = [];
-			$('.edu-checkbox:checked').each(function() {
+			$('.edu-checkbox:checked').each(function () {
 				checkedEdu.push({
 					edu_idx: $(this).data('edu-idx'),
 					edu_name: $(this).closest('tr').find('td[data-dataindx="edu_name"]').text() || ''
@@ -1437,32 +1503,32 @@ $(document).ready(function () {
 		});
 
 		// 신청자 추가 버튼
-		$('#btnAddApplicant').on('click', function() {
+		$('#btnAddApplicant').on('click', function () {
 			openAddApplicantModal();
 		});
 
 		// 신청자 저장 버튼
-		$('#btnSaveApplicant').on('click', function() {
+		$('#btnSaveApplicant').on('click', function () {
 			saveApplicant();
 		});
 
 		// 신청자 수정 저장 버튼
-		$('#btnUpdateApplicant').on('click', function() {
+		$('#btnUpdateApplicant').on('click', function () {
 			updateApplicant();
 		});
 
 		// 상태 일괄변경 버튼
-		$('#btnChangeStatusBulk').on('click', function() {
+		$('#btnChangeStatusBulk').on('click', function () {
 			$('#bulkStatusModal').modal('show');
 		});
 
 		// 일괄 상태변경 적용 버튼
-		$('#btnApplyBulkStatus').on('click', function() {
+		$('#btnApplyBulkStatus').on('click', function () {
 			applyBulkStatus();
 		});
 
 		// 삭제 확인 버튼
-		$('#btnConfirmDeleteApplicant').on('click', function() {
+		$('#btnConfirmDeleteApplicant').on('click', function () {
 			confirmDeleteApplicant();
 		});
 
@@ -1488,15 +1554,15 @@ $(document).ready(function () {
 				url: window.educationPageData.baseUrl + 'education/search_members',
 				dataType: 'json',
 				delay: 250,
-				data: function(params) {
+				data: function (params) {
 					return {
 						keyword: params.term,
 						org_id: selectedOrgId || window.educationPageData.currentOrgId
 					};
 				},
-				processResults: function(data) {
+				processResults: function (data) {
 					return {
-						results: data.data.map(function(member) {
+						results: data.data.map(function (member) {
 							return {
 								id: member.member_idx,
 								text: member.member_name + (member.member_phone ? ' (' + member.member_phone + ')' : ''),
@@ -1507,7 +1573,7 @@ $(document).ready(function () {
 					};
 				}
 			},
-			createTag: function(params) {
+			createTag: function (params) {
 				var term = $.trim(params.term);
 				if (term === '') {
 					return null;
@@ -1557,14 +1623,14 @@ $(document).ready(function () {
 			method: 'POST',
 			data: { edu_idx: eduIdx },
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					renderApplicantList(response.data);
 				} else {
 					showToast(response.message || '신청자 목록 조회 실패', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('신청자 목록을 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -1586,7 +1652,7 @@ $(document).ready(function () {
 		$('#applicantTable').show();
 		$('#noApplicantMessage').addClass('d-none');
 
-		applicants.forEach(function(applicant) {
+		applicants.forEach(function (applicant) {
 			var statusBadge = getStatusBadge(applicant.status);
 			var regiDate = applicant.regi_date ? applicant.regi_date.substring(0, 16).replace('T', ' ') : '';
 
@@ -1606,12 +1672,12 @@ $(document).ready(function () {
 				'</tr>');
 
 			// 수정 버튼 이벤트
-			$row.find('.btn-edit-applicant').on('click', function() {
+			$row.find('.btn-edit-applicant').on('click', function () {
 				openEditApplicantModal(applicant);
 			});
 
 			// 삭제 버튼 이벤트
-			$row.find('.btn-delete-applicant').on('click', function() {
+			$row.find('.btn-delete-applicant').on('click', function () {
 				openDeleteApplicantModal(applicant.applicant_idx);
 			});
 
@@ -1664,7 +1730,7 @@ $(document).ready(function () {
 			return;
 		}
 
-		var applicants = selectedMembers.map(function(member) {
+		var applicants = selectedMembers.map(function (member) {
 			return {
 				member_idx: member.newTag ? null : member.id,
 				name: member.name || member.text.split(' (')[0],
@@ -1680,7 +1746,7 @@ $(document).ready(function () {
 				applicants: JSON.stringify(applicants)
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					showToast('신청자가 추가되었습니다.', 'success');
 					$('#addApplicantModal').modal('hide');
@@ -1690,7 +1756,7 @@ $(document).ready(function () {
 					showToast(response.message || '신청자 추가 실패', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('신청자 추가 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -1745,7 +1811,7 @@ $(document).ready(function () {
 				status: status
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					showToast('신청자 정보가 수정되었습니다.', 'success');
 					$('#editApplicantModal').modal('hide');
@@ -1754,7 +1820,7 @@ $(document).ready(function () {
 					showToast(response.message || '신청자 수정 실패', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('신청자 수정 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -1781,7 +1847,7 @@ $(document).ready(function () {
 			method: 'POST',
 			data: { applicant_idx: deleteApplicantIdx },
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					showToast('신청자가 삭제되었습니다.', 'success');
 					$('#deleteApplicantModal').modal('hide');
@@ -1791,7 +1857,7 @@ $(document).ready(function () {
 					showToast(response.message || '신청자 삭제 실패', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('신청자 삭제 중 오류가 발생했습니다.', 'error');
 			}
 		});
@@ -1811,7 +1877,7 @@ $(document).ready(function () {
 				status: status
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				if (response.success) {
 					showToast('상태가 일괄 변경되었습니다.', 'success');
 					$('#bulkStatusModal').modal('hide');
@@ -1820,7 +1886,7 @@ $(document).ready(function () {
 					showToast(response.message || '상태 변경 실패', 'error');
 				}
 			},
-			error: function() {
+			error: function () {
 				showToast('상태 변경 중 오류가 발생했습니다.', 'error');
 			}
 		});

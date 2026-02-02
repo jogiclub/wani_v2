@@ -300,18 +300,20 @@ class Education extends My_Controller
 			'user_id' => $user_id
 		);
 
-		// 포스터 이미지 처리
-		if (!empty($_FILES['poster_img']['name'])) {
-			$poster_path = $this->upload_poster_image($org_id);
-			if ($poster_path) {
-				$edu_data['poster_img'] = $poster_path;
+		// DB에 먼저 저장하여 edu_idx 얻기
+		$edu_idx = $this->Education_model->insert_edu($edu_data);
+
+		if ($edu_idx) {
+			// 포스터 이미지 처리 (edu_idx가 생성된 후)
+			if (!empty($_FILES['poster_img']['name'])) {
+				$poster_path = $this->upload_poster_image($org_id, $edu_idx);
+				if ($poster_path) {
+					// 이미지 경로 업데이트
+					$this->Education_model->update_edu($edu_idx, array('poster_img' => $poster_path));
+				}
 			}
-		}
 
-		$result = $this->Education_model->insert_edu($edu_data);
-
-		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '교육이 등록되었습니다.', 'edu_idx' => $result));
+			echo json_encode(array('success' => true, 'message' => '교육이 등록되었습니다.', 'edu_idx' => $edu_idx));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '교육 등록에 실패했습니다.'));
 		}
@@ -509,7 +511,7 @@ class Education extends My_Controller
 
 		// 포스터 이미지 처리
 		if (!empty($_FILES['poster_img']['name'])) {
-			$poster_path = $this->upload_poster_image($org_id);
+			$poster_path = $this->upload_poster_image($org_id, $edu_idx);
 			if ($poster_path) {
 				$edu_data['poster_img'] = $poster_path;
 			}
@@ -564,12 +566,16 @@ class Education extends My_Controller
 		$this->load->library('upload');
 		$this->load->library('image_lib');
 
-		// 업로드 디렉토리 설정
-		$upload_path = './uploads/edu_img/' . $org_id . '/';
+		// 업로드 디렉토리 설정 (절대 경로 사용)
+		$relative_path = 'uploads/edu_img/' . $org_id . '/';
+		$upload_path = FCPATH . $relative_path;
 
 		// 디렉토리가 없으면 생성
 		if (!is_dir($upload_path)) {
-			mkdir($upload_path, 0755, true);
+			if (!mkdir($upload_path, 0755, true)) {
+				log_message('error', '디렉토리 생성 실패: ' . $upload_path);
+				return null;
+			}
 		}
 
 		// 기존 파일 확장자 확인
@@ -578,6 +584,7 @@ class Education extends My_Controller
 		$allowed_extensions = array('jpg', 'jpeg', 'png', 'gif');
 
 		if (!in_array($file_extension, $allowed_extensions)) {
+			log_message('error', '허용되지 않는 확장자: ' . $file_extension);
 			return null;
 		}
 
@@ -596,14 +603,14 @@ class Education extends My_Controller
 		$config['upload_path'] = $upload_path;
 		$config['allowed_types'] = 'jpg|jpeg|png|gif';
 		$config['max_size'] = 10240; // 10MB
-		$config['file_name'] = 'edu_' . $edu_idx;
-		$config['overwrite'] = TRUE; // 같은 이름 파일 덮어쓰기
+		$config['file_name'] = 'edu_' . $edu_idx; // 확장자는 CI가 자동 처리하거나 위에서 설정한 이름 사용
+		$config['overwrite'] = TRUE;
 
 		$this->upload->initialize($config);
 
 		// 파일 업로드
 		if (!$this->upload->do_upload('poster_img')) {
-			log_message('error', '포스터 이미지 업로드 실패: ' . $this->upload->display_errors());
+			log_message('error', '포스터 이미지 업로드 실패: ' . $this->upload->display_errors('', ''));
 			return null;
 		}
 
@@ -634,8 +641,8 @@ class Education extends My_Controller
 			}
 		}
 
-		// 상대 경로 반환
-		return 'uploads/edu_img/' . $org_id . '/' . $file_name;
+		// 상대 경로 반환 (DB 저장용) - uploads/edu_img/...
+		return $relative_path . $file_name;
 	}
 
 	/**
