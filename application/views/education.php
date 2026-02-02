@@ -118,22 +118,22 @@ $this->load->view('header');
 			<input type="hidden" id="eduIdx" name="edu_idx">
 			<input type="hidden" id="eduOrgId" name="org_id">
 
-			<div class="mb-3">
-				<label class="form-label">교육카테고리 <span class="text-danger">*</span></label>
-				<select class="form-select" id="eduCategoryCode" name="category_code" required>
-					<option value="">카테고리 선택</option>
-				</select>
+
+			<div class="row mb-3">
+				<div class="col-6 ">
+					<label class="form-label">교육카테고리 <span class="text-danger">*</span></label>
+					<select class="form-select" id="eduCategoryCode" name="category_code" required>
+						<option value="">카테고리 선택</option>
+					</select>
+				</div>
+
+				<div class="col-6">
+					<label class="form-label">교육명 <span class="text-danger">*</span></label>
+					<input type="text" class="form-control" id="eduName" name="edu_name" placeholder="예: 하나님께 받는 복" required>
+				</div>
 			</div>
 
-			<div class="mb-3">
-				<label class="form-label">교육명 <span class="text-danger">*</span></label>
-				<input type="text" class="form-control" id="eduName" name="edu_name" placeholder="예: 하나님께 받는 복" required>
-			</div>
 
-			<div class="mb-3">
-				<label class="form-label">교육지역</label>
-				<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
-			</div>
 
 			<div class="row mb-3">
 				<div class="col-6">
@@ -147,7 +147,11 @@ $this->load->view('header');
 			</div>
 
 			<div class="row mb-3">
-				<div class="col-6">
+				<div class="col-4">
+					<label class="form-label">교육지역</label>
+					<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
+				</div>
+				<div class="col-4">
 					<label class="form-label">요일</label>
 					<div class="dropdown w-100">
 						<button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="eduDaysDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
@@ -200,7 +204,7 @@ $this->load->view('header');
 					</div>
 					<input type="hidden" id="eduDays" name="edu_days">
 				</div>
-				<div class="col-6">
+				<div class="col-4">
 					<label class="form-label">시간대</label>
 					<div class="dropdown w-100">
 						<button class="btn btn-outline-secondary dropdown-toggle w-100 text-start" type="button" id="eduTimesDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
@@ -316,11 +320,15 @@ $this->load->view('header');
 			</div>
 
 			<div class="row mb-3">
-				<div class="col-4">
+				<div class="col-3">
 					<label class="form-label">인도자</label>
 					<input type="text" class="form-control" id="eduLeader" name="edu_leader" placeholder="예: 손용일 집사">
 				</div>
-				<div class="col-4">
+				<div class="col-3">
+					<label class="form-label">인도자 연락처</label>
+					<input type="text" class="form-control" id="eduLeaderPhone" name="edu_leader_phone" placeholder="010-1234-5678">
+				</div>
+				<div class="col-3">
 					<label class="form-label">인도자 연령대</label>
 					<select class="form-select" id="eduLeaderAge" name="edu_leader_age">
 						<option value="">선택</option>
@@ -329,9 +337,10 @@ $this->load->view('header');
 						<option value="30s">30대</option>
 						<option value="40s">40대</option>
 						<option value="50s">50대</option>
+						<option value="60s">60대</option>
 					</select>
 				</div>
-				<div class="col-4">
+				<div class="col-3">
 					<label class="form-label">인도자 성별</label>
 					<select class="form-select" id="eduLeaderGender" name="edu_leader_gender">
 						<option value="">선택</option>
@@ -341,20 +350,43 @@ $this->load->view('header');
 				</div>
 			</div>
 
+			<!-- 새로 추가되는 필드들 -->
+			<div class="row mb-3">
+				<div class="col-6">
+					<label class="form-label">외부 공개</label>
+					<select class="form-select" id="eduPublicYn" name="public_yn">
+						<option value="N">비공개</option>
+						<option value="Y">공개</option>
+					</select>
+				</div>
+				<div class="col-6">
+					<label class="form-label">온라인 가능 여부(ZOOM이용)</label>
+					<select class="form-select" id="eduOnlineYn" name="online_yn">
+						<option value="N">불가능</option>
+						<option value="Y">가능</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="mb-3">
+				<label class="form-label">유튜브 URL</label>
+				<input type="url" class="form-control" id="eduYoutubeUrl" name="youtube_url" placeholder="https://www.youtube.com/watch?v=...">
+				<div class="form-text">유튜브 동영상 링크를 입력하세요</div>
+			</div>
+
 			<div class="mb-3">
 				<label class="form-label">교육 설명</label>
 				<textarea class="form-control" id="eduDesc" name="edu_desc" rows="4" placeholder="교육에 대한 상세 설명을 입력하세요"></textarea>
 			</div>
 		</form>
 	</div>
-	<div class="offcanvas-footer border-top p-3">
-		<div class="d-flex justify-content-end gap-2">
-			<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">취소</button>
-			<button type="button" class="btn btn-primary" id="btnSaveEdu">저장</button>
+	<div class="offcanvas-footer">
+		<div class="d-flex gap-2 p-3 border-top bg-light">
+			<button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="offcanvas">취소</button>
+			<button type="button" class="btn btn-primary flex-fill" id="btnSaveEdu">저장</button>
 		</div>
 	</div>
 </div>
-
 <!-- 카테고리 관리 Modal -->
 <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
 	<div class="modal-dialog modal-lg">

@@ -390,7 +390,7 @@ span.fancytree-icon::after{content: '\F3D1'; font-family:'bootstrap-icons'; font
 
 .msg-comment{word-break: keep-all;}
 
-.footer-buttons{position: fixed;right: 30px;bottom: 30px;z-index: 9999;}
+.footer-buttons{position: fixed;right: 30px;bottom: 70px;z-index: 9;}
 .footer-buttons .kakao-channel{cursor: pointer; width: 60px; height: 60px; border-radius: 50%; background: #ffc107}
 .footer-buttons .kakao-channel a {color:#fff}
 .footer-buttons .kakao-channel a i{font-size:30px}

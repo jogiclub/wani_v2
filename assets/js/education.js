@@ -256,132 +256,9 @@ $(document).ready(function () {
 		}
 	}
 
-	/**
-	 * ParamQuery Grid 초기화
-	 */
-	function initializeParamQuery() {
-		showGridSpinner();
 
-		try {
-			eduGrid = $("#eduGrid").pqGrid({
-				width: "100%",
-				height: "100%",
-				dataModel: { data: [] },
-				colModel: [
-					{
-						title: '<input type="checkbox" id="selectAllCheckbox" />',
-						dataIndx: "checkbox",
-						width: 40,
-						align: "center",
-						resizable: false,
-						sortable: false,
-						editable: false,
-						menuIcon: false,
-						render: function(ui) {
-							var checkboxId = 'edu-checkbox-' + ui.rowData.edu_idx;
-							return '<input type="checkbox" class="edu-checkbox" id="' + checkboxId + '" data-edu-idx="' + ui.rowData.edu_idx + '" />';
-						}
 
-					},
-					{
-						title: "교육카테고리",
-						dataIndx: "category_name",
-						width: 120,
-						align: "center"
-					},
-					{
-						title: "교육명",
-						dataIndx: "edu_name",
-						width: 200,
-						render: function(ui) {
-							return '<a href="javascript:void(0)" class="text-primary edu-name-link" data-edu-idx="' + ui.rowData.edu_idx + '">' + ui.cellData + '</a>';
-						}
-					},
-					{
-						title: "교육지역",
-						dataIndx: "edu_location",
-						width: 150
-					},
-					{
-						title: "교육기간",
-						dataIndx: "edu_period_str",
-						width: 200,
-						align: "center"
-					},
-					{
-						title: "요일",
-						dataIndx: "edu_days_str",
-						width: 150
-					},
-					{
-						title: "시간대",
-						dataIndx: "edu_times_str",
-						width: 150
-					},
-					{
-						title: "인도자",
-						dataIndx: "edu_leader",
-						width: 100,
-						align: "center"
-					},
-					{
-						title: "인도자연령",
-						dataIndx: "edu_leader_age_str",
-						width: 100,
-						align: "center"
-					},
-					{
-						title: "인도자성별",
-						dataIndx: "edu_leader_gender_str",
-						width: 100,
-						align: "center"
-					}
-				],
-				strNoRows: '교육 정보가 없습니다',
-				selectionModel: { type: 'row', mode: 'block' },
-				numberCell: { show: false },
-				title: false,
-				resizable: true,
-				sortable: true,
-				hoverMode: 'row',
-				wrap: false,
-				columnBorders: true,
-				rowBorders: true,
-				rowInit: function (ui) {
-					var style = "height: 40px;";
-					return {
-						style: style,
-					};
-				},
-				cellClick: function(event, ui) {
-					if (ui.dataIndx === 'checkbox') {
-						handleCheckboxClick(event, ui.rowData.edu_idx);
-					}
-				}
-			});
 
-			// 그리드 이벤트 바인딩
-			bindGridEvents();
-
-			hideGridSpinner();
-		} catch (error) {
-			console.error('ParamQuery Grid 초기화 실패:', error);
-			hideGridSpinner();
-			showToast('그리드 초기화에 실패했습니다.', 'error');
-		}
-	}
-
-	/**
-	 * 그리드 이벤트 바인딩
-	 */
-	function bindGridEvents() {
-		// 교육명 클릭 이벤트
-		$(document).on('click', '.edu-name-link', function(e) {
-			e.preventDefault();
-			const eduIdx = $(this).data('edu-idx');
-			openEduEditOffcanvas(eduIdx);
-		});
-	}
 
 	/**
 	 * 체크박스 클릭 핸들러
@@ -629,7 +506,154 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 폼 채우기
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 교육관리 화면 - 셀 클릭 이벤트 및 필드 추가
+	 */
+
+	/**
+	 * ParamQuery Grid 초기화 - 수정
+	 */
+	function initializeParamQuery() {
+		showGridSpinner();
+
+		try {
+			eduGrid = $("#eduGrid").pqGrid({
+				width: "100%",
+				height: "100%",
+				dataModel: { data: [] },
+				colModel: [
+					{
+						title: '<input type="checkbox" id="selectAllCheckbox" />',
+						dataIndx: "checkbox",
+						width: 40,
+						align: "center",
+						resizable: false,
+						sortable: false,
+						editable: false,
+						menuIcon: false,
+						render: function(ui) {
+							var checkboxId = 'edu-checkbox-' + ui.rowData.edu_idx;
+							return '<input type="checkbox" class="edu-checkbox" id="' + checkboxId + '" data-edu-idx="' + ui.rowData.edu_idx + '" />';
+						}
+					},
+					{
+						title: "교육카테고리",
+						dataIndx: "category_name",
+						width: 120,
+						align: "center"
+					},
+					{
+						title: "교육명",
+						dataIndx: "edu_name",
+						width: 200
+					},
+					{
+						title: "교육지역",
+						dataIndx: "edu_location",
+						width: 150
+					},
+					{
+						title: "교육기간",
+						dataIndx: "edu_period_str",
+						width: 240,
+						align: "center"
+					},
+					{
+						title: "요일",
+						dataIndx: "edu_days_str",
+						width: 150
+					},
+					{
+						title: "시간대",
+						dataIndx: "edu_times_str",
+						width: 150
+					},
+					{
+						title: "인도자",
+						dataIndx: "edu_leader",
+						width: 100,
+						align: "center"
+					},
+					{
+						title: "인도자연락처",
+						dataIndx: "edu_leader_phone",
+						width: 120,
+						align: "center"
+					},
+					{
+						title: "인도자연령",
+						dataIndx: "edu_leader_age_str",
+						width: 100,
+						align: "center"
+					},
+					{
+						title: "인도자성별",
+						dataIndx: "edu_leader_gender_str",
+						width: 100,
+						align: "center"
+					},
+					{
+						title: "외부공개",
+						dataIndx: "public_yn",
+						width: 80,
+						align: "center",
+						render: function(ui) {
+							return ui.cellData === 'Y' ? '공개' : '비공개';
+						}
+					},
+					{
+						title: "온라인",
+						dataIndx: "online_yn",
+						width: 80,
+						align: "center",
+						render: function(ui) {
+							return ui.cellData === 'Y' ? '가능' : '-';
+						}
+					}
+				],
+				strNoRows: '교육 정보가 없습니다',
+				selectionModel: { type: 'row', mode: 'block' },
+				numberCell: { show: false },
+				title: false,
+				resizable: true,
+				sortable: true,
+				hoverMode: 'row',
+				wrap: false,
+				columnBorders: true,
+				rowBorders: true,
+				rowInit: function (ui) {
+					var style = "height: 40px;";
+					return {
+						style: style,
+					};
+				},
+				cellClick: function(event, ui) {
+					// 체크박스 컬럼 클릭 시
+					if (ui.dataIndx === 'checkbox') {
+						handleCheckboxClick(event, ui.rowData.edu_idx);
+					}
+					// 다른 컬럼 클릭 시 수정 offcanvas 열기
+					else {
+						openEduEditOffcanvas(ui.rowData.edu_idx);
+					}
+				}
+			});
+
+
+
+			hideGridSpinner();
+		} catch (error) {
+			console.error('ParamQuery Grid 초기화 실패:', error);
+			hideGridSpinner();
+			showToast('그리드 초기화에 실패했습니다.', 'error');
+		}
+	}
+
+
+
+
+	/**
+	 * 교육 폼 채우기 - 필드 추가
 	 */
 	function fillEduForm(eduData) {
 		$('#eduIdx').val(eduData.edu_idx);
@@ -637,9 +661,19 @@ $(document).ready(function () {
 		$('#eduName').val(eduData.edu_name);
 		$('#eduLocation').val(eduData.edu_location);
 		$('#eduLeader').val(eduData.edu_leader);
+		$('#eduLeaderPhone').val(eduData.edu_leader_phone);
 		$('#eduLeaderAge').val(eduData.edu_leader_age);
 		$('#eduLeaderGender').val(eduData.edu_leader_gender);
 		$('#eduDesc').val(eduData.edu_desc);
+
+		// 외부공개 여부
+		$('#eduPublicYn').val(eduData.public_yn || 'N');
+
+		// 온라인 가능 여부
+		$('#eduOnlineYn').val(eduData.online_yn || 'N');
+
+		// 유튜브 URL
+		$('#eduYoutubeUrl').val(eduData.youtube_url || '');
 
 		// 카테고리 옵션 로드 후 선택
 		loadCategoryOptions(eduData.category_code);
@@ -672,7 +706,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 폼 초기화
+	 * 교육 폼 초기화 - 필드 추가
 	 */
 	function resetEduForm() {
 		$('#eduForm')[0].reset();
@@ -681,6 +715,12 @@ $(document).ready(function () {
 		$('.edu-time-checkbox').prop('checked', false);
 		$('#eduDaysText').text('요일 선택');
 		$('#eduTimesText').text('시간대 선택');
+
+		// 새로 추가된 필드 초기화
+		$('#eduPublicYn').val('N');
+		$('#eduOnlineYn').val('N');
+		$('#eduYoutubeUrl').val('');
+		$('#eduLeaderPhone').val('');
 
 		if (flatpickrStartInstance) {
 			flatpickrStartInstance.clear();
@@ -821,7 +861,8 @@ $(document).ready(function () {
 
 		if (selectedDays.length > 0) {
 			$('#eduDaysText').text(selectedDays.join(', '));
-			$('#eduDays').val(JSON.stringify(selectedDays));
+			// JSON.stringify 제거 - 배열을 직접 저장
+			$('#eduDays').val(selectedDays.join(','));
 		} else {
 			$('#eduDaysText').text('요일 선택');
 			$('#eduDays').val('');
@@ -839,7 +880,8 @@ $(document).ready(function () {
 
 		if (selectedTimes.length > 0) {
 			$('#eduTimesText').text(selectedTimes.join(', '));
-			$('#eduTimes').val(JSON.stringify(selectedTimes));
+			// JSON.stringify 제거 - 배열을 직접 저장
+			$('#eduTimes').val(selectedTimes.join(','));
 		} else {
 			$('#eduTimesText').text('시간대 선택');
 			$('#eduTimes').val('');

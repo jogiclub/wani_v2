@@ -257,7 +257,17 @@ class Education extends My_Controller
 		));
 	}
 
-	// 기존 add_edu 메서드를 insert_edu로 변경
+
+	/**
+	 * 파일 위치: application/controllers/Education.php
+	 * 역할: insert_edu, update_edu 메서드에 새 필드 추가
+	 */
+
+	/**
+	 * 파일 위치: application/controllers/Education.php
+	 * 역할: insert_edu, update_edu 메서드 수정 - 요일/시간 저장 방식 변경
+	 */
+
 	public function insert_edu()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -273,6 +283,24 @@ class Education extends My_Controller
 			return;
 		}
 
+		// 요일 데이터 처리
+		$edu_days_input = $this->input->post('edu_days');
+		$edu_days = null;
+		if ($edu_days_input) {
+			// 쉼표로 구분된 문자열을 배열로 변환
+			$days_array = explode(',', $edu_days_input);
+			$edu_days = json_encode($days_array, JSON_UNESCAPED_UNICODE);
+		}
+
+		// 시간대 데이터 처리
+		$edu_times_input = $this->input->post('edu_times');
+		$edu_times = null;
+		if ($edu_times_input) {
+			// 쉼표로 구분된 문자열을 배열로 변환
+			$times_array = explode(',', $edu_times_input);
+			$edu_times = json_encode($times_array, JSON_UNESCAPED_UNICODE);
+		}
+
 		$edu_data = array(
 			'org_id' => $org_id,
 			'category_code' => $this->input->post('category_code'),
@@ -280,12 +308,16 @@ class Education extends My_Controller
 			'edu_location' => $this->input->post('edu_location'),
 			'edu_start_date' => $this->input->post('edu_start_date'),
 			'edu_end_date' => $this->input->post('edu_end_date'),
-			'edu_days' => $this->input->post('edu_days') ? json_encode($this->input->post('edu_days')) : null,
-			'edu_times' => $this->input->post('edu_times') ? json_encode($this->input->post('edu_times')) : null,
+			'edu_days' => $edu_days,
+			'edu_times' => $edu_times,
 			'edu_leader' => $this->input->post('edu_leader'),
+			'edu_leader_phone' => $this->input->post('edu_leader_phone'),
 			'edu_leader_age' => $this->input->post('edu_leader_age'),
 			'edu_leader_gender' => $this->input->post('edu_leader_gender'),
 			'edu_desc' => $this->input->post('edu_desc'),
+			'public_yn' => $this->input->post('public_yn') ?: 'N',
+			'online_yn' => $this->input->post('online_yn') ?: 'N',
+			'youtube_url' => $this->input->post('youtube_url'),
 			'user_id' => $user_id
 		);
 
@@ -302,9 +334,6 @@ class Education extends My_Controller
 		}
 	}
 
-	/**
-	 * 교육 수정 API
-	 */
 	public function update_edu()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -332,18 +361,40 @@ class Education extends My_Controller
 			return;
 		}
 
+		// 요일 데이터 처리
+		$edu_days_input = $this->input->post('edu_days');
+		$edu_days = null;
+		if ($edu_days_input) {
+			// 쉼표로 구분된 문자열을 배열로 변환
+			$days_array = explode(',', $edu_days_input);
+			$edu_days = json_encode($days_array, JSON_UNESCAPED_UNICODE);
+		}
+
+		// 시간대 데이터 처리
+		$edu_times_input = $this->input->post('edu_times');
+		$edu_times = null;
+		if ($edu_times_input) {
+			// 쉼표로 구분된 문자열을 배열로 변환
+			$times_array = explode(',', $edu_times_input);
+			$edu_times = json_encode($times_array, JSON_UNESCAPED_UNICODE);
+		}
+
 		$edu_data = array(
 			'category_code' => $this->input->post('category_code'),
 			'edu_name' => $this->input->post('edu_name'),
 			'edu_location' => $this->input->post('edu_location'),
 			'edu_start_date' => $this->input->post('edu_start_date'),
 			'edu_end_date' => $this->input->post('edu_end_date'),
-			'edu_days' => $this->input->post('edu_days') ? json_encode($this->input->post('edu_days')) : null,
-			'edu_times' => $this->input->post('edu_times') ? json_encode($this->input->post('edu_times')) : null,
+			'edu_days' => $edu_days,
+			'edu_times' => $edu_times,
 			'edu_leader' => $this->input->post('edu_leader'),
+			'edu_leader_phone' => $this->input->post('edu_leader_phone'),
 			'edu_leader_age' => $this->input->post('edu_leader_age'),
 			'edu_leader_gender' => $this->input->post('edu_leader_gender'),
-			'edu_desc' => $this->input->post('edu_desc')
+			'edu_desc' => $this->input->post('edu_desc'),
+			'public_yn' => $this->input->post('public_yn') ?: 'N',
+			'online_yn' => $this->input->post('online_yn') ?: 'N',
+			'youtube_url' => $this->input->post('youtube_url')
 		);
 
 		$result = $this->Education_model->update_edu($edu_idx, $edu_data);
@@ -354,6 +405,7 @@ class Education extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '교육 수정에 실패했습니다.'));
 		}
 	}
+
 
 	/**
 	 * 교육 삭제 API
