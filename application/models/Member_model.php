@@ -863,6 +863,27 @@ class Member_model extends CI_Model
 	}
 
 	/**
+	 * 회원 검색 (이름 또는 전화번호)
+	 */
+	public function search_members($org_id, $keyword)
+	{
+		$this->db->select('member_idx, member_name, member_phone');
+		$this->db->from('wb_member');
+		$this->db->where('org_id', $org_id);
+		$this->db->where('del_yn', 'N');
+		if ($keyword) {
+			$this->db->group_start();
+			$this->db->like('member_name', $keyword);
+			$this->db->or_like('member_phone', $keyword);
+			$this->db->group_end();
+		}
+
+		$this->db->order_by('member_name', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
 	 * 최근 8주간 주별 신규 회원 수 조회
 	 * @param int $org_id 조직 ID
 	 * @return array 주별 신규 회원 수 데이터

@@ -8,6 +8,7 @@ $this->load->view('header');
 
 <!-- ParamQuery CSS -->
 <link rel="stylesheet" href="/assets/css/custom/pqgrid.min.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
 <!-- Fancytree CSS -->
 <link rel="stylesheet" href="/assets/css/custom/ui.fancytree.min.css?<?php echo WB_VERSION; ?>">
@@ -78,12 +79,15 @@ $this->load->view('header');
 								<i class="bi bi-trash"></i> 선택 삭제
 							</button>
 
-								<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">
-									<i class="bi bi-folder"></i> 카테고리 관리
-								</button>
+<!--								<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">-->
+<!--									<i class="bi bi-folder"></i> 카테고리 관리-->
+<!--								</button>-->
 								<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
 									<i class="bi bi-plus-lg"></i> 교육 등록
 								</button>
+							<button type="button" class="btn btn-sm btn-outline-primary" id="btnManageApplicant">
+								<i class="bi bi-people"></i> 신청자 관리
+							</button>
 
 
 						</div>
@@ -319,6 +323,18 @@ $this->load->view('header');
 
 			<div class="row mb-3">
 				<div class="col-6">
+					<label class="form-label">정원</label>
+					<input type="number" class="form-control" id="eduCapacity" name="edu_capacity" placeholder="정원 입력 (0: 무제한)" min="0">
+				</div>
+				<div class="col-6">
+					<label class="form-label">교육지역</label>
+					<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
+				</div>
+			</div>
+
+			<div class="row mb-3">
+
+				<div class="col-6">
 					<label class="form-label">수강료</label>
 					<div class="input-group">
 						<input type="text" class="form-control" id="eduFee" name="edu_fee" placeholder="0" value="0">
@@ -326,13 +342,18 @@ $this->load->view('header');
 					</div>
 					<div class="form-text">수강료를 입력하세요 (무료인 경우 0)</div>
 				</div>
-
-
-				<div class="col-6">
-					<label class="form-label">교육지역</label>
-					<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
+				<div class="mb-3">
+					<label class="form-label">계좌정보</label>
+					<div class="input-group mb-2">
+						<input type="text" class="form-control" id="eduBankName" placeholder="은행명">
+						<input type="text" class="form-control" id="eduAccountNumber" placeholder="계좌번호">
+					</div>
+					<input type="hidden" id="eduBankAccount" name="bank_account">
 				</div>
 			</div>
+
+
+
 
 			<div class="row mb-3">
 				<div class="col-6">
@@ -394,7 +415,7 @@ $this->load->view('header');
 
 			<div class="mb-3">
 				<label class="form-label">포스터 이미지</label>
-				<div class="border rounded p-3 text-center" style="min-height: 200px; background-color: #f8f9fa;">
+				<div class="border rounded p-3 text-center d-flex align-items-center justify-content-center bg-light" style="min-height: 200px;">
 					<div id="posterPlaceholder">
 						<i class="bi bi-image" style="font-size: 3rem; color: #dee2e6;"></i>
 						<p class="text-muted mb-0">포스터 이미지를 선택하세요</p>
@@ -463,6 +484,151 @@ $this->load->view('header');
 	</div>
 </div>
 
+
+<!-- 신청자 관리 Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="applicantOffcanvas" aria-labelledby="applicantOffcanvasLabel" style="width: 700px;">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="applicantOffcanvasTitle">신청자 관리</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body">
+		<div class="d-flex justify-content-end gap-2 mb-3">
+			<button type="button" class="btn btn-sm btn-primary" id="btnAddApplicant">
+				<i class="bi bi-plus-lg"></i> 신청자 추가
+			</button>
+			<button type="button" class="btn btn-sm btn-outline-secondary" id="btnChangeStatusBulk">
+				<i class="bi bi-arrow-repeat"></i> 상태변경
+			</button>
+			<button type="button" class="btn btn-sm btn-outline-info" id="btnExternalUrl">
+				<i class="bi bi-link-45deg"></i> 외부URL
+			</button>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-sm table-hover" id="applicantTable">
+				<thead>
+				<tr>
+					<th style="width: 150px;">신청일</th>
+					<th style="width: 100px;">신청자</th>
+					<th style="width: 130px;">연락처</th>
+					<th style="width: 80px;">상태</th>
+					<th style="width: 100px;">관리</th>
+				</tr>
+				</thead>
+				<tbody id="applicantTableBody">
+				</tbody>
+			</table>
+		</div>
+		<div id="noApplicantMessage" class="text-center text-muted py-5 d-none">
+			<i class="bi bi-people fs-1"></i>
+			<p class="mb-0 mt-2">신청자가 없습니다.</p>
+		</div>
+	</div>
+</div>
+
+<!-- 신청자 추가 모달 -->
+<div class="modal fade" id="addApplicantModal" tabindex="-1" aria-labelledby="addApplicantModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="addApplicantModalTitle">신청자 추가</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label class="form-label">신청자</label>
+					<select class="form-select" id="applicantMemberSelect" multiple="multiple" style="width: 100%;"></select>
+					<small class="text-muted">회원 목록에서 선택하거나 직접 입력할 수 있습니다.</small>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnSaveApplicant">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 신청자 수정 모달 -->
+<div class="modal fade" id="editApplicantModal" tabindex="-1" aria-labelledby="editApplicantModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editApplicantModalTitle">신청자 수정</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="editApplicantIdx">
+				<div class="mb-3">
+					<label class="form-label">신청자</label>
+					<input type="text" class="form-control" id="editApplicantName">
+				</div>
+				<div class="mb-3">
+					<label class="form-label">연락처</label>
+					<input type="text" class="form-control" id="editApplicantPhone">
+				</div>
+				<div class="mb-3">
+					<label class="form-label">상태</label>
+					<select class="form-select" id="editApplicantStatus">
+						<option value="신청">신청</option>
+						<option value="교육중">교육중</option>
+						<option value="수료">수료</option>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnUpdateApplicant">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 상태 일괄변경 모달 -->
+<div class="modal fade" id="bulkStatusModal" tabindex="-1" aria-labelledby="bulkStatusModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="bulkStatusModalTitle">상태 일괄변경</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label class="form-label">변경할 상태</label>
+					<select class="form-select" id="bulkStatusSelect">
+						<option value="신청">신청</option>
+						<option value="교육중">교육중</option>
+						<option value="수료">수료</option>
+					</select>
+				</div>
+				<p class="text-muted small">전체 신청자의 상태가 선택한 상태로 변경됩니다.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnApplyBulkStatus">적용</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteApplicantModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">신청자 삭제</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p>선택한 신청자를 삭제하시겠습니까?</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="btnConfirmDeleteApplicant">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <?php $this->load->view('footer'); ?>
 
 <!-- Split.js -->
@@ -477,7 +643,8 @@ $this->load->view('header');
 <!-- Flatpickr -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="/assets/js/custom/select2.sortable.min.js?<?php echo WB_VERSION; ?>"></script>
 <script>
 	window.educationPageData = {
 		baseUrl: '<?php echo base_url(); ?>',

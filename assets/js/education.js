@@ -11,6 +11,9 @@ $(document).ready(function () {
 	let categoryMap = {};             // 카테고리 코드-이름 매핑
 	let flatpickrStartInstance = null; // 시작일 Flatpickr 인스턴스
 	let flatpickrEndInstance = null;   // 종료일 Flatpickr 인스턴스
+	let currentApplicantEduIdx = null;
+	let applicantMemberSelect = null;
+
 
 	// 초기화 시도
 	setTimeout(function () {
@@ -35,6 +38,7 @@ $(document).ready(function () {
 			initializeParamQuery();
 			initializeFlatpickr();
 			bindGlobalEvents();
+			bindApplicantEvents();
 			setupCleanupEvents();
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
@@ -598,13 +602,10 @@ $(document).ready(function () {
 		}
 	}
 
-	/**
-	 * 파일 위치: assets/js/education.js
-	 * 역할: 수강료, 포스터 필드 추가
-	 */
+
 
 	/**
-	 * ParamQuery Grid 초기화 - 수강료 컬럼 추가
+	 * ParamQuery Grid 초기화 - 교육명 클릭 시에만 offcanvas, 신청자 컬럼 추가
 	 */
 	function initializeParamQuery() {
 		showGridSpinner();
@@ -640,7 +641,27 @@ $(document).ready(function () {
 						title: "교육명",
 						dataIndx: "edu_name",
 						editable: false,
-						width: 200
+						width: 200,
+						cls: 'pq-edu-name-cell',
+						render: function(ui) {
+							return '<span class="text-primary" style="cursor:pointer;">' + escapeHtml(ui.cellData || '') + '</span>';
+						}
+					},
+					{
+						title: "신청자",
+						dataIndx: "applicant_count_str",
+						width: 100,
+						align: "center",
+						editable: false,
+						render: function(ui) {
+							var applicantCount = ui.rowData.applicant_count || 0;
+							var capacity = ui.rowData.edu_capacity || 0;
+							if (capacity > 0) {
+								return applicantCount + '명 / ' + capacity + '명';
+							} else {
+								return applicantCount + '명';
+							}
+						}
 					},
 					{
 						title: "교육지역",
@@ -738,14 +759,13 @@ $(document).ready(function () {
 					if (ui.dataIndx === 'checkbox') {
 						handleCheckboxClick(event, ui.rowData.edu_idx);
 					}
-					// 다른 컬럼 클릭 시 수정 offcanvas 열기
-					else {
+					// 교육명 컬럼 클릭 시에만 수정 offcanvas 열기
+					else if (ui.dataIndx === 'edu_name') {
 						openEduEditOffcanvas(ui.rowData.edu_idx);
 					}
+					// 다른 컬럼 클릭 시에는 아무 동작 안 함
 				}
 			});
-
-
 
 			hideGridSpinner();
 		} catch (error) {
@@ -889,72 +909,75 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 폼 채우기 - 수강료, 포스터 추가
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 교육 폼 데이터 채우기 - 정원, 계좌정보 추가
 	 */
-	function fillEduForm(eduData) {
-		$('#eduIdx').val(eduData.edu_idx);
-		$('#eduOrgId').val(eduData.org_id);
-		$('#eduName').val(eduData.edu_name);
-		$('#eduLocation').val(eduData.edu_location);
-		$('#eduLeader').val(eduData.edu_leader);
-		$('#eduLeaderPhone').val(eduData.edu_leader_phone);
-		$('#eduLeaderAge').val(eduData.edu_leader_age);
-		$('#eduLeaderGender').val(eduData.edu_leader_gender);
-		$('#eduDesc').val(eduData.edu_desc);
+	function fillEduForm(data) {
+		$('#eduIdx').val(data.edu_idx);
+		$('#eduOrgId').val(data.org_id);
+		$('#eduCategoryCode').val(data.category_code);
+		$('#eduName').val(data.edu_name);
+		$('#eduLocation').val(data.edu_location || '');
+		$('#eduStartDate').val(data.edu_start_date || '');
+		$('#eduEndDate').val(data.edu_end_date || '');
+		$('#eduLeader').val(data.edu_leader || '');
+		$('#eduLeaderPhone').val(data.edu_leader_phone || '');
+		$('#eduLeaderAge').val(data.edu_leader_age || '');
+		$('#eduLeaderGender').val(data.edu_leader_gender || '');
+		$('#eduDesc').val(data.edu_desc || '');
+		$('#eduPublicYn').val(data.public_yn || 'N');
+		$('#eduOnlineYn').val(data.online_yn || 'N');
+		$('#eduYoutubeUrl').val(data.youtube_url || '');
 
 		// 수강료
-		var fee = parseInt(eduData.edu_fee) || 0;
-		$('#eduFee').val(fee > 0 ? formatNumber(fee) : '0');
+		var feeValue = parseInt(data.edu_fee) || 0;
+		$('#eduFee').val(feeValue > 0 ? formatNumber(feeValue) : '');
 
-		// 외부공개 여부
-		$('#eduPublicYn').val(eduData.public_yn || 'N');
+		// 정원
+		$('#eduCapacity').val(data.edu_capacity || 0);
 
-		// 온라인 가능 여부
-		$('#eduOnlineYn').val(eduData.online_yn || 'N');
-
-		// 유튜브 URL
-		$('#eduYoutubeUrl').val(eduData.youtube_url || '');
-
-		// 포스터 이미지
-		$('#removePosterFlag').val('0');
-		if (eduData.poster_img) {
-			$('#posterPreview').attr('src', window.educationPageData.baseUrl + eduData.poster_img).show();
-			$('#posterPlaceholder').hide();
-			$('#btnRemovePoster').show();
+		// 계좌정보
+		if (data.bank_account) {
+			try {
+				var bankInfo = JSON.parse(data.bank_account);
+				$('#eduBankName').val(bankInfo.bank_name || '');
+				$('#eduAccountNumber').val(bankInfo.account_number || '');
+			} catch(e) {
+				$('#eduBankName').val('');
+				$('#eduAccountNumber').val('');
+			}
 		} else {
-			$('#posterPreview').attr('src', '').hide();
-			$('#posterPlaceholder').show();
-			$('#btnRemovePoster').hide();
-		}
-
-		// 카테고리 옵션 로드 후 선택
-		loadCategoryOptions(eduData.category_code);
-
-		// 날짜 설정
-		if (flatpickrStartInstance && eduData.edu_start_date) {
-			flatpickrStartInstance.setDate(eduData.edu_start_date);
-		}
-		if (flatpickrEndInstance && eduData.edu_end_date) {
-			flatpickrEndInstance.setDate(eduData.edu_end_date);
+			$('#eduBankName').val('');
+			$('#eduAccountNumber').val('');
 		}
 
 		// 요일 체크박스 설정
 		$('.edu-day-checkbox').prop('checked', false);
-		if (eduData.edu_days && Array.isArray(eduData.edu_days)) {
-			eduData.edu_days.forEach(function(day) {
+		if (data.edu_days && Array.isArray(data.edu_days)) {
+			data.edu_days.forEach(function(day) {
 				$('.edu-day-checkbox[value="' + day + '"]').prop('checked', true);
 			});
-			updateDaysDisplay();
 		}
+		updateDaysDisplay();
 
 		// 시간대 체크박스 설정
 		$('.edu-time-checkbox').prop('checked', false);
-		if (eduData.edu_times && Array.isArray(eduData.edu_times)) {
-			eduData.edu_times.forEach(function(time) {
+		if (data.edu_times && Array.isArray(data.edu_times)) {
+			data.edu_times.forEach(function(time) {
 				$('.edu-time-checkbox[value="' + time + '"]').prop('checked', true);
 			});
-			updateTimesDisplay();
 		}
+		updateTimesDisplay();
+
+		// 포스터 이미지 미리보기
+		$('#posterPreview').hide();
+		$('#removePosterFlag').val('0');
+		if (data.poster_img) {
+			$('#posterPreviewImage').attr('src', data.poster_img);
+			$('#posterPreview').show();
+		}
+
+		loadCategoryOptions(data.category_code);
 	}
 
 	/**
@@ -991,12 +1014,12 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 저장 - FormData로 변경
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 교육 저장 - 정원, 계좌정보 추가
 	 */
 	function saveEdu() {
-		// 필수값 검증
 		if (!$('#eduCategoryCode').val()) {
-			showToast('교육카테고리를 선택해주세요.', 'warning');
+			showToast('카테고리를 선택해주세요.', 'warning');
 			return;
 		}
 
@@ -1035,6 +1058,22 @@ $(document).ready(function () {
 		// 수강료 (숫자만 추출)
 		var feeValue = $('#eduFee').val().replace(/[^\d]/g, '');
 		formData.append('edu_fee', feeValue || '0');
+
+		// 정원
+		formData.append('edu_capacity', $('#eduCapacity').val() || '0');
+
+		// 계좌정보
+		var bankName = $('#eduBankName').val().trim();
+		var accountNumber = $('#eduAccountNumber').val().trim();
+		if (bankName || accountNumber) {
+			var bankAccount = JSON.stringify({
+				bank_name: bankName,
+				account_number: accountNumber
+			});
+			formData.append('bank_account', bankAccount);
+		} else {
+			formData.append('bank_account', '');
+		}
 
 		// 포스터 이미지
 		var posterFile = $('#eduPosterImg')[0].files[0];
@@ -1365,5 +1404,425 @@ $(document).ready(function () {
 			clearTimeout(timeout);
 			timeout = setTimeout(later, wait);
 		};
+	}
+
+
+	/**
+	 * 신청자 관리 버튼 클릭 이벤트 바인딩
+	 */
+	function bindApplicantEvents() {
+		// 신청자 관리 버튼 클릭
+		$('#btnManageApplicant').on('click', function() {
+			// 체크된 교육 확인
+			var checkedEdu = [];
+			$('.edu-checkbox:checked').each(function() {
+				checkedEdu.push({
+					edu_idx: $(this).data('edu-idx'),
+					edu_name: $(this).closest('tr').find('td[data-dataindx="edu_name"]').text() || ''
+				});
+			});
+
+			if (checkedEdu.length === 0) {
+				showToast('신청자를 관리할 교육을 선택해주세요.', 'warning');
+				return;
+			}
+
+			if (checkedEdu.length > 1) {
+				showToast('신청자 관리는 하나의 교육만 선택해주세요.', 'warning');
+				return;
+			}
+
+			currentApplicantEduIdx = checkedEdu[0].edu_idx;
+			openApplicantOffcanvas(currentApplicantEduIdx);
+		});
+
+		// 신청자 추가 버튼
+		$('#btnAddApplicant').on('click', function() {
+			openAddApplicantModal();
+		});
+
+		// 신청자 저장 버튼
+		$('#btnSaveApplicant').on('click', function() {
+			saveApplicant();
+		});
+
+		// 신청자 수정 저장 버튼
+		$('#btnUpdateApplicant').on('click', function() {
+			updateApplicant();
+		});
+
+		// 상태 일괄변경 버튼
+		$('#btnChangeStatusBulk').on('click', function() {
+			$('#bulkStatusModal').modal('show');
+		});
+
+		// 일괄 상태변경 적용 버튼
+		$('#btnApplyBulkStatus').on('click', function() {
+			applyBulkStatus();
+		});
+
+		// 삭제 확인 버튼
+		$('#btnConfirmDeleteApplicant').on('click', function() {
+			confirmDeleteApplicant();
+		});
+
+		// Select2 초기화
+		initApplicantSelect2();
+	}
+
+	/**
+	 * Select2 초기화 (신청자 선택)
+	 */
+	function initApplicantSelect2() {
+		if (applicantMemberSelect) {
+			applicantMemberSelect.select2('destroy');
+		}
+
+		applicantMemberSelect = $('#applicantMemberSelect').select2({
+			dropdownParent: $('#addApplicantModal'),
+			placeholder: '회원을 선택하거나 이름을 입력하세요',
+			allowClear: true,
+			multiple: true,
+			tags: true,
+			ajax: {
+				url: window.educationPageData.baseUrl + 'education/search_members',
+				dataType: 'json',
+				delay: 250,
+				data: function(params) {
+					return {
+						keyword: params.term,
+						org_id: selectedOrgId || window.educationPageData.currentOrgId
+					};
+				},
+				processResults: function(data) {
+					return {
+						results: data.data.map(function(member) {
+							return {
+								id: member.member_idx,
+								text: member.member_name + (member.member_phone ? ' (' + member.member_phone + ')' : ''),
+								name: member.member_name,
+								phone: member.member_phone
+							};
+						})
+					};
+				}
+			},
+			createTag: function(params) {
+				var term = $.trim(params.term);
+				if (term === '') {
+					return null;
+				}
+				return {
+					id: 'new_' + term,
+					text: term + ' (직접입력)',
+					name: term,
+					phone: '',
+					newTag: true
+				};
+			}
+		});
+	}
+
+	/**
+	 * 신청자 관리 Offcanvas 열기
+	 */
+	function openApplicantOffcanvas(eduIdx) {
+		// 교육명 조회
+		var eduName = '';
+		if (eduGrid) {
+			var data = eduGrid.pqGrid("option", "dataModel.data");
+			for (var i = 0; i < data.length; i++) {
+				if (data[i].edu_idx == eduIdx) {
+					eduName = data[i].edu_name;
+					break;
+				}
+			}
+		}
+
+		$('#applicantOffcanvasTitle').text(eduName + ' 신청자 관리');
+
+		// 신청자 목록 로드
+		loadApplicantList(eduIdx);
+
+		const offcanvas = new bootstrap.Offcanvas('#applicantOffcanvas');
+		offcanvas.show();
+	}
+
+	/**
+	 * 신청자 목록 로드
+	 */
+	function loadApplicantList(eduIdx) {
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/get_applicant_list',
+			method: 'POST',
+			data: { edu_idx: eduIdx },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					renderApplicantList(response.data);
+				} else {
+					showToast(response.message || '신청자 목록 조회 실패', 'error');
+				}
+			},
+			error: function() {
+				showToast('신청자 목록을 불러오는 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 신청자 목록 렌더링
+	 */
+	function renderApplicantList(applicants) {
+		var $tbody = $('#applicantTableBody');
+		$tbody.empty();
+
+		if (!applicants || applicants.length === 0) {
+			$('#applicantTable').hide();
+			$('#noApplicantMessage').removeClass('d-none');
+			return;
+		}
+
+		$('#applicantTable').show();
+		$('#noApplicantMessage').addClass('d-none');
+
+		applicants.forEach(function(applicant) {
+			var statusBadge = getStatusBadge(applicant.status);
+			var regiDate = applicant.regi_date ? applicant.regi_date.substring(0, 16).replace('T', ' ') : '';
+
+			var $row = $('<tr data-idx="' + applicant.applicant_idx + '">' +
+				'<td>' + regiDate + '</td>' +
+				'<td>' + escapeHtml(applicant.applicant_name) + '</td>' +
+				'<td>' + escapeHtml(applicant.applicant_phone || '-') + '</td>' +
+				'<td>' + statusBadge + '</td>' +
+				'<td class="text-center">' +
+				'<button type="button" class="btn btn-xs btn-outline-secondary btn-edit-applicant me-1" title="수정">' +
+				'<i class="bi bi-pencil"></i>' +
+				'</button>' +
+				'<button type="button" class="btn btn-xs btn-outline-danger btn-delete-applicant" title="삭제">' +
+				'<i class="bi bi-trash"></i>' +
+				'</button>' +
+				'</td>' +
+				'</tr>');
+
+			// 수정 버튼 이벤트
+			$row.find('.btn-edit-applicant').on('click', function() {
+				openEditApplicantModal(applicant);
+			});
+
+			// 삭제 버튼 이벤트
+			$row.find('.btn-delete-applicant').on('click', function() {
+				openDeleteApplicantModal(applicant.applicant_idx);
+			});
+
+			$tbody.append($row);
+		});
+	}
+
+	/**
+	 * 상태 뱃지 반환
+	 */
+	function getStatusBadge(status) {
+		var badgeClass = 'bg-secondary';
+		if (status === '신청') badgeClass = 'bg-primary';
+		else if (status === '교육중') badgeClass = 'bg-warning text-dark';
+		else if (status === '수료') badgeClass = 'bg-success';
+
+		return '<span class="badge ' + badgeClass + '">' + status + '</span>';
+	}
+
+	/**
+	 * 신청자 추가 모달 열기
+	 */
+	function openAddApplicantModal() {
+		// 교육명 조회
+		var eduName = '';
+		if (eduGrid && currentApplicantEduIdx) {
+			var data = eduGrid.pqGrid("option", "dataModel.data");
+			for (var i = 0; i < data.length; i++) {
+				if (data[i].edu_idx == currentApplicantEduIdx) {
+					eduName = data[i].edu_name;
+					break;
+				}
+			}
+		}
+
+		$('#addApplicantModalTitle').text(eduName + ' 신청자 추가');
+		$('#applicantMemberSelect').val(null).trigger('change');
+
+		$('#addApplicantModal').modal('show');
+	}
+
+	/**
+	 * 신청자 저장
+	 */
+	function saveApplicant() {
+		var selectedMembers = $('#applicantMemberSelect').select2('data');
+
+		if (!selectedMembers || selectedMembers.length === 0) {
+			showToast('신청자를 선택해주세요.', 'warning');
+			return;
+		}
+
+		var applicants = selectedMembers.map(function(member) {
+			return {
+				member_idx: member.newTag ? null : member.id,
+				name: member.name || member.text.split(' (')[0],
+				phone: member.phone || ''
+			};
+		});
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/add_applicants',
+			method: 'POST',
+			data: {
+				edu_idx: currentApplicantEduIdx,
+				applicants: JSON.stringify(applicants)
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast('신청자가 추가되었습니다.', 'success');
+					$('#addApplicantModal').modal('hide');
+					loadApplicantList(currentApplicantEduIdx);
+					loadEduList(); // 그리드 갱신 (신청자 수 업데이트)
+				} else {
+					showToast(response.message || '신청자 추가 실패', 'error');
+				}
+			},
+			error: function() {
+				showToast('신청자 추가 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 신청자 수정 모달 열기
+	 */
+	function openEditApplicantModal(applicant) {
+		// 교육명 조회
+		var eduName = '';
+		if (eduGrid && currentApplicantEduIdx) {
+			var data = eduGrid.pqGrid("option", "dataModel.data");
+			for (var i = 0; i < data.length; i++) {
+				if (data[i].edu_idx == currentApplicantEduIdx) {
+					eduName = data[i].edu_name;
+					break;
+				}
+			}
+		}
+
+		$('#editApplicantModalTitle').text(eduName + ' ' + applicant.applicant_name + ' 수정');
+		$('#editApplicantIdx').val(applicant.applicant_idx);
+		$('#editApplicantName').val(applicant.applicant_name);
+		$('#editApplicantPhone').val(applicant.applicant_phone || '');
+		$('#editApplicantStatus').val(applicant.status);
+
+		$('#editApplicantModal').modal('show');
+	}
+
+	/**
+	 * 신청자 수정
+	 */
+	function updateApplicant() {
+		var applicantIdx = $('#editApplicantIdx').val();
+		var name = $('#editApplicantName').val().trim();
+		var phone = $('#editApplicantPhone').val().trim();
+		var status = $('#editApplicantStatus').val();
+
+		if (!name) {
+			showToast('신청자명을 입력해주세요.', 'warning');
+			return;
+		}
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/update_applicant',
+			method: 'POST',
+			data: {
+				applicant_idx: applicantIdx,
+				applicant_name: name,
+				applicant_phone: phone,
+				status: status
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast('신청자 정보가 수정되었습니다.', 'success');
+					$('#editApplicantModal').modal('hide');
+					loadApplicantList(currentApplicantEduIdx);
+				} else {
+					showToast(response.message || '신청자 수정 실패', 'error');
+				}
+			},
+			error: function() {
+				showToast('신청자 수정 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	var deleteApplicantIdx = null;
+
+	/**
+	 * 신청자 삭제 모달 열기
+	 */
+	function openDeleteApplicantModal(applicantIdx) {
+		deleteApplicantIdx = applicantIdx;
+		$('#deleteApplicantModal').modal('show');
+	}
+
+	/**
+	 * 신청자 삭제 확인
+	 */
+	function confirmDeleteApplicant() {
+		if (!deleteApplicantIdx) return;
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/delete_applicant',
+			method: 'POST',
+			data: { applicant_idx: deleteApplicantIdx },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast('신청자가 삭제되었습니다.', 'success');
+					$('#deleteApplicantModal').modal('hide');
+					loadApplicantList(currentApplicantEduIdx);
+					loadEduList(); // 그리드 갱신
+				} else {
+					showToast(response.message || '신청자 삭제 실패', 'error');
+				}
+			},
+			error: function() {
+				showToast('신청자 삭제 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 상태 일괄변경 적용
+	 */
+	function applyBulkStatus() {
+		var status = $('#bulkStatusSelect').val();
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/bulk_update_status',
+			method: 'POST',
+			data: {
+				edu_idx: currentApplicantEduIdx,
+				status: status
+			},
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					showToast('상태가 일괄 변경되었습니다.', 'success');
+					$('#bulkStatusModal').modal('hide');
+					loadApplicantList(currentApplicantEduIdx);
+				} else {
+					showToast(response.message || '상태 변경 실패', 'error');
+				}
+			},
+			error: function() {
+				showToast('상태 변경 중 오류가 발생했습니다.', 'error');
+			}
+		});
 	}
 });

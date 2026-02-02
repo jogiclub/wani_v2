@@ -69,16 +69,17 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 조직별 교육 목록 조회
+	 * 파일 위치: application/models/Education_model.php
+	 * 역할: 교육 목록 조회 - 신청자 수 포함
 	 */
 	public function get_edu_list_by_org($org_id)
 	{
-		$this->db->select('*');
-		$this->db->from('wb_edu');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('del_yn', 'N');
-		$this->db->order_by('edu_start_date', 'DESC');
-		$this->db->order_by('edu_idx', 'DESC');
+		$this->db->select('e.*, (SELECT COUNT(*) FROM wb_edu_applicant WHERE edu_idx = e.edu_idx AND del_yn = "N") as applicant_count');
+		$this->db->from('wb_edu e');
+		$this->db->where('e.org_id', $org_id);
+		$this->db->where('e.del_yn', 'N');
+		$this->db->order_by('e.edu_start_date', 'DESC');
+		$this->db->order_by('e.edu_idx', 'DESC');
 		$query = $this->db->get();
 
 		return $this->process_edu_list($query->result_array());
@@ -89,13 +90,13 @@ class Education_model extends CI_Model
 	 */
 	public function get_edu_list_by_category($org_id, $category_code)
 	{
-		$this->db->select('*');
-		$this->db->from('wb_edu');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('category_code', $category_code);
-		$this->db->where('del_yn', 'N');
-		$this->db->order_by('edu_start_date', 'DESC');
-		$this->db->order_by('edu_idx', 'DESC');
+		$this->db->select('e.*, (SELECT COUNT(*) FROM wb_edu_applicant WHERE edu_idx = e.edu_idx AND del_yn = "N") as applicant_count');
+		$this->db->from('wb_edu e');
+		$this->db->where('e.org_id', $org_id);
+		$this->db->where('e.category_code', $category_code);
+		$this->db->where('e.del_yn', 'N');
+		$this->db->order_by('e.edu_start_date', 'DESC');
+		$this->db->order_by('e.edu_idx', 'DESC');
 		$query = $this->db->get();
 
 		return $this->process_edu_list($query->result_array());
@@ -322,6 +323,85 @@ class Education_model extends CI_Model
 		}
 
 		return $result;
+	}
+
+
+	/**
+	 * 파일 위치: application/models/Education_model.php
+	 * 역할: 신청자 관리 함수
+	 */
+
+	/**
+	 * 신청자 목록 조회
+	 */
+	public function get_applicant_list($edu_idx)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_edu_applicant');
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('regi_date', 'DESC');
+		$query = $this->db->get();
+
+		return $query->result_array();
+	}
+
+	/**
+	 * 신청자 추가
+	 */
+	public function add_applicant($data)
+	{
+		$insert_data = array_merge($data, array(
+			'regi_date' => date('Y-m-d H:i:s')
+		));
+
+		return $this->db->insert('wb_edu_applicant', $insert_data);
+	}
+
+	/**
+	 * 신청자 수정
+	 */
+	public function update_applicant($applicant_idx, $data)
+	{
+		$update_data = array_merge($data, array(
+			'modi_date' => date('Y-m-d H:i:s')
+		));
+
+		$this->db->where('applicant_idx', $applicant_idx);
+		return $this->db->update('wb_edu_applicant', $update_data);
+	}
+
+	/**
+	 * 신청자 삭제 (소프트 삭제)
+	 */
+	public function delete_applicant($applicant_idx)
+	{
+		$this->db->where('applicant_idx', $applicant_idx);
+		return $this->db->update('wb_edu_applicant', array('del_yn' => 'Y'));
+	}
+
+	/**
+	 * 신청자 상태 일괄변경
+	 */
+	public function bulk_update_applicant_status($edu_idx, $status)
+	{
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('del_yn', 'N');
+		return $this->db->update('wb_edu_applicant', array(
+			'status' => $status,
+			'modi_date' => date('Y-m-d H:i:s')
+		));
+	}
+
+	/**
+	 * 교육별 신청자 수 조회
+	 */
+	public function get_applicant_count($edu_idx)
+	{
+		$this->db->from('wb_edu_applicant');
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('del_yn', 'N');
+		return $this->db->count_all_results();
 	}
 
 }

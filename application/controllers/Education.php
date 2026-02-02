@@ -261,9 +261,8 @@ class Education extends My_Controller
 
 	/**
 	 * 파일 위치: application/controllers/Education.php
-	 * 역할: insert_edu, update_edu 메서드 수정 - 파일명 변경 및 이미지 삭제 처리
+	 * 역할: 교육 등록/수정 - 정원, 계좌정보 처리 추가
 	 */
-
 	public function insert_edu()
 	{
 		if (!$this->input->is_ajax_request()) {
@@ -273,26 +272,9 @@ class Education extends My_Controller
 		$user_id = $this->session->userdata('user_id');
 		$org_id = $this->input->post('org_id');
 
-		// 권한 확인
 		if (!$this->check_org_access($org_id)) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
 			return;
-		}
-
-		// 요일 데이터 처리
-		$edu_days_input = $this->input->post('edu_days');
-		$edu_days = null;
-		if ($edu_days_input) {
-			$days_array = explode(',', $edu_days_input);
-			$edu_days = json_encode($days_array, JSON_UNESCAPED_UNICODE);
-		}
-
-		// 시간대 데이터 처리
-		$edu_times_input = $this->input->post('edu_times');
-		$edu_times = null;
-		if ($edu_times_input) {
-			$times_array = explode(',', $edu_times_input);
-			$edu_times = json_encode($times_array, JSON_UNESCAPED_UNICODE);
 		}
 
 		$edu_data = array(
@@ -300,11 +282,10 @@ class Education extends My_Controller
 			'category_code' => $this->input->post('category_code'),
 			'edu_name' => $this->input->post('edu_name'),
 			'edu_location' => $this->input->post('edu_location'),
-			'edu_start_date' => $this->input->post('edu_start_date'),
-			'edu_end_date' => $this->input->post('edu_end_date'),
-			'edu_days' => $edu_days,
-			'edu_times' => $edu_times,
-			'edu_fee' => $this->input->post('edu_fee') ?: 0,
+			'edu_start_date' => $this->input->post('edu_start_date') ?: null,
+			'edu_end_date' => $this->input->post('edu_end_date') ?: null,
+			'edu_days' => $this->process_json_field($this->input->post('edu_days')),
+			'edu_times' => $this->process_json_field($this->input->post('edu_times')),
 			'edu_leader' => $this->input->post('edu_leader'),
 			'edu_leader_phone' => $this->input->post('edu_leader_phone'),
 			'edu_leader_age' => $this->input->post('edu_leader_age'),
@@ -313,112 +294,200 @@ class Education extends My_Controller
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
 			'online_yn' => $this->input->post('online_yn') ?: 'N',
 			'youtube_url' => $this->input->post('youtube_url'),
-			'poster_img' => null, // 먼저 null로 저장
+			'edu_fee' => intval($this->input->post('edu_fee')),
+			'edu_capacity' => intval($this->input->post('edu_capacity')),
+			'bank_account' => $this->input->post('bank_account') ?: null,
 			'user_id' => $user_id
 		);
 
-		// DB에 먼저 저장하여 edu_idx 얻기
-		$edu_idx = $this->Education_model->insert_edu($edu_data);
-
-		if ($edu_idx) {
-			// edu_idx를 얻은 후 이미지 업로드
-			$poster_img = $this->upload_poster_image($org_id, $edu_idx);
-
-			if ($poster_img) {
-				// 이미지 경로 업데이트
-				$this->Education_model->update_edu($edu_idx, array('poster_img' => $poster_img));
+		// 포스터 이미지 처리
+		if (!empty($_FILES['poster_img']['name'])) {
+			$poster_path = $this->upload_poster_image($org_id);
+			if ($poster_path) {
+				$edu_data['poster_img'] = $poster_path;
 			}
+		}
 
-			echo json_encode(array(
-				'success' => true,
-				'message' => '교육이 등록되었습니다.',
-				'edu_idx' => $edu_idx
-			));
+		$result = $this->Education_model->insert_edu($edu_data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '교육이 등록되었습니다.', 'edu_idx' => $result));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '교육 등록에 실패했습니다.'));
 		}
 	}
 
-	public function update_edu()
+	/**
+	 * 회원 검색 (Select2용)
+	 */
+	public function search_members()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$keyword = $this->input->get('keyword');
+		$org_id = $this->input->get('org_id');
+
+		$this->load->model('Member_model');
+		$members = $this->Member_model->search_members($org_id, $keyword, 20);
+
+		echo json_encode(array('success' => true, 'data' => $members));
+	}
+
+	/**
+	 * 신청자 목록 조회
+	 */
+	public function get_applicant_list()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
 		}
 
 		$edu_idx = $this->input->post('edu_idx');
+		$applicants = $this->Education_model->get_applicant_list($edu_idx);
 
-		if (!$edu_idx) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
-			return;
+		echo json_encode(array('success' => true, 'data' => $applicants));
+	}
+
+	/**
+	 * 신청자 추가
+	 */
+	public function add_applicants()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
 		}
 
-		// 기존 교육 정보 조회
-		$existing_edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		$user_id = $this->session->userdata('user_id');
+		$edu_idx = $this->input->post('edu_idx');
+		$applicants_json = $this->input->post('applicants');
 
-		if (!$existing_edu) {
+		// 교육 정보 조회
+		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		if (!$edu) {
 			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
 			return;
 		}
 
-		// 권한 확인
-		if (!$this->check_org_access($existing_edu['org_id'])) {
-			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+		$applicants = json_decode($applicants_json, true);
+		if (!$applicants || !is_array($applicants)) {
+			echo json_encode(array('success' => false, 'message' => '신청자 정보가 올바르지 않습니다.'));
 			return;
 		}
 
-		// 요일 데이터 처리
-		$edu_days_input = $this->input->post('edu_days');
-		$edu_days = null;
-		if ($edu_days_input) {
-			$days_array = explode(',', $edu_days_input);
-			$edu_days = json_encode($days_array, JSON_UNESCAPED_UNICODE);
-		}
+		$success_count = 0;
+		foreach ($applicants as $applicant) {
+			$data = array(
+				'edu_idx' => $edu_idx,
+				'org_id' => $edu['org_id'],
+				'member_idx' => !empty($applicant['member_idx']) && is_numeric($applicant['member_idx']) ? $applicant['member_idx'] : null,
+				'applicant_name' => $applicant['name'],
+				'applicant_phone' => $applicant['phone'] ?: null,
+				'status' => '신청',
+				'user_id' => $user_id
+			);
 
-		// 시간대 데이터 처리
-		$edu_times_input = $this->input->post('edu_times');
-		$edu_times = null;
-		if ($edu_times_input) {
-			$times_array = explode(',', $edu_times_input);
-			$edu_times = json_encode($times_array, JSON_UNESCAPED_UNICODE);
-		}
-
-		// 포스터 이미지 처리
-		$poster_img = $existing_edu['poster_img']; // 기존 이미지 유지
-
-		// 이미지 삭제 요청 확인
-		if ($this->input->post('remove_poster') == '1') {
-			if ($poster_img) {
-				// 기존 파일 삭제
-				$file_path = FCPATH . $poster_img;
-				if (file_exists($file_path)) {
-					unlink($file_path);
-				}
-				$poster_img = null;
+			if ($this->Education_model->add_applicant($data)) {
+				$success_count++;
 			}
 		}
 
-		// 새 이미지 업로드 확인
-		if (!empty($_FILES['poster_img']['name'])) {
-			// 기존 파일 삭제 (있다면)
-			if ($poster_img) {
-				$file_path = FCPATH . $poster_img;
-				if (file_exists($file_path)) {
-					unlink($file_path);
-				}
-			}
-			// 새 파일 업로드
-			$poster_img = $this->upload_poster_image($existing_edu['org_id'], $edu_idx);
+		echo json_encode(array('success' => true, 'message' => $success_count . '명의 신청자가 추가되었습니다.'));
+	}
+
+	/**
+	 * 신청자 수정
+	 */
+	public function update_applicant()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$applicant_idx = $this->input->post('applicant_idx');
+		$data = array(
+			'applicant_name' => $this->input->post('applicant_name'),
+			'applicant_phone' => $this->input->post('applicant_phone'),
+			'status' => $this->input->post('status')
+		);
+
+		$result = $this->Education_model->update_applicant($applicant_idx, $data);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '신청자 정보가 수정되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '신청자 수정에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 신청자 삭제
+	 */
+	public function delete_applicant()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$applicant_idx = $this->input->post('applicant_idx');
+		$result = $this->Education_model->delete_applicant($applicant_idx);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '신청자가 삭제되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '신청자 삭제에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 상태 일괄변경
+	 */
+	public function bulk_update_status()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$edu_idx = $this->input->post('edu_idx');
+		$status = $this->input->post('status');
+
+		$result = $this->Education_model->bulk_update_applicant_status($edu_idx, $status);
+
+		if ($result) {
+			echo json_encode(array('success' => true, 'message' => '상태가 일괄 변경되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '상태 변경에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Education.php
+	 * 역할: 교육 수정 - 정원, 계좌정보 처리 추가
+	 */
+	public function update_edu()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$edu_idx = $this->input->post('edu_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
 		}
 
 		$edu_data = array(
 			'category_code' => $this->input->post('category_code'),
 			'edu_name' => $this->input->post('edu_name'),
 			'edu_location' => $this->input->post('edu_location'),
-			'edu_start_date' => $this->input->post('edu_start_date'),
-			'edu_end_date' => $this->input->post('edu_end_date'),
-			'edu_days' => $edu_days,
-			'edu_times' => $edu_times,
-			'edu_fee' => $this->input->post('edu_fee') ?: 0,
+			'edu_start_date' => $this->input->post('edu_start_date') ?: null,
+			'edu_end_date' => $this->input->post('edu_end_date') ?: null,
+			'edu_days' => $this->process_json_field($this->input->post('edu_days')),
+			'edu_times' => $this->process_json_field($this->input->post('edu_times')),
 			'edu_leader' => $this->input->post('edu_leader'),
 			'edu_leader_phone' => $this->input->post('edu_leader_phone'),
 			'edu_leader_age' => $this->input->post('edu_leader_age'),
@@ -427,8 +496,24 @@ class Education extends My_Controller
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
 			'online_yn' => $this->input->post('online_yn') ?: 'N',
 			'youtube_url' => $this->input->post('youtube_url'),
-			'poster_img' => $poster_img
+			'edu_fee' => intval($this->input->post('edu_fee')),
+			'edu_capacity' => intval($this->input->post('edu_capacity')),
+			'bank_account' => $this->input->post('bank_account') ?: null,
+			'user_id' => $user_id
 		);
+
+		// 포스터 삭제 플래그 처리
+		if ($this->input->post('remove_poster') == '1') {
+			$edu_data['poster_img'] = null;
+		}
+
+		// 포스터 이미지 처리
+		if (!empty($_FILES['poster_img']['name'])) {
+			$poster_path = $this->upload_poster_image($org_id);
+			if ($poster_path) {
+				$edu_data['poster_img'] = $poster_path;
+			}
+		}
 
 		$result = $this->Education_model->update_edu($edu_idx, $edu_data);
 
@@ -437,6 +522,34 @@ class Education extends My_Controller
 		} else {
 			echo json_encode(array('success' => false, 'message' => '교육 수정에 실패했습니다.'));
 		}
+	}
+
+	/**
+	 * JSON 필드 처리 (배열/문자열 -> JSON 문자열)
+	 */
+	private function process_json_field($data)
+	{
+		if (empty($data)) {
+			return json_encode(array());
+		}
+		if (is_array($data)) {
+			return json_encode($data, JSON_UNESCAPED_UNICODE);
+		}
+		// 이미 문자열인 경우 (쉼표로 구분된 문자열 등)
+		if (is_string($data)) {
+			// 쉼표로 구분된 문자열이면 배열로 변환 후 JSON 저장
+			if (strpos($data, ',') !== false) {
+				$array = array_map('trim', explode(',', $data));
+				return json_encode($array, JSON_UNESCAPED_UNICODE);
+			}
+
+			// JSON 형식이 아닌 일반 문자열이면 배열로 감싸서 저장
+			// (단, 이미 JSON 형식이면 그대로 반환하는 로직이 필요할 수도 있지만,
+			// 현재 JS에서는 쉼표구분 문자열로 보내므로 배열로 변환하는 것이 안전)
+			// 여기서는 단순히 배열 하나로 처리
+			return json_encode(array($data), JSON_UNESCAPED_UNICODE);
+		}
+		return json_encode(array());
 	}
 
 	/**
