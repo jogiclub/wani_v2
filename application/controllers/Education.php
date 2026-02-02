@@ -292,7 +292,7 @@ class Education extends My_Controller
 			'edu_leader_gender' => $this->input->post('edu_leader_gender'),
 			'edu_desc' => $this->input->post('edu_desc'),
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
-			'online_yn' => $this->input->post('online_yn') ?: 'N',
+			'zoom_url' => $this->input->post('zoom_url') ?: 'N',
 			'youtube_url' => $this->input->post('youtube_url'),
 			'edu_fee' => intval($this->input->post('edu_fee')),
 			'edu_capacity' => intval($this->input->post('edu_capacity')),
@@ -616,7 +616,7 @@ class Education extends My_Controller
 			'edu_leader_gender' => $this->input->post('edu_leader_gender'),
 			'edu_desc' => $this->input->post('edu_desc'),
 			'public_yn' => $this->input->post('public_yn') ?: 'N',
-			'online_yn' => $this->input->post('online_yn') ?: 'N',
+			'zoom_url' => $this->input->post('zoom_url') ?: 'N',
 			'youtube_url' => $this->input->post('youtube_url'),
 			'edu_fee' => intval($this->input->post('edu_fee')),
 			'edu_capacity' => intval($this->input->post('edu_capacity')),
@@ -912,4 +912,248 @@ class Education extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '카테고리 저장에 실패했습니다.'));
 		}
 	}
+
+
+
+// ========================================
+// 다음 함수들을 Education.php에 추가
+// ========================================
+
+	/**
+	 * 외부 URL 생성 (교육 신청용)
+	 */
+	public function generate_external_url()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$edu_idx = $this->input->post('edu_idx');
+
+		if (!$edu_idx) {
+			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			return;
+		}
+
+		// 교육 정보 조회
+		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		if (!$edu) {
+			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 권한 확인
+		if (!$this->check_org_access($edu['org_id'])) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		// 외부 공개 여부 확인
+		if ($edu['public_yn'] !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '외부 공개로 설정된 교육만 URL을 생성할 수 있습니다.'));
+			return;
+		}
+
+		// 6자리 랜덤 코드 생성
+		$access_code = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+
+		// 만료 시간 설정 (72시간)
+		$expired_at = date('Y-m-d H:i:s', strtotime('+72 hours'));
+
+		// wb_edu_external_url 테이블에 저장
+		$url_data = array(
+			'edu_idx' => $edu_idx,
+			'org_id' => $edu['org_id'],
+			'access_code' => $access_code,
+			'expired_at' => $expired_at,
+			'regi_date' => date('Y-m-d H:i:s')
+		);
+
+		if ($this->Education_model->save_external_url($url_data)) {
+			$external_url = base_url('education/apply/' . $edu['org_id'] . '/' . $edu_idx . '/' . $access_code);
+
+			echo json_encode(array(
+				'success' => true,
+				'url' => $external_url,
+				'access_code' => $access_code,
+				'expired_at' => $expired_at
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '외부 URL 생성에 실패했습니다.'));
+		}
+	}
+
+	/**
+	 * 외부 신청 페이지 표시
+	 */
+	public function apply($org_id, $edu_idx, $access_code)
+	{
+		// 액세스 코드 검증
+		$url_info = $this->Education_model->get_external_url($edu_idx, $access_code);
+
+		if (!$url_info) {
+			show_error('유효하지 않은 링크입니다.', 404);
+			return;
+		}
+
+		// 만료 시간 확인
+		if (strtotime($url_info['expired_at']) < time()) {
+			show_error('만료된 링크입니다.', 404);
+			return;
+		}
+
+		// 교육 정보 조회
+		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		if (!$edu || $edu['del_yn'] === 'Y') {
+			show_error('교육 정보를 찾을 수 없습니다.', 404);
+			return;
+		}
+
+		// 외부 공개 확인
+		if ($edu['public_yn'] !== 'Y') {
+			show_error('공개되지 않은 교육입니다.', 404);
+			return;
+		}
+
+		// 원본 JSON 데이터 백업 (ZOOM/YouTube 조건 체크용)
+		$edu_days_original = $edu['edu_days'];
+		$edu_times_original = $edu['edu_times'];
+
+		// JSON 필드 파싱 (이미 배열인 경우와 문자열인 경우 모두 처리)
+		if (!empty($edu['edu_days'])) {
+			if (is_string($edu['edu_days'])) {
+				$days = json_decode($edu['edu_days'], true);
+				if (is_array($days)) {
+					$edu['edu_days_display'] = implode(', ', $days);
+				} else {
+					$edu['edu_days_display'] = $edu['edu_days'];
+				}
+			} else if (is_array($edu['edu_days'])) {
+				$edu['edu_days_display'] = implode(', ', $edu['edu_days']);
+			}
+		}
+
+		if (!empty($edu['edu_times'])) {
+			if (is_string($edu['edu_times'])) {
+				$times = json_decode($edu['edu_times'], true);
+				if (is_array($times)) {
+					$edu['edu_times_display'] = implode(', ', $times);
+				} else {
+					$edu['edu_times_display'] = $edu['edu_times'];
+				}
+			} else if (is_array($edu['edu_times'])) {
+				$edu['edu_times_display'] = implode(', ', $edu['edu_times']);
+			}
+		}
+
+		// 원본 데이터 유지 (조건 체크용)
+		$edu['edu_days'] = $edu_days_original;
+		$edu['edu_times'] = $edu_times_original;
+
+		// 계좌정보 파싱
+		if (!empty($edu['bank_account'])) {
+			if (is_string($edu['bank_account'])) {
+				$bank_data = json_decode($edu['bank_account'], true);
+				if (is_array($bank_data) && isset($bank_data['bank_name']) && isset($bank_data['account_number'])) {
+					$edu['bank_account'] = $bank_data['bank_name'] . ' ' . $bank_data['account_number'];
+				}
+			}
+		}
+
+		// 조직 정보 조회
+		$this->load->model('Org_model');
+		$org_info = $this->Org_model->get_org_detail_by_id($org_id);
+
+		if (!$org_info) {
+			show_error('조직 정보를 찾을 수 없습니다.', 404);
+			return;
+		}
+
+		// 신청자 수 조회
+		$applicant_count = $this->Education_model->get_applicant_count($edu_idx);
+
+		// 남은 시간 계산
+		$remaining_seconds = strtotime($url_info['expired_at']) - time();
+		$remaining_hours = floor($remaining_seconds / 3600);
+
+		// 뷰 데이터 준비
+		$data = array(
+			'org_info' => $org_info,
+			'edu' => $edu,
+			'applicant_count' => $applicant_count,
+			'remaining_hours' => $remaining_hours,
+			'access_code' => $access_code
+		);
+
+		// 외부 신청 페이지 로드
+		$this->load->view('education_apply', $data);
+	}
+
+	/**
+	 * 외부 신청 처리
+	 */
+	public function submit_external_application()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$edu_idx = $this->input->post('edu_idx');
+		$access_code = $this->input->post('access_code');
+		$applicant_name = $this->input->post('applicant_name');
+		$applicant_phone = $this->input->post('applicant_phone');
+		$agree_privacy = $this->input->post('agree_privacy');
+
+		if (!$edu_idx || !$access_code || !$applicant_name || !$applicant_phone || $agree_privacy !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 액세스 코드 검증
+		$url_info = $this->Education_model->get_external_url($edu_idx, $access_code);
+
+		if (!$url_info || strtotime($url_info['expired_at']) < time()) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않거나 만료된 링크입니다.'));
+			return;
+		}
+
+		// 교육 정보 조회
+		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+		if (!$edu || $edu['del_yn'] === 'Y' || $edu['public_yn'] !== 'Y') {
+			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 정원 확인
+		if ($edu['edu_capacity'] > 0) {
+			$applicant_count = $this->Education_model->get_applicant_count($edu_idx);
+			if ($applicant_count >= $edu['edu_capacity']) {
+				echo json_encode(array('success' => false, 'message' => '정원이 마감되었습니다.'));
+				return;
+			}
+		}
+
+		// 신청자 추가 (상태: 신청(외부))
+		$applicant_data = array(
+			'edu_idx' => $edu_idx,
+			'member_idx' => null,
+			'applicant_name' => $applicant_name,
+			'applicant_phone' => $applicant_phone,
+			'status' => '신청(외부)',
+			'del_yn' => 'N'
+		);
+
+		if ($this->Education_model->add_applicant($applicant_data)) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => '신청이 완료되었습니다.'
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '신청 처리 중 오류가 발생했습니다.'));
+		}
+	}
+
+
+
+
 }

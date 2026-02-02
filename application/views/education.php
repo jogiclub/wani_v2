@@ -85,9 +85,7 @@ $this->load->view('header');
 								<button type="button" class="btn btn-sm btn-outline-success" id="btnManageApplicant">
 									<i class="bi bi-people"></i> 신청자 관리
 								</button>
-								<button type="button" class="btn btn-sm btn-outline-info" id="btnExternalUrl">
-									<i class="bi bi-link-45deg"></i> 외부URL
-								</button>
+
 							</div>
 
 						</div>
@@ -398,11 +396,9 @@ $this->load->view('header');
 					</select>
 				</div>
 				<div class="col-6">
-					<label class="form-label">온라인 가능 여부(ZOOM이용)</label>
-					<select class="form-select" id="eduOnlineYn" name="online_yn">
-						<option value="N">불가능</option>
-						<option value="Y">가능</option>
-					</select>
+					<label class="form-label">ZOOM 주소</label>
+					<input type="text" class="form-control" id="eduZoomUrl" name="zoom_url" placeholder="https://zoom.us/j/...">
+					<div class="form-text">온라인 교육 시 ZOOM 링크를 입력하세요</div>
 				</div>
 			</div>
 
@@ -506,6 +502,10 @@ $this->load->view('header');
 				<button type="button" class="btn btn-sm btn-outline-secondary" id="btnChangeStatusBulk">
 					<i class="bi bi-arrow-repeat"></i> 선택 상태변경
 				</button>
+
+				<button type="button" class="btn btn-sm btn-outline-info" id="btnExternalUrl">
+					<i class="bi bi-link-45deg"></i> 외부URL
+				</button>
 			</div>
 		</div>
 		<div class="flex-grow-1 position-relative">
@@ -567,6 +567,7 @@ $this->load->view('header');
 					<label class="form-label">상태</label>
 					<select class="form-select" id="editApplicantStatus">
 						<option value="신청">신청</option>
+						<option value="신청(외부)">신청(외부)</option>
 						<option value="교육중">교육중</option>
 						<option value="수료">수료</option>
 					</select>
@@ -593,6 +594,7 @@ $this->load->view('header');
 					<label class="form-label">변경할 상태</label>
 					<select class="form-select" id="bulkStatusSelect">
 						<option value="신청">신청</option>
+						<option value="신청(외부)">신청(외부)</option>
 						<option value="교육중">교육중</option>
 						<option value="수료">수료</option>
 					</select>
@@ -625,7 +627,47 @@ $this->load->view('header');
 		</div>
 	</div>
 </div>
+<!-- 외부URL로 교육신청 모달 -->
+<div class="modal fade" id="externalUrlModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="externalUrlModalLabel">
+					<i class="bi bi-link-45deg"></i> 외부URL로 교육신청
+				</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="alert alert-info mb-3">
+					<small>
+						아래의 URL을 외부 신청자에게 전달하여 교육 신청을 받을 수 있습니다.
+					</small>
+				</div>
 
+				<div class="border rounded p-3 bg-light">
+					<p class="mb-2"><strong>교육 신청 URL</strong></p>
+					<div class="input-group mb-2">
+						<input type="text" class="form-control" id="externalUrlInput" readonly>
+						<button class="btn btn-outline-secondary" type="button" id="btnRefreshExternalUrl">
+							<i class="bi bi-arrow-clockwise"></i> 갱신
+						</button>
+						<button class="btn btn-outline-secondary" type="button" id="btnCopyExternalUrl">
+							<i class="bi bi-clipboard"></i> 복사
+						</button>
+					</div>
+				</div>
+
+				<div class="mt-3 text-muted small">
+					<i class="bi bi-info-circle"></i>
+					이 링크는 72시간 동안 유효합니다.
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php $this->load->view('footer'); ?>
 
 <!-- Split.js -->

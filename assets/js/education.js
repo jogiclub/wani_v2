@@ -14,7 +14,7 @@ $(document).ready(function () {
 	let flatpickrEndInstance = null;   // 종료일 Flatpickr 인스턴스
 	let currentApplicantEduIdx = null;
 	let applicantMemberSelect = null;
-
+	let currentExternalEduIdx = null;
 
 	// 초기화 시도
 	setTimeout(function () {
@@ -732,12 +732,12 @@ $(document).ready(function () {
 						}
 					},
 					{
-						title: "온라인",
-						dataIndx: "online_yn",
-						width: 80,
+						title: "ZOOM",
+						dataIndx: "zoom_url",
+						width: 100,
 						align: "center",
 						render: function (ui) {
-							return ui.cellData === 'Y' ? '가능' : '-';
+							return ui.cellData ? '<i class="bi bi-camera-video text-primary"></i>' : '-';
 						}
 					}
 				],
@@ -831,6 +831,21 @@ $(document).ready(function () {
 		$('#eduFee').off('input').on('input', function () {
 			var val = $(this).val().replace(/[^\d]/g, '');
 			$(this).val(formatNumber(val));
+		});
+
+		// 외부 URL 버튼
+		$('#btnExternalUrl').off('click').on('click', function () {
+			openExternalUrlModal();
+		});
+
+		// 외부 URL 복사 버튼
+		$('#btnCopyExternalUrl').off('click').on('click', function () {
+			copyExternalUrl();
+		});
+
+		// 외부 URL 갱신 버튼
+		$('#btnRefreshExternalUrl').off('click').on('click', function () {
+			generateExternalUrl();
 		});
 
 		// 포스터 이미지 선택
@@ -934,7 +949,7 @@ $(document).ready(function () {
 		$('#eduLeaderGender').val(data.edu_leader_gender || '');
 		$('#eduDesc').val(data.edu_desc || '');
 		$('#eduPublicYn').val(data.public_yn || 'N');
-		$('#eduOnlineYn').val(data.online_yn || 'N');
+		$('#eduZoomUrl').val(data.zoom_url || '');
 		$('#eduYoutubeUrl').val(data.youtube_url || '');
 
 		// 수강료
@@ -1074,8 +1089,9 @@ $(document).ready(function () {
 			formData.append('edu_leader_gender', $('#eduLeaderGender').val());
 			formData.append('edu_desc', $('#eduDesc').val());
 			formData.append('public_yn', $('#eduPublicYn').val());
-			formData.append('online_yn', $('#eduOnlineYn').val());
+			// formData.append('online_yn', $('#eduOnlineYn').val());
 			formData.append('youtube_url', $('#eduYoutubeUrl').val());
+			formData.append('zoom_url', $('#eduZoomUrl').val().trim());
 
 			// 수강료 (숫자만 추출)
 			var feeValue = $('#eduFee').val().replace(/[^\d]/g, '');
@@ -2184,4 +2200,141 @@ $(document).ready(function () {
 		$('#applicantSelectAllCheckbox').prop('indeterminate', false);
 	}
 
+	/**
+	 * 외부 URL 모달 열기
+	 */
+	function openExternalUrlModal() {
+		if (!currentApplicantEduIdx) {
+			showToast('교육 정보가 없습니다.', 'warning');
+			return;
+		}
+
+		// 외부 공개 여부 확인
+		var eduInfo = getEduInfoByIdx(currentApplicantEduIdx);
+		if (eduInfo.public_yn !== 'Y') {
+			showToast('외부 공개로 설정된 교육만 URL을 생성할 수 있습니다.', 'warning');
+			return;
+		}
+
+		currentExternalEduIdx = currentApplicantEduIdx;
+		generateExternalUrl();
+		$('#externalUrlModal').modal('show');
+	}
+
+	function getEduInfoByIdx(eduIdx) {
+		if (!eduGrid) return null;
+
+		var data = eduGrid.pqGrid("option", "dataModel.data");
+
+		for (var i = 0; i < data.length; i++) {
+			if (data[i].edu_idx == eduIdx) {
+				return data[i];
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * 선택된 교육 정보 가져오기
+	 */
+	function getSelectedEdu() {
+		if (!eduGrid) return null;
+
+		var selection = eduGrid.pqGrid("selection", { type: 'row', method: 'getSelection' });
+
+		if (!selection || selection.length === 0) {
+			return null;
+		}
+
+		var data = eduGrid.pqGrid("option", "dataModel.data");
+		var selectedRow = selection[0];
+
+		return data[selectedRow.rowIndx];
+	}
+
+	/**
+	 * 외부 URL 생성
+	 */
+	function generateExternalUrl() {
+		if (!currentExternalEduIdx) {
+			showToast('교육 정보가 없습니다.', 'error');
+			return;
+		}
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/generate_external_url',
+			method: 'POST',
+			data: { edu_idx: currentExternalEduIdx },
+			dataType: 'json',
+			success: function (response) {
+				if (response.success) {
+					$('#externalUrlInput').val(response.url);
+					showToast('외부 URL이 생성되었습니다.', 'success');
+				} else {
+					showToast(response.message || '외부 URL 생성에 실패했습니다.', 'error');
+				}
+			},
+			error: function () {
+				showToast('외부 URL 생성 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 외부 URL 복사
+	 */
+	function copyExternalUrl() {
+		var url = $('#externalUrlInput').val();
+
+		if (!url) {
+			showToast('복사할 URL이 없습니다.', 'warning');
+			return;
+		}
+
+		// 클립보드에 복사
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(url).then(function() {
+				showToast('URL이 클립보드에 복사되었습니다.', 'success');
+			}).catch(function() {
+				fallbackCopyTextToClipboard(url);
+			});
+		} else {
+			fallbackCopyTextToClipboard(url);
+		}
+	}
+
+	/**
+	 * 클립보드 복사 fallback 함수
+	 */
+	function fallbackCopyTextToClipboard(text) {
+		var textArea = document.createElement("textarea");
+		textArea.value = text;
+		textArea.style.position = "fixed";
+		textArea.style.top = "0";
+		textArea.style.left = "0";
+		textArea.style.width = "2em";
+		textArea.style.height = "2em";
+		textArea.style.padding = "0";
+		textArea.style.border = "none";
+		textArea.style.outline = "none";
+		textArea.style.boxShadow = "none";
+		textArea.style.background = "transparent";
+		document.body.appendChild(textArea);
+		textArea.focus();
+		textArea.select();
+
+		try {
+			var successful = document.execCommand('copy');
+			if (successful) {
+				showToast('URL이 클립보드에 복사되었습니다.', 'success');
+			} else {
+				showToast('복사에 실패했습니다.', 'error');
+			}
+		} catch (err) {
+			showToast('복사에 실패했습니다.', 'error');
+		}
+
+		document.body.removeChild(textArea);
+	}
 });

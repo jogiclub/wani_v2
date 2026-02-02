@@ -404,4 +404,56 @@ class Education_model extends CI_Model
 		return $this->db->count_all_results();
 	}
 
+
+	/**
+	 * 외부 URL 저장
+	 */
+	public function save_external_url($data)
+	{
+		// 기존 URL이 있으면 삭제 (하나의 교육당 하나의 활성 URL만 유지)
+		$this->db->where('edu_idx', $data['edu_idx']);
+		$this->db->delete('wb_edu_external_url');
+
+		// 새 URL 저장
+		return $this->db->insert('wb_edu_external_url', $data);
+	}
+
+	/**
+	 * 외부 URL 정보 조회
+	 */
+	public function get_external_url($edu_idx, $access_code)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_edu_external_url');
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('access_code', $access_code);
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			return $query->row_array();
+		}
+
+		return null;
+	}
+
+	/**
+	 * 외부 URL 정보 조회 (교육 인덱스만으로)
+	 */
+	public function get_external_url_by_edu($edu_idx)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_edu_external_url');
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('expired_at >', date('Y-m-d H:i:s'));
+		$this->db->order_by('regi_date', 'DESC');
+		$this->db->limit(1);
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			return $query->row_array();
+		}
+
+		return null;
+	}
+
 }
