@@ -198,28 +198,30 @@
 								<div class="col-12 col-lg-4">
 									<input type="radio" class="btn-check" name="theme" id="theme1" value="1"
 										<?php echo (empty($homepage_setting['theme']) || $homepage_setting['theme'] == '1') ? 'checked' : ''; ?>>
-									<label class="btn btn-outline-primary w-100 d-flex flex-column align-items-center p-3" for="theme1">
+									<label class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center p-3" for="theme1" style="height: 300px;">
 										<i class="bi bi-1-circle fs-1 mb-2"></i>
 										<span>테마 1</span>
-										<small class="text-muted">클래식 스타일</small>
+										<small class="text-muted">클래식 스타일(현재준비중)</small>
 									</label>
 								</div>
 								<div class="col-12 col-lg-4">
-									<input type="radio" class="btn-check" name="theme" id="theme2" value="2"
-										<?php echo (!empty($homepage_setting['theme']) && $homepage_setting['theme'] == '2') ? 'checked' : ''; ?>>
-									<label class="btn btn-outline-primary w-100 d-flex flex-column align-items-center p-3" for="theme2">
-										<i class="bi bi-2-circle fs-1 mb-2"></i>
-										<span>테마 2</span>
-										<small class="text-muted">모던 스타일</small>
-									</label>
+									<div class="" style="background: url('/assets/images/home_sample2.png') center center/cover; border-radius: 10px">
+										<input type="radio" class="btn-check" name="theme" id="theme2" value="2"
+											<?php echo (!empty($homepage_setting['theme']) && $homepage_setting['theme'] == '2') ? 'checked' : ''; ?>>
+										<label class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center p-3" for="theme2" style="height: 300px; background-color:rgba(100,100,100,0.7)">
+											<i class="bi bi-2-circle fs-1 mb-2"></i>
+											<span>테마 2</span>
+											<small class="">모던 스타일</small>
+										</label>
+									</div>
 								</div>
 								<div class="col-12 col-lg-4">
 									<input type="radio" class="btn-check" name="theme" id="theme3" value="3"
 										<?php echo (!empty($homepage_setting['theme']) && $homepage_setting['theme'] == '3') ? 'checked' : ''; ?>>
-									<label class="btn btn-outline-primary w-100 d-flex flex-column align-items-center p-3" for="theme3">
+									<label class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center p-3" for="theme3" style="height: 300px;">
 										<i class="bi bi-3-circle fs-1 mb-2"></i>
 										<span>테마 3</span>
-										<small class="text-muted">미니멀 스타일</small>
+										<small class="text-muted">미니멀 스타일(현재준비중)</small>
 									</label>
 								</div>
 							</div>
