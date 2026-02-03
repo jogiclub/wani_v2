@@ -346,8 +346,50 @@ class Education_model extends CI_Model
 		return $query->result_array();
 	}
 
+
+	// 파일 위치: application/models/Education_model.php
+// 역할: 중복 신청 확인 및 신청자 정보 조회
+
 	/**
-	 * 신청자 추가
+	 * 중복 신청 확인 (이름과 연락처)
+	 */
+	public function check_duplicate_applicant($edu_idx, $applicant_name, $applicant_phone)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_edu_applicant');
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('applicant_name', $applicant_name);
+		$this->db->where('applicant_phone', $applicant_phone);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			return $query->row_array();
+		}
+
+		return null;
+	}
+
+	/**
+	 * 신청자 정보 조회 (applicant_idx로)
+	 */
+	public function get_applicant_by_idx($applicant_idx)
+	{
+		$this->db->select('*');
+		$this->db->from('wb_edu_applicant');
+		$this->db->where('applicant_idx', $applicant_idx);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get();
+
+		if ($query->num_rows() > 0) {
+			return $query->row_array();
+		}
+
+		return null;
+	}
+
+	/**
+	 * 신청자 추가 (수정됨 - applicant_idx 반환)
 	 */
 	public function add_applicant($data)
 	{
@@ -366,7 +408,13 @@ class Education_model extends CI_Model
 			$data['del_yn'] = 'N';
 		}
 
-		return $this->db->insert('wb_edu_applicant', $data);
+		$result = $this->db->insert('wb_edu_applicant', $data);
+
+		if ($result) {
+			return $this->db->insert_id();
+		}
+
+		return false;
 	}
 
 	/**

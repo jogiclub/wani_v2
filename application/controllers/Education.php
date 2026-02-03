@@ -1089,8 +1089,12 @@ class Education extends My_Controller
 		$this->load->view('education_apply', $data);
 	}
 
+
+// 파일 위치: application/controllers/Education.php
+// 역할: 외부 신청 처리 - 기존 신청자 확인 및 정보 반환
+
 	/**
-	 * 외부 신청 처리
+	 * 외부 신청 처리 (수정됨 - 기존 신청자 정보 반환)
 	 */
 	public function submit_external_application()
 	{
@@ -1124,6 +1128,25 @@ class Education extends My_Controller
 			return;
 		}
 
+		// 중복 신청 확인 (이름과 연락처가 같은 경우)
+		$existing_applicant = $this->Education_model->check_duplicate_applicant($edu_idx, $applicant_name, $applicant_phone);
+		if ($existing_applicant) {
+			// 기존 신청자 정보 반환
+			echo json_encode(array(
+				'success' => false,
+				'already_exists' => true,
+				'message' => '이미 신청되었습니다.',
+				'applicant_data' => array(
+					'applicant_idx' => $existing_applicant['applicant_idx'],
+					'applicant_name' => $existing_applicant['applicant_name'],
+					'applicant_phone' => $existing_applicant['applicant_phone'],
+					'status' => $existing_applicant['status'],
+					'regi_date' => date('Y-m-d H:i', strtotime($existing_applicant['regi_date']))
+				)
+			));
+			return;
+		}
+
 		// 정원 확인
 		if ($edu['edu_capacity'] > 0) {
 			$applicant_count = $this->Education_model->get_applicant_count($edu_idx);
@@ -1143,17 +1166,67 @@ class Education extends My_Controller
 			'del_yn' => 'N'
 		);
 
-		if ($this->Education_model->add_applicant($applicant_data)) {
+		$applicant_idx = $this->Education_model->add_applicant($applicant_data);
+
+		if ($applicant_idx) {
 			echo json_encode(array(
 				'success' => true,
-				'message' => '신청이 완료되었습니다.'
+				'message' => '신청이 완료되었습니다.',
+				'applicant_idx' => $applicant_idx
 			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '신청 처리 중 오류가 발생했습니다.'));
 		}
 	}
 
+	/**
+	 * 외부 교육 수료 처리
+	 */
+	public function complete_external_education()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
 
+		$applicant_idx = $this->input->post('applicant_idx');
+		$access_code = $this->input->post('access_code');
+
+		if (!$applicant_idx || !$access_code) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 신청자 정보 조회
+		$applicant = $this->Education_model->get_applicant_by_idx($applicant_idx);
+
+		if (!$applicant) {
+			echo json_encode(array('success' => false, 'message' => '신청자 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 액세스 코드 검증
+		$url_info = $this->Education_model->get_external_url($applicant['edu_idx'], $access_code);
+
+		if (!$url_info || strtotime($url_info['expired_at']) < time()) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않거나 만료된 링크입니다.'));
+			return;
+		}
+
+		// 상태를 '수료'로 변경
+		$update_data = array(
+			'status' => '수료',
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		if ($this->Education_model->update_applicant($applicant_idx, $update_data)) {
+			echo json_encode(array(
+				'success' => true,
+				'message' => '교육이 수료되었습니다.'
+			));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '수료 처리 중 오류가 발생했습니다.'));
+		}
+	}
 
 
 	/**
