@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<script>const ORG_CODE = '3033';</script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="index, follow">
+	<title></title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+	<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+	<link href="https://wani.im/homepage/_theme/2/assets/css/theme.css?v=20251128220034" rel="stylesheet">
+</head>
+<body>
+
+<!-- 로딩 스피너 -->
+<div id="pageLoading" class="page-loading">
+	<div class="spinner-border text-primary" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+	<p class="mt-3 text-muted">로딩중...</p>
+</div>
+
+<header>
+	<nav class="navbar navbar-expand-lg navbar-dark">
+		<div class="logo-container">
+			<div id="logoArea"></div>
+			<a class="navbar-brand" href="/" id="homepageName"></a>
+		</div>
+		<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+			<ul class="navbar-nav " id="mainMenu">
+				<li class="nav-item">
+					<div class="spinner-border spinner-border-sm text-light" role="status">
+						<span class="visually-hidden">Loading...</span>
+					</div>
+				</li>
+			</ul>
+		</div>
+		<div class="link-list d-none d-lg-block">
+			<ul>
+				<li><i class="bi bi-youtube"></i></li>
+				<li><i class="bi bi-instagram"></i></li>
+				<li><i class="bi bi-facebook"></i></li>
+			</ul>
+		</div>
+	</nav>
+</header>
+
+<main>
+	<div id="mainContent"></div>
+</main>
+
+<footer>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-6">
+				<h5 id="footerOrgName"></h5>
+				<p class="mb-0">조직 코드: <span id="footerOrgCode">3033</span></p>
+			</div>
+			<div class="col-md-6 text-md-end">
+				<p class="mb-0">&copy; <span id="currentYear"></span> <span id="footerCopyright"></span>. All rights reserved.</p>
+				<small class="text-muted">Powered by 왓니</small>
+			</div>
+		</div>
+	</div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+<script src="https://wani.im/homepage/_js/common.js?v=20251128220034"></script>
+<script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+<script src="https://wani.im/homepage/_theme/2/assets/js/theme.js?v=20251128220034"></script>
+<script>
+
+
+
+	$(document).ready(function () {
+		// 커버 슬라이드 초기화 함수
+		function initializeCoverSlider() {
+			const $slider = $(".wani-card-slider");
+
+			if ($slider.length > 0 && !$slider.hasClass('slick-initialized')) {
+				const viewportHeight = $(window).height();
+
+				$slider.find('.cover-slide-img').css('height', viewportHeight + 'px');
+				$slider.find('.cover-text').css('height', viewportHeight + 'px');
+				$slider.find('.cover-overlay').css('height', viewportHeight + 'px');
+
+				$slider.slick({
+					dots: true,
+					infinite: true,
+					speed: 500,
+					slidesToShow: 1,
+					slidesToScroll: 1,
+					autoplay: true,
+					fade: true,
+					autoplaySpeed: 3000,
+					prevArrow: '<button type="button" class="slick-prev"><i class="bi bi-chevron-left"></i></button>',
+					nextArrow: '<button type="button" class="slick-next"><i class="bi bi-chevron-right"></i></button>',
+					arrows: true
+				});
+			}
+		}
+
+		// 유튜브 슬라이드 초기화 함수
+		function initializeYoutubeSliders() {
+			$(".youtube-slide-container").each(function() {
+				const $youtubeSlider = $(this);
+
+				// 이미 초기화되었는지 확인
+				if ($youtubeSlider.length > 0 && !$youtubeSlider.hasClass('slick-initialized')) {
+					// data 속성에서 설정 가져오기 (없으면 기본값 3)
+					const slidesToShow = parseInt($youtubeSlider.data('slides-to-show')) || 3;
+
+					$youtubeSlider.slick({
+						dots: true,
+						infinite: true,
+						speed: 500,
+						slidesToShow: slidesToShow,
+						slidesToScroll: 1,
+						autoplay: true,
+						centerMode: true,
+						centerPadding: '60px',
+						autoplaySpeed: 3000,
+						arrows: false,
+						responsive: [
+							{
+								breakpoint: 992,
+								settings: {
+									slidesToShow: Math.min(2, slidesToShow)
+								}
+							},
+							{
+								breakpoint: 576,
+								settings: {
+									slidesToShow: 1
+								}
+							}
+						]
+					});
+				}
+			});
+		}
+
+		function initializeImageSliders() {
+			$(".image-slide-container").each(function() {
+				const $youtubeSlider = $(this);
+
+				// 이미 초기화되었는지 확인
+				if ($youtubeSlider.length > 0 && !$youtubeSlider.hasClass('slick-initialized')) {
+					// data 속성에서 설정 가져오기 (없으면 기본값 3)
+					const slidesToShow = parseInt($youtubeSlider.data('slides-to-show')) || 3;
+
+					$youtubeSlider.slick({
+						dots: true,
+						infinite: true,
+						speed: 500,
+						slidesToShow: slidesToShow,
+						slidesToScroll: 1,
+						autoplay: true,
+						centerMode: true,
+						centerPadding: '60px',
+						autoplaySpeed: 3000,
+						arrows: false,
+						responsive: [
+							{
+								breakpoint: 992,
+								settings: {
+									slidesToShow: Math.min(2, slidesToShow)
+								}
+							},
+							{
+								breakpoint: 576,
+								settings: {
+									slidesToShow: 1
+								}
+							}
+						]
+					});
+				}
+			});
+		}
+
+		// MutationObserver로 DOM 변경 감지
+		const observer = new MutationObserver(function(mutations) {
+			mutations.forEach(function(mutation) {
+				if (mutation.addedNodes.length) {
+					// 커버 슬라이드 초기화
+					initializeCoverSlider();
+
+					// 유튜브 슬라이드 초기화
+					initializeYoutubeSliders();
+
+					// 이미지 슬라이드 초기화
+					initializeImageSliders();
+				}
+			});
+		});
+
+		// mainContent 영역 감시 시작
+		const mainContent = document.getElementById('mainContent');
+		if (mainContent) {
+			observer.observe(mainContent, {
+				childList: true,
+				subtree: true
+			});
+		}
+
+		// 초기 실행
+		initializeCoverSlider();
+		initializeYoutubeSliders();
+
+		// 윈도우 리사이즈 시 커버 슬라이드 높이 조정
+		$(window).on('resize', function() {
+			const $slider = $(".wani-card-slider");
+			if ($slider.length > 0) {
+				const viewportHeight = $(window).height();
+				$slider.find('.cover-slide-img').css('height', viewportHeight + 'px');
+				$slider.find('.cover-text').css('height', viewportHeight + 'px');
+				$slider.find('.cover-overlay').css('height', viewportHeight + 'px');
+			}
+		});
+	});
+</script>
+</body>
+</html>
