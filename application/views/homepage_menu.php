@@ -92,8 +92,37 @@
 	</div>
 </div>
 
-<!-- 파일 위치: application/views/homepage_menu.php -->
-<!-- 역할: 게시글 작성/수정 Offcanvas - Dropzone 자동 초기화 방지 버전 -->
+
+<!-- AI 페이지 생성 모달 -->
+<div class="modal fade" id="aiPageModal" tabindex="-1" aria-labelledby="aiPageModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="aiPageModalLabel">AI 페이지 생성</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="ai_page_prompt" class="form-label">생성할 페이지 내용</label>
+					<textarea class="form-control" id="ai_page_prompt" rows="5" placeholder="예: 우리 교회는 1985년에 설립되었으며, 지역사회를 섬기는 것을 목표로 합니다..."></textarea>
+					<small class="text-muted">원하는 페이지의 내용이나 구성을 자유롭게 설명해주세요.</small>
+				</div>
+				<div class="mb-3">
+					<div class="d-flex justify-content-between align-items-center mb-2">
+						<label for="ai_page_result" class="form-label mb-0">결과</label>
+						<button type="button" class="btn btn-sm btn-primary" id="btnAiPageGenerate">생성</button>
+					</div>
+					<textarea class="form-control" id="ai_page_result" rows="12" placeholder="생성된 HTML 코드가 여기에 표시됩니다." style="font-family: monospace; font-size: 12px;"></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="btnInsertAiPage">페이지에 넣기</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 <!-- 게시글 작성/수정 Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="boardOffcanvas" aria-labelledby="boardOffcanvasLabel" style="width: 600px;">

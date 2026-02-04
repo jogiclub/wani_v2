@@ -68,14 +68,17 @@ function initializeSplit() {
 	}
 }
 
-
 /**
- * 이벤트 바인딩
+ * 이벤트 바인딩에 AI 페이지 생성 버튼 추가
  */
 function bindEvents() {
 	$('#btnAddMenu').on('click', handleAddMenu);
 	$('#btnSaveMenuEdit').on('click', handleSaveMenuEdit);
 	$('#btnSaveBoard').on('click', handleSaveBoard);
+
+	// AI 페이지 생성 이벤트 추가
+	$(document).on('click', '#btnAiPageGenerate', handleAiPageGenerate);
+	$(document).on('click', '#btnInsertAiPage', handleInsertAiPage);
 
 	$(document).on('click', '.btn-add-submenu', handleAddSubMenu);
 	$(document).on('click', '.btn-edit-menu', handleEditMenu);
@@ -100,12 +103,88 @@ function bindEvents() {
 
 	// 툴팁초기화
 	$('body').tooltip({
-		selector: '[data-bs-toggle="tooltip"]' // BS4는 data-toggle="tooltip"
+		selector: '[data-bs-toggle="tooltip"]'
 	});
-
 }
 
+/**
+ * AI 페이지 생성 버튼 클릭 핸들러
+ */
+function handleAiPageGenerate() {
+	const prompt = $('#ai_page_prompt').val().trim();
 
+	if (!prompt) {
+		showToast('생성할 페이지 내용을 입력해주세요.');
+		return;
+	}
+
+	const orgId = $('#current_org_id').val();
+
+	// 로딩 상태 표시
+	$('#btnAiPageGenerate').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> 생성 중...');
+	$('#ai_page_result').val('생성 중입니다. 잠시만 기다려주세요...');
+
+	$.ajax({
+		url: '/homepage_menu/generate_ai_page',
+		type: 'POST',
+		dataType: 'json',
+		data: {
+			org_id: orgId,
+			prompt: prompt
+		},
+		success: function(response) {
+			if (response.success) {
+				$('#ai_page_result').val(response.html_content);
+				showToast(response.message);
+			} else {
+				$('#ai_page_result').val('');
+				showToast(response.message);
+			}
+		},
+		error: function(xhr, status, error) {
+			console.error('AI 페이지 생성 오류:', error);
+			$('#ai_page_result').val('');
+			showToast('AI 페이지 생성 중 오류가 발생했습니다.');
+		},
+		complete: function() {
+			$('#btnAiPageGenerate').prop('disabled', false).html('생성');
+		}
+	});
+}
+
+/**
+ * AI 생성 페이지를 에디터에 삽입
+ */
+function handleInsertAiPage() {
+	const htmlContent = $('#ai_page_result').val().trim();
+
+	if (!htmlContent) {
+		showToast('먼저 페이지를 생성해주세요.');
+		return;
+	}
+
+	if (!pageContentEditor) {
+		showToast('에디터가 초기화되지 않았습니다.');
+		return;
+	}
+
+	// Raw HTML 블록으로 추가
+	pageContentEditor.blocks.insert('raw', {
+		html: htmlContent
+	});
+
+	// 모달 닫기
+	const modal = bootstrap.Modal.getInstance(document.getElementById('aiPageModal'));
+	if (modal) {
+		modal.hide();
+	}
+
+	// 입력 필드 초기화
+	$('#ai_page_prompt').val('');
+	$('#ai_page_result').val('');
+
+	showToast('페이지에 콘텐츠가 추가되었습니다.');
+}
 
 /**
  * 메뉴 목록 로드
@@ -876,9 +955,9 @@ function handleSaveLink() {
 }
 
 /**
- * 페이지 컨텐츠 로드
+ * 페이지 컨텐츠 로드 (AI 생성 버튼 추가)
  */
-function loadPageContent(menuId) {
+function loadPageContent(menuId, menuData) {
 	const orgId = $('#current_org_id').val();
 
 	$.ajax({
@@ -891,9 +970,9 @@ function loadPageContent(menuId) {
 		},
 		success: function(response) {
 			if (response.success) {
-				renderPageContent(response.data);
+				renderPageContent(menuData, response.data);
 			} else {
-				renderPageContent(null);
+				showToast(response.message);
 			}
 		},
 		error: function() {
@@ -903,26 +982,33 @@ function loadPageContent(menuId) {
 }
 
 /**
- * 페이지 컨텐츠 렌더링
+ * 페이지 컨텐츠 렌더링 (AI 생성 버튼 추가)
  */
-function renderPageContent(data) {
-	const pageContent = data ? data.page_content : '';
-
+function renderPageContent(menuData, pageData) {
 	const html = `
-		<h5 class="mb-3">페이지 설정</h5>
-		<div class="mb-3">
-			<label for="page_content" class="form-label">페이지 내용</label>
-			<div id="page_content_editor" style="border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 15px;"></div>
-		</div>
-		<hr>
-		<button type="button" class="btn btn-primary" id="btnSavePage">저장</button>
-	`;
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">페이지 설정</h5>
+            <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#aiPageModal">
+                <i class="bi bi-stars"></i> AI 페이지 생성
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" id="btnSavePage"><i class="bi bi-save"></i> 저장</button>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="page_title" class="form-label">페이지 제목</label>
+            <input type="text" class="form-control" id="page_title" value="${escapeHtml(pageData?.page_title || '')}" placeholder="페이지 제목을 입력하세요">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">페이지 내용</label>
+            <div id="page_content_editor" style="border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 15px; min-height: 400px; background: #fff;"></div>
+        </div>
+        
+    `;
 
 	$('#contentArea').html(html);
 
-
-		initPageContentEditor(pageContent);
-
+	initPageContentEditor(pageData?.page_content || null);
 }
 
 /**

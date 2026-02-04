@@ -121,6 +121,7 @@
 
 #contentArea {
 	min-height: 500px;
+	position: relative;
 }
 
 .board-table {

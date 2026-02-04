@@ -14,6 +14,9 @@ class Homepage_menu extends My_Controller
 		$this->load->model('User_model');
 		$this->load->library('session');
 		$this->load->helper('url');
+
+		// Gemini API 설정 로드
+		$this->load->config('gemini', false, true);
 	}
 
 	/**
@@ -1511,7 +1514,103 @@ class Homepage_menu extends My_Controller
 
 
 
+	/**
+	 * AI 페이지 생성
+	 */
+	public function generate_ai_page()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
 
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+		$prompt = $this->input->post('prompt');
+
+		if (empty($prompt)) {
+			echo json_encode(array(
+				'success' => false,
+				'message' => '생성할 페이지 내용을 입력해주세요.'
+			));
+			return;
+		}
+
+		// 조직 권한 확인
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			return;
+		}
+
+		try {
+			// Gemini 라이브러리 로드
+			$this->load->library('Gemini_lib');
+
+			// Unsplash 이미지 URL 생성 (여러 키워드로)
+			$image_urls = array();
+			$keywords = array('church', 'community', 'people', 'nature', 'inspiration');
+
+			foreach ($keywords as $keyword) {
+				$image_result = $this->gemini_lib->fetch_unsplash_image($keyword);
+				if ($image_result['success']) {
+					$image_urls[$keyword] = $image_result['data']['regular'];
+				}
+			}
+
+			// 시스템 프롬프트 구성
+			$system_prompt = "이 내용을 기반으로 html 소개페이지를 만들어줘!\n";
+			$system_prompt .= "1) bootstrap 5.3 기반으로 반응형으로 동작하도록 해줘!\n";
+			$system_prompt .= "2) html 및 css 만 사용해줘!\n";
+			$system_prompt .= "3) 가급적 글자폰트, 두께, 크기 등은 bootstrap의 class를 최대한 활용해줘!\n";
+			$system_prompt .= "4) 도형 및 표로 정리가 가능하다면 최대한 사용해줘!\n";
+			$system_prompt .= "6) card 또는 이미지 사용시 높이를 균일하게 맞춰줘! !\n";
+			$system_prompt .= "7) 색상 또한 bootstrap의 그것을 이용해줘!\n";
+			$system_prompt .= "8) 최대한 심플하면서 모던하게 작업해줘!\n";
+			$system_prompt .= "9) 헤더, 푸터 만들지 말고 가급적 <section></section>안의 내용만 정의해줘! 가급적 col 12를 충분히 활용해줘! section에는 다른 class는 없어야해! \n";
+			$system_prompt .= "10) 사전에 bootstrap의 css 및 js는 정의되어 있으므로 별도로 작성하지 말아줘!\n";
+			$system_prompt .= "11) HTML 코드만 반환하고, 설명이나 마크다운 코드블록(```)은 포함하지 말아줘!\n";
+			$system_prompt .= "12) 페이지의 제목은 포함하지 않도록 해줘! 필요 시 거버닝 메시지로 활용해줘! h1, h2는 사용하지 말아줘!\n";
+			$system_prompt .= "13) 적재적소에 bootstrap icon을 사용해줘! css는 이미 정의해놨어!\n";
+			$system_prompt .= "14) 적재적소에 이미지를 사용해줘! 다음 Unsplash 이미지 URL들을 사용할 수 있어:\n";
+
+			if (!empty($image_urls)) {
+				foreach ($image_urls as $keyword => $url) {
+					$system_prompt .= "   - {$keyword} 관련: {$url}\n";
+				}
+			}
+
+			$system_prompt .= "\n내용: " . $prompt;
+
+			// Gemini 라이브러리를 통한 API 호출
+			$result = $this->gemini_lib->generate($system_prompt);
+
+			if ($result['success']) {
+				$html_content = $result['data'];
+
+				// 마크다운 코드 블록 제거 (만약 있다면)
+				$html_content = preg_replace('/```html\n?/', '', $html_content);
+				$html_content = preg_replace('/```\n?/', '', $html_content);
+				$html_content = trim($html_content);
+
+				echo json_encode(array(
+					'success' => true,
+					'html_content' => $html_content,
+					'message' => 'AI 페이지가 생성되었습니다.',
+					'image_urls' => $image_urls
+				));
+			} else {
+				echo json_encode(array(
+					'success' => false,
+					'message' => $result['message']
+				));
+			}
+		} catch (Exception $e) {
+			log_message('error', 'AI page generation error: ' . $e->getMessage());
+			echo json_encode(array(
+				'success' => false,
+				'message' => 'AI 페이지 생성 중 오류가 발생했습니다.'
+			));
+		}
+	}
 
 
 
