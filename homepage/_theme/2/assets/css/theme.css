@@ -257,12 +257,17 @@ footer .footer-logo img{filter: brightness(0) invert(1);}
 @media (max-width: 992px) {
 
 	.board-container, .board-detail {padding: 1rem; padding-top: 80px;}
+	.page-container.sub{padding: 1rem;padding-top: 80px;}
+	.page-container.sub .page-body{padding: 0;}
 	.slide-item .cover-text .card-title{font-size: 60px}
 	.slide-item .cover-text .card-text{font-size: 40px}
 
 	.table {font-size: 0.9rem;}
 	.table thead th, .table tbody td {padding: 0.5rem;}
 	.slick-prev, .slick-next {display: none!important;}
+
+
+
 }
 
 
