@@ -37,8 +37,9 @@
 
 		<div class="d-grid gap-2">
 			<button type="submit" class="btn btn-primary">시작하기 <i class="bi bi-chevron-right"></i></button>
-			<button type="button" class="btn btn-outline-primary" id="createOrgBtn">새로운 조직 생성하기 <i class="bi bi-chevron-right"></i></button>
+<!--			<button type="button" class="btn btn-outline-primary" id="createOrgBtn">새로운 조직 생성하기 <i class="bi bi-chevron-right"></i></button>-->
 		</div>
+
 	</form>
 </div>
 
@@ -58,14 +59,16 @@
 					</div>
 
 					<div class="mb-3">
-						<label for="org_type" class="form-label">조직유형 <span class="text-danger">*</span></label>
+						<label for="org_type" class="form-label">조직 유형 <span class="text-danger">*</span></label>
 						<select class="form-select" id="org_type" name="org_type" required>
-							<option value="">조직유형을 선택하세요</option>
-							<option value="교회">교회</option>
-							<option value="단체">단체</option>
-							<option value="기업">기업</option>
-							<option value="학교">학교</option>
-							<option value="기타">기타</option>
+							<option value="" selected>선택하세요</option>
+							<?php if (!empty($org_types)) : ?>
+								<?php foreach ($org_types as $type) : ?>
+									<option value="<?php echo html_escape($type['org_type']); ?>">
+										<?php echo html_escape($type['category_name']); ?>
+									</option>
+								<?php endforeach; ?>
+							<?php endif; ?>
 						</select>
 					</div>
 

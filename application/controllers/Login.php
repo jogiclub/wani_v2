@@ -57,10 +57,13 @@ class Login extends CI_Controller
 
 	public function join()
 	{
+		$this->load->model('Org_category_model'); // Org_category_model 로드
+
 		$data = array(
 			'user_id' => $this->session->userdata('user_id'),
 			'user_name' => $this->session->userdata('user_name'),
-			'user_email' => $this->session->userdata('user_email')
+			'user_email' => $this->session->userdata('user_email'),
+			'org_types' => $this->Org_category_model->get_org_types() // 조직 유형 목록 추가
 		);
 		$this->load->view('join', $data);
 	}
