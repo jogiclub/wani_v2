@@ -36,6 +36,7 @@ $(document).ready(function() {
 			// ORG 분류
 			{ key: 'mng_org', name: '조직관리', icon: 'bi bi-building', group: 'ORG' },
 			{ key: 'mng_member', name: '회원관리', icon: 'bi bi-person', group: 'ORG' },
+			{ key: 'mng_education', name: '양육관리', icon: 'bi bi-person', group: 'ORG' },
 			// MASTER 분류
 			{ key: 'mng_master', name: '마스터관리', icon: 'bi bi-people', group: 'MASTER' },
 			{ key: 'mng_cost', name: '비용관리', icon: 'bi bi-cash-coin', group: 'MASTER' },

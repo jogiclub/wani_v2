@@ -1,0 +1,581 @@
+'use strict';
+
+/**
+ * 파일 위치: assets/js/mng_education.js
+ * 역할: 관리자 양육관리 화면의 메인 JavaScript 파일
+ */
+
+(function() {
+	// 전역 변수
+	let eduGrid = null;
+	let applicantGrid = null;
+	let treeInstance = null;
+	let splitInstance = null;
+	let selectedNodeType = null;
+	let selectedNodeId = null;
+	let selectedNodeName = '';
+	let eduDetailOffcanvas = null;
+	let applicantOffcanvas = null;
+
+	// DOM 준비 완료 시 초기화
+	$(document).ready(function() {
+		initializePage();
+	});
+
+	/**
+	 * 페이지 전체 초기화
+	 */
+	function initializePage() {
+		console.log('양육관리 페이지 초기화 시작');
+
+		// Offcanvas 초기화
+		const eduDetailOffcanvasEl = document.getElementById('eduDetailOffcanvas');
+		if (eduDetailOffcanvasEl) {
+			eduDetailOffcanvas = new bootstrap.Offcanvas(eduDetailOffcanvasEl);
+		}
+
+		const applicantOffcanvasEl = document.getElementById('applicantOffcanvas');
+		if (applicantOffcanvasEl) {
+			applicantOffcanvas = new bootstrap.Offcanvas(applicantOffcanvasEl);
+		}
+
+		cleanupExistingInstances();
+		initSplitJS();
+		initFancytree();
+		initParamQueryGrid();
+		initApplicantGrid();
+		bindGlobalEvents();
+
+		console.log('양육관리 페이지 초기화 완료');
+	}
+
+	/**
+	 * 기존 인스턴스 정리
+	 */
+	function cleanupExistingInstances() {
+		if (splitInstance && splitInstance.destroy) {
+			splitInstance.destroy();
+			splitInstance = null;
+		}
+
+		if (treeInstance && $.ui.fancytree.getTree('#categoryTree')) {
+			$('#categoryTree').fancytree('destroy');
+			treeInstance = null;
+		}
+
+		if (eduGrid && eduGrid.destroy) {
+			eduGrid.destroy();
+			eduGrid = null;
+		}
+
+		if (applicantGrid && applicantGrid.destroy) {
+			applicantGrid.destroy();
+			applicantGrid = null;
+		}
+	}
+
+	/**
+	 * Split.js 초기화
+	 */
+	function initSplitJS() {
+		const leftPane = document.getElementById('left-pane');
+		const rightPane = document.getElementById('right-pane');
+
+		if (!leftPane || !rightPane) {
+			console.error('Split 패널을 찾을 수 없습니다.');
+			return;
+		}
+
+		splitInstance = Split(['#left-pane', '#right-pane'], {
+			sizes: [20, 80],
+			minSize: [200, 400],
+			gutterSize: 5,
+			cursor: 'col-resize'
+		});
+
+		console.log('Split.js 초기화 완료');
+	}
+
+	/**
+	 * Fancytree 초기화
+	 */
+	function initFancytree() {
+		$('#treeSpinner').removeClass('d-none').addClass('d-flex');
+
+		$.ajax({
+			url: '/mng/mng_education/get_category_org_tree',
+			type: 'POST',
+			dataType: 'json',
+			success: function(treeData) {
+				console.log('트리 데이터 로드 성공:', treeData);
+
+				$('#categoryTree').fancytree({
+					source: treeData,
+					extensions: ['persist'],
+					persist: {
+						store: 'local',
+						cookiePrefix: 'mng_edu_tree_'
+					},
+					selectMode: 1,
+					activate: function(event, data) {
+						handleTreeNodeActivation(data.node);
+					},
+					renderNode: function(event, data) {
+						const node = data.node;
+						const $span = $(node.span);
+
+						if (node.data && node.data.type === 'org') {
+							$span.find('.fancytree-icon').removeClass('fancytree-ico-cf')
+								.addClass('bi bi-building text-primary');
+						}
+					}
+				});
+
+				treeInstance = $.ui.fancytree.getTree('#categoryTree');
+				$('#treeSpinner').removeClass('d-flex').addClass('d-none');
+
+				// 전체 양육 개수 로드
+				loadTotalEduCount();
+			},
+			error: function(xhr, status, error) {
+				console.error('트리 로드 실패:', error);
+				$('#treeSpinner').removeClass('d-flex').addClass('d-none');
+				showToast('트리 데이터 로드에 실패했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 트리 노드 활성화 처리
+	 */
+	function handleTreeNodeActivation(node) {
+		const nodeData = node.data;
+
+		if (nodeData.type === 'org') {
+			selectedNodeType = 'org';
+			selectedNodeId = nodeData.org_id;
+			selectedNodeName = nodeData.org_name;
+			$('#selectedNodeName').html('<i class="bi bi-building"></i> ' + selectedNodeName);
+		} else if (nodeData.type === 'category') {
+			selectedNodeType = 'category';
+			selectedNodeId = nodeData.category_idx;
+			selectedNodeName = nodeData.category_name;
+			$('#selectedNodeName').html('<i class="bi bi-folder"></i> ' + selectedNodeName);
+		} else {
+			selectedNodeType = 'all';
+			selectedNodeId = null;
+			selectedNodeName = '전체 양육';
+			$('#selectedNodeName').html('<i class="bi bi-book"></i> ' + selectedNodeName);
+		}
+
+		loadEduList();
+	}
+
+	/**
+	 * 전체 양육 개수 로드
+	 */
+	function loadTotalEduCount() {
+		$.ajax({
+			url: '/mng/mng_education/get_total_edu_count',
+			type: 'POST',
+			dataType: 'json',
+			success: function(res) {
+				$('#totalEduCount').text(res.total_count);
+			}
+		});
+	}
+
+	/**
+	 * ParamQuery Grid 초기화 (양육 목록)
+	 */
+	function initParamQueryGrid() {
+		const columns = [
+			{
+				title: "양육명",
+				dataIndx: "edu_name",
+				width: 250,
+				render: function(ui) {
+					return '<a href="javascript:void(0);" class="edu-detail-link text-primary text-decoration-none" data-edu-idx="' +
+						ui.rowData.edu_idx + '">' + escapeHtml(ui.cellData) + '</a>';
+				}
+			},
+			{
+				title: "소속 조직",
+				dataIndx: "org_name",
+				width: 150
+			},
+			{
+				title: "카테고리",
+				dataIndx: "category_name",
+				width: 120
+			},
+			{
+				title: "장소",
+				dataIndx: "edu_location",
+				width: 150
+			},
+			{
+				title: "시작일",
+				dataIndx: "edu_start_date",
+				width: 100,
+				render: function(ui) {
+					return ui.cellData ? ui.cellData.substring(0, 10) : '';
+				}
+			},
+			{
+				title: "종료일",
+				dataIndx: "edu_end_date",
+				width: 100,
+				render: function(ui) {
+					return ui.cellData ? ui.cellData.substring(0, 10) : '';
+				}
+			},
+			{
+				title: "담당자",
+				dataIndx: "edu_leader",
+				width: 100
+			},
+			{
+				title: "신청자",
+				dataIndx: "applicant_count",
+				width: 80,
+				align: 'center',
+				render: function(ui) {
+					const count = ui.cellData || 0;
+					if (count > 0) {
+						return '<a href="javascript:void(0);" class="applicant-link text-primary" data-edu-idx="' +
+							ui.rowData.edu_idx + '">' + count + '명</a>';
+					}
+					return '0명';
+				}
+			},
+			{
+				title: "공개",
+				dataIndx: "public_yn",
+				width: 60,
+				align: 'center',
+				render: function(ui) {
+					return ui.cellData === 'Y'
+						? '<span class="badge bg-success">공개</span>'
+						: '<span class="badge bg-secondary">비공개</span>';
+				}
+			}
+		];
+
+		eduGrid = pq.grid('#eduGrid', {
+			width: '100%',
+			height: 'flex',
+			colModel: columns,
+			dataModel: { data: [] },
+			scrollModel: { autoFit: true },
+			numberCell: { show: true, title: "No", width: 40 },
+			pageModel: { type: 'local', rPP: 50, rPPOptions: [20, 50, 100] },
+			selectionModel: { type: 'row', mode: 'single' },
+			strNoRows: '양육 데이터가 없습니다.',
+			rowClick: function(evt, ui) {
+				// 링크 클릭은 별도 처리
+			}
+		});
+
+		console.log('ParamQuery Grid 초기화 완료');
+	}
+
+	/**
+	 * 신청자 Grid 초기화
+	 */
+	function initApplicantGrid() {
+		const columns = [
+			{
+				title: "이름",
+				dataIndx: "applicant_name",
+				width: 120
+			},
+			{
+				title: "연락처",
+				dataIndx: "applicant_phone",
+				width: 130
+			},
+			{
+				title: "상태",
+				dataIndx: "status",
+				width: 100,
+				align: 'center',
+				render: function(ui) {
+					const status = ui.cellData || '신청';
+					let badgeClass = 'bg-primary';
+					if (status === '수료') badgeClass = 'bg-success';
+					else if (status === '중도포기') badgeClass = 'bg-danger';
+					else if (status.includes('외부')) badgeClass = 'bg-info';
+					return '<span class="badge ' + badgeClass + '">' + escapeHtml(status) + '</span>';
+				}
+			},
+			{
+				title: "신청일",
+				dataIndx: "regi_date",
+				width: 150,
+				render: function(ui) {
+					return ui.cellData ? ui.cellData.substring(0, 16) : '';
+				}
+			},
+			{
+				title: "상태 변경",
+				width: 200,
+				render: function(ui) {
+					const currentStatus = ui.rowData.status || '신청';
+					return '<select class="form-select form-select-sm applicant-status-select" data-applicant-idx="' +
+						ui.rowData.applicant_idx + '">' +
+						'<option value="신청"' + (currentStatus === '신청' ? ' selected' : '') + '>신청</option>' +
+						'<option value="승인"' + (currentStatus === '승인' ? ' selected' : '') + '>승인</option>' +
+						'<option value="중도포기"' + (currentStatus === '중도포기' ? ' selected' : '') + '>중도포기</option>' +
+						'<option value="수료"' + (currentStatus === '수료' ? ' selected' : '') + '>수료</option>' +
+						'</select>';
+				}
+			}
+		];
+
+		applicantGrid = pq.grid('#applicantGrid', {
+			width: '100%',
+			height: 500,
+			colModel: columns,
+			dataModel: { data: [] },
+			scrollModel: { autoFit: true },
+			numberCell: { show: true, title: "No", width: 40 },
+			strNoRows: '신청자가 없습니다.'
+		});
+
+		console.log('신청자 Grid 초기화 완료');
+	}
+
+	/**
+	 * 양육 목록 로드
+	 */
+	function loadEduList() {
+		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
+
+		const postData = {
+			type: selectedNodeType || 'all'
+		};
+
+		if (selectedNodeType === 'org') {
+			postData.org_id = selectedNodeId;
+		} else if (selectedNodeType === 'category') {
+			postData.category_idx = selectedNodeId;
+		}
+
+		$.ajax({
+			url: '/mng/mng_education/get_edu_list',
+			type: 'POST',
+			data: postData,
+			dataType: 'json',
+			success: function(res) {
+				if (res.success) {
+					eduGrid.option('dataModel.data', res.data);
+					eduGrid.refreshDataAndView();
+					$('#totalEduCount').text(res.total_count);
+				} else {
+					showToast(res.message || '양육 목록 로드에 실패했습니다.', 'error');
+				}
+				$('#gridSpinner').removeClass('d-flex').addClass('d-none');
+			},
+			error: function() {
+				showToast('양육 목록 로드 중 오류가 발생했습니다.', 'error');
+				$('#gridSpinner').removeClass('d-flex').addClass('d-none');
+			}
+		});
+	}
+
+	/**
+	 * 양육 상세 로드
+	 */
+	function loadEduDetail(eduIdx) {
+		$.ajax({
+			url: '/mng/mng_education/get_edu_detail',
+			type: 'POST',
+			data: { edu_idx: eduIdx },
+			dataType: 'json',
+			success: function(res) {
+				if (res.success) {
+					displayEduDetail(res.data);
+					eduDetailOffcanvas.show();
+				} else {
+					showToast(res.message || '양육 상세 정보를 불러올 수 없습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('양육 상세 정보 로드 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 양육 상세 정보 표시
+	 */
+	function displayEduDetail(edu) {
+		$('#detail_edu_name').text(edu.edu_name || '');
+		$('#detail_org_name').text(edu.org_name || '');
+		$('#detail_category_name').text(edu.category_name || '');
+		$('#detail_edu_location').text(edu.edu_location || '');
+		$('#detail_edu_start_date').text(edu.edu_start_date ? edu.edu_start_date.substring(0, 10) : '');
+		$('#detail_edu_end_date').text(edu.edu_end_date ? edu.edu_end_date.substring(0, 10) : '');
+
+		// JSON 필드 파싱
+		let days = '';
+		if (edu.edu_days) {
+			try {
+				const daysArray = typeof edu.edu_days === 'string' ? JSON.parse(edu.edu_days) : edu.edu_days;
+				days = Array.isArray(daysArray) ? daysArray.join(', ') : edu.edu_days;
+			} catch(e) {
+				days = edu.edu_days;
+			}
+		}
+		$('#detail_edu_days').text(days);
+
+		let times = '';
+		if (edu.edu_times) {
+			try {
+				const timesArray = typeof edu.edu_times === 'string' ? JSON.parse(edu.edu_times) : edu.edu_times;
+				times = Array.isArray(timesArray) ? timesArray.join(', ') : edu.edu_times;
+			} catch(e) {
+				times = edu.edu_times;
+			}
+		}
+		$('#detail_edu_times').text(times);
+
+		$('#detail_edu_leader').text(edu.edu_leader || '');
+		$('#detail_edu_leader_phone').text(edu.edu_leader_phone || '');
+		$('#detail_edu_leader_age').text(edu.edu_leader_age || '');
+		$('#detail_edu_leader_gender').text(edu.edu_leader_gender || '');
+		$('#detail_edu_desc').text(edu.edu_desc || '');
+		$('#detail_edu_fee').text(edu.edu_fee ? edu.edu_fee.toLocaleString() + '원' : '무료');
+		$('#detail_edu_capacity').text(edu.edu_capacity > 0 ? edu.edu_capacity + '명' : '제한 없음');
+		$('#detail_public_yn').text(edu.public_yn === 'Y' ? '공개' : '비공개');
+
+		// ZOOM/YouTube URL
+		if (edu.zoom_url) {
+			$('#detail_zoom_url').attr('href', edu.zoom_url).text(edu.zoom_url);
+			$('#detail_zoom_section').show();
+		} else {
+			$('#detail_zoom_section').hide();
+		}
+
+		if (edu.youtube_url) {
+			$('#detail_youtube_url').attr('href', edu.youtube_url).text(edu.youtube_url);
+			$('#detail_youtube_section').show();
+		} else {
+			$('#detail_youtube_section').hide();
+		}
+	}
+
+	/**
+	 * 신청자 목록 로드
+	 */
+	function loadApplicantList(eduIdx) {
+		$.ajax({
+			url: '/mng/mng_education/get_applicant_list',
+			type: 'POST',
+			data: { edu_idx: eduIdx },
+			dataType: 'json',
+			success: function(res) {
+				if (res.success) {
+					applicantGrid.option('dataModel.data', res.data);
+					applicantGrid.refreshDataAndView();
+					$('#applicant_total_count').text(res.total_count);
+					applicantOffcanvas.show();
+				} else {
+					showToast(res.message || '신청자 목록을 불러올 수 없습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('신청자 목록 로드 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 신청자 상태 업데이트
+	 */
+	function updateApplicantStatus(applicantIdx, status) {
+		$.ajax({
+			url: '/mng/mng_education/update_applicant_status',
+			type: 'POST',
+			data: {
+				applicant_idx: applicantIdx,
+				status: status
+			},
+			dataType: 'json',
+			success: function(res) {
+				if (res.success) {
+					showToast('상태가 업데이트되었습니다.', 'success');
+				} else {
+					showToast(res.message || '상태 업데이트에 실패했습니다.', 'error');
+				}
+			},
+			error: function() {
+				showToast('상태 업데이트 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 전역 이벤트 바인딩
+	 */
+	function bindGlobalEvents() {
+		// 양육 상세 링크 클릭
+		$(document).on('click', '.edu-detail-link', function(e) {
+			e.preventDefault();
+			const eduIdx = $(this).data('edu-idx');
+			loadEduDetail(eduIdx);
+		});
+
+		// 신청자 링크 클릭
+		$(document).on('click', '.applicant-link', function(e) {
+			e.preventDefault();
+			const eduIdx = $(this).data('edu-idx');
+			loadApplicantList(eduIdx);
+		});
+
+		// 신청자 상태 변경
+		$(document).on('change', '.applicant-status-select', function() {
+			const applicantIdx = $(this).data('applicant-idx');
+			const newStatus = $(this).val();
+			updateApplicantStatus(applicantIdx, newStatus);
+		});
+	}
+
+	/**
+	 * Toast 메시지 표시
+	 */
+	function showToast(message, type) {
+		const bgColor = type === 'success' ? 'bg-success' : 'bg-danger';
+		const toast = `
+			<div class="toast align-items-center text-white ${bgColor} border-0" role="alert">
+				<div class="d-flex">
+					<div class="toast-body">${escapeHtml(message)}</div>
+					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+				</div>
+			</div>
+		`;
+		const container = $('<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>').append(toast);
+		$('body').append(container);
+		const toastEl = container.find('.toast')[0];
+		const bsToast = new bootstrap.Toast(toastEl);
+		bsToast.show();
+		setTimeout(() => container.remove(), 3000);
+	}
+
+	/**
+	 * HTML 이스케이프
+	 */
+	function escapeHtml(text) {
+		if (!text) return '';
+		const map = {
+			'&': '&amp;',
+			'<': '&lt;',
+			'>': '&gt;',
+			'"': '&quot;',
+			"'": '&#039;'
+		};
+		return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+	}
+
+})();

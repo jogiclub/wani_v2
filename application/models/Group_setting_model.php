@@ -502,13 +502,14 @@ class Group_setting_model extends CI_Model {
 
 	/**
 	 * 파일 위치: application/models/Group_setting_model.php
-	 * 역할: 그룹 초대코드 조회
+	 * 역할: 그룹(area)의 소속 조직(org)의 초대코드를 조회
 	 */
-	public function get_area_invite_code($area_idx)
+	public function get_org_invite_code_by_area($area_idx)
 	{
-		$this->db->select('invite_code');
-		$this->db->from('wb_member_area');
-		$this->db->where('area_idx', $area_idx);
+		$this->db->select('o.invite_code');
+		$this->db->from('wb_member_area a');
+		$this->db->join('wb_org o', 'a.org_id = o.org_id');
+		$this->db->where('a.area_idx', $area_idx);
 		$query = $this->db->get();
 		$result = $query->row_array();
 		return $result ? $result['invite_code'] : null;
@@ -516,58 +517,39 @@ class Group_setting_model extends CI_Model {
 
 	/**
 	 * 파일 위치: application/models/Group_setting_model.php
-	 * 역할: 고유한 그룹 초대코드 생성
+	 * 역할: 고유한 조직 초대코드 생성 (5자리)
 	 */
-	public function generate_unique_area_invite_code($org_id)
+	public function generate_unique_org_invite_code()
 	{
-		$max_attempts = 100;
-		$attempt = 0;
-
+		$this->load->helper('string');
 		do {
-			$code = strtoupper(substr(str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZ123456789'), 0, 8));
-
+			$code = random_string('alnum', 5);
 			$this->db->where('invite_code', $code);
-			$this->db->where('org_id', $org_id);
-			$exists = $this->db->count_all_results('wb_member_area') > 0;
-
-			$attempt++;
-
-			if ($attempt >= $max_attempts) {
-				log_message('error', '그룹 초대코드 생성 시도 한계 도달');
-				break;
-			}
-		} while ($exists);
-
-		return $code;
+			$this->db->from('wb_org');
+		} while ($this->db->count_all_results() > 0);
+		return strtoupper($code);
 	}
 
 	/**
 	 * 파일 위치: application/models/Group_setting_model.php
-	 * 역할: 그룹 초대코드 저장
+	 * 역할: 조직 초대코드 저장
 	 */
-	public function save_area_invite_code($area_idx, $invite_code)
+	public function save_org_invite_code($org_id, $invite_code)
 	{
-		$data = array(
-			'invite_code' => $invite_code
-		);
-
-		$this->db->where('area_idx', $area_idx);
-		return $this->db->update('wb_member_area', $data);
-	}
-
-	/**
-	 * 파일 위치: application/models/Group_setting_model.php
-	 * 역할: 초대코드로 그룹 정보 조회
-	 */
-	public function get_area_by_invite_code($invite_code, $org_id)
-	{
-		$this->db->select('area_idx, area_name, org_id');
-		$this->db->from('wb_member_area');
-		$this->db->where('invite_code', $invite_code);
 		$this->db->where('org_id', $org_id);
+		return $this->db->update('wb_org', array('invite_code' => $invite_code));
+	}
+
+	/**
+	 * 파일 위치: application/models/Group_setting_model.php
+	 * 역할: 초대코드로 조직 정보 조회
+	 */
+	public function get_org_by_invite_code($invite_code)
+	{
+		$this->db->select('org_id, org_name');
+		$this->db->from('wb_org');
+		$this->db->where('invite_code', $invite_code);
 		$query = $this->db->get();
 		return $query->row_array();
 	}
-
-
 }

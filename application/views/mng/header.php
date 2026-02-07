@@ -114,6 +114,11 @@ function can_access_master_menu($menu_key, $master_managed_menus) {
 							<i class="bi bi-person"></i> 회원관리
 						</a>
 					</li>
+					<li class="nav-item">
+						<a class="nav-link <?php echo (uri_string() == 'mng/mng_education' || strpos(uri_string(), 'mng/mng_education') === 0) ? 'active' : ''; ?>" href="/mng/mng_education">
+							<i class="bi bi-person"></i> 양육관리
+						</a>
+					</li>
 				</ul>
 			<?php endif; ?>
 
