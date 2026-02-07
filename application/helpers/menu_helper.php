@@ -9,9 +9,11 @@ if (!function_exists('get_system_menus')) {
 	 * 시스템 메뉴 배열 반환
 	 * - menu_class: 사이드바 메뉴 클래스 (menu-XX 형식)
 	 * - level: 메뉴 접근 최소 레벨 (0: 모든 사용자, 1: 일반 권한, 9: 설정 권한)
+	 * @param string|null $org_type 조직 타입
+	 * @return array
 	 */
-	function get_system_menus() {
-		return array(
+	function get_system_menus($org_type = null) {
+		$menus = array(
 			'OVERVIEW' => array(
 				'name' => '대시보드',
 				'key' => 'OVERVIEW',
@@ -45,7 +47,7 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-23'
 			),
 			'EDU_MANAGEMENT' => array(
-				'name' => '교육관리',
+				'name' => '양육',
 				'key' => 'EDU_MANAGEMENT',
 				'url' => 'education',
 				'icon' => 'bi bi-mortarboard',
@@ -61,7 +63,7 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-27'
 			),
 			'TIMELINE_MANAGEMENT' => array(
-				'name' => '타임라인관리',
+				'name' => '타임라인',
 				'key' => 'TIMELINE_MANAGEMENT',
 				'url' => 'timeline',
 				'icon' => 'bi bi-clock-history',
@@ -69,7 +71,7 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-24'
 			),
 			'MEMO_MANAGEMENT' => array(
-				'name' => '메모관리',
+				'name' => '메모',
 				'key' => 'MEMO_MANAGEMENT',
 				'url' => 'memos',
 				'icon' => 'bi bi-journal-bookmark',
@@ -86,7 +88,7 @@ if (!function_exists('get_system_menus')) {
 			),
 
 			'HOMEPAGE_BASIC' => array(
-				'name' => '홈페이지 기본설정',
+				'name' => '홈피설정',
 				'key' => 'HOMEPAGE_BASIC',
 				'url' => 'homepage_setting',
 				'icon' => 'bi bi-house-gear',
@@ -94,7 +96,7 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-31'
 			),
 			'HOMEPAGE_MENU' => array(
-				'name' => '홈페이지 메뉴설정',
+				'name' => '홈피메뉴',
 				'key' => 'HOMEPAGE_MENU',
 				'url' => 'homepage_menu',
 				'icon' => 'bi bi-view-stacked',
@@ -135,7 +137,7 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-44'
 			),
 			'USER_MANAGEMENT' => array(
-				'name' => '사용자관리',
+				'name' => '사용자설정',
 				'key' => 'USER_MANAGEMENT',
 				'url' => 'user_management',
 				'icon' => 'bi bi-person-video',
@@ -143,7 +145,7 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-45'
 			),
 			'FEE_MANAGEMENT' => array(
-				'name' => '요금관리',
+				'name' => '요금설정',
 				'key' => 'FEE_MANAGEMENT',
 				'url' => 'fee_management',
 				'icon' => 'bi bi-person-video',
@@ -151,7 +153,7 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-46'
 			),
 			'ACCOUNT_MANAGEMENT' => array(
-				'name' => '수입/지출계정',
+				'name' => '수입/지출설정',
 				'key' => 'ACCOUNT_MANAGEMENT',
 				'url' => 'account',
 				'icon' => 'bi bi-tags',
@@ -159,6 +161,12 @@ if (!function_exists('get_system_menus')) {
 				'menu_class' => 'menu-47'
 		)
 		);
+
+		if ($org_type === 'meak' || $org_type === 'meakchurch') {
+			$menus['MEMBER_MANAGEMENT']['name'] = '전도/세례/파송';
+		}
+
+		return $menus;
 	}
 }
 

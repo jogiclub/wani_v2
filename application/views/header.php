@@ -202,7 +202,8 @@
 $this->load->helper('menu');
 
 // 메뉴 및 카테고리 데이터 가져오기
-$system_menus = get_system_menus();
+$org_type = isset($current_org) && $current_org ? $current_org['org_type'] : null;
+$system_menus = get_system_menus($org_type);
 $menu_categories = get_menu_categories();
 
 // 현재 조직에서의 사용자 권한 레벨 확인

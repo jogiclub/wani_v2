@@ -1,4 +1,4 @@
-<?php
+	<?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Login extends CI_Controller
@@ -333,7 +333,8 @@ class Login extends CI_Controller
 			$this->input->set_cookie('activeOrg', $default_org['org_id'], 86400);
 			$this->session->set_userdata([
 				'current_org_id' => $default_org['org_id'],
-				'current_org_name' => $default_org['org_name']
+				'current_org_name' => $default_org['org_name'],
+				'org_type' => $default_org['org_type']
 			]);
 
 			log_message('info', "사용자 {$user_id}의 임시 기본 조직이 {$default_org['org_id']}로 설정되었습니다.");
@@ -393,7 +394,8 @@ class Login extends CI_Controller
 		$this->input->set_cookie('activeOrg', $org_id, 86400);
 		$this->session->set_userdata([
 			'current_org_id' => $org_id,
-			'current_org_name' => $selected_org['org_name']
+			'current_org_name' => $selected_org['org_name'],
+			'org_type' => $selected_org['org_type']
 		]);
 
 		log_message('info', "사용자 {$user_id}의 기본 조직이 localStorage 기반으로 {$org_id}로 설정되었습니다.");
@@ -619,7 +621,8 @@ class Login extends CI_Controller
 		$this->input->set_cookie('activeOrg', $org_id, 86400);
 		$this->session->set_userdata([
 			'current_org_id' => $org_id,
-			'current_org_name' => $org_name
+			'current_org_name' => $org_name,
+			'org_type' => $org_type
 		]);
 
 		log_message('info', "사용자 {$user_id}가 새로운 조직 {$org_id}({$org_name})을 생성했습니다.");
@@ -632,7 +635,6 @@ class Login extends CI_Controller
 			'redirect_url' => base_url('org')
 		]);
 	}
-
 	/**
 	 * 중복되지 않는 5자리 초대코드 생성
 	 */
