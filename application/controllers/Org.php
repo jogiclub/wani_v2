@@ -17,8 +17,12 @@ class Org extends My_Controller
 		$this->check_menu_access('ORG_SETTING');
 	}
 
+	/**
+	 * 파일 위치: application/controllers/Org.php
+	 * 역할: 조직 설정 페이지
+	 */
 	public function index() {
-
+		$this->load->model('Org_category_model'); // Org_category_model 로드
 
 		$user_id = $this->session->userdata('user_id');
 
@@ -48,6 +52,9 @@ class Org extends My_Controller
 
 		// 조직의 최고관리자 정보 가져오기
 		$data['org_admin'] = $this->Org_model->get_org_admin($currentOrgId);
+
+		// 조직 유형 목록 가져오기
+		$data['org_types'] = $this->Org_category_model->get_org_types();
 
 		$this->load->view('org_setting', $data);
 	}

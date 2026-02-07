@@ -597,4 +597,19 @@ class Org_category_model extends CI_Model
 		return $this->build_category_select_options($filtered_categories, null, 0);
 	}
 
+	/**
+	 * 조직 유형 목록 조회 (최상위 카테고리)
+	 */
+	public function get_org_types()
+	{
+		$this->db->select('org_type, category_name');
+		$this->db->from('wb_org_category');
+		$this->db->where('parent_idx IS NULL', null, false);
+		$this->db->where('org_type IS NOT NULL', null, false);
+		$this->db->group_by(array('org_type', 'category_name'));
+		$this->db->order_by('category_order', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
 }

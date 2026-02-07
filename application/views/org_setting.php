@@ -99,20 +99,26 @@
 								</div>
 							</div>
 
+							<!-- 조직 이름 -->
+							<div class="mb-3">
+								<label for="org_name" class="form-label">조직 이름</label>
+								<input type="text" class="form-control" id="org_name" name="org_name" value="<?php echo htmlspecialchars($selected_org_detail['org_name'] ?? ''); ?>" placeholder="조직 이름을 입력하세요">
+							</div>
+
+							<!-- 조직 정보 -->
 							<div class="row mb-3">
-								<div class="col-md-6">
-									<label for="org_name" class="form-label">조직명</label>
-									<input type="text" class="form-control" id="org_name" name="org_name" value="<?php echo htmlspecialchars($selected_org_detail['org_name']); ?>" required>
-								</div>
-								<div class="col-md-6">
+
+								<div class="col-12">
 									<label for="org_type" class="form-label">조직 유형</label>
-									<select class="form-select" id="org_type" name="org_type" required>
-										<option value="church" <?php echo ($selected_org_detail['org_type'] == 'church') ? 'selected' : ''; ?>>교회</option>
-										<option value="school" <?php echo ($selected_org_detail['org_type'] == 'school') ? 'selected' : ''; ?>>학교</option>
-										<option value="company" <?php echo ($selected_org_detail['org_type'] == 'company') ? 'selected' : ''; ?>>회사</option>
-										<option value="club" <?php echo ($selected_org_detail['org_type'] == 'club') ? 'selected' : ''; ?>>동아리</option>
-										<option value="community" <?php echo ($selected_org_detail['org_type'] == 'community') ? 'selected' : ''; ?>>커뮤니티</option>
-										<option value="other" <?php echo ($selected_org_detail['org_type'] == 'other') ? 'selected' : ''; ?>>기타</option>
+									<select class="form-select" id="org_type" name="org_type">
+										<option value="">선택하세요</option>
+										<?php if (!empty($org_types)) : ?>
+											<?php foreach ($org_types as $type) : ?>
+												<option value="<?php echo html_escape($type['org_type']); ?>" <?php echo (isset($selected_org_detail['org_type']) && $selected_org_detail['org_type'] === $type['org_type']) ? 'selected' : ''; ?>>
+													<?php echo html_escape($type['category_name']); ?>
+												</option>
+											<?php endforeach; ?>
+										<?php endif; ?>
 									</select>
 								</div>
 							</div>
@@ -200,6 +206,8 @@
 						</div>
 						<div class="card-body card-height">
 							<!-- 조직 아이콘 -->
+
+							<!--
 							<div class="row mb-3">
 								<div class="col-md-6">
 									<label for="leader_name" class="form-label">리더 호칭</label>
@@ -209,7 +217,7 @@
 									<label for="new_name" class="form-label">신규 회원 호칭</label>
 									<input type="text" class="form-control" id="new_name" name="new_name" value="<?php echo htmlspecialchars($selected_org_detail['new_name']); ?>" placeholder="예: 새가족, 신입생, 신입사원">
 								</div>
-							</div>
+							</div>-->
 
 							<!-- 직위/직분, 직책, 타임라인 설정 추가 -->
 							<div class="row mb-3">

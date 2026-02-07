@@ -6,7 +6,7 @@ class Gemini_lib {
 
 	private $CI;
 	private $api_key;
-	private $api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+	private $api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
 	private $unsplash_access_key;
 
 	public function __construct()
