@@ -97,6 +97,7 @@
 										<li><a class="dropdown-item" href="#" id="btnSelectedQrPrint">선택QR인쇄</a></li>
 										<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
 										<li><a class="dropdown-item" href="#" id="btnExcelEdit">엑셀편집</a></li>
+										<li><a class="dropdown-item" href="#" id="btnMemberCardUrl">그룹카드 URL</a></li>
 									</ul>
 								</div>
 							</div>
@@ -923,6 +924,30 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
 				<button type="button" class="btn btn-danger" id="confirmDeleteTimelineBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 그룹카드 URL 모달 -->
+<div class="modal fade" id="memberCardUrlModal" tabindex="-1" aria-labelledby="memberCardUrlModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="memberCardUrlModalLabel">그룹카드 URL</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p><strong id="memberCardUrlName"></strong> 그룹의 카드 URL입니다.</p>
+				<div class="input-group">
+					<input type="text" class="form-control" id="memberCardUrlInput" readonly>
+					<button class="btn btn-outline-secondary" type="button" id="copyMemberCardUrlBtn">
+						<i class="bi bi-clipboard"></i> 복사
+					</button>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
 			</div>
 		</div>
 	</div>

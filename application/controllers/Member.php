@@ -16,6 +16,7 @@ class Member extends My_Controller
 		$this->load->model('Member_model');
 		$this->load->model('Member_area_model');
 		$this->load->model('User_model');
+		$this->load->model('Group_setting_model'); // Group_setting_model 로드
 
 		// 메뉴 권한 체크
 		$this->check_menu_access('MEMBER_MANAGEMENT');
@@ -3136,6 +3137,48 @@ class Member extends My_Controller
 				'message' => '해당 회원의 정보를 조회할 권한이 없습니다.'
 			]);
 		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Member.php
+	 * 역할: 그룹 카드 URL 생성
+	 */
+	public function get_group_card_url()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$area_idx = $this->input->post('area_idx');
+		$org_id = $this->input->post('org_id');
+
+		if (!$area_idx || !$org_id) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보가 누락되었습니다.'));
+			return;
+		}
+
+		// 그룹 정보 조회
+		$group_info = $this->Group_setting_model->get_group_info($area_idx);
+		if (!$group_info || $group_info['org_id'] != $org_id) {
+			echo json_encode(array('success' => false, 'message' => '그룹 정보를 찾을 수 없습니다.'));
+			return;
+		}
+
+		// 패스코드(초대코드) 조회 또는 생성
+		$passcode = $this->Group_setting_model->get_org_invite_code_by_area($area_idx);
+		if (empty($passcode)) {
+			$passcode = $this->Group_setting_model->generate_unique_org_invite_code();
+			$this->Group_setting_model->save_org_invite_code($org_id, $passcode);
+		}
+
+		// 그룹 카드 URL 생성
+		$card_url = 'https://wani.im/member_card/register/' . $org_id . '/' . $area_idx . '/' . $passcode;
+
+		echo json_encode(array(
+			'success' => true,
+			'card_url' => $card_url,
+			'group_name' => $group_info['area_name']
+		));
 	}
 
 }

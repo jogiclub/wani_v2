@@ -521,6 +521,17 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			exportMemberToExcel();
 		});
 
+		// 그룹카드 URL 버튼 클릭 이벤트
+		$(document).on('click', '#btnMemberCardUrl', function (e) {
+			e.preventDefault();
+			handleGroupCardUrlClick();
+		});
+
+		// 그룹카드 URL 복사 버튼
+		$(document).on('click', '#copyMemberCardUrlBtn', function () {
+			copyToClipboard('#memberCardUrlInput', '그룹카드 URL이 복사되었습니다.');
+		});
+
 		// 회원 검색 기능 바인딩
 		bindMemberSearchEvents();
 
@@ -534,6 +545,65 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 				}
 			}
 		}, 250));
+	}
+
+	/**
+	 * 그룹카드 URL 버튼 클릭 처리
+	 */
+	function handleGroupCardUrlClick() {
+		const tree = $("#groupTree").fancytree("getTree");
+		const activeNode = tree.getActiveNode();
+
+		if (!activeNode || activeNode.data.type !== 'area') {
+			showToast('소그룹을 선택해주세요.', 'warning');
+			return;
+		}
+
+		const areaIdx = activeNode.data.area_idx;
+		const orgId = activeNode.data.org_id;
+
+		$.ajax({
+			url: '/member/get_group_card_url',
+			method: 'POST',
+			data: {
+				area_idx: areaIdx,
+				org_id: orgId
+			},
+			dataType: 'json',
+			success: function (response) {
+				if (response.success) {
+					$('#memberCardUrlName').text(response.group_name);
+					$('#memberCardUrlInput').val(response.card_url);
+					const modal = new bootstrap.Modal(document.getElementById('memberCardUrlModal'));
+					modal.show();
+				} else {
+					showToast(response.message || 'URL을 가져오는데 실패했습니다.', 'error');
+				}
+			},
+			error: function () {
+				showToast('URL을 가져오는 중 오류가 발생했습니다.', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 클립보드 복사 유틸리티
+	 */
+	function copyToClipboard(elementSelector, successMessage) {
+		const element = $(elementSelector);
+		if (!element.length) return;
+
+		element.select();
+		try {
+			document.execCommand('copy');
+			showToast(successMessage, 'success');
+		} catch (err) {
+			navigator.clipboard.writeText(element.val()).then(function () {
+				showToast(successMessage, 'success');
+			}).catch(function () {
+				showToast('복사에 실패했습니다.', 'error');
+			});
+		}
 	}
 
 	/**
