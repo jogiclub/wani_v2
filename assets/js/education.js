@@ -356,7 +356,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 목록 로드
+	 * 양육 목록 로드
 	 */
 	function loadEduList() {
 		if (!selectedOrgId || !selectedType) {
@@ -390,13 +390,13 @@ $(document).ready(function () {
 					updateGrid(dataWithCategoryName);
 					$('#totalEduCount').text(response.total_count);
 				} else {
-					showToast(response.message || '교육 목록을 불러오는데 실패했습니다.', 'error');
+					showToast(response.message || '양육 목록을 불러오는데 실패했습니다.', 'error');
 				}
 			},
 			error: function (xhr, status, error) {
-				console.error('교육 목록 로드 실패:', error);
+				console.error('양육 목록 로드 실패:', error);
 				hideGridSpinner();
-				showToast('교육 목록을 불러오는 중 오류가 발생했습니다.', 'error');
+				showToast('양육 목록을 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		});
 	}
@@ -465,12 +465,12 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 등록 Offcanvas 열기
+	 * 양육 등록 Offcanvas 열기
 	 */
 	function openEduAddOffcanvas() {
 		resetEduForm();
 		loadCategoryOptions();
-		$('#eduOffcanvasTitle').text('교육 등록');
+		$('#eduOffcanvasTitle').text('양육 등록');
 		$('#eduIdx').val('');
 		$('#eduOrgId').val(selectedOrgId || window.educationPageData.currentOrgId);
 
@@ -479,7 +479,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 수정 Offcanvas 열기
+	 * 양육 수정 Offcanvas 열기
 	 */
 	function openEduEditOffcanvas(eduIdx) {
 		showSpinner();
@@ -494,18 +494,18 @@ $(document).ready(function () {
 
 				if (response.success) {
 					fillEduForm(response.data);
-					$('#eduOffcanvasTitle').text('교육 수정');
+					$('#eduOffcanvasTitle').text('양육 수정');
 
 					const offcanvas = new bootstrap.Offcanvas('#eduOffcanvas');
 					offcanvas.show();
 				} else {
-					showToast(response.message || '교육 정보를 불러오는데 실패했습니다.', 'error');
+					showToast(response.message || '양육 정보를 불러오는데 실패했습니다.', 'error');
 				}
 			},
 			error: function (xhr, status, error) {
-				console.error('교육 정보 로드 실패:', error);
+				console.error('양육 정보 로드 실패:', error);
 				hideSpinner();
-				showToast('교육 정보를 불러오는 중 오류가 발생했습니다.', 'error');
+				showToast('양육 정보를 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		});
 	}
@@ -606,7 +606,7 @@ $(document).ready(function () {
 
 
 	/**
-	 * ParamQuery Grid 초기화 - 교육명 클릭 시에만 offcanvas, 신청자 컬럼 추가
+	 * ParamQuery Grid 초기화 - 양육명 클릭 시에만 offcanvas, 신청자 컬럼 추가
 	 */
 	function initializeParamQuery() {
 		showGridSpinner();
@@ -632,14 +632,14 @@ $(document).ready(function () {
 						}
 					},
 					{
-						title: "교육카테고리",
+						title: "양육카테고리",
 						dataIndx: "category_name",
 						width: 120,
 						editable: false,
 						align: "center"
 					},
 					{
-						title: "교육명",
+						title: "양육명",
 						dataIndx: "edu_name",
 						editable: false,
 						width: 200,
@@ -667,13 +667,13 @@ $(document).ready(function () {
 						}
 					},
 					{
-						title: "교육지역",
+						title: "양육지역",
 						dataIndx: "edu_location",
 						editable: false,
 						width: 150
 					},
 					{
-						title: "교육기간",
+						title: "양육기간",
 						dataIndx: "edu_period_str",
 						width: 300,
 						align: "center"
@@ -741,7 +741,7 @@ $(document).ready(function () {
 						}
 					}
 				],
-				strNoRows: '교육 정보가 없습니다',
+				strNoRows: '양육 정보가 없습니다',
 				selectionModel: { type: 'row', mode: 'block' },
 				numberCell: { show: false },
 				title: false,
@@ -762,7 +762,7 @@ $(document).ready(function () {
 					if (ui.dataIndx === 'checkbox') {
 						handleCheckboxClick(event, ui.rowData.edu_idx);
 					}
-					// 교육명 컬럼 클릭 시에만 수정 offcanvas 열기
+					// 양육명 컬럼 클릭 시에만 수정 offcanvas 열기
 					else if (ui.dataIndx === 'edu_name') {
 						openEduEditOffcanvas(ui.rowData.edu_idx);
 					}
@@ -787,7 +787,7 @@ $(document).ready(function () {
 	 * 전역 이벤트 바인딩 - 수강료 포맷팅 이벤트 추가
 	 */
 	function bindGlobalEvents() {
-		// 교육 등록 버튼
+		// 양육 등록 버튼
 		$('#btnAddEdu').off('click').on('click', function () {
 			openEduAddOffcanvas();
 		});
@@ -802,7 +802,7 @@ $(document).ready(function () {
 			openCategoryModal();
 		});
 
-		// 교육 저장 버튼
+		// 양육 저장 버튼
 		$('#btnSaveEdu').off('click').on('click', function () {
 			saveEdu();
 		});
@@ -933,7 +933,7 @@ $(document).ready(function () {
 
 	/**
 	 * 파일 위치: assets/js/education.js
-	 * 역할: 교육 폼 데이터 채우기 - 정원, 계좌정보 추가
+	 * 역할: 양육 폼 데이터 채우기 - 정원, 계좌정보 추가
 	 */
 	function fillEduForm(data) {
 		$('#eduIdx').val(data.edu_idx);
@@ -1016,7 +1016,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 교육 폼 초기화 - 수강료, 포스터 추가
+	 * 양육 폼 초기화 - 수강료, 포스터 추가
 	 */
 	function resetEduForm() {
 		$('#eduForm')[0].reset();
@@ -1050,7 +1050,7 @@ $(document).ready(function () {
 
 	/**
 	 * 파일 위치: assets/js/education.js
-	 * 역할: 교육 저장 - 정원, 계좌정보 추가
+	 * 역할: 양육 저장 - 정원, 계좌정보 추가
 	 */
 	function saveEdu() {
 		if (!$('#eduCategoryCode').val()) {
@@ -1059,7 +1059,7 @@ $(document).ready(function () {
 		}
 
 		if (!$('#eduName').val().trim()) {
-			showToast('교육명을 입력해주세요.', 'warning');
+			showToast('양육명을 입력해주세요.', 'warning');
 			return;
 		}
 
@@ -1152,13 +1152,13 @@ $(document).ready(function () {
 						loadEduList();
 						refreshCategoryTree();
 					} else {
-						showToast(response.message || '교육 저장에 실패했습니다.', 'error');
+						showToast(response.message || '양육 저장에 실패했습니다.', 'error');
 					}
 				},
 				error: function (xhr, status, error) {
-					console.error('교육 저장 실패:', error);
+					console.error('양육 저장 실패:', error);
 					hideSpinner();
-					showToast('교육 저장 중 오류가 발생했습니다.', 'error');
+					showToast('양육 저장 중 오류가 발생했습니다.', 'error');
 				}
 			});
 		};
@@ -1218,10 +1218,10 @@ $(document).ready(function () {
 
 
 	/**
-	 * 선택된 교육 삭제
+	 * 선택된 양육 삭제
 	 */
 	function deleteSelectedEdu() {
-		// 선택된 체크박스에서 교육 인덱스 수집
+		// 선택된 체크박스에서 양육 인덱스 수집
 		var eduIndexes = [];
 		$('.edu-checkbox:checked').each(function () {
 			var eduIdx = $(this).data('edu-idx');
@@ -1231,14 +1231,14 @@ $(document).ready(function () {
 		});
 
 		if (eduIndexes.length === 0) {
-			showToast('삭제할 교육을 선택해주세요.', 'warning');
+			showToast('삭제할 양육을 선택해주세요.', 'warning');
 			return;
 		}
 
 		// 삭제 확인 모달
 		showConfirmModal(
-			'교육 삭제',
-			'선택한 ' + eduIndexes.length + '개의 교육을 삭제하시겠습니까?',
+			'양육 삭제',
+			'선택한 ' + eduIndexes.length + '개의 양육을 삭제하시겠습니까?',
 			function () {
 				deleteMultipleEdu(eduIndexes);
 			}
@@ -1246,7 +1246,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 여러 교육 삭제
+	 * 여러 양육 삭제
 	 */
 	function deleteMultipleEdu(eduIndexes) {
 		showSpinner();
@@ -1264,13 +1264,13 @@ $(document).ready(function () {
 					loadEduList();
 					refreshCategoryTree();
 				} else {
-					showToast(response.message || '교육 삭제에 실패했습니다.', 'error');
+					showToast(response.message || '양육 삭제에 실패했습니다.', 'error');
 				}
 			},
 			error: function (xhr, status, error) {
-				console.error('교육 삭제 실패:', error);
+				console.error('양육 삭제 실패:', error);
 				hideSpinner();
-				showToast('교육 삭제 중 오류가 발생했습니다.', 'error');
+				showToast('양육 삭제 중 오류가 발생했습니다.', 'error');
 			}
 		});
 	}
@@ -1503,7 +1503,7 @@ $(document).ready(function () {
 	function bindApplicantEvents() {
 		// 신청자 관리 버튼 클릭
 		$('#btnManageApplicant').on('click', function () {
-			// 체크된 교육 확인
+			// 체크된 양육 확인
 			var checkedEdu = [];
 			$('.edu-checkbox:checked').each(function () {
 				checkedEdu.push({
@@ -1513,12 +1513,12 @@ $(document).ready(function () {
 			});
 
 			if (checkedEdu.length === 0) {
-				showToast('신청자를 관리할 교육을 선택해주세요.', 'warning');
+				showToast('신청자를 관리할 양육을 선택해주세요.', 'warning');
 				return;
 			}
 
 			if (checkedEdu.length > 1) {
-				showToast('신청자 관리는 하나의 교육만 선택해주세요.', 'warning');
+				showToast('신청자 관리는 하나의 양육만 선택해주세요.', 'warning');
 				return;
 			}
 
@@ -1632,7 +1632,7 @@ $(document).ready(function () {
 	 * 신청자 관리 Offcanvas 열기
 	 */
 	function openApplicantOffcanvas(eduIdx) {
-		// 교육명 조회
+		// 양육명 조회
 		var eduName = '';
 		if (eduGrid) {
 			var data = eduGrid.pqGrid("option", "dataModel.data");
@@ -1741,7 +1741,7 @@ $(document).ready(function () {
 	function getStatusBadge(status) {
 		var badgeClass = 'bg-secondary';
 		if (status === '신청') badgeClass = 'bg-primary';
-		else if (status === '교육중') badgeClass = 'bg-warning text-dark';
+		else if (status === '양육중') badgeClass = 'bg-warning text-dark';
 		else if (status === '수료') badgeClass = 'bg-success';
 
 		return '<span class="badge ' + badgeClass + '">' + status + '</span>';
@@ -1751,7 +1751,7 @@ $(document).ready(function () {
 	 * 신청자 추가 모달 열기
 	 */
 	function openAddApplicantModal() {
-		// 교육명 조회
+		// 양육명 조회
 		var eduName = '';
 		if (eduGrid && currentApplicantEduIdx) {
 			var data = eduGrid.pqGrid("option", "dataModel.data");
@@ -1816,7 +1816,7 @@ $(document).ready(function () {
 	 * 신청자 수정 모달 열기
 	 */
 	function openEditApplicantModal(applicant) {
-		// 교육명 조회
+		// 양육명 조회
 		var eduName = '';
 		if (eduGrid && currentApplicantEduIdx) {
 			var data = eduGrid.pqGrid("option", "dataModel.data");
@@ -2008,7 +2008,7 @@ $(document).ready(function () {
 	/**
 	 * 파일 위치: assets/js/education.js
 	 * 역할: 신청자 그리드 초기화 함수 수정
-	 * - 체크박스 방식을 교육관리 pqGrid 방식으로 변경
+	 * - 체크박스 방식을 양육관리 pqGrid 방식으로 변경
 	 * - 전체 체크박스 추가
 	 * - 관리 필드 제거
 	 * - 신청자명에 text-primary 적용 및 클릭 시 수정 모달 표시
@@ -2217,7 +2217,7 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 선택된 교육 정보 가져오기
+	 * 선택된 양육 정보 가져오기
 	 */
 	function getSelectedEdu() {
 		if (!eduGrid) return null;
@@ -2244,14 +2244,14 @@ $(document).ready(function () {
 	 */
 	function openExternalUrlModal() {
 		if (!currentApplicantEduIdx) {
-			showToast('교육 정보가 없습니다.', 'warning');
+			showToast('양육 정보가 없습니다.', 'warning');
 			return;
 		}
 
 		// 외부 공개 여부 확인
 		var eduInfo = getEduInfoByIdx(currentApplicantEduIdx);
 		if (eduInfo.public_yn !== 'Y') {
-			showToast('외부 공개로 설정된 교육만 URL을 생성할 수 있습니다.', 'warning');
+			showToast('외부 공개로 설정된 양육만 URL을 생성할 수 있습니다.', 'warning');
 			return;
 		}
 
@@ -2295,7 +2295,7 @@ $(document).ready(function () {
 	 */
 	function generateExternalUrl() {
 		if (!currentExternalEduIdx) {
-			showToast('교육 정보가 없습니다.', 'error');
+			showToast('양육 정보가 없습니다.', 'error');
 			return;
 		}
 

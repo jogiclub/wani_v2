@@ -1,7 +1,7 @@
 <?php
 /**
  * 파일 위치: application/views/education.php
- * 역할: 교육관리 화면 레이아웃 (Offcanvas 적용)
+ * 역할: 양육관리 화면 레이아웃 (Offcanvas 적용)
  */
 $this->load->view('header');
 ?>
@@ -21,12 +21,12 @@ $this->load->view('header');
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">EDUCATION</a></li>
-			<li class="breadcrumb-item active">교육관리</li>
+			<li class="breadcrumb-item active">양육관리</li>
 		</ol>
 	</nav>
 
 	<div class="col-12 my-1 d-flex align-items-center justify-content-between">
-		<h3 class="page-title mb-0">교육관리</h3>
+		<h3 class="page-title mb-0">양육관리</h3>
 
 	</div>
 
@@ -51,7 +51,7 @@ $this->load->view('header');
 			</div>
 		</div>
 
-		<!-- 오른쪽: 교육 목록 -->
+		<!-- 오른쪽: 양육 목록 -->
 		<div class="split-pane" id="right-pane">
 			<div class="card">
 				<div class="card-header">
@@ -67,7 +67,7 @@ $this->load->view('header');
 						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
 
 							<div class="input-group input-group-sm" style="max-width: 300px;">
-								<input type="text" class="form-control" placeholder="교육명 검색" id="searchKeyword">
+								<input type="text" class="form-control" placeholder="양육명 검색" id="searchKeyword">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="btnSearch">
 									<i class="bi bi-search"></i> 검색
 								</button>
@@ -77,7 +77,7 @@ $this->load->view('header');
 						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
 							<div class="btn-group">
 								<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
-									<i class="bi bi-plus-lg"></i> 교육 등록
+									<i class="bi bi-plus-lg"></i> 양육 등록
 								</button>
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelected">
 									<i class="bi bi-trash"></i> 선택 삭제
@@ -98,7 +98,7 @@ $this->load->view('header');
 							<div class="spinner-border text-primary mb-2" role="status">
 								<span class="visually-hidden">로딩 중...</span>
 							</div>
-							<div class="small text-muted">교육 목록 로딩 중...</div>
+							<div class="small text-muted">양육 목록 로딩 중...</div>
 						</div>
 					</div>
 					<!-- ParamQuery Grid가 여기에 렌더링됩니다 -->
@@ -109,10 +109,10 @@ $this->load->view('header');
 	</div>
 </div>
 
-<!-- 교육 등록/수정 Offcanvas -->
+<!-- 양육 등록/수정 Offcanvas -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="eduOffcanvas" aria-labelledby="eduOffcanvasLabel" style="width: 600px;">
 	<div class="offcanvas-header">
-		<h5 class="offcanvas-title" id="eduOffcanvasTitle">교육 등록</h5>
+		<h5 class="offcanvas-title" id="eduOffcanvasTitle">양육 등록</h5>
 		<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
 	</div>
 	<div class="offcanvas-body">
@@ -124,14 +124,14 @@ $this->load->view('header');
 
 			<div class="row mb-3">
 				<div class="col-6 ">
-					<label class="form-label">교육카테고리 <span class="text-danger">*</span></label>
+					<label class="form-label">양육카테고리 <span class="text-danger">*</span></label>
 					<select class="form-select" id="eduCategoryCode" name="category_code" required>
 						<option value="">카테고리 선택</option>
 					</select>
 				</div>
 
 				<div class="col-6">
-					<label class="form-label">교육명 <span class="text-danger">*</span></label>
+					<label class="form-label">양육명 <span class="text-danger">*</span></label>
 					<input type="text" class="form-control" id="eduName" name="edu_name" placeholder="예: 하나님께 받는 복" required>
 				</div>
 			</div>
@@ -140,11 +140,11 @@ $this->load->view('header');
 
 			<div class="row mb-3">
 				<div class="col-6">
-					<label class="form-label">교육 시작일</label>
+					<label class="form-label">양육 시작일</label>
 					<input type="text" class="form-control" id="eduStartDate" name="edu_start_date" placeholder="시작일 선택">
 				</div>
 				<div class="col-6">
-					<label class="form-label">교육 종료일</label>
+					<label class="form-label">양육 종료일</label>
 					<input type="text" class="form-control" id="eduEndDate" name="edu_end_date" placeholder="종료일 선택">
 				</div>
 			</div>
@@ -325,7 +325,7 @@ $this->load->view('header');
 					<input type="number" class="form-control" id="eduCapacity" name="edu_capacity" placeholder="정원 입력 (0: 무제한)" min="0">
 				</div>
 				<div class="col-6">
-					<label class="form-label">교육지역</label>
+					<label class="form-label">양육지역</label>
 					<input type="text" class="form-control" id="eduLocation" name="edu_location" placeholder="예: 경기 광명 지역">
 				</div>
 			</div>
@@ -402,7 +402,7 @@ $this->load->view('header');
 				<div class="col-6">
 					<label class="form-label">ZOOM URL</label>
 					<input type="text" class="form-control" id="eduZoomUrl" name="zoom_url" placeholder="https://zoom.us/j/...">
-					<div class="form-text">온라인 교육 시 ZOOM 링크를 입력하세요</div>
+					<div class="form-text">온라인 양육 시 ZOOM 링크를 입력하세요</div>
 				</div>
 
 				<div class="col-6">
@@ -433,8 +433,8 @@ $this->load->view('header');
 			</div>
 
 			<div class="mb-3">
-				<label class="form-label">교육 설명</label>
-				<textarea class="form-control" id="eduDesc" name="edu_desc" rows="4" placeholder="교육에 대한 상세 설명을 입력하세요"></textarea>
+				<label class="form-label">양육 설명</label>
+				<textarea class="form-control" id="eduDesc" name="edu_desc" rows="4" placeholder="양육에 대한 상세 설명을 입력하세요"></textarea>
 			</div>
 		</form>
 	</div>
@@ -574,7 +574,7 @@ $this->load->view('header');
 					<select class="form-select" id="editApplicantStatus">
 						<option value="신청">신청</option>
 						<option value="신청(외부)">신청(외부)</option>
-						<option value="교육중">교육중</option>
+						<option value="양육중">양육중</option>
 						<option value="수료">수료</option>
 					</select>
 				</div>
@@ -601,7 +601,7 @@ $this->load->view('header');
 					<select class="form-select" id="bulkStatusSelect">
 						<option value="신청">신청</option>
 						<option value="신청(외부)">신청(외부)</option>
-						<option value="교육중">교육중</option>
+						<option value="양육중">양육중</option>
 						<option value="수료">수료</option>
 					</select>
 				</div>
@@ -633,25 +633,25 @@ $this->load->view('header');
 		</div>
 	</div>
 </div>
-<!-- 외부URL로 교육신청 모달 -->
+<!-- 외부URL로 양육신청 모달 -->
 <div class="modal fade" id="externalUrlModal" tabindex="-1" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title" id="externalUrlModalLabel">
-					<i class="bi bi-link-45deg"></i> 외부URL로 교육신청
+					<i class="bi bi-link-45deg"></i> 외부URL로 양육신청
 				</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
 				<div class="alert alert-info mb-3">
 					<small>
-						아래의 URL을 외부 신청자에게 전달하여 교육 신청을 받을 수 있습니다.
+						아래의 URL을 외부 신청자에게 전달하여 양육 신청을 받을 수 있습니다.
 					</small>
 				</div>
 
 				<div class="border rounded p-3 bg-light">
-					<p class="mb-2"><strong>교육 신청 URL</strong></p>
+					<p class="mb-2"><strong>양육 신청 URL</strong></p>
 					<div class="input-group mb-2">
 						<input type="text" class="form-control" id="externalUrlInput" readonly>
 						<button class="btn btn-outline-secondary" type="button" id="btnRefreshExternalUrl">

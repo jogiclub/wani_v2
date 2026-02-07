@@ -1,7 +1,7 @@
 <?php
 /**
  * 파일 위치: application/models/Education_model.php
- * 역할: 교육관리 데이터베이스 작업 처리
+ * 역할: 양육관리 데이터베이스 작업 처리
  */
 
 class Education_model extends CI_Model
@@ -36,7 +36,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 카테고리별 교육 개수 조회
+	 * 카테고리별 양육 개수 조회
 	 */
 	public function get_category_edu_counts($org_id)
 	{
@@ -58,7 +58,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 전체 교육 개수 조회
+	 * 전체 양육 개수 조회
 	 */
 	public function get_total_edu_count($org_id)
 	{
@@ -70,7 +70,7 @@ class Education_model extends CI_Model
 
 	/**
 	 * 파일 위치: application/models/Education_model.php
-	 * 역할: 교육 목록 조회 - 신청자 수 포함
+	 * 역할: 양육 목록 조회 - 신청자 수 포함
 	 */
 	public function get_edu_list_by_org($org_id)
 	{
@@ -86,7 +86,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 카테고리별 교육 목록 조회
+	 * 카테고리별 양육 목록 조회
 	 */
 	public function get_edu_list_by_category($org_id, $category_code)
 	{
@@ -104,7 +104,7 @@ class Education_model extends CI_Model
 
 	/**
 	 * 파일 위치: application/models/Education_model.php
-	 * 역할: 교육 목록 데이터 가공 - implode 오류 수정
+	 * 역할: 양육 목록 데이터 가공 - implode 오류 수정
 	 */
 
 	private function process_edu_list($edu_list)
@@ -135,7 +135,7 @@ class Education_model extends CI_Model
 				? implode(', ', $edu['edu_times'])
 				: '';
 
-			// 교육 기간 문자열 생성
+			// 양육 기간 문자열 생성
 			if (!empty($edu['edu_start_date']) && $edu['edu_start_date'] != '0000-00-00') {
 				$start_date = $edu['edu_start_date'];
 				$end_date = !empty($edu['edu_end_date']) && $edu['edu_end_date'] != '0000-00-00'
@@ -173,7 +173,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 교육 상세 조회
+	 * 양육 상세 조회
 	 */
 	public function get_edu_by_idx($edu_idx)
 	{
@@ -197,7 +197,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 교육 등록
+	 * 양육 등록
 	 */
 	public function insert_edu($edu_data)
 	{
@@ -213,7 +213,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 교육 수정
+	 * 양육 수정
 	 */
 	public function update_edu($edu_idx, $edu_data)
 	{
@@ -226,7 +226,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 교육 삭제 (소프트 삭제)
+	 * 양육 삭제 (소프트 삭제)
 	 */
 	public function delete_edu($edu_idx)
 	{
@@ -317,9 +317,9 @@ class Education_model extends CI_Model
 		$result = $this->db->insert('wb_edu_category', $insert_data);
 
 		if ($result) {
-			log_message('info', "교육 기본 카테고리 생성 완료 - org_id: {$org_id}");
+			log_message('info', "양육 기본 카테고리 생성 완료 - org_id: {$org_id}");
 		} else {
-			log_message('error', "교육 기본 카테고리 생성 실패 - org_id: {$org_id}");
+			log_message('error', "양육 기본 카테고리 생성 실패 - org_id: {$org_id}");
 		}
 
 		return $result;
@@ -453,7 +453,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 교육별 신청자 수 조회
+	 * 양육별 신청자 수 조회
 	 */
 	public function get_applicant_count($edu_idx)
 	{
@@ -469,7 +469,7 @@ class Education_model extends CI_Model
 	 */
 	public function save_external_url($data)
 	{
-		// 기존 URL이 있으면 삭제 (하나의 교육당 하나의 활성 URL만 유지)
+		// 기존 URL이 있으면 삭제 (하나의 양육당 하나의 활성 URL만 유지)
 		$this->db->where('edu_idx', $data['edu_idx']);
 		$this->db->delete('wb_edu_external_url');
 
@@ -496,7 +496,7 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 외부 URL 정보 조회 (교육 인덱스만으로)
+	 * 외부 URL 정보 조회 (양육 인덱스만으로)
 	 */
 	public function get_external_url_by_edu($edu_idx)
 	{

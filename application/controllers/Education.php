@@ -19,7 +19,7 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 교육관리 메인 페이지
+	 * 양육관리 메인 페이지
 	 */
 	public function index()
 	{
@@ -39,7 +39,7 @@ class Education extends My_Controller
 
 		// 권한 확인
 		if (!$this->check_org_access($currentOrgId)) {
-			$this->handle_access_denied('해당 조직의 교육을 관리할 권한이 없습니다.');
+			$this->handle_access_denied('해당 조직의 양육을 관리할 권한이 없습니다.');
 			return;
 		}
 
@@ -113,7 +113,7 @@ class Education extends My_Controller
 			}
 		}
 
-		// 교육 개수 카운트
+		// 양육 개수 카운트
 		$category_counts = $this->Education_model->get_category_edu_counts($active_org_id);
 
 		// Fancytree 노드 구성
@@ -155,7 +155,7 @@ class Education extends My_Controller
 			// 카테고리 노드들
 			$category_nodes = $build_fancytree_nodes($category_data);
 
-			// 전체 교육 개수
+			// 전체 양육 개수
 			$total_edu_count = $this->Education_model->get_total_edu_count($active_org_id);
 
 			// 루트 노드 (조직) - get_org_detail_by_id 사용
@@ -182,7 +182,7 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 교육 목록 조회 API
+	 * 양육 목록 조회 API
 	 */
 	public function get_edu_list()
 	{
@@ -208,10 +208,10 @@ class Education extends My_Controller
 		$edu_list = array();
 
 		if ($type === 'org') {
-			// 전체 교육 목록
+			// 전체 양육 목록
 			$edu_list = $this->Education_model->get_edu_list_by_org($org_id);
 		} else if ($type === 'category') {
-			// 카테고리별 교육 목록
+			// 카테고리별 양육 목록
 			$edu_list = $this->Education_model->get_edu_list_by_category($org_id, $category_code);
 		}
 
@@ -223,7 +223,7 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 교육 상세 조회 API
+	 * 양육 상세 조회 API
 	 */
 	public function get_edu_detail()
 	{
@@ -234,14 +234,14 @@ class Education extends My_Controller
 		$edu_idx = $this->input->post('edu_idx');
 
 		if (!$edu_idx) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보가 필요합니다.'));
 			return;
 		}
 
 		$edu_detail = $this->Education_model->get_edu_by_idx($edu_idx);
 
 		if (!$edu_detail) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보를 찾을 수 없습니다.'));
 			return;
 		}
 
@@ -261,7 +261,7 @@ class Education extends My_Controller
 
 	/**
 	 * 파일 위치: application/controllers/Education.php
-	 * 역할: 교육 등록/수정 - 정원, 계좌정보 처리 추가
+	 * 역할: 양육 등록/수정 - 정원, 계좌정보 처리 추가
 	 */
 	public function insert_edu()
 	{
@@ -313,9 +313,9 @@ class Education extends My_Controller
 				}
 			}
 
-			echo json_encode(array('success' => true, 'message' => '교육이 등록되었습니다.', 'edu_idx' => $edu_idx));
+			echo json_encode(array('success' => true, 'message' => '양육이 등록되었습니다.', 'edu_idx' => $edu_idx));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '교육 등록에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 등록에 실패했습니다.'));
 		}
 	}
 
@@ -359,11 +359,11 @@ class Education extends My_Controller
 		$edu_idx = $this->input->post('edu_idx');
 
 		if (!$edu_idx) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보가 필요합니다.'));
 			return;
 		}
 
-		// 교육 정보 조회하여 권한 확인
+		// 양육 정보 조회하여 권한 확인
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
 		if (!$edu || !$this->check_org_access($edu['org_id'])) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
@@ -395,7 +395,7 @@ class Education extends My_Controller
 			return;
 		}
 
-		// 교육 정보 조회하여 권한 확인
+		// 양육 정보 조회하여 권한 확인
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
 		if (!$edu || !$this->check_org_access($edu['org_id'])) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
@@ -550,7 +550,7 @@ class Education extends My_Controller
 			return;
 		}
 
-		// 교육 정보 조회하여 권한 확인
+		// 양육 정보 조회하여 권한 확인
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
 		if (!$edu || !$this->check_org_access($edu['org_id'])) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
@@ -585,7 +585,7 @@ class Education extends My_Controller
 
 	/**
 	 * 파일 위치: application/controllers/Education.php
-	 * 역할: 교육 수정 - 정원, 계좌정보 처리 추가
+	 * 역할: 양육 수정 - 정원, 계좌정보 처리 추가
 	 */
 	public function update_edu()
 	{
@@ -640,9 +640,9 @@ class Education extends My_Controller
 		$result = $this->Education_model->update_edu($edu_idx, $edu_data);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '교육이 수정되었습니다.'));
+			echo json_encode(array('success' => true, 'message' => '양육이 수정되었습니다.'));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '교육 수정에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 수정에 실패했습니다.'));
 		}
 	}
 
@@ -766,7 +766,7 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 교육 삭제 시 이미지도 함께 삭제하도록 수정
+	 * 양육 삭제 시 이미지도 함께 삭제하도록 수정
 	 */
 	public function delete_edu()
 	{
@@ -777,15 +777,15 @@ class Education extends My_Controller
 		$edu_idx = $this->input->post('edu_idx');
 
 		if (!$edu_idx) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보가 필요합니다.'));
 			return;
 		}
 
-		// 기존 교육 정보 조회
+		// 기존 양육 정보 조회
 		$existing_edu = $this->Education_model->get_edu_by_idx($edu_idx);
 
 		if (!$existing_edu) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보를 찾을 수 없습니다.'));
 			return;
 		}
 
@@ -806,14 +806,14 @@ class Education extends My_Controller
 		$result = $this->Education_model->delete_edu($edu_idx);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '교육이 삭제되었습니다.'));
+			echo json_encode(array('success' => true, 'message' => '양육이 삭제되었습니다.'));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '교육 삭제에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 삭제에 실패했습니다.'));
 		}
 	}
 
 	/**
-	 * 여러 교육 삭제 - 이미지도 함께 삭제
+	 * 여러 양육 삭제 - 이미지도 함께 삭제
 	 */
 	public function delete_multiple_edu()
 	{
@@ -824,7 +824,7 @@ class Education extends My_Controller
 		$edu_indexes = $this->input->post('edu_indexes');
 
 		if (!$edu_indexes || !is_array($edu_indexes)) {
-			echo json_encode(array('success' => false, 'message' => '삭제할 교육 정보가 필요합니다.'));
+			echo json_encode(array('success' => false, 'message' => '삭제할 양육 정보가 필요합니다.'));
 			return;
 		}
 
@@ -832,7 +832,7 @@ class Education extends My_Controller
 		$fail_count = 0;
 
 		foreach ($edu_indexes as $edu_idx) {
-			// 교육 정보 조회
+			// 양육 정보 조회
 			$existing_edu = $this->Education_model->get_edu_by_idx($edu_idx);
 
 			if (!$existing_edu) {
@@ -865,13 +865,13 @@ class Education extends My_Controller
 		}
 
 		if ($success_count > 0) {
-			$message = $success_count . '개의 교육이 삭제되었습니다.';
+			$message = $success_count . '개의 양육이 삭제되었습니다.';
 			if ($fail_count > 0) {
 				$message .= ' (' . $fail_count . '개 실패)';
 			}
 			echo json_encode(array('success' => true, 'message' => $message));
 		} else {
-			echo json_encode(array('success' => false, 'message' => '교육 삭제에 실패했습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 삭제에 실패했습니다.'));
 		}
 	}
 
@@ -920,7 +920,7 @@ class Education extends My_Controller
 // ========================================
 
 	/**
-	 * 외부 URL 생성 (교육 신청용)
+	 * 외부 URL 생성 (양육 신청용)
 	 */
 	public function generate_external_url()
 	{
@@ -931,14 +931,14 @@ class Education extends My_Controller
 		$edu_idx = $this->input->post('edu_idx');
 
 		if (!$edu_idx) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보가 필요합니다.'));
 			return;
 		}
 
-		// 교육 정보 조회
+		// 양육 정보 조회
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
 		if (!$edu) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보를 찾을 수 없습니다.'));
 			return;
 		}
 
@@ -950,7 +950,7 @@ class Education extends My_Controller
 
 		// 외부 공개 여부 확인
 		if ($edu['public_yn'] !== 'Y') {
-			echo json_encode(array('success' => false, 'message' => '외부 공개로 설정된 교육만 URL을 생성할 수 있습니다.'));
+			echo json_encode(array('success' => false, 'message' => '외부 공개로 설정된 양육만 URL을 생성할 수 있습니다.'));
 			return;
 		}
 
@@ -1002,16 +1002,16 @@ class Education extends My_Controller
 			return;
 		}
 
-		// 교육 정보 조회
+		// 양육 정보 조회
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
 		if (!$edu || $edu['del_yn'] === 'Y') {
-			show_error('교육 정보를 찾을 수 없습니다.', 404);
+			show_error('양육 정보를 찾을 수 없습니다.', 404);
 			return;
 		}
 
 		// 외부 공개 확인
 		if ($edu['public_yn'] !== 'Y') {
-			show_error('공개되지 않은 교육입니다.', 404);
+			show_error('공개되지 않은 양육입니다.', 404);
 			return;
 		}
 
@@ -1121,10 +1121,10 @@ class Education extends My_Controller
 			return;
 		}
 
-		// 교육 정보 조회
+		// 양육 정보 조회
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
 		if (!$edu || $edu['del_yn'] === 'Y' || $edu['public_yn'] !== 'Y') {
-			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보를 찾을 수 없습니다.'));
 			return;
 		}
 
@@ -1180,7 +1180,7 @@ class Education extends My_Controller
 	}
 
 	/**
-	 * 외부 교육 수료 처리
+	 * 외부 양육 수료 처리
 	 */
 	public function complete_external_education()
 	{
@@ -1221,7 +1221,7 @@ class Education extends My_Controller
 		if ($this->Education_model->update_applicant($applicant_idx, $update_data)) {
 			echo json_encode(array(
 				'success' => true,
-				'message' => '교육이 수료되었습니다.'
+				'message' => '양육이 수료되었습니다.'
 			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '수료 처리 중 오류가 발생했습니다.'));
@@ -1241,14 +1241,14 @@ class Education extends My_Controller
 		$edu_idx = $this->input->post('edu_idx');
 
 		if (!$edu_idx) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보가 필요합니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보가 필요합니다.'));
 			return;
 		}
 
-		// 교육 정보 조회
+		// 양육 정보 조회
 		$edu = $this->Education_model->get_edu_by_idx($edu_idx);
 		if (!$edu) {
-			echo json_encode(array('success' => false, 'message' => '교육 정보를 찾을 수 없습니다.'));
+			echo json_encode(array('success' => false, 'message' => '양육 정보를 찾을 수 없습니다.'));
 			return;
 		}
 

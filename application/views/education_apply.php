@@ -5,7 +5,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><?php echo htmlspecialchars($edu['edu_name']); ?> - 교육 신청</title>
+	<title><?php echo htmlspecialchars($edu['edu_name']); ?> - 양육 신청</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" integrity="sha512-jnSuA4Ss2PkkikSOLtYs8BlYIeeIK1h99ty4YfvRPAlzr377vr3CXDb7sb7eEEBYjDtcYj+AjBH3FLv5uSJuXg==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" integrity="sha512-dPXYcDub/aeb08c63jRq/k6GaKccl256JQy/AnOq7CAnEZ9FzSL9wSbcZkMp4R26vBsMLFYH4kQ67/bbV8XaCQ==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 	<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -172,23 +172,23 @@
 							 class="poster-img">
 					<?php endif; ?>
 
-					<!-- 교육 카테고리 -->
+					<!-- 양육 카테고리 -->
 					<?php if (!empty($edu['category_name'])): ?>
 						<div class="mb-2">
 							<span class="badge bg-secondary badge-info"><?php echo htmlspecialchars($edu['category_name']); ?></span>
 						</div>
 					<?php endif; ?>
 
-					<!-- 교육명 -->
+					<!-- 양육명 -->
 					<h2 class="mb-4"><?php echo htmlspecialchars($edu['edu_name']); ?></h2>
 
-					<!-- 교육 정보 -->
+					<!-- 양육 정보 -->
 					<div class="row mb-4">
-						<!-- 교육 기간 -->
+						<!-- 양육 기간 -->
 						<?php if (!empty($edu['edu_start_date']) || !empty($edu['edu_end_date'])): ?>
 							<div class="col-12 col-lg-6">
 								<div class="info-row">
-									<div class="info-label"><i class="bi bi-calendar-range"></i> 교육 기간</div>
+									<div class="info-label"><i class="bi bi-calendar-range"></i> 양육 기간</div>
 									<div class="info-value">
 										<?php
 										if ($edu['edu_start_date'] && $edu['edu_end_date']) {
@@ -225,11 +225,11 @@
 							</div>
 						<?php endif; ?>
 
-						<!-- 교육 지역 -->
+						<!-- 양육 지역 -->
 						<?php if (!empty($edu['edu_location'])): ?>
 							<div class="col-12 col-lg-6">
 								<div class="info-row">
-									<div class="info-label"><i class="bi bi-geo-alt"></i> 교육 지역</div>
+									<div class="info-label"><i class="bi bi-geo-alt"></i> 양육 지역</div>
 									<div class="info-value"><?php echo htmlspecialchars($edu['edu_location']); ?></div>
 								</div>
 							</div>
@@ -282,7 +282,7 @@
 							</div>
 						<?php endif; ?>
 
-						<!-- ZOOM 주소 (교육 중이고 해당 요일/시간대인 경우만 표시) -->
+						<!-- ZOOM 주소 (양육 중이고 해당 요일/시간대인 경우만 표시) -->
 						<?php
 						$now = time();
 						$current_date = date('Y-m-d');
@@ -301,7 +301,7 @@
 						);
 						$current_day_name = $day_map[$current_day];
 
-						// 교육 기간 확인
+						// 양육 기간 확인
 						$start_date = $edu['edu_start_date'] ? $edu['edu_start_date'] : null;
 						$end_date = $edu['edu_end_date'] ? $edu['edu_end_date'] : null;
 
@@ -330,7 +330,7 @@
 								$days_array = array();
 							}
 
-							// 현재 요일이 교육 요일에 포함되는지 확인
+							// 현재 요일이 양육 요일에 포함되는지 확인
 							if (in_array($current_day_name, $days_array)) {
 								$is_correct_day = true;
 							}
@@ -356,7 +356,7 @@
 								$times_array = array();
 							}
 
-							// 현재 시간이 교육 시간대에 포함되는지 확인
+							// 현재 시간이 양육 시간대에 포함되는지 확인
 							foreach ($times_array as $time_slot) {
 								if ($time_slot === '오전' && $current_time >= '06:00' && $current_time < '12:00') {
 									$is_correct_time = true;
@@ -377,7 +377,7 @@
 							$is_correct_time = true;
 						}
 
-						// ZOOM URL이 있고, 교육 기간이고, 해당 요일이고, 해당 시간대인 경우에만 표시
+						// ZOOM URL이 있고, 양육 기간이고, 해당 요일이고, 해당 시간대인 경우에만 표시
 						$show_zoom = !empty($edu['zoom_url']) && $is_in_period && $is_correct_day && $is_correct_time;
 						?>
 						<?php if ($show_zoom): ?>
@@ -397,10 +397,10 @@
 
 					</div>
 
-					<!-- 교육 설명 -->
+					<!-- 양육 설명 -->
 					<?php if (!empty($edu['edu_desc'])): ?>
 						<div class="mb-4">
-							<h5 class="mb-3">교육 안내</h5>
+							<h5 class="mb-3">양육 안내</h5>
 							<div class="border rounded p-3 bg-light">
 								<?php echo nl2br(htmlspecialchars($edu['edu_desc'])); ?>
 							</div>
@@ -419,7 +419,7 @@
 								<p class="mb-2 ps-3">이름, 연락처</p>
 
 								<p class="mb-1"><strong>3. 개인정보 제공 목적</strong></p>
-								<p class="mb-2 ps-3">교육 신청 관리 및 연락을 위한 목적</p>
+								<p class="mb-2 ps-3">양육 신청 관리 및 연락을 위한 목적</p>
 
 								<p class="mb-1"><strong>4. 개인정보 보유 및 이용 기간</strong></p>
 								<p class="mb-0 ps-3">목적 달성 후 즉시 파기 (최대 1년)</p>
@@ -428,7 +428,7 @@
 							<p class="mb-0 text-muted small">
 								<i class="bi bi-info-circle"></i>
 								귀하는 위의 개인정보 제공에 대한 동의를 거부할 권리가 있으며,
-								동의를 거부할 경우 교육 신청이 제한될 수 있습니다.
+								동의를 거부할 경우 양육 신청이 제한될 수 있습니다.
 							</p>
 						</div>
 						<div class="form-check mt-3">
@@ -472,7 +472,7 @@
 	<div class="modal-dialog modal-xl">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title"><i class="bi bi-youtube"></i> 교육 영상 시청</h5>
+				<h5 class="modal-title"><i class="bi bi-youtube"></i> 양육 영상 시청</h5>
 			</div>
 			<div class="modal-body">
 				<div class="youtube-player-wrapper" id="youtubePlayerWrapper">
@@ -501,7 +501,7 @@
 				<div id="existingApplicantInfo" class="border rounded p-3 bg-light mb-3">
 					<!-- 신청 정보가 여기에 표시됩니다 -->
 				</div>
-				<p class="text-muted small mb-0">아래 버튼을 통해 교육에 참여하실 수 있습니다.</p>
+				<p class="text-muted small mb-0">아래 버튼을 통해 양육에 참여하실 수 있습니다.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
@@ -578,11 +578,11 @@
 						applicantIdx = response.applicant_idx;
 
 						if (eduData.youtubeUrl) {
-							// 교육 시간 확인
+							// 양육 시간 확인
 							var isValidTime = checkEducationTime();
 
 							if (isValidTime) {
-								showToast('신청이 완료되었습니다. 교육 영상을 시청해주세요.', 'success');
+								showToast('신청이 완료되었습니다. 양육 영상을 시청해주세요.', 'success');
 								// YouTube 모달 열기
 								openYoutubeModal(eduData.youtubeUrl);
 							} else {
@@ -692,7 +692,7 @@
 			case '신청(외부)':
 				badgeClass = 'bg-primary';
 				break;
-			case '교육중':
+			case '양육중':
 				badgeClass = 'bg-info';
 				break;
 			case '수료':
@@ -704,7 +704,7 @@
 	}
 
 	/**
-	 * 교육 시간 확인
+	 * 양육 시간 확인
 	 */
 	function checkEducationTime() {
 		return eduData.isInPeriod && eduData.isCorrectDay;
@@ -825,7 +825,7 @@
 	}
 
 	/**
-	 * 교육 수료 처리
+	 * 양육 수료 처리
 	 */
 	function completeEducation() {
 		if (!applicantIdx) {
@@ -843,7 +843,7 @@
 			dataType: 'json',
 			success: function(response) {
 				if (response.success) {
-					showToast('교육이 수료되었습니다. 수고하셨습니다!', 'success');
+					showToast('양육이 수료되었습니다. 수고하셨습니다!', 'success');
 
 					// 3초 후 모달 닫기 및 폼 초기화
 					setTimeout(function() {
