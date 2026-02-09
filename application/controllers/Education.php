@@ -101,7 +101,7 @@ class Education extends My_Controller
 		}
 
 		// 카테고리 데이터 조회
-		$category_data = $this->Education_model->get_category_tree($active_org_id);
+		$category_data = $this->Education_model->get_categories_as_tree($active_org_id);
 
 		// 카테고리가 없으면 기본 카테고리 생성
 		if (empty($category_data)) {
@@ -109,7 +109,7 @@ class Education extends My_Controller
 
 			if ($default_result) {
 				// 다시 카테고리 조회
-				$category_data = $this->Education_model->get_category_tree($active_org_id);
+				$category_data = $this->Education_model->get_categories_as_tree($active_org_id);
 			}
 		}
 

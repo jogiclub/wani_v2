@@ -1,5 +1,13 @@
 <?php $this->load->view('header'); ?>
 
+<?php
+$org_type = $this->session->userdata('org_type');
+$page_title = '회원관리';
+if ($org_type === 'meak' || $org_type === 'meakchurch') {
+    $page_title = '전도/세례/파송';
+}
+?>
+
 <!-- Member CSS -->
 <link rel="stylesheet" href="/assets/css/member.css?<?php echo WB_VERSION; ?>">
 
@@ -19,11 +27,11 @@
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">MEMBER</a></li>
-			<li class="breadcrumb-item active">회원관리</li>
+			<li class="breadcrumb-item active"><?php echo $page_title; ?></li>
 		</ol>
 	</nav>
 	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
-		<h3 class="page-title col-12 mb-0">회원관리</h3>
+		<h3 class="page-title col-12 mb-0"><?php echo $page_title; ?></h3>
 	</div>
 
 

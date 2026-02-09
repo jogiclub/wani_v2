@@ -15,7 +15,7 @@ class Education_model extends CI_Model
 	/**
 	 * 카테고리 트리 조회
 	 */
-	public function get_category_tree($org_id)
+	public function get_categories_as_tree($org_id)
 	{
 		$this->db->select('category_json');
 		$this->db->from('wb_edu_category');
