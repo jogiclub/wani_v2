@@ -69,6 +69,18 @@ class Education_model extends CI_Model
 	}
 
 	/**
+	 * 전체 양육 개수 조회 (모든 조직)
+	 */
+	public function get_total_edu_count_for_all()
+	{
+		$this->db->from('wb_edu e');
+		$this->db->join('wb_org o', 'e.org_id = o.org_id');
+		$this->db->where('e.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		return $this->db->count_all_results();
+	}
+
+	/**
 	 * 파일 위치: application/models/Education_model.php
 	 * 역할: 양육 목록 조회 - 신청자 수 포함
 	 */
@@ -334,7 +346,7 @@ class Education_model extends CI_Model
 	/**
 	 * 신청자 목록 조회
 	 */
-	public function get_applicant_list($edu_idx)
+	public function get_applicants_by_edu($edu_idx)
 	{
 		$this->db->select('*');
 		$this->db->from('wb_edu_applicant');
@@ -515,4 +527,129 @@ class Education_model extends CI_Model
 		return null;
 	}
 
+	/**
+	 * 특정 카테고리에 직접 속한 조직 조회
+	 */
+	public function get_orgs_by_category_direct($category_idx)
+	{
+		$this->db->select('org_id, org_name');
+		$this->db->from('wb_org');
+		$this->db->where('category_idx', $category_idx);
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('org_name', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 미분류 조직 조회
+	 */
+	public function get_uncategorized_orgs()
+	{
+		$this->db->select('org_id, org_name');
+		$this->db->from('wb_org');
+		$this->db->where('del_yn', 'N');
+		$this->db->group_start();
+		$this->db->where('category_idx IS NULL');
+		$this->db->or_where('category_idx', 0);
+		$this->db->group_end();
+		$this->db->order_by('org_name', 'ASC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 조직별 양육 수 조회
+	 */
+	public function get_org_edu_count($org_id)
+	{
+		$this->db->from('wb_edu');
+		$this->db->where('org_id', $org_id);
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 카테고리의 전체 양육 수 조회 (하위 카테고리 포함)
+	 */
+	public function get_category_edu_count($category_idx)
+	{
+		$this->load->model('Org_category_model');
+		$category_ids = $this->Org_category_model->get_category_with_descendants_public(array($category_idx));
+
+		if (empty($category_ids)) {
+			return 0;
+		}
+
+		$this->db->from('wb_edu e');
+		$this->db->join('wb_org o', 'e.org_id = o.org_id');
+		$this->db->where('e.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where_in('o.category_idx', $category_ids);
+
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 미분류 조직의 양육 수 조회
+	 */
+	public function get_uncategorized_edu_count()
+	{
+		$this->db->from('wb_edu e');
+		$this->db->join('wb_org o', 'e.org_id = o.org_id');
+		$this->db->where('e.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->group_start();
+		$this->db->where('o.category_idx IS NULL');
+		$this->db->or_where('o.category_idx', 0);
+		$this->db->group_end();
+
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 카테고리 목록 기반 전체 양육 수 조회
+	 */
+	public function get_total_edu_count_by_categories($category_ids)
+	{
+		if (empty($category_ids)) {
+			return 0;
+		}
+		$this->db->from('wb_edu e');
+		$this->db->join('wb_org o', 'e.org_id = o.org_id');
+		$this->db->where('e.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where_in('o.category_idx', $category_ids);
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * 카테고리별 양육 목록 조회
+	 */
+	public function get_edu_list_by_categories($category_ids)
+	{
+		$this->db->select('e.*, o.org_name');
+		$this->db->from('wb_edu e');
+		$this->db->join('wb_org o', 'e.org_id = o.org_id');
+		$this->db->where('e.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->where_in('o.category_idx', $category_ids);
+		$this->db->order_by('e.regi_date', 'DESC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
+
+	/**
+	 * 전체 양육 목록 조회
+	 */
+	public function get_all_edu_list()
+	{
+		$this->db->select('e.*, o.org_name');
+		$this->db->from('wb_edu e');
+		$this->db->join('wb_org o', 'e.org_id = o.org_id');
+		$this->db->where('e.del_yn', 'N');
+		$this->db->where('o.del_yn', 'N');
+		$this->db->order_by('e.regi_date', 'DESC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 }

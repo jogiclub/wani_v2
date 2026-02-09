@@ -47,7 +47,7 @@ $this->load->view('mng/header');
 							<h5 class="mb-0 text-truncate" id="selectedNodeName">
 								<i class="bi bi-book"></i> 조직을 선택해주세요
 							</h5>
-							<small class="ms-3 text-muted">총 <span id="totalEduCount">0</span>개</small>
+							<small class="ms-3 text-muted">총 <span id="totalEduCount"><?php echo $total_edu_count; ?></span>개</small>
 						</div>
 					</div>
 				</div>

@@ -56,6 +56,7 @@ class Mng_education extends CI_Controller
 	public function index()
 	{
 		$data['user'] = $this->User_model->get_user_by_id($this->session->userdata('user_id'));
+		$data['total_edu_count'] = $this->Education_model->get_total_edu_count_for_all();
 		$this->load->view('mng/mng_education', $data);
 	}
 
@@ -117,7 +118,7 @@ class Mng_education extends CI_Controller
 			if (isset($node['data']) && $node['data']['type'] === 'category') {
 				// 해당 카테고리에 직접 속한 조직 조회
 				$category_idx = $node['data']['category_idx'];
-				$orgs = $this->get_orgs_by_category_direct($category_idx);
+				$orgs = $this->Education_model->get_orgs_by_category_direct($category_idx);
 
 				// 기존 children이 있으면 재귀 처리
 				$children = array();
@@ -127,7 +128,7 @@ class Mng_education extends CI_Controller
 
 				// 조직 노드 추가
 				foreach ($orgs as $org) {
-					$edu_count = $this->get_org_edu_count($org['org_id']);
+					$edu_count = $this->Education_model->get_org_edu_count($org['org_id']);
 					$children[] = array(
 						'key' => 'org_' . $org['org_id'],
 						'title' => $org['org_name'] . ' (' . $edu_count . '개)',
@@ -143,17 +144,17 @@ class Mng_education extends CI_Controller
 				}
 
 				// 카테고리의 양육 수 재계산 (하위 포함)
-				$category_edu_count = $this->get_category_edu_count($category_idx);
+				$category_edu_count = $this->Education_model->get_category_edu_count($category_idx);
 				$new_node['title'] = $node['data']['category_name'] . ' (' . $category_edu_count . '개)';
 				$new_node['children'] = $children;
 
 			} else if (isset($node['data']) && $node['data']['type'] === 'uncategorized') {
 				// 미분류 조직 처리
-				$orgs = $this->get_uncategorized_orgs();
+				$orgs = $this->Education_model->get_uncategorized_orgs();
 				$children = array();
 
 				foreach ($orgs as $org) {
-					$edu_count = $this->get_org_edu_count($org['org_id']);
+					$edu_count = $this->Education_model->get_org_edu_count($org['org_id']);
 					$children[] = array(
 						'key' => 'org_' . $org['org_id'],
 						'title' => $org['org_name'] . ' (' . $edu_count . '개)',
@@ -168,7 +169,7 @@ class Mng_education extends CI_Controller
 					);
 				}
 
-				$uncategorized_edu_count = $this->get_uncategorized_edu_count();
+				$uncategorized_edu_count = $this->Education_model->get_uncategorized_edu_count();
 				$new_node['title'] = '미분류 (' . $uncategorized_edu_count . '개)';
 				$new_node['folder'] = true;
 				$new_node['children'] = $children;
@@ -178,85 +179,6 @@ class Mng_education extends CI_Controller
 		}
 
 		return $result;
-	}
-
-	/**
-	 * 특정 카테고리에 직접 속한 조직 조회
-	 */
-	private function get_orgs_by_category_direct($category_idx)
-	{
-		$this->db->select('org_id, org_name');
-		$this->db->from('wb_org');
-		$this->db->where('category_idx', $category_idx);
-		$this->db->where('del_yn', 'N');
-		$this->db->order_by('org_name', 'ASC');
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
-	/**
-	 * 미분류 조직 조회
-	 */
-	private function get_uncategorized_orgs()
-	{
-		$this->db->select('org_id, org_name');
-		$this->db->from('wb_org');
-		$this->db->where('del_yn', 'N');
-		$this->db->group_start();
-		$this->db->where('category_idx IS NULL');
-		$this->db->or_where('category_idx', 0);
-		$this->db->group_end();
-		$this->db->order_by('org_name', 'ASC');
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
-	/**
-	 * 조직별 양육 수 조회
-	 */
-	private function get_org_edu_count($org_id)
-	{
-		$this->db->from('wb_education');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('del_yn', 'N');
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 카테고리의 전체 양육 수 조회 (하위 카테고리 포함)
-	 */
-	private function get_category_edu_count($category_idx)
-	{
-		$category_ids = $this->Org_category_model->get_category_with_descendants_public(array($category_idx));
-
-		if (empty($category_ids)) {
-			return 0;
-		}
-
-		$this->db->from('wb_education e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->where_in('o.category_idx', $category_ids);
-
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 미분류 조직의 양육 수 조회
-	 */
-	private function get_uncategorized_edu_count()
-	{
-		$this->db->from('wb_education e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->group_start();
-		$this->db->where('o.category_idx IS NULL');
-		$this->db->or_where('o.category_idx', 0);
-		$this->db->group_end();
-
-		return $this->db->count_all_results();
 	}
 
 	/**
@@ -272,23 +194,9 @@ class Mng_education extends CI_Controller
 
 		if (!empty($visible_categories)) {
 			$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
-
-			if (empty($category_ids)) {
-				$total_count = 0;
-			} else {
-				$this->db->from('wb_education e');
-				$this->db->join('wb_org o', 'e.org_id = o.org_id');
-				$this->db->where('e.del_yn', 'N');
-				$this->db->where('o.del_yn', 'N');
-				$this->db->where_in('o.category_idx', $category_ids);
-				$total_count = $this->db->count_all_results();
-			}
+			$total_count = $this->Education_model->get_total_edu_count_by_categories($category_ids);
 		} else {
-			$this->db->from('wb_education e');
-			$this->db->join('wb_org o', 'e.org_id = o.org_id');
-			$this->db->where('e.del_yn', 'N');
-			$this->db->where('o.del_yn', 'N');
-			$total_count = $this->db->count_all_results();
+			$total_count = $this->Education_model->get_total_edu_count_for_all();
 		}
 
 		header('Content-Type: application/json; charset=utf-8');
@@ -321,17 +229,17 @@ class Mng_education extends CI_Controller
 			$category_ids = $this->Org_category_model->get_category_with_descendants_public(array($category_idx));
 
 			if (!empty($category_ids)) {
-				$edu_list = $this->get_edu_list_by_categories($category_ids);
+				$edu_list = $this->Education_model->get_edu_list_by_categories($category_ids);
 			}
 		} else {
 			// 전체 양육 목록
 			if (!empty($visible_categories)) {
 				$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
 				if (!empty($category_ids)) {
-					$edu_list = $this->get_edu_list_by_categories($category_ids);
+					$edu_list = $this->Education_model->get_edu_list_by_categories($category_ids);
 				}
 			} else {
-				$edu_list = $this->get_all_edu_list();
+				$edu_list = $this->Education_model->get_all_edu_list();
 			}
 		}
 
@@ -340,37 +248,6 @@ class Mng_education extends CI_Controller
 			'data' => $edu_list,
 			'total_count' => count($edu_list)
 		));
-	}
-
-	/**
-	 * 카테고리별 양육 목록 조회
-	 */
-	private function get_edu_list_by_categories($category_ids)
-	{
-		$this->db->select('e.*, o.org_name');
-		$this->db->from('wb_education e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->where_in('o.category_idx', $category_ids);
-		$this->db->order_by('e.regi_date', 'DESC');
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
-	/**
-	 * 전체 양육 목록 조회
-	 */
-	private function get_all_edu_list()
-	{
-		$this->db->select('e.*, o.org_name');
-		$this->db->from('wb_education e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->order_by('e.regi_date', 'DESC');
-		$query = $this->db->get();
-		return $query->result_array();
 	}
 
 	/**
