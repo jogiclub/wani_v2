@@ -141,6 +141,15 @@ $(document).ready(function() {
             const days = edu.edu_days ? JSON.parse(edu.edu_days).join(', ') : '미정';
             const times = edu.edu_times ? JSON.parse(edu.edu_times).join(', ') : '미정';
             const posterImage = edu.poster_img ? `<img src="${escapeHtml(edu.poster_img)}" class="card-img-top" alt="포스터">` : '';
+            
+            let buttonHtml = '';
+            if (edu.access_code) {
+                const applyUrl = `/education/apply/${edu.org_id}/${edu.edu_idx}/${edu.access_code}`;
+                buttonHtml = `<a href="${applyUrl}" class="btn btn-primary btn-sm">신청하기</a>`;
+            } else {
+                buttonHtml = `<a href="/education/detail/${edu.edu_idx}" class="btn btn-secondary btn-sm">상세보기</a>`;
+            }
+
             const card = `
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="card h-100">
@@ -159,7 +168,7 @@ $(document).ready(function() {
                             </ul>
                         </div>
                         <div class="card-footer text-end">
-                            <a href="/education/detail/${edu.edu_idx}" class="btn btn-primary btn-sm">상세보기</a>
+                            ${buttonHtml}
                         </div>
                     </div>
                 </div>

@@ -50,9 +50,10 @@ class Public_education extends CI_Controller
 
     private function get_all_public_edu_list($search_params = array())
     {
-        $this->db->select('e.*, o.org_name');
+        $this->db->select('e.*, o.org_name, u.access_code');
         $this->db->from('wb_edu e');
         $this->db->join('wb_org o', 'e.org_id = o.org_id');
+        $this->db->join('wb_edu_external_url u', 'e.edu_idx = u.edu_idx AND u.expired_at > NOW()', 'left');
         $this->db->where('e.del_yn', 'N');
         $this->db->where('o.del_yn', 'N');
         $this->db->where('e.public_yn', 'Y');
