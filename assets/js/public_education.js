@@ -140,9 +140,11 @@ $(document).ready(function() {
         data.forEach(function(edu) {
             const days = edu.edu_days ? JSON.parse(edu.edu_days).join(', ') : '미정';
             const times = edu.edu_times ? JSON.parse(edu.edu_times).join(', ') : '미정';
+            const posterImage = edu.poster_img ? `<img src="${escapeHtml(edu.poster_img)}" class="card-img-top" alt="포스터">` : '';
             const card = `
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="card h-100">
+                        ${posterImage}
                         <div class="card-body">
                             <h5 class="card-title">${escapeHtml(edu.edu_name)}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">${escapeHtml(edu.org_name)}</h6>

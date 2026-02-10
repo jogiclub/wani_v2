@@ -1,8 +1,5 @@
 <?php
-/**
- * 파일 위치: application/models/Education_model.php
- * 역할: 양육관리 데이터베이스 작업 처리
- */
+defined('BASEPATH') or exit('No direct script access allowed');
 
 class Education_model extends CI_Model
 {
@@ -13,83 +10,79 @@ class Education_model extends CI_Model
 	}
 
 	/**
-	 * 카테고리 트리 조회
+	 * 공개 양육 목록 페이지 데이터 조회
 	 */
-	public function get_categories_as_tree($org_id)
+	public function get_public_education_data($edu_idx)
 	{
-		$this->db->select('category_json');
-		$this->db->from('wb_edu_category');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('category_type', 'edu');
+		if (empty($edu_idx)) {
+			return null;
+		}
+
+		$this->db->from('wb_edu');
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('del_yn', 'N');
 		$query = $this->db->get();
+		$education = $query->row();
 
-		if ($query->num_rows() > 0) {
-			$result = $query->row_array();
-			$category_json = json_decode($result['category_json'], true);
-
-			if (isset($category_json['categories']) && is_array($category_json['categories'])) {
-				return $category_json['categories'];
+		if ($education && !empty($education->poster_img)) {
+			// `poster_img`에 전체 URL이 포함되어 있지 않은 경우, `site_url`을 사용하여 전체 URL을 만들어줍니다.
+			if (!filter_var($education->poster_img, FILTER_VALIDATE_URL)) {
+				$education->poster_img = site_url($education->poster_img);
 			}
 		}
 
-		return array();
+		return $education;
 	}
 
 	/**
-	 * 카테고리별 양육 개수 조회
+	 * 양육 목록 조회
 	 */
-	public function get_category_edu_counts($org_id)
+	public function get_education_list($org_id, $params = array())
 	{
-		$this->db->select('category_code, COUNT(*) as count');
-		$this->db->from('wb_edu');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('del_yn', 'N');
-		$this->db->group_by('category_code');
-		$query = $this->db->get();
-
-		$counts = array();
-		foreach ($query->result_array() as $row) {
-			if (!empty($row['category_code'])) {
-				$counts[$row['category_code']] = (int)$row['count'];
-			}
-		}
-
-		return $counts;
-	}
-
-	/**
-	 * 전체 양육 개수 조회
-	 */
-	public function get_total_edu_count($org_id)
-	{
-		$this->db->from('wb_edu');
-		$this->db->where('org_id', $org_id);
-		$this->db->where('del_yn', 'N');
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 전체 양육 개수 조회 (모든 조직)
-	 */
-	public function get_total_edu_count_for_all()
-	{
+		$this->db->select('e.*, c.category_name, (SELECT COUNT(*) FROM wb_edu_applicant WHERE edu_idx = e.edu_idx AND del_yn = "N") as applicant_count');
 		$this->db->from('wb_edu e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 파일 위치: application/models/Education_model.php
-	 * 역할: 양육 목록 조회 - 신청자 수 포함
-	 */
-	public function get_edu_list_by_org($org_id)
-	{
-		$this->db->select('e.*, (SELECT COUNT(*) FROM wb_edu_applicant WHERE edu_idx = e.edu_idx AND del_yn = "N") as applicant_count');
-		$this->db->from('wb_edu e');
+		$this->db->join('wb_edu_category c', 'e.category_code = c.category_code', 'left');
 		$this->db->where('e.org_id', $org_id);
 		$this->db->where('e.del_yn', 'N');
+
+		// 검색 조건 추가
+		if (!empty($params['search_date'])) {
+			$this->db->where('e.edu_start_date <=', $params['search_date']);
+			$this->db->where('e.edu_end_date >=', $params['search_date']);
+		}
+		if (!empty($params['search_days'])) {
+			$day_conditions = array();
+			foreach ($params['search_days'] as $day) {
+				$day_conditions[] = "JSON_CONTAINS(e.edu_days, '\"" . $day . "\"')";
+			}
+			if (!empty($day_conditions)) {
+				$this->db->where('(' . implode(' OR ', $day_conditions) . ')');
+			}
+		}
+		if (!empty($params['search_times'])) {
+			$time_conditions = array();
+			foreach ($params['search_times'] as $time) {
+				$time_conditions[] = "JSON_CONTAINS(e.edu_times, '\"" . $time . "\"')";
+			}
+			if (!empty($time_conditions)) {
+				$this->db->where('(' . implode(' OR ', $time_conditions) . ')');
+			}
+		}
+		if (!empty($params['search_ages'])) {
+			$this->db->where_in('e.target_age', $params['search_ages']);
+		}
+		if (!empty($params['search_genders'])) {
+			$this->db->where_in('e.target_gender', $params['search_genders']);
+		}
+		if (!empty($params['search_keyword'])) {
+			$this->db->group_start();
+			$this->db->like('e.category_code', $params['search_keyword']);
+			$this->db->or_like('e.edu_place', $params['search_keyword']);
+			$this->db->or_like('e.edu_tutor', $params['search_keyword']);
+			$this->db->or_like('e.edu_name', $params['search_keyword']);
+			$this->db->group_end();
+		}
+
 		$this->db->order_by('e.edu_start_date', 'DESC');
 		$this->db->order_by('e.edu_idx', 'DESC');
 		$query = $this->db->get();
@@ -148,508 +141,183 @@ class Education_model extends CI_Model
 				: '';
 
 			// 양육 기간 문자열 생성
-			if (!empty($edu['edu_start_date']) && $edu['edu_start_date'] != '0000-00-00') {
-				$start_date = $edu['edu_start_date'];
-				$end_date = !empty($edu['edu_end_date']) && $edu['edu_end_date'] != '0000-00-00'
-					? $edu['edu_end_date']
-					: $start_date;
-				$edu['edu_period_str'] = $start_date . ' ~ ' . $end_date;
+			$edu['edu_period_str'] = $edu['edu_start_date'] . ' ~ ' . $edu['edu_end_date'];
+
+			// 썸네일 이미지 경로
+			if (!empty($edu['thumbnail_img'])) {
+				$edu['thumbnail_img'] = '/uploads/edu_img/' . $edu['edu_idx'] . '/' . $edu['thumbnail_img'];
 			} else {
-				$edu['edu_period_str'] = '';
+				$edu['thumbnail_img'] = '/assets/img/default_edu_thumbnail.png'; // 기본 이미지
 			}
-
-			// 인도자 연령대 문자열 변환
-			$age_map = array(
-				'10s' => '10대',
-				'20s' => '20대',
-				'30s' => '30대',
-				'40s' => '40대',
-				'50s' => '50대',
-				'60s' => '60대'
-			);
-			$edu['edu_leader_age_str'] = isset($age_map[$edu['edu_leader_age']])
-				? $age_map[$edu['edu_leader_age']]
-				: '';
-
-			// 인도자 성별 문자열 변환
-			$gender_map = array(
-				'male' => '남',
-				'female' => '여'
-			);
-			$edu['edu_leader_gender_str'] = isset($gender_map[$edu['edu_leader_gender']])
-				? $gender_map[$edu['edu_leader_gender']]
-				: '';
+            
+            // 포스터 이미지 경로
+            if (!empty($edu['poster_img'])) {
+                if (!filter_var($edu['poster_img'], FILTER_VALIDATE_URL)) {
+                    $edu['poster_img'] = site_url($edu['poster_img']);
+                }
+            }
 		}
-
 		return $edu_list;
 	}
 
+
 	/**
-	 * 양육 상세 조회
+	 * 양육 상세 정보 조회
 	 */
-	public function get_edu_by_idx($edu_idx)
+	public function get_education_detail($edu_idx)
 	{
-		$this->db->select('*');
-		$this->db->from('wb_edu');
-		$this->db->where('edu_idx', $edu_idx);
-		$this->db->where('del_yn', 'N');
+		$this->db->select('e.*, c.category_name');
+		$this->db->from('wb_edu e');
+		$this->db->join('wb_edu_category c', 'e.category_code = c.category_code', 'left');
+		$this->db->where('e.edu_idx', $edu_idx);
+		$this->db->where('e.del_yn', 'N');
 		$query = $this->db->get();
+		$edu = $query->row_array();
 
-		if ($query->num_rows() > 0) {
-			$edu = $query->row_array();
+		if ($edu) {
+			// JSON 디코딩
+			$edu['edu_days'] = json_decode($edu['edu_days'], true);
+			$edu['edu_times'] = json_decode($edu['edu_times'], true);
 
-			// JSON 필드 파싱
-			$edu['edu_days'] = !empty($edu['edu_days']) ? json_decode($edu['edu_days'], true) : array();
-			$edu['edu_times'] = !empty($edu['edu_times']) ? json_decode($edu['edu_times'], true) : array();
-
-			return $edu;
+			// 파일 목록 조회
+			$this->db->where('edu_idx', $edu_idx);
+			$this->db->where('del_yn', 'N');
+			$edu['files'] = $this->db->get('wb_edu_file')->result_array();
 		}
 
-		return null;
+		return $edu;
 	}
 
 	/**
-	 * 양육 등록
+	 * 양육 신청자 목록 조회
 	 */
-	public function insert_edu($edu_data)
+	public function get_applicant_list($edu_idx)
 	{
-		$insert_data = array_merge($edu_data, array(
-			'regi_date' => date('Y-m-d H:i:s')
-		));
+		$this->db->select('a.*, m.user_name, m.birth, m.gender, m.phone, m.email, d.dept_name');
+		$this->db->from('wb_edu_applicant a');
+		$this->db->join('wb_member m', 'a.user_id = m.user_id', 'left');
+		$this->db->join('wb_dept d', 'm.dept_code = d.dept_code', 'left');
+		$this->db->where('a.edu_idx', $edu_idx);
+		$this->db->where('a.del_yn', 'N');
+		$this->db->order_by('a.reg_date', 'DESC');
+		$query = $this->db->get();
+		return $query->result_array();
+	}
 
-		if ($this->db->insert('wb_edu', $insert_data)) {
+	/**
+	 * 양육 정보 저장 (등록/수정)
+	 */
+	public function save_education($data, $edu_idx = null)
+	{
+		// JSON 인코딩
+		if (isset($data['edu_days'])) {
+			$data['edu_days'] = json_encode($data['edu_days'], JSON_UNESCAPED_UNICODE);
+		}
+		if (isset($data['edu_times'])) {
+			$data['edu_times'] = json_encode($data['edu_times'], JSON_UNESCAPED_UNICODE);
+		}
+
+		if ($edu_idx) {
+			// 수정
+			$this->db->where('edu_idx', $edu_idx);
+			$this->db->update('wb_edu', $data);
+			return $edu_idx;
+		} else {
+			// 등록
+			$this->db->insert('wb_edu', $data);
 			return $this->db->insert_id();
 		}
-
-		return false;
 	}
 
 	/**
-	 * 양육 수정
+	 * 양육 삭제 (del_yn = 'Y' 업데이트)
 	 */
-	public function update_edu($edu_idx, $edu_data)
-	{
-		$update_data = array_merge($edu_data, array(
-			'modi_date' => date('Y-m-d H:i:s')
-		));
-
-		$this->db->where('edu_idx', $edu_idx);
-		return $this->db->update('wb_edu', $update_data);
-	}
-
-	/**
-	 * 양육 삭제 (소프트 삭제)
-	 */
-	public function delete_edu($edu_idx)
-	{
-		$delete_data = array(
-			'del_yn' => 'Y',
-			'del_date' => date('Y-m-d H:i:s'),
-			'modi_date' => date('Y-m-d H:i:s')
-		);
-
-		$this->db->where('edu_idx', $edu_idx);
-		return $this->db->update('wb_edu', $delete_data);
-	}
-
-	/**
-	 * 카테고리 저장
-	 */
-	public function save_category($category_data)
-	{
-		// 기존 카테고리 확인
-		$this->db->select('category_id');
-		$this->db->from('wb_edu_category');
-		$this->db->where('org_id', $category_data['org_id']);
-		$this->db->where('category_type', 'edu');
-		$query = $this->db->get();
-
-		if ($query->num_rows() > 0) {
-			// 업데이트
-			$row = $query->row_array();
-			$update_data = array(
-				'category_json' => $category_data['category_json'],
-				'modi_date' => date('Y-m-d H:i:s'),
-				'user_id' => $category_data['user_id']
-			);
-
-			$this->db->where('category_id', $row['category_id']);
-			return $this->db->update('wb_edu_category', $update_data);
-		} else {
-			// 신규 등록
-			$insert_data = array_merge($category_data, array(
-				'regi_date' => date('Y-m-d H:i:s')
-			));
-
-			return $this->db->insert('wb_edu_category', $insert_data);
-		}
-	}
-
-
-	/**
-	 * 파일 위치: application/models/Education_model.php - create_default_categories() 함수
-	 * 역할: 기본 카테고리 생성 (초급과정, 중급과정, 고급과정)
-	 */
-	public function create_default_categories($org_id, $user_id)
-	{
-		// 기본 카테고리 구조
-		$default_categories = array(
-			'categories' => array(
-				array(
-					'code' => 'EDU_BASIC',
-					'name' => '초급과정',
-					'order' => 1,
-					'children' => array()
-				),
-				array(
-					'code' => 'EDU_INTERMEDIATE',
-					'name' => '중급과정',
-					'order' => 2,
-					'children' => array()
-				),
-				array(
-					'code' => 'EDU_ADVANCED',
-					'name' => '고급과정',
-					'order' => 3,
-					'children' => array()
-				)
-			)
-		);
-
-		$category_json = json_encode($default_categories, JSON_UNESCAPED_UNICODE);
-
-		$insert_data = array(
-			'org_id' => $org_id,
-			'category_type' => 'edu',
-			'category_json' => $category_json,
-			'user_id' => $user_id,
-			'regi_date' => date('Y-m-d H:i:s')
-		);
-
-		$result = $this->db->insert('wb_edu_category', $insert_data);
-
-		if ($result) {
-			log_message('info', "양육 기본 카테고리 생성 완료 - org_id: {$org_id}");
-		} else {
-			log_message('error', "양육 기본 카테고리 생성 실패 - org_id: {$org_id}");
-		}
-
-		return $result;
-	}
-
-
-	/**
-	 * 파일 위치: application/models/Education_model.php
-	 * 역할: 신청자 관리 함수
-	 */
-
-	/**
-	 * 신청자 목록 조회
-	 */
-	public function get_applicants_by_edu($edu_idx)
-	{
-		$this->db->select('*');
-		$this->db->from('wb_edu_applicant');
-		$this->db->where('edu_idx', $edu_idx);
-		$this->db->where('del_yn', 'N');
-		$this->db->order_by('regi_date', 'DESC');
-		$query = $this->db->get();
-
-		return $query->result_array();
-	}
-
-
-	// 파일 위치: application/models/Education_model.php
-// 역할: 중복 신청 확인 및 신청자 정보 조회
-
-	/**
-	 * 중복 신청 확인 (이름과 연락처)
-	 */
-	public function check_duplicate_applicant($edu_idx, $applicant_name, $applicant_phone)
-	{
-		$this->db->select('*');
-		$this->db->from('wb_edu_applicant');
-		$this->db->where('edu_idx', $edu_idx);
-		$this->db->where('applicant_name', $applicant_name);
-		$this->db->where('applicant_phone', $applicant_phone);
-		$this->db->where('del_yn', 'N');
-		$query = $this->db->get();
-
-		if ($query->num_rows() > 0) {
-			return $query->row_array();
-		}
-
-		return null;
-	}
-
-	/**
-	 * 신청자 정보 조회 (applicant_idx로)
-	 */
-	public function get_applicant_by_idx($applicant_idx)
-	{
-		$this->db->select('*');
-		$this->db->from('wb_edu_applicant');
-		$this->db->where('applicant_idx', $applicant_idx);
-		$this->db->where('del_yn', 'N');
-		$query = $this->db->get();
-
-		if ($query->num_rows() > 0) {
-			return $query->row_array();
-		}
-
-		return null;
-	}
-
-	/**
-	 * 신청자 추가 (수정됨 - applicant_idx 반환)
-	 */
-	public function add_applicant($data)
-	{
-		// regi_date가 없으면 현재 시간으로 설정
-		if (!isset($data['regi_date'])) {
-			$data['regi_date'] = date('Y-m-d H:i:s');
-		}
-
-		// status가 없으면 기본값 '신청'으로 설정
-		if (!isset($data['status']) || empty($data['status'])) {
-			$data['status'] = '신청';
-		}
-
-		// del_yn이 없으면 기본값 'N'으로 설정
-		if (!isset($data['del_yn'])) {
-			$data['del_yn'] = 'N';
-		}
-
-		$result = $this->db->insert('wb_edu_applicant', $data);
-
-		if ($result) {
-			return $this->db->insert_id();
-		}
-
-		return false;
-	}
-
-	/**
-	 * 신청자 수정
-	 */
-	public function update_applicant($applicant_idx, $data)
-	{
-		$update_data = array_merge($data, array(
-			'modi_date' => date('Y-m-d H:i:s')
-		));
-
-		$this->db->where('applicant_idx', $applicant_idx);
-		return $this->db->update('wb_edu_applicant', $update_data);
-	}
-
-	/**
-	 * 신청자 삭제 (소프트 삭제)
-	 */
-	public function delete_applicant($applicant_idx)
-	{
-		$this->db->where('applicant_idx', $applicant_idx);
-		return $this->db->update('wb_edu_applicant', array('del_yn' => 'Y'));
-	}
-
-	/**
-	 * 신청자 상태 일괄변경
-	 */
-	public function bulk_update_applicant_status($edu_idx, $status)
+	public function delete_education($edu_idx)
 	{
 		$this->db->where('edu_idx', $edu_idx);
-		$this->db->where('del_yn', 'N');
-		return $this->db->update('wb_edu_applicant', array(
-			'status' => $status,
-			'modi_date' => date('Y-m-d H:i:s')
-		));
+		$this->db->update('wb_edu', array('del_yn' => 'Y'));
 	}
 
 	/**
-	 * 양육별 신청자 수 조회
+	 * 파일 정보 저장
 	 */
-	public function get_applicant_count($edu_idx)
+	public function save_file($data)
 	{
-		$this->db->from('wb_edu_applicant');
-		$this->db->where('edu_idx', $edu_idx);
-		$this->db->where('del_yn', 'N');
-		return $this->db->count_all_results();
+		$this->db->insert('wb_edu_file', $data);
+	}
+
+	/**
+	 * 파일 정보 삭제
+	 */
+	public function delete_file($file_idx)
+	{
+		$this->db->where('file_idx', $file_idx);
+		$this->db->update('wb_edu_file', array('del_yn' => 'Y'));
 	}
 
 
 	/**
-	 * 외부 URL 저장
+	 * 양육 카테고리 목록 조회
 	 */
-	public function save_external_url($data)
+	public function get_category_list($org_id)
 	{
-		// 기존 URL이 있으면 삭제 (하나의 양육당 하나의 활성 URL만 유지)
-		$this->db->where('edu_idx', $data['edu_idx']);
-		$this->db->delete('wb_edu_external_url');
-
-		// 새 URL 저장
-		return $this->db->insert('wb_edu_external_url', $data);
-	}
-
-	/**
-	 * 외부 URL 정보 조회
-	 */
-	public function get_external_url($edu_idx, $access_code)
-	{
-		$this->db->select('*');
-		$this->db->from('wb_edu_external_url');
-		$this->db->where('edu_idx', $edu_idx);
-		$this->db->where('access_code', $access_code);
-		$query = $this->db->get();
-
-		if ($query->num_rows() > 0) {
-			return $query->row_array();
-		}
-
-		return null;
-	}
-
-	/**
-	 * 외부 URL 정보 조회 (양육 인덱스만으로)
-	 */
-	public function get_external_url_by_edu($edu_idx)
-	{
-		$this->db->select('*');
-		$this->db->from('wb_edu_external_url');
-		$this->db->where('edu_idx', $edu_idx);
-		$this->db->where('expired_at >', date('Y-m-d H:i:s'));
-		$this->db->order_by('regi_date', 'DESC');
-		$this->db->limit(1);
-		$query = $this->db->get();
-
-		if ($query->num_rows() > 0) {
-			return $query->row_array();
-		}
-
-		return null;
-	}
-
-	/**
-	 * 특정 카테고리에 직접 속한 조직 조회
-	 */
-	public function get_orgs_by_category_direct($category_idx)
-	{
-		$this->db->select('org_id, org_name');
-		$this->db->from('wb_org');
-		$this->db->where('category_idx', $category_idx);
-		$this->db->where('del_yn', 'N');
-		$this->db->order_by('org_name', 'ASC');
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
-	/**
-	 * 미분류 조직 조회
-	 */
-	public function get_uncategorized_orgs()
-	{
-		$this->db->select('org_id, org_name');
-		$this->db->from('wb_org');
-		$this->db->where('del_yn', 'N');
-		$this->db->group_start();
-		$this->db->where('category_idx IS NULL');
-		$this->db->or_where('category_idx', 0);
-		$this->db->group_end();
-		$this->db->order_by('org_name', 'ASC');
-		$query = $this->db->get();
-		return $query->result_array();
-	}
-
-	/**
-	 * 조직별 양육 수 조회
-	 */
-	public function get_org_edu_count($org_id)
-	{
-		$this->db->from('wb_edu');
 		$this->db->where('org_id', $org_id);
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 카테고리의 전체 양육 수 조회 (하위 카테고리 포함)
-	 */
-	public function get_category_edu_count($category_idx)
-	{
-		$this->load->model('Org_category_model');
-		$category_ids = $this->Org_category_model->get_category_with_descendants_public(array($category_idx));
-
-		if (empty($category_ids)) {
-			return 0;
-		}
-
-		$this->db->from('wb_edu e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->where_in('o.category_idx', $category_ids);
-
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 미분류 조직의 양육 수 조회
-	 */
-	public function get_uncategorized_edu_count()
-	{
-		$this->db->from('wb_edu e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->group_start();
-		$this->db->where('o.category_idx IS NULL');
-		$this->db->or_where('o.category_idx', 0);
-		$this->db->group_end();
-
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 카테고리 목록 기반 전체 양육 수 조회
-	 */
-	public function get_total_edu_count_by_categories($category_ids)
-	{
-		if (empty($category_ids)) {
-			return 0;
-		}
-		$this->db->from('wb_edu e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->where_in('o.category_idx', $category_ids);
-		return $this->db->count_all_results();
-	}
-
-	/**
-	 * 카테고리별 양육 목록 조회
-	 */
-	public function get_edu_list_by_categories($category_ids)
-	{
-		$this->db->select('e.*, o.org_name');
-		$this->db->from('wb_edu e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->where_in('o.category_idx', $category_ids);
-		$this->db->order_by('e.regi_date', 'DESC');
-		$query = $this->db->get();
+		$this->db->where('del_yn', 'N');
+		$this->db->order_by('sort_order', 'ASC');
+		$query = $this->db->get('wb_edu_category');
 		return $query->result_array();
 	}
 
 	/**
-	 * 전체 양육 목록 조회
+	 * 양육 신청
 	 */
-	public function get_all_edu_list()
+	public function apply_education($data)
 	{
-		$this->db->select('e.*, o.org_name');
-		$this->db->from('wb_edu e');
-		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
-		$this->db->where('o.del_yn', 'N');
-		$this->db->order_by('e.regi_date', 'DESC');
-		$query = $this->db->get();
-		return $query->result_array();
+		// 중복 신청 확인
+		$this->db->where('edu_idx', $data['edu_idx']);
+		$this->db->where('user_id', $data['user_id']);
+		$this->db->where('del_yn', 'N');
+		$count = $this->db->count_all_results('wb_edu_applicant');
+
+		if ($count > 0) {
+			return array('status' => 'error', 'message' => '이미 신청한 양육입니다.');
+		}
+
+		// 신청자 수 확인
+		$edu = $this->get_education_detail($data['edu_idx']);
+		$this->db->where('edu_idx', $data['edu_idx']);
+		$this->db->where('del_yn', 'N');
+		$applicant_count = $this->db->count_all_results('wb_edu_applicant');
+
+		if ($edu['edu_personnel'] > 0 && $applicant_count >= $edu['edu_personnel']) {
+			return array('status' => 'error', 'message' => '모집이 마감되었습니다.');
+		}
+
+		// 신청 처리
+		$this->db->insert('wb_edu_applicant', $data);
+		return array('status' => 'success', 'message' => '신청이 완료되었습니다.');
+	}
+
+	/**
+	 * 양육 신청 취소
+	 */
+	public function cancel_application($edu_idx, $user_id)
+	{
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('user_id', $user_id);
+		$this->db->update('wb_edu_applicant', array('del_yn' => 'Y'));
+		return array('status' => 'success', 'message' => '신청이 취소되었습니다.');
+	}
+
+	/**
+	 * 특정 사용자의 양육 신청 정보 조회
+	 */
+	public function get_user_application($edu_idx, $user_id)
+	{
+		$this->db->where('edu_idx', $edu_idx);
+		$this->db->where('user_id', $user_id);
+		$this->db->where('del_yn', 'N');
+		$query = $this->db->get('wb_edu_applicant');
+		return $query->row_array();
 	}
 }

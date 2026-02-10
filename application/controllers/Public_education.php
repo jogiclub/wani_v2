@@ -9,27 +9,19 @@ class Public_education extends CI_Controller
         $this->load->helper('url');
         $this->load->model('Education_model');
         $this->load->model('Org_model'); // org_name 조인을 위해 필요
-        // $this->load->model('Org_category_model'); // 여기서는 사용하지 않음
     }
 
-    /**
-     * 공용 양육 목록 페이지
-     */
     public function index()
     {
         $this->load->view('public_education_list');
     }
 
-    /**
-     * 공용 양육 목록 조회 (AJAX)
-     */
     public function get_edu_list()
     {
         if (!$this->input->is_ajax_request()) {
             show_404();
         }
 
-        // 검색 파라미터
         $search_params = array(
             'date' => $this->input->post('date'),
             'days' => $this->input->post('days'),
@@ -42,6 +34,13 @@ class Public_education extends CI_Controller
         $edu_list = $this->get_all_public_edu_list($search_params);
         $edu_list = $this->process_edu_category_names($edu_list);
 
+        // 포스터 이미지 경로 처리
+        foreach ($edu_list as &$edu) {
+            if (!empty($edu['poster_img']) && !filter_var($edu['poster_img'], FILTER_VALIDATE_URL)) {
+                $edu['poster_img'] = site_url($edu['poster_img']);
+            }
+        }
+
         echo json_encode(array(
             'success' => true,
             'data' => $edu_list,
@@ -49,9 +48,6 @@ class Public_education extends CI_Controller
         ));
     }
 
-    /**
-     * 모든 공개 양육 목록 조회
-     */
     private function get_all_public_edu_list($search_params = array())
     {
         $this->db->select('e.*, o.org_name');
@@ -59,16 +55,13 @@ class Public_education extends CI_Controller
         $this->db->join('wb_org o', 'e.org_id = o.org_id');
         $this->db->where('e.del_yn', 'N');
         $this->db->where('o.del_yn', 'N');
-        $this->db->where('e.public_yn', 'Y'); // 공개된 양육만
+        $this->db->where('e.public_yn', 'Y');
         $this->apply_search_filters($search_params);
         $this->db->order_by('e.regi_date', 'DESC');
         $query = $this->db->get();
         return $query->result_array();
     }
 
-    /**
-     * 검색 필터 적용 (Mng_education과 동일)
-     */
     private function apply_search_filters($params)
     {
         if (!empty($params['date'])) {
@@ -109,14 +102,10 @@ class Public_education extends CI_Controller
             $this->db->like('e.edu_name', $params['keyword']);
             $this->db->or_like('e.edu_location', $params['keyword']);
             $this->db->or_like('e.edu_leader', $params['keyword']);
-            // 카테고리명 검색은 PHP에서 처리 후 필터링 (여기서는 직접 필터링하지 않음)
             $this->db->group_end();
         }
     }
 
-    /**
-     * 양육 목록에 카테고리 이름 추가 (Mng_education과 동일)
-     */
     private function process_edu_category_names($edu_list)
     {
         if (empty($edu_list)) {
@@ -133,13 +122,11 @@ class Public_education extends CI_Controller
             return $edu_list;
         }
 
-        // 각 조직(org_id)별 카테고리 JSON 조회
         $this->db->select('org_id, category_json');
         $this->db->from('wb_edu_category');
         $this->db->where_in('org_id', $org_ids);
         $category_jsons_raw = $this->db->get()->result_array();
 
-        // org_id를 key로, [code => name] 맵을 value로 하는 맵 생성
         $org_category_map = array();
         foreach ($category_jsons_raw as $row) {
             $json_data = json_decode($row['category_json'], true);
@@ -150,9 +137,8 @@ class Public_education extends CI_Controller
             }
         }
 
-        // edu_list를 순회하며 category_name 채우기
         foreach ($edu_list as &$edu) {
-            $edu['category_name'] = ''; // 기본값
+            $edu['category_name'] = '';
             if (!empty($edu['org_id']) && !empty($edu['category_code'])) {
                 $org_id = $edu['org_id'];
                 $category_code = $edu['category_code'];
@@ -167,9 +153,6 @@ class Public_education extends CI_Controller
         return $edu_list;
     }
 
-    /**
-     * 재귀적으로 카테고리 조회 맵 생성 (Mng_education과 동일)
-     */
     private function build_category_lookup($categories, &$lookup)
     {
         foreach ($categories as $category) {
@@ -182,9 +165,6 @@ class Public_education extends CI_Controller
         }
     }
 
-    /**
-     * 고유한 진행시간 목록 조회 (Mng_education과 동일)
-     */
     public function get_distinct_edu_times()
     {
         if (!$this->input->is_ajax_request()) {
@@ -194,7 +174,7 @@ class Public_education extends CI_Controller
         $this->db->select('edu_times');
         $this->db->from('wb_edu');
         $this->db->where('del_yn', 'N');
-        $this->db->where('public_yn', 'Y'); // 공개된 양육만
+        $this->db->where('public_yn', 'Y');
         $this->db->where('edu_times IS NOT NULL');
         $this->db->where("edu_times != '[]'");
         $this->db->where("edu_times != ''");
@@ -221,9 +201,6 @@ class Public_education extends CI_Controller
         ));
     }
 
-    /**
-     * 공개된 양육의 총 개수 조회
-     */
     public function get_total_public_edu_count()
     {
         if (!$this->input->is_ajax_request()) {
@@ -232,7 +209,7 @@ class Public_education extends CI_Controller
 
         $this->db->from('wb_edu e');
         $this->db->where('e.del_yn', 'N');
-        $this->db->where('e.public_yn', 'Y'); // 공개된 양육만
+        $this->db->where('e.public_yn', 'Y');
         $total_count = $this->db->count_all_results();
 
         header('Content-Type: application/json; charset=utf-8');
