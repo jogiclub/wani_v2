@@ -216,9 +216,9 @@ class Mng_education extends CI_Controller
 	 */
 	private function get_org_edu_count($org_id)
 	{
-		$this->db->from('wb_education');
+		$this->db->from('wb_edu');
 		$this->db->where('org_id', $org_id);
-		$this->db->where('del_yn', 'N');
+//		$this->db->where('del_yn', 'N');
 		return $this->db->count_all_results();
 	}
 
@@ -233,9 +233,9 @@ class Mng_education extends CI_Controller
 			return 0;
 		}
 
-		$this->db->from('wb_education e');
+		$this->db->from('wb_edu e');
 		$this->db->join('wb_org o', 'e.org_id = o.org_id');
-		$this->db->where('e.del_yn', 'N');
+//		$this->db->where('e.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');
 		$this->db->where_in('o.category_idx', $category_ids);
 
@@ -247,7 +247,7 @@ class Mng_education extends CI_Controller
 	 */
 	private function get_uncategorized_edu_count()
 	{
-		$this->db->from('wb_education e');
+		$this->db->from('wb_edu e');
 		$this->db->join('wb_org o', 'e.org_id = o.org_id');
 		$this->db->where('e.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');
@@ -276,7 +276,7 @@ class Mng_education extends CI_Controller
 			if (empty($category_ids)) {
 				$total_count = 0;
 			} else {
-				$this->db->from('wb_education e');
+				$this->db->from('wb_edu e');
 				$this->db->join('wb_org o', 'e.org_id = o.org_id');
 				$this->db->where('e.del_yn', 'N');
 				$this->db->where('o.del_yn', 'N');
@@ -284,7 +284,7 @@ class Mng_education extends CI_Controller
 				$total_count = $this->db->count_all_results();
 			}
 		} else {
-			$this->db->from('wb_education e');
+			$this->db->from('wb_edu e');
 			$this->db->join('wb_org o', 'e.org_id = o.org_id');
 			$this->db->where('e.del_yn', 'N');
 			$this->db->where('o.del_yn', 'N');
@@ -348,7 +348,7 @@ class Mng_education extends CI_Controller
 	private function get_edu_list_by_categories($category_ids)
 	{
 		$this->db->select('e.*, o.org_name');
-		$this->db->from('wb_education e');
+		$this->db->from('wb_edu e');
 		$this->db->join('wb_org o', 'e.org_id = o.org_id');
 		$this->db->where('e.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');
@@ -364,7 +364,7 @@ class Mng_education extends CI_Controller
 	private function get_all_edu_list()
 	{
 		$this->db->select('e.*, o.org_name');
-		$this->db->from('wb_education e');
+		$this->db->from('wb_edu e');
 		$this->db->join('wb_org o', 'e.org_id = o.org_id');
 		$this->db->where('e.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');

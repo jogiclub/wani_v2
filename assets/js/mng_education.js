@@ -102,46 +102,75 @@
 	function initFancytree() {
 		$('#treeSpinner').removeClass('d-none').addClass('d-flex');
 
-		$.ajax({
-			url: '/mng/mng_education/get_category_org_tree',
-			type: 'POST',
-			dataType: 'json',
-			success: function(treeData) {
-				console.log('트리 데이터 로드 성공:', treeData);
+		// 조직 트리와 전체 양육 수를 동시에 요청
+		Promise.all([
+			$.ajax({ url: '/mng/mng_education/get_category_org_tree', type: 'POST', dataType: 'json' }),
+			$.ajax({ url: '/mng/mng_education/get_total_edu_count', type: 'POST', dataType: 'json' })
+		]).then(function(results) {
+			const treeDataFromServer = results[0];
+			const totalCountResponse = results[1];
+			const totalEduCount = totalCountResponse.total_count || 0;
 
-				$('#categoryTree').fancytree({
-					source: treeData,
-					extensions: ['persist'],
-					persist: {
-						store: 'local',
-						cookiePrefix: 'mng_edu_tree_'
-					},
-					selectMode: 1,
-					activate: function(event, data) {
-						handleTreeNodeActivation(data.node);
-					},
-					renderNode: function(event, data) {
-						const node = data.node;
-						const $span = $(node.span);
+			console.log('트리 데이터 로드 성공:', treeDataFromServer);
+			console.log('전체 양육 수:', totalEduCount);
 
-						if (node.data && node.data.type === 'org') {
-							$span.find('.fancytree-icon').removeClass('fancytree-ico-cf')
-								.addClass('bi bi-building text-primary');
-						}
-					}
-				});
+			// 미분류 노드를 별도로 추출
+			const uncategorizedNode = treeDataFromServer.find(node => node.data && node.data.type === 'uncategorized');
+			const categoryNodes = treeDataFromServer.filter(node => !node.data || node.data.type !== 'uncategorized');
 
-				treeInstance = $.ui.fancytree.getTree('#categoryTree');
-				$('#treeSpinner').removeClass('d-flex').addClass('d-none');
+			// '전체' 노드 생성
+			const treeData = [
+				{
+					key: 'all',
+					title: `전체 양육 (${totalEduCount}개)`,
+					folder: true,
+					expanded: true,
+					data: { type: 'all' },
+					children: categoryNodes // 미분류를 제외한 카테고리 노드만 추가
+				}
+			];
 
-				// 전체 양육 개수 로드
-				loadTotalEduCount();
-			},
-			error: function(xhr, status, error) {
-				console.error('트리 로드 실패:', error);
-				$('#treeSpinner').removeClass('d-flex').addClass('d-none');
-				showToast('트리 데이터 로드에 실패했습니다.', 'error');
+			// 미분류 노드가 있으면 최상위 레벨에 추가
+			if (uncategorizedNode) {
+				treeData.push(uncategorizedNode);
 			}
+
+
+			$('#categoryTree').fancytree({
+				source: treeData,
+				extensions: ['persist'],
+				persist: {
+					store: 'local',
+					cookiePrefix: 'mng_edu_tree_'
+				},
+				selectMode: 1,
+				activate: function(event, data) {
+					handleTreeNodeActivation(data.node);
+				},
+				renderNode: function(event, data) {
+					const node = data.node;
+					const $span = $(node.span);
+
+					if (node.data && node.data.type === 'org') {
+						$span.find('.fancytree-icon').removeClass('fancytree-ico-cf')
+							.addClass('bi bi-building text-primary');
+					}
+				}
+			});
+
+			treeInstance = $.ui.fancytree.getTree('#categoryTree');
+			$('#treeSpinner').removeClass('d-flex').addClass('d-none');
+
+			// 첫 번째 노드(전체)를 기본으로 활성화
+			const firstNode = treeInstance.getFirstChild();
+			if (firstNode) {
+				firstNode.setActive();
+			}
+
+		}).catch(function(error) {
+			console.error('트리 또는 전체 개수 로드 실패:', error);
+			$('#treeSpinner').removeClass('d-flex').addClass('d-none');
+			showToast('트리 데이터 로드에 실패했습니다.', 'error');
 		});
 	}
 
@@ -172,24 +201,11 @@
 	}
 
 	/**
-	 * 전체 양육 개수 로드
-	 */
-	function loadTotalEduCount() {
-		$.ajax({
-			url: '/mng/mng_education/get_total_edu_count',
-			type: 'POST',
-			dataType: 'json',
-			success: function(res) {
-				$('#totalEduCount').text(res.total_count);
-			}
-		});
-	}
-
-	/**
 	 * ParamQuery Grid 초기화 (양육 목록)
 	 */
 	function initParamQueryGrid() {
 		const columns = [
+
 			{
 				title: "양육명",
 				dataIndx: "edu_name",
@@ -264,14 +280,24 @@
 
 		eduGrid = pq.grid('#eduGrid', {
 			width: '100%',
-			height: 'flex',
+			height: "100%",
 			colModel: columns,
+			freezeCols: 2,
 			dataModel: { data: [] },
+			resizable: true,
 			scrollModel: { autoFit: true },
-			numberCell: { show: true, title: "No", width: 40 },
-			pageModel: { type: 'local', rPP: 50, rPPOptions: [20, 50, 100] },
-			selectionModel: { type: 'row', mode: 'single' },
+			numberCell: { show: false },
+			// pageModel: { type: 'local', rPP: 50, rPPOptions: [20, 50, 100] },
+			selectionModel: { type: 'cell', mode: 'single' },
 			strNoRows: '양육 데이터가 없습니다.',
+			wrap: false,
+			hwrap: false,
+			rowInit: function (ui) {
+				var style = "height: 40px;";
+				return {
+					style: style,
+				};
+			},
 			rowClick: function(evt, ui) {
 				// 링크 클릭은 별도 처리
 			}
