@@ -21,13 +21,12 @@ $this->load->view('header');
 		<ol class="breadcrumb mb-0">
 			<li class="breadcrumb-item"><a href="#!">홈</a></li>
 			<li class="breadcrumb-item"><a href="#!">EDUCATION</a></li>
-			<li class="breadcrumb-item active">양육관리</li>
+			<li class="breadcrumb-item active">양육</li>
 		</ol>
 	</nav>
 
 	<div class="col-12 my-1 d-flex align-items-center justify-content-between">
-		<h3 class="page-title mb-0">양육관리</h3>
-
+		<h3 class="page-title mb-0">양육</h3>
 	</div>
 
 
