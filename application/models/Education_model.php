@@ -371,7 +371,7 @@ class Education_model extends CI_Model
 
 	public function get_applicant_list($edu_idx)
 	{
-		$this->db->select('a.*, m.user_name as member_name, m.phone as member_phone');
+		$this->db->select('a.*, m.member_name as member_name, m.member_phone as member_phone');
 		$this->db->from('wb_edu_applicant a');
 		$this->db->join('wb_member m', 'a.member_idx = m.member_idx', 'left');
 		$this->db->where('a.edu_idx', $edu_idx);
