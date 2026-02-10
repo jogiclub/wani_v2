@@ -297,7 +297,6 @@ class Mng_education extends CI_Controller
 
 	/**
 	 * 양육 목록 조회 (AJAX)
-	 * type: 'all' (전체), 'category' (카테고리별), 'org' (조직별)
 	 */
 	public function get_edu_list()
 	{
@@ -309,31 +308,38 @@ class Mng_education extends CI_Controller
 		$org_id = $this->input->post('org_id');
 		$category_idx = $this->input->post('category_idx');
 
-		$visible_categories = $this->get_visible_categories();
+		// 검색 파라미터
+		$search_params = array(
+			'date' => $this->input->post('date'),
+			'days' => $this->input->post('days'),
+			'times' => $this->input->post('times'),
+			'ages' => $this->input->post('ages'),
+			'genders' => $this->input->post('genders'),
+			'keyword' => $this->input->post('keyword')
+		);
 
+		$visible_categories = $this->get_visible_categories();
 		$edu_list = array();
 
 		if ($type === 'org' && $org_id) {
-			// 특정 조직의 양육 목록
-			$edu_list = $this->Education_model->get_edu_list_by_org($org_id);
+			$edu_list = $this->Education_model->get_edu_list_by_org($org_id, $search_params);
 		} else if ($type === 'category' && $category_idx) {
-			// 카테고리별 양육 목록 (하위 카테고리 포함)
 			$category_ids = $this->Org_category_model->get_category_with_descendants_public(array($category_idx));
-
 			if (!empty($category_ids)) {
-				$edu_list = $this->get_edu_list_by_categories($category_ids);
+				$edu_list = $this->get_edu_list_by_categories($category_ids, $search_params);
 			}
 		} else {
-			// 전체 양육 목록
 			if (!empty($visible_categories)) {
 				$category_ids = $this->Org_category_model->get_category_with_descendants_public($visible_categories);
 				if (!empty($category_ids)) {
-					$edu_list = $this->get_edu_list_by_categories($category_ids);
+					$edu_list = $this->get_edu_list_by_categories($category_ids, $search_params);
 				}
 			} else {
-				$edu_list = $this->get_all_edu_list();
+				$edu_list = $this->get_all_edu_list($search_params);
 			}
 		}
+
+		$edu_list = $this->process_edu_category_names($edu_list);
 
 		echo json_encode(array(
 			'success' => true,
@@ -345,7 +351,7 @@ class Mng_education extends CI_Controller
 	/**
 	 * 카테고리별 양육 목록 조회
 	 */
-	private function get_edu_list_by_categories($category_ids)
+	private function get_edu_list_by_categories($category_ids, $search_params = array())
 	{
 		$this->db->select('e.*, o.org_name');
 		$this->db->from('wb_edu e');
@@ -353,6 +359,7 @@ class Mng_education extends CI_Controller
 		$this->db->where('e.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');
 		$this->db->where_in('o.category_idx', $category_ids);
+		$this->apply_search_filters($search_params);
 		$this->db->order_by('e.regi_date', 'DESC');
 		$query = $this->db->get();
 		return $query->result_array();
@@ -361,16 +368,65 @@ class Mng_education extends CI_Controller
 	/**
 	 * 전체 양육 목록 조회
 	 */
-	private function get_all_edu_list()
+	private function get_all_edu_list($search_params = array())
 	{
 		$this->db->select('e.*, o.org_name');
 		$this->db->from('wb_edu e');
 		$this->db->join('wb_org o', 'e.org_id = o.org_id');
 		$this->db->where('e.del_yn', 'N');
 		$this->db->where('o.del_yn', 'N');
+		$this->apply_search_filters($search_params);
 		$this->db->order_by('e.regi_date', 'DESC');
 		$query = $this->db->get();
 		return $query->result_array();
+	}
+
+	/**
+	 * 검색 필터 적용
+	 */
+	private function apply_search_filters($params)
+	{
+		if (!empty($params['date'])) {
+			$this->db->where('e.edu_start_date <=', $params['date']);
+			$this->db->where('e.edu_end_date >=', $params['date']);
+		}
+
+		if (!empty($params['days']) && is_array($params['days'])) {
+			$day_conditions = array();
+			foreach ($params['days'] as $day) {
+				$day_conditions[] = "e.edu_days LIKE '%\"" . $this->db->escape_like_str($day) . "\"%'";
+			}
+			if (!empty($day_conditions)) {
+				$this->db->where('(' . implode(' OR ', $day_conditions) . ')');
+			}
+		}
+
+		if (!empty($params['times']) && is_array($params['times'])) {
+			$time_conditions = array();
+			foreach ($params['times'] as $time) {
+				$time_conditions[] = "e.edu_times LIKE '%\"" . $this->db->escape_like_str($time) . "\"%'";
+			}
+			if (!empty($time_conditions)) {
+				$this->db->where('(' . implode(' OR ', $time_conditions) . ')');
+			}
+		}
+
+		if (!empty($params['ages']) && is_array($params['ages'])) {
+			$this->db->where_in('e.edu_leader_age', $params['ages']);
+		}
+
+		if (!empty($params['genders']) && is_array($params['genders'])) {
+			$this->db->where_in('e.edu_leader_gender', $params['genders']);
+		}
+
+		if (!empty($params['keyword'])) {
+			$this->db->group_start();
+			$this->db->like('e.edu_name', $params['keyword']);
+			$this->db->or_like('e.edu_location', $params['keyword']);
+			$this->db->or_like('e.edu_leader', $params['keyword']);
+			// 카테고리명 검색은 PHP에서 처리 후 필터링
+			$this->db->group_end();
+		}
 	}
 
 	/**
@@ -457,5 +513,111 @@ class Mng_education extends CI_Controller
 		} else {
 			echo json_encode(array('success' => false, 'message' => '업데이트 중 오류가 발생했습니다.'));
 		}
+	}
+
+    /**
+	 * 양육 목록에 카테고리 이름 추가
+	 */
+	private function process_edu_category_names($edu_list)
+	{
+		if (empty($edu_list)) {
+			return array();
+		}
+
+		$org_ids = array_unique(array_column($edu_list, 'org_id'));
+
+		if (empty($org_ids)) {
+			foreach ($edu_list as &$edu) {
+				$edu['category_name'] = '';
+			}
+			unset($edu);
+			return $edu_list;
+		}
+
+		// 각 조직(org_id)별 카테고리 JSON 조회
+		$this->db->select('org_id, category_json');
+		$this->db->from('wb_edu_category');
+		$this->db->where_in('org_id', $org_ids);
+		$category_jsons_raw = $this->db->get()->result_array();
+
+		// org_id를 key로, [code => name] 맵을 value로 하는 맵 생성
+		$org_category_map = array();
+		foreach ($category_jsons_raw as $row) {
+			$json_data = json_decode($row['category_json'], true);
+			if (is_array($json_data) && isset($json_data['categories'])) {
+				$category_lookup = array();
+				$this->build_category_lookup($json_data['categories'], $category_lookup);
+				$org_category_map[$row['org_id']] = $category_lookup;
+			}
+		}
+
+		// edu_list를 순회하며 category_name 채우기
+		foreach ($edu_list as &$edu) {
+			$edu['category_name'] = ''; // 기본값
+			if (!empty($edu['org_id']) && !empty($edu['category_code'])) {
+				$org_id = $edu['org_id'];
+				$category_code = $edu['category_code'];
+
+				if (isset($org_category_map[$org_id]) && isset($org_category_map[$org_id][$category_code])) {
+					$edu['category_name'] = $org_category_map[$org_id][$category_code];
+				}
+			}
+		}
+		unset($edu);
+
+		return $edu_list;
+	}
+
+	/**
+	 * 재귀적으로 카테고리 조회 맵 생성
+	 */
+	private function build_category_lookup($categories, &$lookup)
+	{
+		foreach ($categories as $category) {
+			if (isset($category['code']) && isset($category['name'])) {
+				$lookup[$category['code']] = $category['name'];
+			}
+			if (isset($category['children']) && is_array($category['children']) && !empty($category['children'])) {
+				$this->build_category_lookup($category['children'], $lookup);
+			}
+		}
+	}
+
+	/**
+	 * 고유한 진행시간 목록 조회
+	 */
+	public function get_distinct_edu_times()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$this->db->select('edu_times');
+		$this->db->from('wb_edu');
+		$this->db->where('del_yn', 'N');
+		$this->db->where('edu_times IS NOT NULL');
+		$this->db->where("edu_times != '[]'");
+		$this->db->where("edu_times != ''");
+		$query = $this->db->get();
+		$results = $query->result_array();
+
+		$all_times = array();
+		foreach ($results as $row) {
+			$times = json_decode($row['edu_times'], true);
+			if (is_array($times)) {
+				foreach ($times as $time) {
+					$all_times[] = $time;
+				}
+			}
+		}
+
+		$distinct_times = array_unique($all_times);
+		sort($distinct_times, SORT_NATURAL);
+
+		header('Content-Type: application/json; charset=utf-8');
+		echo json_encode(array(
+			'success' => true,
+			'data' => array_values($distinct_times)
+		));
 	}
 }

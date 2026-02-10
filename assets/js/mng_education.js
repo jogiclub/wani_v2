@@ -17,6 +17,16 @@
 	let eduDetailOffcanvas = null;
 	let applicantOffcanvas = null;
 
+	// 검색 관련 전역 변수
+	let searchParams = {
+		date: '',
+		days: [],
+		times: [],
+		ages: [],
+		genders: [],
+		keyword: ''
+	};
+
 	// DOM 준비 완료 시 초기화
 	$(document).ready(function() {
 		initializePage();
@@ -42,6 +52,7 @@
 		cleanupExistingInstances();
 		initSplitJS();
 		initFancytree();
+		initSearchControls(); // 검색 컨트롤 초기화
 		initParamQueryGrid();
 		initApplicantGrid();
 		bindGlobalEvents();
@@ -175,6 +186,132 @@
 	}
 
 	/**
+	 * 검색 컨트롤 초기화
+	 */
+	function initSearchControls() {
+		// 검색 버튼 클릭
+		$('#btn_search').on('click', function() {
+			searchParams.date = $('#search_date').val();
+			searchParams.keyword = $('#search_keyword').val();
+			loadEduList();
+		});
+
+		// 초기화 버튼 클릭
+		$('#btn_reset').on('click', function() {
+			resetSearch();
+		});
+
+		// 엔터키로 검색
+		$('#search_keyword, #search_date').on('keypress', function(e) {
+			if (e.which === 13) {
+				$('#btn_search').trigger('click');
+			}
+		});
+
+		// 멀티셀렉트 드롭다운 설정
+		setupMultiSelectDropdown('day', searchParams.days, '진행요일');
+		setupMultiSelectDropdown('time', searchParams.times, '진행시간');
+		setupMultiSelectDropdown('age', searchParams.ages, '연령대');
+		setupMultiSelectDropdown('gender', searchParams.genders, '성별');
+
+		// 진행시간 목록 동적 로드
+		loadDistinctEduTimes();
+	}
+
+	/**
+	 * 고유 진행시간 목록 로드 및 드롭다운 구성
+	 */
+	function loadDistinctEduTimes() {
+		$.ajax({
+			url: '/mng/mng_education/get_distinct_edu_times',
+			type: 'POST',
+			dataType: 'json',
+			success: function(res) {
+				if (res.success && res.data) {
+					const $menu = $('#search_time_menu');
+					$menu.empty();
+					res.data.forEach(function(time) {
+						const $li = $('<li><a class="dropdown-item" href="#"><input type="checkbox" value="' + escapeHtml(time) + '" class="form-check-input me-2">' + escapeHtml(time) + '</a></li>');
+						$menu.append($li);
+					});
+				}
+			},
+			error: function() {
+				console.error('진행시간 목록 로드에 실패했습니다.');
+			}
+		});
+	}
+
+	/**
+	 * 멀티셀렉트 드롭다운 공통 설정 함수 (이벤트 위임 사용)
+	 */
+	function setupMultiSelectDropdown(type, targetArray, defaultBtnText) {
+		const menuId = `#search_${type}_menu`;
+		const btnId = `#search_${type}_btn`;
+
+		$(document).on('change', `${menuId} input[type="checkbox"]`, function() {
+			const value = $(this).val();
+			if ($(this).is(':checked')) {
+				if (!targetArray.includes(value)) {
+					targetArray.push(value);
+				}
+			} else {
+				const index = targetArray.indexOf(value);
+				if (index > -1) {
+					targetArray.splice(index, 1);
+				}
+			}
+			updateMultiSelectButtonText($(btnId), targetArray, defaultBtnText);
+			$('#btn_search').trigger('click');
+		});
+
+		// 드롭다운 메뉴가 닫히지 않도록 이벤트 전파 중단
+		$(document).on('click', menuId, function(e) {
+			e.stopPropagation();
+		});
+	}
+
+	/**
+	 * 멀티셀렉트 드롭다운 버튼 텍스트 업데이트
+	 */
+	function updateMultiSelectButtonText($btn, arr, defaultText) {
+		if (arr.length === 0) {
+			$btn.text(defaultText);
+		} else if (arr.length === 1) {
+			$btn.text(arr[0]);
+		} else {
+			$btn.text(`${defaultText} (${arr.length}개)`);
+		}
+	}
+
+	/**
+	 * 검색 조건 초기화
+	 */
+	function resetSearch() {
+		// 검색 파라미터 초기화
+		searchParams.date = '';
+		searchParams.days = [];
+		searchParams.times = [];
+		searchParams.ages = [];
+		searchParams.genders = [];
+		searchParams.keyword = '';
+
+		// UI 초기화
+		$('#search_date').val('');
+		$('#search_keyword').val('');
+
+		// 멀티셀렉트 드롭다운 초기화
+		$('.dropdown-menu input[type="checkbox"]').prop('checked', false);
+		updateMultiSelectButtonText($('#search_day_btn'), searchParams.days, '진행요일');
+		updateMultiSelectButtonText($('#search_time_btn'), searchParams.times, '진행시간');
+		updateMultiSelectButtonText($('#search_age_btn'), searchParams.ages, '연령대');
+		updateMultiSelectButtonText($('#search_gender_btn'), searchParams.genders, '성별');
+
+		// 목록 다시 로드
+		loadEduList();
+	}
+
+	/**
 	 * 트리 노드 활성화 처리
 	 */
 	function handleTreeNodeActivation(node) {
@@ -205,7 +342,6 @@
 	 */
 	function initParamQueryGrid() {
 		const columns = [
-
 			{
 				title: "양육명",
 				dataIndx: "edu_name",
@@ -218,7 +354,14 @@
 			{
 				title: "소속 조직",
 				dataIndx: "org_name",
-				width: 150
+				width: 200,
+				render: function(ui) {
+					if (ui.cellData && ui.rowData.org_id) {
+						return '<span class="badge bg-primary org-dashboard-link" data-org-id="' + ui.rowData.org_id + '" data-org-name="' + ui.cellData + '" style="cursor: pointer;" title="' + ui.cellData + ' 대시보드 바로가기">' +
+							ui.cellData + ' <i class="bi bi-box-arrow-up-right"></i></span>';
+					}
+					return '<span class="badge bg-light text-dark">미지정</span>';
+				}
 			},
 			{
 				title: "카테고리",
@@ -247,9 +390,53 @@
 				}
 			},
 			{
+				title: "진행요일",
+				dataIndx: "edu_days",
+				width: 120,
+				render: function(ui) {
+					try {
+						const days = JSON.parse(ui.cellData);
+						return Array.isArray(days) ? days.join(', ') : '';
+					} catch (e) {
+						return '';
+					}
+				}
+			},
+			{
+				title: "진행시간",
+				dataIndx: "edu_times",
+				width: 100,
+				render: function(ui) {
+					try {
+						const times = JSON.parse(ui.cellData);
+						return Array.isArray(times) ? times.join(', ') : '';
+					} catch (e) {
+						return '';
+					}
+				}
+			},
+			{
 				title: "담당자",
 				dataIndx: "edu_leader",
 				width: 100
+			},
+			{
+				title: "연령대",
+				dataIndx: "edu_leader_age",
+				width: 80,
+				render: function(ui) {
+					const ageMap = { '10s': '10대', '20s': '20대', '30s': '30대', '40s': '40대', '50s': '50대', '60s': '60대 이상' };
+					return ageMap[ui.cellData] || '';
+				}
+			},
+			{
+				title: "성별",
+				dataIndx: "edu_leader_gender",
+				width: 60,
+				render: function(ui) {
+					const genderMap = { 'male': '남', 'female': '여' };
+					return genderMap[ui.cellData] || '';
+				}
 			},
 			{
 				title: "신청자",
@@ -285,9 +472,7 @@
 			freezeCols: 2,
 			dataModel: { data: [] },
 			resizable: true,
-			scrollModel: { autoFit: true },
 			numberCell: { show: false },
-			// pageModel: { type: 'local', rPP: 50, rPPOptions: [20, 50, 100] },
 			selectionModel: { type: 'cell', mode: 'single' },
 			strNoRows: '양육 데이터가 없습니다.',
 			wrap: false,
@@ -379,7 +564,8 @@
 		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
 
 		const postData = {
-			type: selectedNodeType || 'all'
+			type: selectedNodeType || 'all',
+			...searchParams
 		};
 
 		if (selectedNodeType === 'org') {
@@ -565,6 +751,52 @@
 			const applicantIdx = $(this).data('applicant-idx');
 			const newStatus = $(this).val();
 			updateApplicantStatus(applicantIdx, newStatus);
+		});
+
+		// 조직 대시보드 링크 클릭
+		$(document).on('click', '.org-dashboard-link', function(e) {
+			e.preventDefault();
+			const orgId = $(this).data('org-id');
+			const orgName = $(this).data('org-name');
+			goToOrgDashboard(orgId, orgName);
+		});
+	}
+
+	/**
+	 * 조직 대시보드로 이동 (새 탭)
+	 */
+	function goToOrgDashboard(orgId, orgName) {
+		if (!orgId) {
+			showToast('조직 정보를 찾을 수 없습니다.', 'warning');
+			return;
+		}
+
+		// 로컬스토리지에 조직 정보 저장
+		try {
+			localStorage.setItem('lastSelectedOrgId', orgId);
+			localStorage.setItem('lastSelectedOrgName', orgName || '');
+		} catch (e) {
+			console.warn('로컬스토리지 저장 실패:', e);
+		}
+
+		// 서버에 조직 전환 요청 후 대시보드로 이동
+		$.ajax({
+			url: '/login/set_default_org',
+			type: 'POST',
+			data: { org_id: orgId },
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					// 새 탭에서 대시보드 열기
+					window.open('/dashboard', '_blank');
+					showToast((orgName || '조직') + '(으)로 전환되었습니다', 'success');
+				} else {
+					showToast(response.message || '조직 전환에 실패했습니다', 'error');
+				}
+			},
+			error: function() {
+				showToast('조직 전환 중 오류가 발생했습니다.', 'error');
+			}
 		});
 	}
 
