@@ -121,21 +121,23 @@ class Education extends My_Controller
 			$nodes = array();
 
 			foreach ($categories as $category) {
-				$edu_count = isset($category_counts[$category['code']]) ? $category_counts[$category['code']] : 0;
+				$category_code = isset($category['code']) ? $category['code'] : null;
+				$title = isset($category['name']) ? $category['name'] : '';
 
-				$title = $category['name'];
+				$edu_count = isset($category_counts[$category_code]) ? $category_counts[$category_code] : 0;
+
 				if ($edu_count > 0) {
 					$title .= ' (' . $edu_count . ')';
 				}
 
 				$node = array(
-					'key' => 'category_' . $category['code'],
+					'key' => 'category_' . $category_code,
 					'title' => $title,
 					'folder' => true,
 					'expanded' => false,
 					'data' => array(
 						'type' => 'category',
-						'category_code' => $category['code']
+						'category_code' => $category_code
 					)
 				);
 
@@ -151,9 +153,9 @@ class Education extends My_Controller
 
 		$tree_data = array();
 
-		if (!empty($category_data)) {
+		if (!empty($category_data) && isset($category_data['categories'])) {
 			// 카테고리 노드들
-			$category_nodes = $build_fancytree_nodes($category_data);
+			$category_nodes = $build_fancytree_nodes($category_data['categories']);
 
 			// 전체 양육 개수
 			$total_edu_count = $this->Education_model->get_total_edu_count($active_org_id);
