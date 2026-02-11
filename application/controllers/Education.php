@@ -253,6 +253,11 @@ class Education extends My_Controller
 			return;
 		}
 
+		// JSON 문자열을 배열로 변환
+		$edu_detail['edu_days'] = json_decode($edu_detail['edu_days'], true);
+		$edu_detail['edu_times'] = json_decode($edu_detail['edu_times'], true);
+
+
 		echo json_encode(array(
 			'success' => true,
 			'data' => $edu_detail
@@ -647,6 +652,111 @@ class Education extends My_Controller
 			echo json_encode(array('success' => false, 'message' => '양육 수정에 실패했습니다.'));
 		}
 	}
+
+	/**
+	 * 파일 위치: application/controllers/Education.php
+	 * 역할: 양육 일괄 수정
+	 */
+	public function batch_update_edu()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$edu_indexes_json = $this->input->post('edu_indexes');
+		$edu_indexes = json_decode($edu_indexes_json, true);
+
+		if (empty($edu_indexes) || !is_array($edu_indexes)) {
+			echo json_encode(['success' => false, 'message' => '수정할 양육을 선택해주세요.']);
+			return;
+		}
+
+		// 입력된 데이터만 필터링하여 update_data 생성
+		$update_data = [];
+		$post_data = $this->input->post();
+		$allowed_fields = [
+			'category_code', 'edu_name', 'edu_location', 'edu_start_date', 'edu_end_date',
+			'edu_days', 'edu_times', 'edu_leader', 'edu_leader_phone', 'edu_leader_age',
+			'edu_leader_gender', 'edu_desc', 'public_yn', 'zoom_url', 'youtube_url',
+			'edu_fee', 'edu_capacity', 'bank_account'
+		];
+
+		foreach ($allowed_fields as $field) {
+			if (isset($post_data[$field]) && $post_data[$field] !== '') {
+				switch ($field) {
+					case 'edu_days':
+					case 'edu_times':
+						$update_data[$field] = $this->process_json_field($post_data[$field]);
+						break;
+					case 'edu_fee':
+					case 'edu_capacity':
+						$update_data[$field] = intval($post_data[$field]);
+						break;
+					default:
+						$update_data[$field] = $post_data[$field];
+				}
+			}
+		}
+
+		if (empty($update_data) && empty($_FILES['poster_img']['name']) && $this->input->post('remove_poster') != '1') {
+			echo json_encode(['success' => false, 'message' => '수정할 내용을 입력해주세요.']);
+			return;
+		}
+
+		$update_data['user_id'] = $user_id;
+
+		$base_edu_name = $this->input->post('edu_name');
+		$name_counter = 1;
+		$success_count = 0;
+		$fail_count = 0;
+
+		foreach ($edu_indexes as $edu_idx) {
+			$edu = $this->Education_model->get_edu_by_idx($edu_idx);
+			if (!$edu || !$this->check_org_access($edu['org_id'])) {
+				$fail_count++;
+				continue;
+			}
+
+			$current_update_data = $update_data;
+
+			// 양육명 자동 생성
+			if (!empty($base_edu_name)) {
+				$current_update_data['edu_name'] = $base_edu_name . ' (' . $name_counter++ . ')';
+			}
+
+			// 포스터 이미지 처리
+			if ($this->input->post('remove_poster') == '1') {
+				$current_update_data['poster_img'] = null;
+				// 실제 파일 삭제
+				if (!empty($edu['poster_img']) && file_exists(FCPATH . $edu['poster_img'])) {
+					unlink(FCPATH . $edu['poster_img']);
+				}
+			} elseif (!empty($_FILES['poster_img']['name'])) {
+				$poster_path = $this->upload_poster_image($edu['org_id'], $edu_idx);
+				if ($poster_path) {
+					$current_update_data['poster_img'] = $poster_path;
+				}
+			}
+
+			if ($this->Education_model->update_edu($edu_idx, $current_update_data)) {
+				$success_count++;
+			} else {
+				$fail_count++;
+			}
+		}
+
+		if ($success_count > 0) {
+			$message = $success_count . '개의 양육이 일괄 수정되었습니다.';
+			if ($fail_count > 0) {
+				$message .= ' (' . $fail_count . '개 실패)';
+			}
+			echo json_encode(['success' => true, 'message' => $message]);
+		} else {
+			echo json_encode(['success' => false, 'message' => '양육 일괄 수정에 실패했습니다.']);
+		}
+	}
+
 
 	/**
 	 * JSON 필드 처리 (배열/문자열 -> JSON 문자열)

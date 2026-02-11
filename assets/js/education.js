@@ -476,7 +476,9 @@ $(document).ready(function () {
 		loadCategoryOptions();
 		$('#eduOffcanvasTitle').text('양육 등록');
 		$('#eduIdx').val('');
+		$('#eduForm').data('mode', 'add');
 		$('#eduOrgId').val(selectedOrgId || window.educationPageData.currentOrgId);
+		$('#eduPublicYn').val('N'); // 기본값 '비공개'로 설정
 
 		const offcanvas = new bootstrap.Offcanvas('#eduOffcanvas');
 		offcanvas.show();
@@ -499,6 +501,7 @@ $(document).ready(function () {
 				if (response.success) {
 					fillEduForm(response.data);
 					$('#eduOffcanvasTitle').text('양육 수정');
+					$('#eduForm').data('mode', 'edit');
 
 					const offcanvas = new bootstrap.Offcanvas('#eduOffcanvas');
 					offcanvas.show();
@@ -514,11 +517,36 @@ $(document).ready(function () {
 		});
 	}
 
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 일괄 수정 Offcanvas 열기 (수정)
+	 */
+	function openEduBatchEditOffcanvas() {
+		const selectedEdu = $('.edu-checkbox:checked').map(function () {
+			return $(this).data('edu-idx');
+		}).get();
 
+		if (selectedEdu.length === 0) {
+			showToast('일괄 수정할 양육을 선택해주세요.', 'warning');
+			return;
+		}
 
+		resetEduForm();
+		loadCategoryOptions();
+		$('#eduOffcanvasTitle').text(`일괄 수정 (${selectedEdu.length}개)`);
+		$('#eduForm').data('mode', 'batch_edit');
+		$('#eduIdx').val(JSON.stringify(selectedEdu));
 
+		// 양육명 필드는 비워두고, placeholder를 설정하여 자동 생성 규칙 안내
+		$('#eduName').val('').attr('placeholder', '입력 시 이름 + (숫자)로 자동 생성');
 
+		// 수강료, 외부 공개 필드 초기화
+		$('#eduFee').val('');
+		$('#eduPublicYn').val('');
 
+		const offcanvas = new bootstrap.Offcanvas('#eduOffcanvas');
+		offcanvas.show();
+	}
 
 	/**
 	 * 카테고리 옵션 로드
@@ -796,6 +824,11 @@ $(document).ready(function () {
 			openEduAddOffcanvas();
 		});
 
+		// 일괄 수정 버튼
+		$('#btnEditEdu').off('click').on('click', function () {
+			openEduBatchEditOffcanvas();
+		});
+
 		// 선택 삭제 버튼
 		$('#btnDeleteSelected').off('click').on('click', function () {
 			deleteSelectedEdu();
@@ -951,7 +984,7 @@ $(document).ready(function () {
 
 		// 수강료
 		var feeValue = parseInt(data.edu_fee) || 0;
-		$('#eduFee').val(feeValue > 0 ? formatNumber(feeValue) : '');
+		$('#eduFee').val(feeValue > 0 ? formatNumber(feeValue) : '0');
 
 		// 정원
 		$('#eduCapacity').val(data.edu_capacity || 0);
@@ -1018,17 +1051,17 @@ $(document).ready(function () {
 	function resetEduForm() {
 		$('#eduForm')[0].reset();
 		$('#eduIdx').val('');
+		$('#eduName').attr('placeholder', '예: 하나님께 받는 복'); // placeholder 복원
 		$('.edu-day-checkbox').prop('checked', false);
 		$('.edu-time-checkbox').prop('checked', false);
 		$('#eduDaysText').text('요일 선택');
 		$('#eduTimesText').text('시간대 선택');
 
 		// 새로 추가된 필드 초기화
-		$('#eduPublicYn').val('N');
-		$('#eduOnlineYn').val('N');
+		$('#eduPublicYn').val('');
 		$('#eduYoutubeUrl').val('');
 		$('#eduLeaderPhone').val('');
-		$('#eduFee').val('0');
+		$('#eduFee').val('');
 
 		// 포스터 이미지 초기화
 		$('#eduPosterImg').val('');
@@ -1047,74 +1080,165 @@ $(document).ready(function () {
 
 	/**
 	 * 파일 위치: assets/js/education.js
-	 * 역할: 양육 저장 - 정원, 계좌정보 추가
+	 * 역할: 양육 저장 로직 분기
 	 */
 	function saveEdu() {
-		if (!$('#eduCategoryCode').val()) {
-			showToast('카테고리를 선택해주세요.', 'warning');
+		const mode = $('#eduForm').data('mode');
+
+		if (mode === 'batch_edit') {
+			saveBatchEdu();
+		} else {
+			// 기존 등록/수정 로직
+			if (!$('#eduCategoryCode').val()) {
+				showToast('카테고리를 선택해주세요.', 'warning');
+				return;
+			}
+			if (!$('#eduName').val().trim()) {
+				showToast('양육명을 입력해주세요.', 'warning');
+				return;
+			}
+			processSaveEdu(mode);
+		}
+	}
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 양육 일괄 수정 저장 (수정)
+	 */
+	function saveBatchEdu() {
+		const eduIndexes = JSON.parse($('#eduIdx').val());
+		const changedFields = {};
+		let changedFieldCount = 0;
+		const fieldMap = {
+			'edu_name': '양육명',
+			'category_code': '양육카테고리',
+			'edu_start_date': '양육 시작일',
+			'edu_end_date': '양육 종료일',
+			'edu_days': '요일',
+			'edu_times': '시간대',
+			'edu_capacity': '정원',
+			'edu_location': '양육지역',
+			'edu_fee': '수강료',
+			'public_yn': '외부 공개',
+			'bank_account': '계좌정보',
+			'edu_leader': '인도자',
+			'edu_leader_phone': '인도자 연락처',
+			'edu_leader_age': '인도자 연령대',
+			'edu_leader_gender': '인도자 성별',
+			'zoom_url': 'ZOOM URL',
+			'youtube_url': '유튜브 URL',
+			'poster_img': '포스터 이미지',
+			'edu_desc': '양육 설명'
+		};
+
+		// 폼 데이터를 순회하며 변경된 필드만 확인
+		const formData = new FormData($('#eduForm')[0]);
+		for (const [key, value] of formData.entries()) {
+			// 빈 값이 아닌 필드만 대상으로 함
+			if (value !== null && value.toString().trim() !== '') {
+				// edu_idx, org_id 등은 제외
+				if (key !== 'edu_idx' && key !== 'org_id' && key !== 'removePosterFlag' && key !== 'poster_img') {
+					if (fieldMap[key]) {
+						changedFields[fieldMap[key]] = value;
+						changedFieldCount++;
+					}
+				}
+			}
+		}
+
+		// 포스터 이미지 변경 확인
+		if ($('#eduPosterImg')[0].files.length > 0) {
+			changedFields['포스터 이미지'] = $('#eduPosterImg')[0].files[0].name;
+			changedFieldCount++;
+		} else if ($('#removePosterFlag').val() === '1') {
+			changedFields['포스터 이미지'] = '제거';
+			changedFieldCount++;
+		}
+
+
+		if (changedFieldCount === 0) {
+			showToast('수정할 내용을 하나 이상 입력해주세요.', 'warning');
 			return;
 		}
 
-		if (!$('#eduName').val().trim()) {
-			showToast('양육명을 입력해주세요.', 'warning');
-			return;
+		const confirmMessage = `${eduIndexes.length}개의 양육을 ${changedFieldCount}개 필드(${Object.keys(changedFields).join(', ')})를 일괄 수정합니다.`;
+
+		showConfirmModal('일괄 수정 확인', confirmMessage, function () {
+			processSaveEdu('batch_edit');
+		});
+	}
+
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: 양육 저장/수정/일괄수정 처리
+	 */
+	function processSaveEdu(mode) {
+		const eduIdx = $('#eduIdx').val();
+		let url;
+		switch (mode) {
+			case 'add':
+				url = window.educationPageData.baseUrl + 'education/insert_edu';
+				break;
+			case 'edit':
+				url = window.educationPageData.baseUrl + 'education/update_edu';
+				break;
+			case 'batch_edit':
+				url = window.educationPageData.baseUrl + 'education/batch_update_edu';
+				break;
+			default:
+				showToast('잘못된 저장 모드입니다.', 'error');
+				return;
 		}
 
-		// 파일 처리 후 실행할 콜백 함수
 		var processFormData = function (posterBlob) {
-			const eduIdx = $('#eduIdx').val();
-			const url = eduIdx ?
-				window.educationPageData.baseUrl + 'education/update_edu' :
-				window.educationPageData.baseUrl + 'education/insert_edu';
-
-			// FormData 생성
 			var formData = new FormData();
 
-			// 기본 필드
-			if (eduIdx) formData.append('edu_idx', eduIdx);
-			formData.append('org_id', $('#eduOrgId').val());
-			formData.append('category_code', $('#eduCategoryCode').val());
-			formData.append('edu_name', $('#eduName').val());
-			formData.append('edu_location', $('#eduLocation').val());
-			formData.append('edu_start_date', $('#eduStartDate').val());
-			formData.append('edu_end_date', $('#eduEndDate').val());
-			formData.append('edu_days', $('#eduDays').val());
-			formData.append('edu_times', $('#eduTimes').val());
-			formData.append('edu_leader', $('#eduLeader').val());
-			formData.append('edu_leader_phone', $('#eduLeaderPhone').val());
-			formData.append('edu_leader_age', $('#eduLeaderAge').val());
-			formData.append('edu_leader_gender', $('#eduLeaderGender').val());
-			formData.append('edu_desc', $('#eduDesc').val());
-			formData.append('public_yn', $('#eduPublicYn').val());
-			// formData.append('online_yn', $('#eduOnlineYn').val());
-			formData.append('youtube_url', $('#eduYoutubeUrl').val());
-			formData.append('zoom_url', $('#eduZoomUrl').val().trim());
-
-			// 수강료 (숫자만 추출)
-			var feeValue = $('#eduFee').val().replace(/[^\d]/g, '');
-			formData.append('edu_fee', feeValue || '0');
-
-			// 정원
-			formData.append('edu_capacity', $('#eduCapacity').val() || '0');
-
-			// 계좌정보
-			var bankName = $('#eduBankName').val().trim();
-			var accountNumber = $('#eduAccountNumber').val().trim();
-			if (bankName || accountNumber) {
-				var bankAccount = JSON.stringify({
-					bank_name: bankName,
-					account_number: accountNumber
+			// 모드에 따라 데이터 구성
+			if (mode === 'batch_edit') {
+				formData.append('edu_indexes', eduIdx); // JSON 문자열 그대로 전달
+				// 변경된 필드만 추가
+				const formFields = $('#eduForm').serializeArray();
+				$.each(formFields, function (i, field) {
+					if (field.name !== 'edu_idx' && field.value.trim() !== '') {
+						formData.append(field.name, field.value);
+					}
 				});
-				formData.append('bank_account', bankAccount);
 			} else {
-				formData.append('bank_account', '');
+				// 기존 등록/수정 로직
+				if (mode === 'edit') formData.append('edu_idx', eduIdx);
+				formData.append('org_id', $('#eduOrgId').val());
+				formData.append('category_code', $('#eduCategoryCode').val());
+				formData.append('edu_name', $('#eduName').val());
+				formData.append('edu_location', $('#eduLocation').val());
+				formData.append('edu_start_date', $('#eduStartDate').val());
+				formData.append('edu_end_date', $('#eduEndDate').val());
+				formData.append('edu_days', $('#eduDays').val());
+				formData.append('edu_times', $('#eduTimes').val());
+				formData.append('edu_leader', $('#eduLeader').val());
+				formData.append('edu_leader_phone', $('#eduLeaderPhone').val());
+				formData.append('edu_leader_age', $('#eduLeaderAge').val());
+				formData.append('edu_leader_gender', $('#eduLeaderGender').val());
+				formData.append('edu_desc', $('#eduDesc').val());
+				formData.append('public_yn', $('#eduPublicYn').val());
+				formData.append('youtube_url', $('#eduYoutubeUrl').val());
+				formData.append('zoom_url', $('#eduZoomUrl').val().trim());
+				var feeValue = $('#eduFee').val().replace(/[^\d]/g, '');
+				formData.append('edu_fee', feeValue || '0');
+				formData.append('edu_capacity', $('#eduCapacity').val() || '0');
+				var bankName = $('#eduBankName').val().trim();
+				var accountNumber = $('#eduAccountNumber').val().trim();
+				if (bankName || accountNumber) {
+					var bankAccount = JSON.stringify({ bank_name: bankName, account_number: accountNumber });
+					formData.append('bank_account', bankAccount);
+				} else {
+					formData.append('bank_account', '');
+				}
 			}
 
-			// 포스터 이미지
+			// 공통: 포스터 이미지 처리
 			if (posterBlob) {
-				// Blob을 파일로 변환 (파일명 지정 필요)
 				var fileName = 'poster.jpg';
-				// 원본 파일명이 있다면 확장자 유지
 				var originalFile = $('#eduPosterImg')[0].files[0];
 				if (originalFile && originalFile.name) {
 					var ext = originalFile.name.split('.').pop();
@@ -1123,6 +1247,7 @@ $(document).ready(function () {
 				formData.append('poster_img', posterBlob, fileName);
 			}
 			formData.append('remove_poster', $('#removePosterFlag').val());
+
 
 			showSpinner();
 
@@ -1135,32 +1260,27 @@ $(document).ready(function () {
 				dataType: 'json',
 				success: function (response) {
 					hideSpinner();
-
 					if (response.success) {
 						showToast(response.message, 'success');
-
-						// Offcanvas 닫기
 						const offcanvasElement = document.getElementById('eduOffcanvas');
 						const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
 						if (offcanvas) {
 							offcanvas.hide();
 						}
-
 						loadEduList();
 						refreshCategoryTree();
 					} else {
-						showToast(response.message || '양육 저장에 실패했습니다.', 'error');
+						showToast(response.message || '저장에 실패했습니다.', 'error');
 					}
 				},
 				error: function (xhr, status, error) {
-					console.error('양육 저장 실패:', error);
+					console.error('저장 실패:', error);
 					hideSpinner();
-					showToast('양육 저장 중 오류가 발생했습니다.', 'error');
+					showToast('저장 중 오류가 발생했습니다.', 'error');
 				}
 			});
 		};
 
-		// 이미지 리사이징 처리
 		var posterFile = $('#eduPosterImg')[0].files[0];
 		if (posterFile) {
 			resizeImage(posterFile, 1200, function (resizedBlob) {
@@ -1170,6 +1290,7 @@ $(document).ready(function () {
 			processFormData(null);
 		}
 	}
+
 
 	/**
 	 * 이미지 리사이징 함수

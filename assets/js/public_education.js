@@ -162,7 +162,8 @@ $(document).ready(function() {
                             </p>
                             <ul class="list-unstyled mb-0">
                                 <li><i class="bi bi-calendar-check me-2"></i>${edu.edu_start_date} ~ ${edu.edu_end_date}</li>
-                                <li><i class="bi bi-clock me-2"></i>${days} ${times}</li>
+                                <li><i class="bi bi-calendar-week me-2"></i>${days}</li>
+                                <li><i class="bi bi-clock me-2"></i>${times}</li>
                                 <li><i class="bi bi-geo-alt me-2"></i>${escapeHtml(edu.edu_location)}</li>
                                 <li><i class="bi bi-person me-2"></i>${escapeHtml(edu.edu_leader)}</li>
                             </ul>

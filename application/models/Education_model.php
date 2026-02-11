@@ -90,30 +90,31 @@ class Education_model extends CI_Model
 
 	private function process_edu_list($edu_list)
 	{
+		$age_map = [
+			'10s' => '10대',
+			'20s' => '20대',
+			'30s' => '30대',
+			'40s' => '40대',
+			'50s' => '50대',
+			'60s' => '60대 이상',
+		];
+		$gender_map = [
+			'male' => '남',
+			'female' => '여',
+		];
+
 		foreach ($edu_list as &$edu) {
-			if (!empty($edu['edu_days'])) {
-				$parsed_days = json_decode($edu['edu_days'], true);
-				$edu['edu_days'] = is_array($parsed_days) ? $parsed_days : array();
-			} else {
-				$edu['edu_days'] = array();
-			}
+			// JSON 필드 처리
+			$edu['edu_days'] = !empty($edu['edu_days']) ? json_decode($edu['edu_days'], true) : [];
+			$edu['edu_times'] = !empty($edu['edu_times']) ? json_decode($edu['edu_times'], true) : [];
 
-			if (!empty($edu['edu_times'])) {
-				$parsed_times = json_decode($edu['edu_times'], true);
-				$edu['edu_times'] = is_array($parsed_times) ? $parsed_times : array();
-			} else {
-				$edu['edu_times'] = array();
-			}
+			// 표시용 문자열 생성
+			$edu['edu_days_str'] = is_array($edu['edu_days']) ? implode(', ', $edu['edu_days']) : '';
+			$edu['edu_times_str'] = is_array($edu['edu_times']) ? implode(', ', $edu['edu_times']) : '';
+			$edu['edu_period_str'] = ($edu['edu_start_date'] && $edu['edu_end_date']) ? $edu['edu_start_date'] . ' ~ ' . $edu['edu_end_date'] : '';
+			$edu['edu_leader_age_str'] = isset($age_map[$edu['edu_leader_age']]) ? $age_map[$edu['edu_leader_age']] : '';
+			$edu['edu_leader_gender_str'] = isset($gender_map[$edu['edu_leader_gender']]) ? $gender_map[$edu['edu_leader_gender']] : '';
 
-			$edu['edu_days_str'] = !empty($edu['edu_days']) && is_array($edu['edu_days'])
-				? implode(', ', $edu['edu_days'])
-				: '';
-
-			$edu['edu_times_str'] = !empty($edu['edu_times']) && is_array($edu['edu_times'])
-				? implode(', ', $edu['edu_times'])
-				: '';
-
-			$edu['edu_period_str'] = $edu['edu_start_date'] . ' ~ ' . $edu['edu_end_date'];
 
 			if (!empty($edu['thumbnail_img'])) {
 				$edu['thumbnail_img'] = '/uploads/edu_img/' . $edu['edu_idx'] . '/' . $edu['thumbnail_img'];
@@ -309,7 +310,7 @@ class Education_model extends CI_Model
 		$this->apply_mng_search_filters($search_params);
 		$this->db->order_by('e.regi_date', 'DESC');
 		$query = $this->db->get();
-		return $query->result_array();
+		return $this->process_edu_list($query->result_array());
 	}
 
 	public function get_edu_list_by_category($org_id, $category_code)

@@ -94,6 +94,9 @@ $this->load->view('header');
 								<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
 									<i class="bi bi-plus-lg"></i> 양육 등록
 								</button>
+								<button type="button" class="btn btn-sm btn-warning" id="btnEditEdu">
+									<i class="bi bi-pencil-square"></i> 일괄 수정
+								</button>
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelected">
 									<i class="bi bi-trash"></i> 선택 삭제
 								</button>
@@ -359,6 +362,7 @@ $this->load->view('header');
 				<div class="col-6">
 					<label class="form-label">외부 공개</label>
 					<select class="form-select" id="eduPublicYn" name="public_yn">
+						<option value="">선택</option>
 						<option value="N">비공개</option>
 						<option value="Y">공개</option>
 					</select>
