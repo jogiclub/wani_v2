@@ -104,7 +104,7 @@ $this->load->view('mng/header');
 									</ul>
 								</div>
 								<div class="col-auto">
-									<input type="text" id="search_keyword" class="form-control form-control-sm" placeholder="카테고리, 장소, 담당자, 교육명">
+									<input type="text" id="search_keyword" class="form-control form-control-sm" placeholder="카테고리, 장소, 담당자, 양육명">
 								</div>
 								<div class="col-auto">
 									<button id="btn_search" class="btn btn-sm btn-primary">검색</button>

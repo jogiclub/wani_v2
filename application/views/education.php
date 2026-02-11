@@ -34,8 +34,8 @@ $this->load->view('header');
 	<div class="split-container">
 		<!-- 왼쪽: 카테고리 트리 -->
 		<div class="split-pane" id="left-pane">
-			<div class="card">
-				<div class="card-body card-height p-0 position-relative">
+			<div class="card h-100 d-flex flex-column">
+				<div class="card-body p-0 position-relative flex-grow-1" style="overflow-y: auto;">
 					<!-- 트리 스피너 -->
 					<div id="treeSpinner" class="d-flex justify-content-center align-items-center position-absolute w-100 h-100" style="z-index: 1000; background: rgba(255, 255, 255, 0.8);">
 						<div class="text-center">
@@ -46,6 +46,22 @@ $this->load->view('header');
 						</div>
 					</div>
 					<div id="categoryTree" class="tree-container"></div>
+				</div>
+				<div class="card-footer p-2">
+					<div class="btn-group-vertical w-100" role="group" aria-label="Vertical button group" id="categoryManagementButtons">
+						<button type="button" class="btn btn-sm btn-primary" id="btnAddCategory">
+							<i class="bi bi-folder-plus"></i> 카테고리 생성
+						</button>
+						<button type="button" class="btn btn-sm btn-warning" id="btnRenameCategory" disabled>
+							<i class="bi bi-pencil-square"></i> 카테고리명 변경
+						</button>
+						<button type="button" class="btn btn-sm btn-danger" id="btnDeleteCategory" disabled>
+							<i class="bi bi-folder-minus"></i> 카테고리 삭제
+						</button>
+						<button type="button" class="btn btn-sm btn-success" id="btnMoveCategory" disabled>
+							<i class="bi bi-arrow-right-square"></i> 카테고리 이동
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -673,6 +689,73 @@ $this->load->view('header');
 		</div>
 	</div>
 </div>
+
+<!-- 카테고리명 변경 모달 -->
+<div class="modal fade" id="renameCategoryModal" tabindex="-1" aria-labelledby="renameCategoryModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="renameCategoryModalLabel">카테고리명 변경</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="newCategoryName" class="form-label">카테고리명</label>
+					<input type="text" class="form-control" id="newCategoryName" name="newCategoryName" maxlength="50" required>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-warning" id="confirmRenameCategoryBtn">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 카테고리 삭제 확인 모달 -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="deleteCategoryModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="deleteCategoryModalLabel">카테고리 삭제 확인</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p id="deleteCategoryMessage"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteCategoryBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 카테고리 이동 모달 -->
+<div class="modal fade" id="moveCategoryModal" tabindex="-1" aria-labelledby="moveCategoryModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="moveCategoryModalLabel">카테고리 이동</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p id="moveCategoryMessage"></p>
+				<div class="mb-3">
+					<label for="moveToCategoryCode" class="form-label">이동할 상위 카테고리 선택</label>
+					<select class="form-select" id="moveToCategoryCode" name="moveToCategoryCode">
+						<option value="">최상위로 이동</option>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmMoveCategoryBtn">이동</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <?php $this->load->view('footer'); ?>
 
 <!-- Split.js -->
