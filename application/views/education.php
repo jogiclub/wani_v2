@@ -47,7 +47,7 @@ $this->load->view('header');
 					</div>
 					<div id="categoryTree" class="tree-container"></div>
 				</div>
-				<div class="card-footer p-2">
+				<div class="card-footer p-2 bg-white">
 					<div class="btn-group-vertical w-100" role="group" aria-label="Vertical button group" id="categoryManagementButtons">
 						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnAddCategory">
 							<i class="bi bi-folder-plus"></i> 카테고리 생성
