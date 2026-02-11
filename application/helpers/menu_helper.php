@@ -163,7 +163,7 @@ if (!function_exists('get_system_menus')) {
 		);
 
 		if ($org_type === 'meak' || $org_type === 'meakchurch') {
-			$menus['MEMBER_MANAGEMENT']['name'] = '전도/세례/파송';
+			$menus['MEMBER_MANAGEMENT']['name'] = '관문선교관리';
 		}
 
 		return $menus;

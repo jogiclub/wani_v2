@@ -43,13 +43,13 @@ $this->load->view('mng/header');
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-6 d-flex align-items-center">
+						<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedNodeName">
 								<i class="bi bi-book"></i> 조직을 선택해주세요
 							</h5>
 							<small class="ms-3 text-muted">총 <span id="totalEduCount">0</span>개</small>
 						</div>
-						<div class="col-12 col-lg-6 d-flex align-items-center justify-content-end">
+						<div class="col-12 col-lg-9 d-flex align-items-center justify-content-end">
 							<!-- 검색 기능 UI -->
 							<div class="row g-1">
 								<div class="col-auto">

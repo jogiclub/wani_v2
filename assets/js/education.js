@@ -1583,30 +1583,7 @@ $(document).ready(function () {
 	 * 신청자 관리 버튼 클릭 이벤트 바인딩
 	 */
 	function bindApplicantEvents() {
-		// 신청자 관리 버튼 클릭
-		$('#btnManageApplicant').on('click', function () {
-			// 체크된 양육 확인
-			var checkedEdu = [];
-			$('.edu-checkbox:checked').each(function () {
-				checkedEdu.push({
-					edu_idx: $(this).data('edu-idx'),
-					edu_name: $(this).closest('tr').find('td[data-dataindx="edu_name"]').text() || ''
-				});
-			});
 
-			if (checkedEdu.length === 0) {
-				showToast('신청자를 관리할 양육을 선택해주세요.', 'warning');
-				return;
-			}
-
-			if (checkedEdu.length > 1) {
-				showToast('신청자 관리는 하나의 양육만 선택해주세요.', 'warning');
-				return;
-			}
-
-			currentApplicantEduIdx = checkedEdu[0].edu_idx;
-			openApplicantOffcanvas(currentApplicantEduIdx);
-		});
 
 		// 신청자 추가 버튼
 		$('#btnAddApplicant').on('click', function () {

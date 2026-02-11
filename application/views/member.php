@@ -4,7 +4,7 @@
 $org_type = $this->session->userdata('org_type');
 $page_title = '회원관리';
 if ($org_type === 'meak' || $org_type === 'meakchurch') {
-    $page_title = '전도/세례/파송';
+    $page_title = '관문선교관리';
 }
 ?>
 

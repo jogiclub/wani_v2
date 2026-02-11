@@ -25,7 +25,7 @@ $this->load->view('header');
 		</ol>
 	</nav>
 
-	<div class="col-12 my-1 d-flex align-items-center justify-content-between">
+	<div class="col-12 my-1 d-flex align-items-center justify-content-between mb-3">
 		<h3 class="page-title mb-0">양육</h3>
 	</div>
 
@@ -97,9 +97,9 @@ $this->load->view('header');
 								<button type="button" class="btn btn-sm btn-outline-danger" id="btnDeleteSelected">
 									<i class="bi bi-trash"></i> 선택 삭제
 								</button>
-								<button type="button" class="btn btn-sm btn-outline-success" id="btnManageApplicant">
+<!--								<button type="button" class="btn btn-sm btn-outline-success" id="btnManageApplicant">
 									<i class="bi bi-people"></i> 신청자 관리
-								</button>
+								</button>-->
 
 							</div>
 
@@ -382,7 +382,7 @@ $this->load->view('header');
 			<div class="row mb-3">
 				<div class="col-6">
 					<label class="form-label">인도자</label>
-					<input type="text" class="form-control" id="eduLeader" name="edu_leader" placeholder="예: 손용일 집사">
+					<input type="text" class="form-control" id="eduLeader" name="edu_leader" placeholder="예: 홍길동 집사">
 				</div>
 				<div class="col-6">
 					<label class="form-label">인도자 연락처</label>
