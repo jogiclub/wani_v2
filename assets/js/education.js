@@ -1323,33 +1323,26 @@ $(document).ready(function () {
 				parentCode = node.data.category_code;
 			}
 
-			showPromptModal('새 카테고리 생성', '새 카테고리 이름을 입력하세요.', function (newCategoryName) {
-				if (!newCategoryName || !newCategoryName.trim()) {
-					showToast('카테고리 이름은 비워둘 수 없습니다.', 'warning');
-					return;
-				}
-
-				$.ajax({
-					url: window.educationPageData.baseUrl + 'mng/mng_education/create_category',
-					method: 'POST',
-					data: {
-						parent_code: parentCode,
-						category_name: newCategoryName.trim(),
-						org_id: window.educationPageData.currentOrgId
-					},
-					dataType: 'json',
-					success: function (response) {
-						if (response.success) {
-							showToast('새 카테고리가 생성되었습니다.', 'success');
-							refreshCategoryTree();
-						} else {
-							showToast(response.message || '카테고리 생성에 실패했습니다.', 'error');
-						}
-					},
-					error: function () {
-						showToast('카테고리 생성 중 오류가 발생했습니다.', 'error');
+			$.ajax({
+				url: window.educationPageData.baseUrl + 'mng/mng_education/create_category',
+				method: 'POST',
+				data: {
+					parent_code: parentCode,
+					category_name: '새 카테고리',
+					org_id: window.educationPageData.currentOrgId
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('새 카테고리가 생성되었습니다.', 'success');
+						refreshCategoryTree();
+					} else {
+						showToast(response.message || '카테고리 생성에 실패했습니다.', 'error');
 					}
-				});
+				},
+				error: function () {
+					showToast('카테고리 생성 중 오류가 발생했습니다.', 'error');
+				}
 			});
 		});
 
@@ -1462,7 +1455,7 @@ $(document).ready(function () {
 
 			tree.visit(function (n) {
 				// 자기 자신과 자기 자식 노드는 제외
-				if (n.data.type === 'category' && n.key !== node.key && !node.isAncestorOf(n)) {
+				if (n.data.type === 'category' && n.key !== node.key && !n.isDescendantOf(node)) {
 					const level = n.getLevel() - 1;
 					const indent = '&nbsp;'.repeat(level * 4);
 					$select.append(
