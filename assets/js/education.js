@@ -821,7 +821,7 @@ $(document).ready(function () {
 	function bindGlobalEvents() {
 		// 양육 등록 버튼
 		$('#btnAddEdu').off('click').on('click', function () {
-			openEduAddOffcanvas();
+			addEmptyEdu();
 		});
 
 		// 일괄 수정 버튼
@@ -915,6 +915,46 @@ $(document).ready(function () {
 
 		// 카테고리 관리 버튼 이벤트
 		bindCategoryManagementEvents();
+	}
+
+	/**
+	 * 파일 위치: assets/js/education.js
+	 * 역할: '새 양육' 바로 추가
+	 */
+	function addEmptyEdu() {
+		if (selectedType !== 'category' || !selectedCategoryCode) {
+			showToast('양육을 추가할 카테고리를 선택해주세요.', 'warning');
+			return;
+		}
+
+		showSpinner();
+
+		$.ajax({
+			url: window.educationPageData.baseUrl + 'education/insert_edu',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				category_code: selectedCategoryCode,
+				edu_name: '새 양육',
+				public_yn: 'N'
+			},
+			dataType: 'json',
+			success: function (response) {
+				hideSpinner();
+				if (response.success) {
+					showToast('\'새 양육\'이 추가되었습니다.', 'success');
+					loadEduList();
+					refreshCategoryTree();
+				} else {
+					showToast(response.message || '양육 추가에 실패했습니다.', 'error');
+				}
+			},
+			error: function (xhr, status, error) {
+				console.error('양육 추가 실패:', error);
+				hideSpinner();
+				showToast('양육 추가 중 오류가 발생했습니다.', 'error');
+			}
+		});
 	}
 
 	/**
