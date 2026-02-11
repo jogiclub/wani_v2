@@ -105,7 +105,7 @@ if ($org_type === 'meak' || $org_type === 'meakchurch') {
 										<li><a class="dropdown-item" href="#" id="btnSelectedQrPrint">선택QR인쇄</a></li>
 										<li><a class="dropdown-item" href="#" id="btnExcelDownload">엑셀다운로드</a></li>
 										<li><a class="dropdown-item" href="#" id="btnExcelEdit">엑셀편집</a></li>
-										<li><a class="dropdown-item" href="#" id="btnMemberCardUrl">그룹카드 URL</a></li>
+										<li><a class="dropdown-item" href="#" id="btnMemberCardUrl">등록카드 URL</a></li>
 									</ul>
 								</div>
 							</div>
@@ -937,12 +937,12 @@ if ($org_type === 'meak' || $org_type === 'meakchurch') {
 	</div>
 </div>
 
-<!-- 그룹카드 URL 모달 -->
+<!-- 등록카드 URL 모달 -->
 <div class="modal fade" id="memberCardUrlModal" tabindex="-1" aria-labelledby="memberCardUrlModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title" id="memberCardUrlModalLabel">그룹카드 URL</h5>
+				<h5 class="modal-title" id="memberCardUrlModalLabel">등록카드 URL</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">

@@ -521,15 +521,15 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 			exportMemberToExcel();
 		});
 
-		// 그룹카드 URL 버튼 클릭 이벤트
+		// 등록카드 URL 버튼 클릭 이벤트
 		$(document).on('click', '#btnMemberCardUrl', function (e) {
 			e.preventDefault();
 			handleGroupCardUrlClick();
 		});
 
-		// 그룹카드 URL 복사 버튼
+		// 등록카드 URL 복사 버튼
 		$(document).on('click', '#copyMemberCardUrlBtn', function () {
-			copyToClipboard('#memberCardUrlInput', '그룹카드 URL이 복사되었습니다.');
+			copyToClipboard('#memberCardUrlInput', '등록카드 URL이 복사되었습니다.');
 		});
 
 		// 회원 검색 기능 바인딩
@@ -548,7 +548,7 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	}
 
 	/**
-	 * 그룹카드 URL 버튼 클릭 처리
+	 * 등록카드 URL 버튼 클릭 처리
 	 */
 	function handleGroupCardUrlClick() {
 		const tree = $("#groupTree").fancytree("getTree");

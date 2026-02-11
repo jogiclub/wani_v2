@@ -278,6 +278,14 @@ class Education extends My_Controller
 
 		$user_id = $this->session->userdata('user_id');
 		$org_id = $this->input->post('org_id');
+		$category_code = $this->input->post('category_code');
+		$edu_name = $this->input->post('edu_name');
+
+		// 필수 필드 유효성 검사
+		if (!$org_id || !$category_code || !$edu_name) {
+			echo json_encode(array('success' => false, 'message' => '필수 정보(조직, 카테고리, 양육명)가 누락되었습니다.'));
+			return;
+		}
 
 		if (!$this->check_org_access($org_id)) {
 			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
@@ -286,8 +294,8 @@ class Education extends My_Controller
 
 		$edu_data = array(
 			'org_id' => $org_id,
-			'category_code' => $this->input->post('category_code'),
-			'edu_name' => $this->input->post('edu_name'),
+			'category_code' => $category_code,
+			'edu_name' => $edu_name,
 			'edu_location' => $this->input->post('edu_location'),
 			'edu_start_date' => $this->input->post('edu_start_date') ?: null,
 			'edu_end_date' => $this->input->post('edu_end_date') ?: null,
@@ -592,7 +600,7 @@ class Education extends My_Controller
 
 	/**
 	 * 파일 위치: application/controllers/Education.php
-	 * 역할: 양육 수정 - 정원, 계좌정보 처리 추가
+	 * 역할: 양육 수정 - 외부 URL 생성 로직 추가
 	 */
 	public function update_edu()
 	{
@@ -647,6 +655,10 @@ class Education extends My_Controller
 		$result = $this->Education_model->update_edu($edu_idx, $edu_data);
 
 		if ($result) {
+			// 외부 공개로 설정된 경우, 외부 URL 생성
+			if ($edu_data['public_yn'] === 'Y') {
+				$this->_generate_and_save_external_url($edu_idx, $org_id);
+			}
 			echo json_encode(array('success' => true, 'message' => '양육이 수정되었습니다.'));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '양육 수정에 실패했습니다.'));
@@ -655,7 +667,7 @@ class Education extends My_Controller
 
 	/**
 	 * 파일 위치: application/controllers/Education.php
-	 * 역할: 양육 일괄 수정
+	 * 역할: 양육 일괄 수정 - 외부 URL 생성 로직 추가
 	 */
 	public function batch_update_edu()
 	{
@@ -740,6 +752,10 @@ class Education extends My_Controller
 			}
 
 			if ($this->Education_model->update_edu($edu_idx, $current_update_data)) {
+				// 외부 공개로 설정된 경우, 외부 URL 생성
+				if (isset($current_update_data['public_yn']) && $current_update_data['public_yn'] === 'Y') {
+					$this->_generate_and_save_external_url($edu_idx, $edu['org_id']);
+				}
 				$success_count++;
 			} else {
 				$fail_count++;
@@ -1066,29 +1082,15 @@ class Education extends My_Controller
 			return;
 		}
 
-		// 6자리 랜덤 코드 생성
-		$access_code = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+		$result = $this->_generate_and_save_external_url($edu_idx, $edu['org_id']);
 
-		// 만료 시간 설정 (72시간)
-		$expired_at = date('Y-m-d H:i:s', strtotime('+72 hours'));
-
-		// wb_edu_external_url 테이블에 저장
-		$url_data = array(
-			'edu_idx' => $edu_idx,
-			'org_id' => $edu['org_id'],
-			'access_code' => $access_code,
-			'expired_at' => $expired_at,
-			'regi_date' => date('Y-m-d H:i:s')
-		);
-
-		if ($this->Education_model->save_external_url($url_data)) {
-			$external_url = base_url('education/apply/' . $edu['org_id'] . '/' . $edu_idx . '/' . $access_code);
-
+		if ($result) {
+			$external_url = base_url('education/apply/' . $edu['org_id'] . '/' . $edu_idx . '/' . $result['access_code']);
 			echo json_encode(array(
 				'success' => true,
 				'url' => $external_url,
-				'access_code' => $access_code,
-				'expired_at' => $expired_at
+				'access_code' => $result['access_code'],
+				'expired_at' => $result['expired_at']
 			));
 		} else {
 			echo json_encode(array('success' => false, 'message' => '외부 URL 생성에 실패했습니다.'));
@@ -1388,6 +1390,34 @@ class Education extends My_Controller
 				'message' => '생성된 URL이 없습니다.'
 			));
 		}
+	}
+
+	/**
+	 * 파일 위치: application/controllers/Education.php
+	 * 역할: 외부 URL 생성 및 저장 (내부용)
+	 */
+	private function _generate_and_save_external_url($edu_idx, $org_id)
+	{
+		// 6자리 랜덤 코드 생성
+		$access_code = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+
+		// 만료 시간 설정 (72시간)
+		$expired_at = date('Y-m-d H:i:s', strtotime('+72 hours'));
+
+		// wb_edu_external_url 테이블에 저장
+		$url_data = array(
+			'edu_idx' => $edu_idx,
+			'org_id' => $org_id,
+			'access_code' => $access_code,
+			'expired_at' => $expired_at,
+			'regi_date' => date('Y-m-d H:i:s')
+		);
+
+		if ($this->Education_model->save_external_url($url_data)) {
+			return $url_data;
+		}
+
+		return false;
 	}
 
 }
