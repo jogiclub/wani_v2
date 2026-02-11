@@ -446,4 +446,111 @@ class Mng_education extends CI_Controller
 			'data' => array_values($distinct_times)
 		));
 	}
+
+	/**
+	 * 카테고리 생성
+	 */
+	public function create_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$parent_code = $this->input->post('parent_code');
+		$category_name = $this->input->post('category_name');
+		$org_id = $this->input->post('org_id');
+
+		if (empty($category_name) || empty($org_id)) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$result = $this->Education_model->create_category($org_id, $parent_code, $category_name);
+
+		if ($result) {
+			echo json_encode(['success' => true, 'message' => '카테고리가 생성되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '카테고리 생성에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 카테고리명 변경
+	 */
+	public function rename_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$category_code = $this->input->post('category_code');
+		$new_name = $this->input->post('new_name');
+		$org_id = $this->input->post('org_id');
+
+		if (empty($category_code) || empty($new_name) || empty($org_id)) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$result = $this->Education_model->rename_category($org_id, $category_code, $new_name);
+
+		if ($result) {
+			echo json_encode(['success' => true, 'message' => '카테고리명이 변경되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '카테고리명 변경에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 카테고리 삭제
+	 */
+	public function delete_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$category_code = $this->input->post('category_code');
+		$org_id = $this->input->post('org_id');
+
+		if (empty($category_code) || empty($org_id)) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$result = $this->Education_model->delete_category($org_id, $category_code);
+
+		if ($result) {
+			echo json_encode(['success' => true, 'message' => '카테고리가 삭제되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '카테고리 삭제에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 카테고리 이동
+	 */
+	public function move_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$source_code = $this->input->post('source_code');
+		$target_parent_code = $this->input->post('target_parent_code');
+		$org_id = $this->input->post('org_id');
+
+		if (empty($source_code) || empty($org_id)) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+
+		$result = $this->Education_model->move_category($org_id, $source_code, $target_parent_code);
+
+		if ($result) {
+			echo json_encode(['success' => true, 'message' => '카테고리가 이동되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '카테고리 이동에 실패했습니다.']);
+		}
+	}
 }

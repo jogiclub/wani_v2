@@ -573,4 +573,185 @@ class Education_model extends CI_Model
 			$this->db->group_end();
 		}
 	}
+
+	// --- Category Management ---
+
+	private function _get_category_data($org_id)
+	{
+		$this->db->select('category_json');
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get('wb_edu_category');
+		$row = $query->row_array();
+		if ($row && !empty($row['category_json'])) {
+			return json_decode($row['category_json'], true);
+		}
+		return ['categories' => []];
+	}
+
+	private function _save_category_data($org_id, $category_data)
+	{
+		$json_data = json_encode($category_data, JSON_UNESCAPED_UNICODE);
+		$this->db->where('org_id', $org_id);
+		$query = $this->db->get('wb_edu_category');
+		if ($query->num_rows() > 0) {
+			return $this->db->update('wb_edu_category', ['category_json' => $json_data], ['org_id' => $org_id]);
+		} else {
+			return $this->db->insert('wb_edu_category', ['org_id' => $org_id, 'category_json' => $json_data]);
+		}
+	}
+
+	private function _generate_category_code($parent_code = null)
+	{
+		// Simple unique code generation
+		return 'CAT_' . strtoupper(uniqid());
+	}
+
+	public function create_category($org_id, $parent_code, $category_name)
+	{
+		$category_data = $this->_get_category_data($org_id);
+		$new_category = [
+			'code' => $this->_generate_category_code($parent_code),
+			'name' => $category_name,
+			'order' => 0, // Order can be managed separately if needed
+			'children' => []
+		];
+
+		if ($parent_code) {
+			$this->_add_child_category($category_data['categories'], $parent_code, $new_category);
+		} else {
+			$category_data['categories'][] = $new_category;
+		}
+
+		return $this->_save_category_data($org_id, $category_data);
+	}
+
+	private function _add_child_category(&$categories, $parent_code, $new_category)
+	{
+		foreach ($categories as &$category) {
+			if ($category['code'] === $parent_code) {
+				if (!isset($category['children'])) {
+					$category['children'] = [];
+				}
+				$category['children'][] = $new_category;
+				return true;
+			}
+			if (!empty($category['children'])) {
+				if ($this->_add_child_category($category['children'], $parent_code, $new_category)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public function rename_category($org_id, $category_code, $new_name)
+	{
+		$category_data = $this->_get_category_data($org_id);
+		if ($this->_find_and_rename_category($category_data['categories'], $category_code, $new_name)) {
+			return $this->_save_category_data($org_id, $category_data);
+		}
+		return false;
+	}
+
+	private function _find_and_rename_category(&$categories, $code, $new_name)
+	{
+		foreach ($categories as &$category) {
+			if ($category['code'] === $code) {
+				$category['name'] = $new_name;
+				return true;
+			}
+			if (!empty($category['children'])) {
+				if ($this->_find_and_rename_category($category['children'], $code, $new_name)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public function delete_category($org_id, $category_code)
+	{
+		$this->db->trans_start();
+
+		$category_data = $this->_get_category_data($org_id);
+		$codes_to_delete = [];
+		$this->_find_and_delete_category($category_data['categories'], $category_code, $codes_to_delete);
+		$this->_save_category_data($org_id, $category_data);
+
+		// Delete related educations
+		if (!empty($codes_to_delete)) {
+			$this->db->where('org_id', $org_id);
+			$this->db->where_in('category_code', $codes_to_delete);
+			$this->db->update('wb_edu', ['del_yn' => 'Y']);
+		}
+
+		$this->db->trans_complete();
+		return $this->db->trans_status();
+	}
+
+	private function _find_and_delete_category(&$categories, $code, &$deleted_codes)
+	{
+		foreach ($categories as $i => &$category) {
+			if ($category['code'] === $code) {
+				$this->_collect_all_child_codes($category, $deleted_codes);
+				array_splice($categories, $i, 1);
+				return true;
+			}
+			if (!empty($category['children'])) {
+				if ($this->_find_and_delete_category($category['children'], $code, $deleted_codes)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private function _collect_all_child_codes($category, &$codes)
+	{
+		$codes[] = $category['code'];
+		if (!empty($category['children'])) {
+			foreach ($category['children'] as $child) {
+				$this->_collect_all_child_codes($child, $codes);
+			}
+		}
+	}
+
+	public function move_category($org_id, $source_code, $target_parent_code)
+	{
+		$category_data = $this->_get_category_data($org_id);
+		
+		// Find and remove the source category
+		$source_category = null;
+		$this->_find_and_remove_category($category_data['categories'], $source_code, $source_category);
+
+		if ($source_category) {
+			// Add it to the new parent
+			if ($target_parent_code) {
+				$this->_add_child_category($category_data['categories'], $target_parent_code, $source_category);
+			} else {
+				// Add to root
+				$category_data['categories'][] = $source_category;
+			}
+			return $this->_save_category_data($org_id, $category_data);
+		}
+
+		return false;
+	}
+
+	private function _find_and_remove_category(&$categories, $code, &$found_category)
+	{
+		foreach ($categories as $i => &$category) {
+			if ($category['code'] === $code) {
+				$found_category = $category;
+				array_splice($categories, $i, 1);
+				return true;
+			}
+			if (!empty($category['children'])) {
+				if ($this->_find_and_remove_category($category['children'], $code, $found_category)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }

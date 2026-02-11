@@ -187,11 +187,15 @@ $(document).ready(function () {
 					selectedCategoryCode = null;
 					selectedType = 'org';
 					$('#selectedCategoryName').html('<i class="bi bi-building"></i> ' + node.title);
+					// 조직 선택 시 카테고리 관리 버튼 비활성화
+					$('#btnRenameCategory, #btnDeleteCategory, #btnMoveCategory').prop('disabled', true);
 				} else if (nodeData.type === 'category') {
 					selectedOrgId = window.educationPageData.currentOrgId;
 					selectedCategoryCode = nodeData.category_code;
 					selectedType = 'category';
 					$('#selectedCategoryName').html('<i class="bi bi-folder"></i> ' + node.title);
+					// 카테고리 선택 시 관련 버튼 활성화
+					$('#btnRenameCategory, #btnDeleteCategory, #btnMoveCategory').prop('disabled', false);
 				}
 
 				loadEduList();
@@ -797,19 +801,9 @@ $(document).ready(function () {
 			deleteSelectedEdu();
 		});
 
-		// 카테고리 관리 버튼
-		$('#btnManageCategory').off('click').on('click', function () {
-			openCategoryModal();
-		});
-
 		// 양육 저장 버튼
 		$('#btnSaveEdu').off('click').on('click', function () {
 			saveEdu();
-		});
-
-		// 카테고리 저장 버튼
-		$('#btnSaveCategory').off('click').on('click', function () {
-			saveCategory();
 		});
 
 		// 검색 버튼
@@ -885,6 +879,9 @@ $(document).ready(function () {
 				}
 			}
 		}, 250));
+
+		// 카테고리 관리 버튼 이벤트
+		bindCategoryManagementEvents();
 	}
 
 	/**
@@ -1313,111 +1310,203 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 카테고리 관리 모달 열기
+	 * 카테고리 관리 이벤트 바인딩
 	 */
-	function openCategoryModal() {
-		showSpinner();
+	function bindCategoryManagementEvents() {
+		// 카테고리 생성
+		$('#btnAddCategory').on('click', function () {
+			const tree = $("#categoryTree").fancytree("getTree");
+			const node = tree.getActiveNode();
+			let parentCode = null;
 
-		$.ajax({
-			url: window.educationPageData.baseUrl + 'education/get_category_tree',
-			method: 'POST',
-			dataType: 'json',
-			success: function (treeData) {
-				hideSpinner();
+			if (node && node.data.type === 'category') {
+				parentCode = node.data.category_code;
+			}
 
-				// 조직 노드 제외하고 카테고리만 추출
-				let categories = [];
-				if (treeData && treeData.length > 0 && treeData[0].children) {
-					categories = extractCategories(treeData[0].children);
+			showPromptModal('새 카테고리 생성', '새 카테고리 이름을 입력하세요.', function (newCategoryName) {
+				if (!newCategoryName || !newCategoryName.trim()) {
+					showToast('카테고리 이름은 비워둘 수 없습니다.', 'warning');
+					return;
 				}
 
-				const categoryJson = {
-					categories: categories
-				};
-
-				$('#categoryJson').val(JSON.stringify(categoryJson, null, 2));
-				$('#categoryModal').modal('show');
-			},
-			error: function (xhr, status, error) {
-				console.error('카테고리 정보 로드 실패:', error);
-				hideSpinner();
-				showToast('카테고리 정보를 불러오는 중 오류가 발생했습니다.', 'error');
-			}
-		});
-	}
-
-	/**
-	 * 트리 데이터에서 카테고리 추출
-	 */
-	function extractCategories(nodes) {
-		const categories = [];
-
-		nodes.forEach(function (node) {
-			if (node.data && node.data.type === 'category') {
-				const category = {
-					code: node.data.category_code,
-					name: node.title.split(' (')[0],
-					order: categories.length + 1
-				};
-
-				if (node.children && node.children.length > 0) {
-					category.children = extractCategories(node.children);
-				}
-
-				categories.push(category);
-			}
+				$.ajax({
+					url: window.educationPageData.baseUrl + 'mng/mng_education/create_category',
+					method: 'POST',
+					data: {
+						parent_code: parentCode,
+						category_name: newCategoryName.trim(),
+						org_id: window.educationPageData.currentOrgId
+					},
+					dataType: 'json',
+					success: function (response) {
+						if (response.success) {
+							showToast('새 카테고리가 생성되었습니다.', 'success');
+							refreshCategoryTree();
+						} else {
+							showToast(response.message || '카테고리 생성에 실패했습니다.', 'error');
+						}
+					},
+					error: function () {
+						showToast('카테고리 생성 중 오류가 발생했습니다.', 'error');
+					}
+				});
+			});
 		});
 
-		return categories;
-	}
+		// 카테고리명 변경
+		$('#btnRenameCategory').on('click', function () {
+			const tree = $("#categoryTree").fancytree("getTree");
+			const node = tree.getActiveNode();
 
-	/**
-	 * 카테고리 저장
-	 */
-	function saveCategory() {
-		const categoryJsonStr = $('#categoryJson').val().trim();
-
-		// JSON 유효성 검증
-		try {
-			const categoryData = JSON.parse(categoryJsonStr);
-
-			if (!categoryData.categories || !Array.isArray(categoryData.categories)) {
-				showToast('올바른 카테고리 형식이 아닙니다.', 'warning');
+			if (!node || node.data.type !== 'category') {
+				showToast('변경할 카테고리를 선택해주세요.', 'warning');
 				return;
 			}
-		} catch (error) {
-			showToast('JSON 형식이 올바르지 않습니다.', 'warning');
-			return;
-		}
 
-		showSpinner();
+			const currentName = node.title.split(' (')[0];
+			$('#newCategoryName').val(currentName);
+			$('#renameCategoryModal').modal('show');
+		});
 
-		$.ajax({
-			url: window.educationPageData.baseUrl + 'education/save_category',
-			method: 'POST',
-			data: {
-				org_id: window.educationPageData.currentOrgId,
-				category_json: categoryJsonStr
-			},
-			dataType: 'json',
-			success: function (response) {
-				hideSpinner();
+		$('#confirmRenameCategoryBtn').on('click', function () {
+			const tree = $("#categoryTree").fancytree("getTree");
+			const node = tree.getActiveNode();
+			const newName = $('#newCategoryName').val().trim();
 
-				if (response.success) {
-					showToast(response.message, 'success');
-					$('#categoryModal').modal('hide');
-					refreshCategoryTree();
-				} else {
-					showToast(response.message || '카테고리 저장에 실패했습니다.', 'error');
-				}
-			},
-			error: function (xhr, status, error) {
-				console.error('카테고리 저장 실패:', error);
-				hideSpinner();
-				showToast('카테고리 저장 중 오류가 발생했습니다.', 'error');
+			if (!newName) {
+				showToast('카테고리명을 입력해주세요.', 'warning');
+				return;
 			}
+
+			$.ajax({
+				url: window.educationPageData.baseUrl + 'mng/mng_education/rename_category',
+				method: 'POST',
+				data: {
+					category_code: node.data.category_code,
+					new_name: newName,
+					org_id: window.educationPageData.currentOrgId
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('카테고리명이 변경되었습니다.', 'success');
+						$('#renameCategoryModal').modal('hide');
+						refreshCategoryTree();
+						loadEduList(); // 그리드도 새로고침
+					} else {
+						showToast(response.message || '카테고리명 변경에 실패했습니다.', 'error');
+					}
+				},
+				error: function () {
+					showToast('카테고리명 변경 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		});
+
+		// 카테고리 삭제
+		$('#btnDeleteCategory').on('click', function () {
+			const tree = $("#categoryTree").fancytree("getTree");
+			const node = tree.getActiveNode();
+
+			if (!node || node.data.type !== 'category') {
+				showToast('삭제할 카테고리를 선택해주세요.', 'warning');
+				return;
+			}
+
+			const message = `'${node.title.split(' (')[0]}' 카테고리를 삭제하시겠습니까? 하위 카테고리와 포함된 모든 양육 정보가 함께 삭제되며, 복구할 수 없습니다.`;
+			$('#deleteCategoryMessage').text(message);
+			$('#deleteCategoryModal').modal('show');
+		});
+
+		$('#confirmDeleteCategoryBtn').on('click', function () {
+			const tree = $("#categoryTree").fancytree("getTree");
+			const node = tree.getActiveNode();
+
+			$.ajax({
+				url: window.educationPageData.baseUrl + 'mng/mng_education/delete_category',
+				method: 'POST',
+				data: {
+					category_code: node.data.category_code,
+					org_id: window.educationPageData.currentOrgId
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('카테고리가 삭제되었습니다.', 'success');
+						$('#deleteCategoryModal').modal('hide');
+						refreshCategoryTree();
+						selectFirstNode(); // 첫번째 노드 선택
+					} else {
+						showToast(response.message || '카테고리 삭제에 실패했습니다.', 'error');
+					}
+				},
+				error: function () {
+					showToast('카테고리 삭제 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		});
+
+
+		// 카테고리 이동
+		$('#btnMoveCategory').on('click', function () {
+			const tree = $("#categoryTree").fancytree("getTree");
+			const node = tree.getActiveNode();
+
+			if (!node || node.data.type !== 'category') {
+				showToast('이동할 카테고리를 선택해주세요.', 'warning');
+				return;
+			}
+
+			const $select = $('#moveToCategoryCode');
+			$select.empty().append('<option value="">최상위로 이동</option>');
+
+			tree.visit(function (n) {
+				// 자기 자신과 자기 자식 노드는 제외
+				if (n.data.type === 'category' && n.key !== node.key && !node.isAncestorOf(n)) {
+					const level = n.getLevel() - 1;
+					const indent = '&nbsp;'.repeat(level * 4);
+					$select.append(
+						$('<option></option>')
+							.val(n.data.category_code)
+							.html(indent + n.title.split(' (')[0])
+					);
+				}
+			});
+
+			$('#moveCategoryMessage').text(`'${node.title.split(' (')[0]}' 카테고리를 어디로 이동하시겠습니까?`);
+			$('#moveCategoryModal').modal('show');
+		});
+
+		$('#confirmMoveCategoryBtn').on('click', function () {
+			const tree = $("#categoryTree").fancytree("getTree");
+			const node = tree.getActiveNode();
+			const targetParentCode = $('#moveToCategoryCode').val();
+
+			$.ajax({
+				url: window.educationPageData.baseUrl + 'mng/mng_education/move_category',
+				method: 'POST',
+				data: {
+					source_code: node.data.category_code,
+					target_parent_code: targetParentCode,
+					org_id: window.educationPageData.currentOrgId
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('카테고리가 이동되었습니다.', 'success');
+						$('#moveCategoryModal').modal('hide');
+						refreshCategoryTree();
+					} else {
+						showToast(response.message || '카테고리 이동에 실패했습니다.', 'error');
+					}
+				},
+				error: function () {
+					showToast('카테고리 이동 중 오류가 발생했습니다.', 'error');
+				}
+			});
 		});
 	}
+
 
 	/**
 	 * 스피너 표시

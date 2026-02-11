@@ -49,16 +49,16 @@ $this->load->view('header');
 				</div>
 				<div class="card-footer p-2">
 					<div class="btn-group-vertical w-100" role="group" aria-label="Vertical button group" id="categoryManagementButtons">
-						<button type="button" class="btn btn-sm btn-primary" id="btnAddCategory">
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnAddCategory">
 							<i class="bi bi-folder-plus"></i> 카테고리 생성
 						</button>
-						<button type="button" class="btn btn-sm btn-warning" id="btnRenameCategory" disabled>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnRenameCategory" disabled>
 							<i class="bi bi-pencil-square"></i> 카테고리명 변경
 						</button>
-						<button type="button" class="btn btn-sm btn-danger" id="btnDeleteCategory" disabled>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnDeleteCategory" disabled>
 							<i class="bi bi-folder-minus"></i> 카테고리 삭제
 						</button>
-						<button type="button" class="btn btn-sm btn-success" id="btnMoveCategory" disabled>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnMoveCategory" disabled>
 							<i class="bi bi-arrow-right-square"></i> 카테고리 이동
 						</button>
 					</div>
