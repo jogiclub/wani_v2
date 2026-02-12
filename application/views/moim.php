@@ -26,7 +26,7 @@ $this->load->view('header');
 			<li class="breadcrumb-item active">소모임</li>
 		</ol>
 	</nav>
-	<div class="row align-items-center justify-content-between g-3 mb-3">
+
 		<div class="col-12 my-1 d-flex align-items-center justify-content-between">
 			<h3 class="page-title mb-0">소모임</h3>
 			<div class="d-flex gap-2">
@@ -38,7 +38,7 @@ $this->load->view('header');
 				</button>
 			</div>
 		</div>
-	</div>
+	
 
 	<!-- Split.js를 위한 단일 컨테이너 -->
 	<div class="split-container">

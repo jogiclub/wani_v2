@@ -27,7 +27,7 @@ $this->load->view('header');
 	<div class="card">
 		<div class="card-header pt-3">
 			<!-- 검색 영역 -->
-			<div class="row g-2 mb-3" id="searchArea" style="display:none;">
+			<div class="row g-2" id="searchArea" style="display:none;">
 				<!-- 구분 -->
 				<div class="col-auto">
 					<select id="searchIncomeType" class="form-select form-select-sm">
@@ -86,7 +86,7 @@ $this->load->view('header');
 						<i class="bi bi-plus-lg"></i> 지출입력
 					</button>
 					<div class="btn-group">
-						<button type="button" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
+						<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
 								aria-expanded="false">
 							<i class="bi bi-three-dots"></i>
 						</button>
@@ -166,20 +166,19 @@ $this->load->view('header');
 		<!-- 항목 입력 영역 -->
 		<div class="p-3 border-bottom">
 			<div class="row g-2 mb-2">
-				<div class="col-12">
+				<div class="col-6">
 					<label class="form-label small mb-1">이름 <span class="text-muted">(여러명 선택 가능, 쉼표로 구분)</span></label>
-					<select class="form-select form-select-sm" id="entryName" name="entry_name[]" multiple="multiple" style="width:100%;">
+					<select class="form-select form-control-sm" id="entryName" name="entry_name[]" multiple="multiple" style="width:100%;">
 					</select>
 				</div>
-			</div>
-			<div class="row g-2 mb-2">
-				<div class="col-6">
+
+				<div class="col-3">
 					<label class="form-label small mb-1">금액</label>
-					<input type="text" class="form-control form-control-sm text-end" id="entryAmount" name="amount" placeholder="0">
+					<input type="text" class="form-control  text-end" id="entryAmount" name="amount" placeholder="0">
 				</div>
-				<div class="col-6">
+				<div class="col-3">
 					<label class="form-label small mb-1">적요</label>
-					<input type="text" class="form-control form-control-sm" id="entryMemo" name="memo" placeholder="적요">
+					<input type="text" class="form-control " id="entryMemo" name="memo" placeholder="적요">
 				</div>
 			</div>
 			<div class="d-flex justify-content-between align-items-center">
