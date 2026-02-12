@@ -89,6 +89,9 @@ $this->load->view('header');
 								<button type="button" class="btn btn-sm btn-primary" id="btnAddMembers">
 									<i class="bi bi-plus-lg"></i> 회원 추가
 								</button>
+								<button type="button" class="btn btn-sm btn-danger" id="btnDeleteSelected">
+									<i class="bi bi-trash"></i> 선택 삭제
+								</button>
 							</div>
 
 						</div>

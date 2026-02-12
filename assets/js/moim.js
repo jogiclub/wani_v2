@@ -213,6 +213,17 @@ $(document).ready(function () {
 	 */
 	function initializeParamQuery() {
 		const colModel = [
+			{
+				title: '<input type="checkbox" id="selectAllCheckbox" />',
+				dataIndx: "checkbox",
+				width: 50,
+				align: "center",
+				sortable: false,
+				editable: false,
+				render: function (ui) {
+					return `<input type="checkbox" class="moim-checkbox" data-moim-idx="${ui.rowData.moim_idx}">`;
+				}
+			},
 			{ title: "이름", dataIndx: "member_name", width: 120, align: "center" },
 			{ title: "성별", dataIndx: "member_sex_str", width: 60, align: "center" },
 			{ title: "생년월일", dataIndx: "member_birth_formatted", width: 120, align: "center" },
@@ -229,11 +240,6 @@ $(document).ready(function () {
 						return [];
 					}
 				}
-			},
-			{ title: "관리", dataIndx: "manage", width: 80, align: "center", editable: false, sortable: false,
-				render: function (ui) {
-					return `<button type="button" class="btn btn-sm btn-danger btn-delete-member" data-idx="${ui.rowData.moim_idx}">삭제</button>`;
-				}
 			}
 		];
 
@@ -243,7 +249,7 @@ $(document).ready(function () {
 			dataModel: { data: [] },
 			colModel: colModel,
 			strNoRows: '소모임 회원이 없습니다',
-			selectionModel: { type: 'row', mode: 'single' },
+			selectionModel: { type: 'none' }, // 기본 선택 비활성화
 			editable: true,
 			editModel: {
 				saveKey: $.ui.keyCode.ENTER,
@@ -269,6 +275,12 @@ $(document).ready(function () {
 					updateMoimPosition(ui.rowData.moim_idx, ui.newVal);
 				}
 			},
+			rowInit: function (ui) {
+				var style = "height: 40px;";
+				return {
+					style: style,
+				};
+			},
 			numberCell: { show: false },
 			title: false,
 			resizable: true,
@@ -276,7 +288,10 @@ $(document).ready(function () {
 			wrap: false,
 			hwrap: false,
 			columnBorders: true,
-			rowBorders: true
+			rowBorders: true,
+			refresh: function() {
+				updateSelectAllCheckbox();
+			}
 		});
 	}
 
@@ -323,9 +338,18 @@ $(document).ready(function () {
 		$('#searchKeyword').on('keypress', e => e.which === 13 && $('#btnSearch').click());
 		$('#btnAddMembers').on('click', openAddMemberModal);
 		$('#btnSaveMembers').on('click', saveMembers);
-		$('#moimGrid').on('click', '.btn-delete-member', function() {
-			deleteMember($(this).data('idx'));
+		$('#btnDeleteSelected').on('click', deleteSelectedMembers);
+
+		// 체크박스 이벤트
+		$(document).on('change', '#selectAllCheckbox', function () {
+			const isChecked = $(this).prop('checked');
+			$('.moim-checkbox').prop('checked', isChecked);
 		});
+
+		$(document).on('change', '.moim-checkbox', function () {
+			updateSelectAllCheckbox();
+		});
+
 
 		// 카테고리 관리 버튼
 		$('#btnAddCategory').on('click', function() {
@@ -338,6 +362,25 @@ $(document).ready(function () {
 		
 		$('#btnMoveCategory').on('click', openMoveCategoryModal);
 		$('#confirmMoveCategoryBtn').on('click', moveCategory);
+	}
+
+	/**
+	 * 전체 선택 체크박스 상태 업데이트
+	 */
+	function updateSelectAllCheckbox() {
+		const totalCheckboxes = $('.moim-checkbox').length;
+		const checkedCheckboxes = $('.moim-checkbox:checked').length;
+		const $selectAll = $('#selectAllCheckbox');
+
+		if (totalCheckboxes === 0) {
+			$selectAll.prop('checked', false).prop('indeterminate', false);
+		} else if (checkedCheckboxes === 0) {
+			$selectAll.prop('checked', false).prop('indeterminate', false);
+		} else if (checkedCheckboxes === totalCheckboxes) {
+			$selectAll.prop('checked', true).prop('indeterminate', false);
+		} else {
+			$selectAll.prop('checked', false).prop('indeterminate', true);
+		}
 	}
 
 	/**
@@ -488,15 +531,24 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 회원 삭제
+	 * 선택된 회원 삭제
 	 */
-	function deleteMember(moimIdx) {
-		showConfirmModal('회원 삭제', '이 회원을 소모임에서 삭제하시겠습니까?', function() {
+	function deleteSelectedMembers() {
+		const moimIndices = $('.moim-checkbox:checked').map(function() {
+			return $(this).data('moim-idx');
+		}).get();
+
+		if (moimIndices.length === 0) {
+			showToast('삭제할 회원을 선택해주세요.', 'warning');
+			return;
+		}
+
+		showConfirmModal('선택 회원 삭제', `선택된 ${moimIndices.length}명의 회원을 소모임에서 삭제하시겠습니까?`, function() {
 			showSpinner();
 			$.ajax({
-				url: window.moimPageData.baseUrl + 'moim/delete_moim_member',
+				url: window.moimPageData.baseUrl + 'moim/delete_moim_members',
 				method: 'POST',
-				data: { moim_idx: moimIdx },
+				data: { moim_indices: moimIndices },
 				dataType: 'json',
 				success: function (response) {
 					hideSpinner();

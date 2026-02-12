@@ -375,6 +375,42 @@ class Moim extends My_Controller
 	}
 
 	/**
+	 * 선택된 소모임 회원 일괄 삭제 API
+	 */
+	public function delete_moim_members()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$moim_indices = $this->input->post('moim_indices');
+
+		if (empty($moim_indices)) {
+			echo json_encode(array('success' => false, 'message' => '삭제할 회원을 선택해주세요.'));
+			return;
+		}
+
+		// 첫 번째 회원의 정보로 권한 확인
+		$first_moim = $this->Moim_model->get_moim_by_idx($moim_indices[0]);
+		if (!$first_moim) {
+			echo json_encode(array('success' => false, 'message' => '유효하지 않은 회원 정보가 포함되어 있습니다.'));
+			return;
+		}
+		if (!$this->check_org_access($first_moim['org_id'])) {
+			echo json_encode(array('success' => false, 'message' => '삭제 권한이 없습니다.'));
+			return;
+		}
+
+		$deleted_count = $this->Moim_model->delete_moim_members($moim_indices);
+
+		if ($deleted_count > 0) {
+			echo json_encode(array('success' => true, 'message' => $deleted_count . '명의 회원이 삭제되었습니다.'));
+		} else {
+			echo json_encode(array('success' => false, 'message' => '삭제에 실패했습니다.'));
+		}
+	}
+
+	/**
 	 * 회원 검색 API
 	 */
 	public function search_members()

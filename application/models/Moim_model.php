@@ -310,6 +310,27 @@ class Moim_model extends CI_Model
 	}
 
 	/**
+	 * 선택된 소모임 회원 일괄 삭제 (소프트 삭제)
+	 */
+	public function delete_moim_members($moim_indices)
+	{
+		if (empty($moim_indices)) {
+			return 0;
+		}
+
+		$delete_data = array(
+			'del_yn' => 'Y',
+			'del_date' => date('Y-m-d H:i:s'),
+			'modi_date' => date('Y-m-d H:i:s')
+		);
+
+		$this->db->where_in('moim_idx', $moim_indices);
+		$this->db->update('wb_moim', $delete_data);
+
+		return $this->db->affected_rows();
+	}
+
+	/**
 	 * 카테고리 추가
 	 */
 	public function add_category($org_id, $user_id, $category_name, $parent_code = null)
