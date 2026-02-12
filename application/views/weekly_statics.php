@@ -57,11 +57,11 @@
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-4 d-flex align-items-center">
+						<!--<div class="col-12 col-lg-4 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								조직을 선택해주세요
 							</h5>
-						</div>
+						</div>-->
 
 						<div class="col-12 col-lg-3 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 							<div class="input-group input-group-sm">

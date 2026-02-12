@@ -310,35 +310,251 @@ class Moim_model extends CI_Model
 	}
 
 	/**
-	 * 카테고리 저장
+	 * 카테고리 추가
 	 */
-	public function save_category($category_data)
+	public function add_category($org_id, $user_id, $category_name, $parent_code = null)
 	{
-		// 기존 카테고리 확인
-		$this->db->select('category_id');
+		$categories_data = $this->_get_categories_data($org_id);
+		if (!$categories_data) return false;
+
+		$new_code = 'MOIM_' . strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
+		$new_category = [
+			'code' => $new_code,
+			'name' => $category_name,
+			'order' => 999, // 순서는 마지막으로
+			'positions' => ['회장', '부회장', '총무', '회계', '회원'], // 기본 직책
+			'children' => []
+		];
+
+		if ($parent_code) {
+			$parent_node = null;
+			$this->_find_node($categories_data['categories'], $parent_code, $parent_node);
+			if ($parent_node) {
+				$parent_node['children'][] = $new_category;
+				$this->_update_node($categories_data['categories'], $parent_code, $parent_node);
+			} else {
+				return false; // 부모 노드 없음
+			}
+		} else {
+			$categories_data['categories'][] = $new_category;
+		}
+
+		return $this->_save_categories_data($org_id, $user_id, $categories_data);
+	}
+
+	/**
+	 * 카테고리명 변경
+	 */
+	public function rename_category($org_id, $user_id, $category_code, $new_name)
+	{
+		$categories_data = $this->_get_categories_data($org_id);
+		if (!$categories_data) return false;
+
+		$node = null;
+		$this->_find_node($categories_data['categories'], $category_code, $node);
+
+		if ($node) {
+			$node['name'] = $new_name;
+			$this->_update_node($categories_data['categories'], $category_code, $node);
+			return $this->_save_categories_data($org_id, $user_id, $categories_data);
+		}
+
+		return false;
+	}
+
+	/**
+	 * 카테고리 삭제
+	 */
+	public function delete_category($org_id, $user_id, $category_code)
+	{
+		$categories_data = $this->_get_categories_data($org_id);
+		if (!$categories_data) return false;
+
+		$this->_remove_node($categories_data['categories'], $category_code);
+
+		return $this->_save_categories_data($org_id, $user_id, $categories_data);
+	}
+
+	/**
+	 * 카테고리 이동
+	 */
+	public function move_category($org_id, $user_id, $source_code, $target_code, $hit_mode)
+	{
+		$categories_data = $this->_get_categories_data($org_id);
+		if (!$categories_data) return false;
+
+		$source_node = null;
+		$this->_find_node($categories_data['categories'], $source_code, $source_node);
+
+		if (!$source_node) return false;
+
+		// 1. 원본 노드 삭제
+		$this->_remove_node($categories_data['categories'], $source_code);
+
+		// 2. 대상 위치에 노드 삽입
+		$this->_insert_node($categories_data['categories'], $source_node, $target_code, $hit_mode);
+
+		return $this->_save_categories_data($org_id, $user_id, $categories_data);
+	}
+
+	/**
+	 * 하위 카테고리 또는 소속된 회원이 있는지 확인
+	 */
+	public function has_children_or_members($org_id, $category_code)
+	{
+		// 1. 하위 카테고리 확인
+		$categories_data = $this->_get_categories_data($org_id);
+		$node = null;
+		$this->_find_node($categories_data['categories'], $category_code, $node);
+
+		if ($node && !empty($node['children'])) {
+			return true;
+		}
+
+		// 2. 소속된 회원 확인
+		$this->db->where('org_id', $org_id);
+		$this->db->where('category_code', $category_code);
+		$this->db->where('del_yn', 'N');
+		$count = $this->db->count_all_results('wb_moim');
+
+		return $count > 0;
+	}
+
+
+	// =======================================================================
+	// Private Helper Functions for Category JSON Manipulation
+	// =======================================================================
+
+	private function _get_categories_data($org_id)
+	{
+		$this->db->select('category_id, category_json');
 		$this->db->from('wb_moim_category');
-		$this->db->where('org_id', $category_data['org_id']);
+		$this->db->where('org_id', $org_id);
 		$this->db->where('category_type', 'moim');
 		$query = $this->db->get();
 
 		if ($query->num_rows() > 0) {
-			// 업데이트
 			$row = $query->row_array();
-			$update_data = array(
-				'category_json' => $category_data['category_json'],
-				'modi_date' => date('Y-m-d H:i:s'),
-				'user_id' => $category_data['user_id']
-			);
+			return [
+				'category_id' => $row['category_id'],
+				'categories' => json_decode($row['category_json'], true)['categories'] ?? []
+			];
+		}
+		return null;
+	}
 
-			$this->db->where('category_id', $row['category_id']);
-			return $this->db->update('wb_moim_category', $update_data);
-		} else {
-			// 신규 등록
-			$insert_data = array_merge($category_data, array(
-				'regi_date' => date('Y-m-d H:i:s')
-			));
+	private function _save_categories_data($org_id, $user_id, $categories_data)
+	{
+		$this->_reorder_nodes($categories_data['categories']);
+		$json_to_save = json_encode(['categories' => $categories_data['categories']], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-			return $this->db->insert('wb_moim_category', $insert_data);
+		$data = [
+			'category_json' => $json_to_save,
+			'user_id' => $user_id,
+			'modi_date' => date('Y-m-d H:i:s')
+		];
+
+		$this->db->where('category_id', $categories_data['category_id']);
+		return $this->db->update('wb_moim_category', $data);
+	}
+
+	private function _find_node(&$nodes, $code, &$found_node)
+	{
+		foreach ($nodes as &$node) {
+			if ($node['code'] === $code) {
+				$found_node = $node;
+				return true;
+			}
+			if (!empty($node['children'])) {
+				if ($this->_find_node($node['children'], $code, $found_node)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private function _update_node(&$nodes, $code, $updated_node)
+	{
+		foreach ($nodes as &$node) {
+			if ($node['code'] === $code) {
+				$node = $updated_node;
+				return true;
+			}
+			if (!empty($node['children'])) {
+				if ($this->_update_node($node['children'], $code, $updated_node)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private function _remove_node(&$nodes, $code)
+	{
+		foreach ($nodes as $i => &$node) {
+			if ($node['code'] === $code) {
+				array_splice($nodes, $i, 1);
+				return true;
+			}
+			if (!empty($node['children'])) {
+				if ($this->_remove_node($node['children'], $code)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private function _insert_node(&$nodes, $source_node, $target_code, $hit_mode)
+	{
+		if ($hit_mode === 'over') {
+			if ($target_code === null) { // 최상위
+				$nodes[] = $source_node;
+			} else {
+				$target_parent = null;
+				$this->_find_node($nodes, $target_code, $target_parent);
+				if ($target_parent) {
+					$target_parent['children'][] = $source_node;
+					$this->_update_node($nodes, $target_code, $target_parent);
+				}
+			}
+		} else { // before, after
+			$inserted = false;
+			foreach ($nodes as $i => &$node) {
+				if ($node['code'] === $target_code) {
+					if ($hit_mode === 'before') {
+						array_splice($nodes, $i, 0, [$source_node]);
+					} else { // after
+						array_splice($nodes, $i + 1, 0, [$source_node]);
+					}
+					$inserted = true;
+					break;
+				}
+			}
+
+			if (!$inserted) { // 대상이 하위 레벨에 있을 경우
+				foreach ($nodes as &$node) {
+					if (!empty($node['children'])) {
+						if ($this->_insert_node($node['children'], $source_node, $target_code, $hit_mode)) {
+							$inserted = true;
+							break;
+						}
+					}
+				}
+			}
+			return $inserted;
+		}
+	}
+
+	private function _reorder_nodes(&$nodes)
+	{
+		$order = 1;
+		foreach ($nodes as &$node) {
+			$node['order'] = $order++;
+			if (!empty($node['children'])) {
+				$this->_reorder_nodes($node['children']);
+			}
 		}
 	}
 }

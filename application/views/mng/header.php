@@ -4,11 +4,11 @@
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="description" content="왔니 관리자"/>
+	<meta name="description" content="왔니 마스터"/>
 	<meta name="keywords" content="왔니, 관리자, 조직관리"/>
 	<meta name="author" content="wani.im"/>
 
-	<title>왔니 관리자</title>
+	<title>왔니 마스터</title>
 
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.3/themes/base/jquery-ui.min.css" integrity="sha512-8PjjnSP8Bw/WNPxF6wkklW6qlQJdWJc/3w/ZQPvZ/1bjVDkrrSqLe9mfPYrMxtnzsXFPc434+u4FHLnLjXTSsg==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
@@ -26,7 +26,7 @@
 <header class="navbar sticky-top flex-xl-nowrap p-0 justify-content-start shadow bg-dark">
 	<div class="header-start col-xl-6 col-10">
 		<a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-4 d-flex align-items-center text-white" href="/mng/mng_org">
-			<img src="/assets/images/logo.png" alt="왔니" class="me-2" style="height: 20px"> 관리자
+			<img src="/assets/images/logo.png" alt="왔니" class="me-2" style="height: 20px"> 마스터
 		</a>
 	</div>
 

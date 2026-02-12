@@ -406,9 +406,9 @@ class Moim extends My_Controller
 	}
 
 	/**
-	 * 카테고리 저장 API
+	 * 카테고리 추가 API
 	 */
-	public function save_category()
+	public function add_category()
 	{
 		if (!$this->input->is_ajax_request()) {
 			show_404();
@@ -416,27 +416,126 @@ class Moim extends My_Controller
 
 		$user_id = $this->session->userdata('user_id');
 		$org_id = $this->input->post('org_id');
-		$category_json = $this->input->post('category_json');
+		$parent_code = $this->input->post('parent_code'); // null이면 최상위
+		$category_name = $this->input->post('category_name');
 
-		// 권한 확인
+		if (!$org_id || !$category_name) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
 		if (!$this->check_org_access($org_id)) {
-			echo json_encode(array('success' => false, 'message' => '권한이 없습니다.'));
+			echo json_encode(['success' => false, 'message' => '권한이 없습니다.']);
 			return;
 		}
 
-		$category_data = array(
-			'org_id' => $org_id,
-			'category_type' => 'moim',
-			'category_json' => $category_json,
-			'user_id' => $user_id
-		);
-
-		$result = $this->Moim_model->save_category($category_data);
+		$result = $this->Moim_model->add_category($org_id, $user_id, $category_name, $parent_code);
 
 		if ($result) {
-			echo json_encode(array('success' => true, 'message' => '카테고리가 저장되었습니다.'));
+			echo json_encode(['success' => true, 'message' => '카테고리가 생성되었습니다.']);
 		} else {
-			echo json_encode(array('success' => false, 'message' => '카테고리 저장에 실패했습니다.'));
+			echo json_encode(['success' => false, 'message' => '카테고리 생성에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 카테고리명 변경 API
+	 */
+	public function rename_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+		$category_code = $this->input->post('category_code');
+		$new_name = $this->input->post('new_name');
+
+		if (!$org_id || !$category_code || !$new_name) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(['success' => false, 'message' => '권한이 없습니다.']);
+			return;
+		}
+
+		$result = $this->Moim_model->rename_category($org_id, $user_id, $category_code, $new_name);
+
+		if ($result) {
+			echo json_encode(['success' => true, 'message' => '카테고리명이 변경되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '카테고리명 변경에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 카테고리 삭제 API
+	 */
+	public function delete_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+		$category_code = $this->input->post('category_code');
+
+		if (!$org_id || !$category_code) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(['success' => false, 'message' => '권한이 없습니다.']);
+			return;
+		}
+
+		// 하위 카테고리 또는 소속된 소모임원이 있는지 확인
+		if ($this->Moim_model->has_children_or_members($org_id, $category_code)) {
+			echo json_encode(['success' => false, 'message' => '하위 카테고리 또는 소속된 회원이 있어 삭제할 수 없습니다.']);
+			return;
+		}
+
+		$result = $this->Moim_model->delete_category($org_id, $user_id, $category_code);
+
+		if ($result) {
+			echo json_encode(['success' => true, 'message' => '카테고리가 삭제되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '카테고리 삭제에 실패했습니다.']);
+		}
+	}
+
+	/**
+	 * 카테고리 이동 API
+	 */
+	public function move_category()
+	{
+		if (!$this->input->is_ajax_request()) {
+			show_404();
+		}
+
+		$user_id = $this->session->userdata('user_id');
+		$org_id = $this->input->post('org_id');
+		$source_code = $this->input->post('source_code');
+		$target_code = $this->input->post('target_code'); // null이면 최상위로 이동
+		$hit_mode = $this->input->post('hit_mode'); // before, after, over
+
+		if (!$org_id || !$source_code || !$hit_mode) {
+			echo json_encode(['success' => false, 'message' => '필수 정보가 누락되었습니다.']);
+			return;
+		}
+		if (!$this->check_org_access($org_id)) {
+			echo json_encode(['success' => false, 'message' => '권한이 없습니다.']);
+			return;
+		}
+
+		$result = $this->Moim_model->move_category($org_id, $user_id, $source_code, $target_code, $hit_mode);
+
+		if ($result) {
+			echo json_encode(['success' => true, 'message' => '카테고리가 이동되었습니다.']);
+		} else {
+			echo json_encode(['success' => false, 'message' => '카테고리 이동에 실패했습니다.']);
 		}
 	}
 }

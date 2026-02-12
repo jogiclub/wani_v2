@@ -29,14 +29,7 @@ $this->load->view('header');
 
 		<div class="col-12 my-1 d-flex align-items-center justify-content-between">
 			<h3 class="page-title mb-0">소모임</h3>
-			<div class="d-flex gap-2">
-				<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">
-					<i class="bi bi-folder"></i> 카테고리 관리
-				</button>
-				<button type="button" class="btn btn-sm btn-primary" id="btnAddMembers">
-					<i class="bi bi-plus-lg"></i> 회원 추가
-				</button>
-			</div>
+
 		</div>
 	
 
@@ -57,6 +50,22 @@ $this->load->view('header');
 					</div>
 					<div id="categoryTree" class="tree-container"></div>
 				</div>
+				<div class="card-footer p-2 bg-white">
+					<div class="btn-group-vertical w-100" role="group" aria-label="Vertical button group" id="categoryManagementButtons">
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnAddCategory">
+							<i class="bi bi-folder-plus"></i> 카테고리 생성
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnRenameCategory">
+							<i class="bi bi-pencil-square"></i> 카테고리명 변경
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnDeleteCategory">
+							<i class="bi bi-folder-minus"></i> 카테고리 삭제
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnMoveCategory">
+							<i class="bi bi-arrow-right-square"></i> 카테고리 이동
+						</button>
+					</div>
+				</div>
 			</div>
 		</div>
 
@@ -65,14 +74,7 @@ $this->load->view('header');
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-6 d-flex align-items-center">
-							<h5 class="mb-0 text-truncate" id="selectedCategoryName">
-								<i class="bi bi-people"></i> 소모임을 선택해주세요
-							</h5>
-							<small class="ms-3 text-muted">총 <span id="totalMemberCount">0</span>명</small>
-						</div>
-
-						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+						<div class="col-12 col-lg-6 d-flex justify-content-start mt-2 mt-lg-0">
 							<div class="input-group input-group-sm" style="max-width: 300px;">
 								<input type="text" class="form-control" placeholder="회원명 검색" id="searchKeyword">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="btnSearch">
@@ -80,6 +82,18 @@ $this->load->view('header');
 								</button>
 							</div>
 						</div>
+
+						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+
+							<div class="btn-group">
+								<button type="button" class="btn btn-sm btn-primary" id="btnAddMembers">
+									<i class="bi bi-plus-lg"></i> 회원 추가
+								</button>
+							</div>
+
+						</div>
+
+
 					</div>
 				</div>
 				<div class="card-body card-height p-0 position-relative">
@@ -141,33 +155,47 @@ $this->load->view('header');
 	</div>
 </div>
 
-<!-- 카테고리 관리 Modal -->
-<div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
-	<div class="modal-dialog modal-lg">
+<!-- 카테고리 이동 Modal -->
+<div class="modal fade" id="moveCategoryModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title">카테고리 관리</h5>
+				<h5 class="modal-title">카테고리 이동</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 			</div>
 			<div class="modal-body">
-				<div class="alert alert-info">
-					<i class="bi bi-info-circle"></i> 카테고리는 JSON 형태로 관리됩니다. positions 배열에 직책 목록을 추가할 수 있습니다.
+				<p id="moveCategoryMessage"></p>
+				<div class="mb-3">
+					<label for="moveToCategoryCode" class="form-label">이동할 위치</label>
+					<select class="form-select" id="moveToCategoryCode">
+						<!-- 옵션은 JS에서 동적으로 채워집니다. -->
+					</select>
 				</div>
-				<textarea class="form-control font-monospace" id="categoryJson" rows="20" placeholder='{"categories": []}'></textarea>
-				<div class="mt-3">
-					<strong>예시:</strong>
-					<pre class="bg-light p-2 rounded"><code>{
-  "categories": [
-    {
-      "code": "MOIM001",
-      "name": "동아리모임",
-      "order": 1,
-      "positions": ["회장", "부회장", "총무", "회계", "회원"],
-      "children": []
-    }
-  ]
-}</code></pre>
-				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmMoveCategoryBtn">이동</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 카테고리 생성/수정 Modal -->
+<div class="modal fade" id="categoryFormModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="categoryFormModalTitle"></h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="categoryForm">
+					<input type="hidden" id="categoryAction">
+					<div class="mb-3">
+						<label for="categoryNameInput" class="form-label">카테고리 이름</label>
+						<input type="text" class="form-control" id="categoryNameInput" required>
+					</div>
+				</form>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
@@ -176,6 +204,33 @@ $this->load->view('header');
 		</div>
 	</div>
 </div>
+
+<!-- 카테고리 삭제 Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">카테고리 삭제</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<p id="deleteCategoryMessage"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteCategoryBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 전역 스피너 -->
+<div id="globalSpinner" class="d-none justify-content-center align-items-center position-fixed" style="top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000;">
+	<div class="spinner-border text-light" role="status">
+		<span class="visually-hidden">Loading...</span>
+	</div>
+</div>
+
 
 <?php $this->load->view('footer'); ?>
 

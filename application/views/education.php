@@ -71,15 +71,15 @@ $this->load->view('header');
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-3 d-flex align-items-center">
+						<!--<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedCategoryName">
 								<i class="bi bi-list-ul"></i> 카테고리를 선택해주세요
 							</h5>
 							<small class="ms-3 text-muted">총 <span id="totalEduCount">0</span>개</small>
-						</div>
+						</div>-->
 
 
-						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
+						<div class="col-12 col-lg-6 d-flex justify-content-start mt-2 mt-lg-0 gap-2">
 
 							<div class="input-group input-group-sm" style="max-width: 300px;">
 								<input type="text" class="form-control" placeholder="양육명 검색" id="searchKeyword">
@@ -89,7 +89,7 @@ $this->load->view('header');
 							</div>
 						</div>
 
-						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
+						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0 gap-2">
 							<div class="btn-group">
 								<button type="button" class="btn btn-sm btn-primary" id="btnAddEdu">
 									<i class="bi bi-plus-lg"></i> 양육 등록

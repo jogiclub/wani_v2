@@ -1,38 +1,26 @@
-/**
- * 파일 위치: assets/js/moim.js
- * 역할: 소모임 관리 화면 프론트엔드 로직
- */
-
 'use strict'
 
 $(document).ready(function () {
-	// 전역 변수 영역
-	let moimGrid;                     // ParamQuery Grid 인스턴스
-	let selectedOrgId = null;         // 선택된 조직 ID
-	let selectedCategoryCode = null;  // 선택된 카테고리 코드
-	let selectedCategoryName = null;  // 선택된 카테고리 이름
-	let selectedPositions = [];       // 선택된 카테고리의 직책 목록
-	let selectedType = null;          // 선택된 타입 ('org', 'category')
-	let splitInstance = null;         // Split.js 인스턴스
-	let categoryData = [];            // 카테고리 데이터
+	// 전역 변수
+	let moimGrid;
+	let selectedOrgId = window.moimPageData.currentOrgId;
+	let selectedCategoryCode = null;
+	let selectedType = null;
+	let splitInstance;
+	let categoryPositions = {}; // 카테고리별 직책 저장
 
-	// 초기화 시도
-	setTimeout(function () {
-		initializePage();
-	}, 500);
+	// 초기화 함수 호출
+	initializePage();
 
 	/**
-	 * 페이지 초기화 메인 함수
+	 * 페이지 초기화
 	 */
 	function initializePage() {
 		showAllSpinners();
-
-		// 라이브러리 검증
 		if (!validateLibraries()) {
 			hideAllSpinners();
 			return;
 		}
-
 		try {
 			initializeSplitJS();
 			initializeFancytree();
@@ -48,33 +36,22 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 라이브러리 검증
+	 * 라이브러리 유효성 검사
 	 */
 	function validateLibraries() {
-		if (typeof $.fn.pqGrid === 'undefined') {
-			console.error('ParamQuery 라이브러리가 로드되지 않았습니다.');
-			showToast('ParamQuery 라이브러리 로드 실패', 'error');
-			return false;
+		const libraries = {
+			'ParamQuery': $.fn.pqGrid,
+			'Fancytree': $.fn.fancytree,
+			'Split.js': window.Split,
+			'Select2': $.fn.select2
+		};
+		for (const [name, lib] of Object.entries(libraries)) {
+			if (!lib) {
+				console.error(`${name} 라이브러리가 로드되지 않았습니다.`);
+				showToast(`${name} 라이브러리 로드 실패`, 'error');
+				return false;
+			}
 		}
-
-		if (typeof $.fn.fancytree === 'undefined') {
-			console.error('Fancytree 라이브러리가 로드되지 않았습니다.');
-			showToast('Fancytree 라이브러리 로드 실패', 'error');
-			return false;
-		}
-
-		if (typeof Split === 'undefined') {
-			console.error('Split.js 라이브러리가 로드되지 않았습니다.');
-			showToast('Split.js 라이브러리 로드 실패', 'error');
-			return false;
-		}
-
-		if (typeof $.fn.select2 === 'undefined') {
-			console.error('Select2 라이브러리가 로드되지 않았습니다.');
-			showToast('Select2 라이브러리 로드 실패', 'error');
-			return false;
-		}
-
 		return true;
 	}
 
@@ -82,39 +59,19 @@ $(document).ready(function () {
 	 * Split.js 초기화
 	 */
 	function initializeSplitJS() {
-		try {
-			splitInstance = Split(['#left-pane', '#right-pane'], {
-				sizes: [15, 85],
-				minSize: [50, 50],
-				gutterSize: 7,
-				cursor: 'col-resize',
-				direction: 'horizontal',
-				onDragEnd: function (sizes) {
-					if (moimGrid) {
-						try {
-							moimGrid.pqGrid("refresh");
-						} catch (error) {
-							console.error('그리드 리프레시 실패:', error);
-						}
-					}
-					localStorage.setItem('moim-split-sizes', JSON.stringify(sizes));
-				}
-			});
+		const savedSizes = localStorage.getItem('moim-split-sizes');
+		const initialSizes = savedSizes ? JSON.parse(savedSizes) : [20, 80];
 
-			// 저장된 크기 복원
-			const savedSizes = localStorage.getItem('moim-split-sizes');
-			if (savedSizes) {
-				try {
-					const sizes = JSON.parse(savedSizes);
-					splitInstance.setSizes(sizes);
-				} catch (error) {
-					console.error('저장된 크기 복원 실패:', error);
-				}
+		splitInstance = Split(['#left-pane', '#right-pane'], {
+			sizes: initialSizes,
+			minSize: [200, 300],
+			gutterSize: 7,
+			cursor: 'col-resize',
+			onDragEnd: function (sizes) {
+				if (moimGrid) moimGrid.pqGrid("refresh");
+				localStorage.setItem('moim-split-sizes', JSON.stringify(sizes));
 			}
-		} catch (error) {
-			console.error('Split.js 초기화 실패:', error);
-			showToast('화면 분할 기능 초기화에 실패했습니다.', 'error');
-		}
+		});
 	}
 
 	/**
@@ -122,24 +79,21 @@ $(document).ready(function () {
 	 */
 	function initializeFancytree() {
 		showTreeSpinner();
-
 		$.ajax({
 			url: window.moimPageData.baseUrl + 'moim/get_category_tree',
 			method: 'POST',
 			dataType: 'json',
 			success: function (treeData) {
+				hideTreeSpinner();
 				if (!treeData || treeData.length === 0) {
-					hideTreeSpinner();
 					showToast('카테고리 데이터가 없습니다.', 'warning');
 					return;
 				}
-
 				setupFancytreeInstance(treeData);
-				hideTreeSpinner();
 			},
 			error: function (xhr, status, error) {
-				console.error('트리 데이터 로드 실패:', error);
 				hideTreeSpinner();
+				console.error('트리 데이터 로드 실패:', error);
 				showToast('카테고리 정보를 불러오는데 실패했습니다.', 'error');
 			}
 		});
@@ -159,36 +113,40 @@ $(document).ready(function () {
 				store: "auto"
 			},
 			activate: function (event, data) {
-				const node = data.node;
-				const nodeData = node.data;
-
-				if (nodeData.type === 'org') {
-					selectedOrgId = nodeData.org_id;
-					selectedCategoryCode = null;
-					selectedCategoryName = null;
-					selectedPositions = [];
-					selectedType = 'org';
-					$('#selectedCategoryName').html('<i class="bi bi-building"></i> ' + node.title.split(' (')[0]);
-				} else if (nodeData.type === 'category') {
-					selectedOrgId = window.moimPageData.currentOrgId;
-					selectedCategoryCode = nodeData.category_code;
-					selectedCategoryName = node.title.split(' (')[0];
-					selectedPositions = nodeData.positions || [];
-					selectedType = 'category';
-					$('#selectedCategoryName').html('<i class="bi bi-people"></i> ' + selectedCategoryName);
-				}
-
-				loadMoimMembers();
+				handleNodeActivation(data.node);
 			},
-			click: function (event, data) {
-				if (data.targetType === 'title' || data.targetType === 'icon') {
-					data.node.setActive();
+			click: function(event, data) {
+				if (data.targetType === "title") {
+					// data.node.toggleExpanded();
 				}
 			}
 		});
 
-		// 첫 번째 노드 자동 선택
 		restorePreviousSelection() || selectFirstNode();
+	}
+
+	/**
+	 * 노드 활성화 처리
+	 */
+	function handleNodeActivation(node) {
+		const nodeData = node.data;
+		categoryPositions = {};
+
+		if (nodeData.type === 'org') {
+			selectedOrgId = nodeData.org_id;
+			selectedCategoryCode = null;
+			selectedType = 'org';
+			$('#btnRenameCategory, #btnDeleteCategory, #btnMoveCategory').prop('disabled', true);
+		} else if (nodeData.type === 'category') {
+			selectedOrgId = window.moimPageData.currentOrgId;
+			selectedCategoryCode = nodeData.category_code;
+			selectedType = 'category';
+			categoryPositions = nodeData.positions || [];
+			$('#btnRenameCategory, #btnDeleteCategory, #btnMoveCategory').prop('disabled', false);
+		}
+
+		loadMoimMembers();
+		saveCurrentSelection();
 	}
 
 	/**
@@ -197,26 +155,16 @@ $(document).ready(function () {
 	function restorePreviousSelection() {
 		try {
 			const savedSelection = localStorage.getItem('moim_selected_category');
-			if (!savedSelection) {
-				return false;
-			}
+			if (!savedSelection) return false;
 
 			const selectionData = JSON.parse(savedSelection);
-			const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-
-			if (selectionData.timestamp < sevenDaysAgo) {
+			if (Date.now() - selectionData.timestamp > 7 * 24 * 60 * 60 * 1000) {
 				localStorage.removeItem('moim_selected_category');
 				return false;
 			}
 
 			const tree = $("#categoryTree").fancytree("getTree");
-			let nodeToSelect = null;
-
-			if (selectionData.type === 'category' && selectionData.category_code) {
-				nodeToSelect = tree.getNodeByKey('category_' + selectionData.category_code);
-			} else if (selectionData.type === 'org' && selectionData.org_id) {
-				nodeToSelect = tree.getNodeByKey('org_' + selectionData.org_id);
-			}
+			const nodeToSelect = tree.getNodeByKey(selectionData.key);
 
 			if (nodeToSelect) {
 				nodeToSelect.setActive(true);
@@ -246,142 +194,89 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * ParamQuery Grid 초기화
+	 * 현재 선택 정보 저장
 	 */
-	function initializeParamQuery() {
-		showGridSpinner();
+	function saveCurrentSelection() {
+		const tree = $("#categoryTree").fancytree("getTree");
+		const activeNode = tree.getActiveNode();
+		if (!activeNode) return;
 
-		try {
-			moimGrid = $("#moimGrid").pqGrid({
-				width: "100%",
-				height: "100%",
-				dataModel: { data: [] },
-				colModel: [
-					{
-						title: "",
-						dataIndx: "photo",
-						width: 60,
-						align: "center",
-						render: function(ui) {
-							const photoUrl = ui.cellData || '/assets/images/photo_no.png';
-							return '<img src="' + photoUrl + '" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">';
-						}
-					},
-					{
-						title: "이름",
-						dataIndx: "member_name",
-						width: 100,
-						align: "center"
-					},
-					{
-						title: "성별",
-						dataIndx: "member_sex_str",
-						width: 60,
-						align: "center"
-					},
-					{
-						title: "직위/직분",
-						dataIndx: "position_name",
-						width: 120,
-						align: "center",
-						render: function(ui) {
-							const position = ui.rowData.position_name || '';
-							const duty = ui.rowData.duty_name || '';
-							const parts = [];
-							if (position) parts.push(position);
-							if (duty) parts.push(duty);
-							return parts.join(' / ');
-						}
-					},
-					{
-						title: "모임직책",
-						dataIndx: "moim_position",
-						width: 120,
-						align: "center",
-						editable: true,
-						editor: {
-							type: 'select',
-							options: [],
-							prepend: {'': '선택'}
-						},
-						render: function(ui) {
-							return ui.cellData || '';
-						}
-					},
-					{
-						title: "휴대폰번호",
-						dataIndx: "member_phone",
-						width: 130,
-						align: "center"
-					},
-					{
-						title: "생년월일",
-						dataIndx: "member_birth_formatted",
-						width: 110,
-						align: "center"
-					},
-					{
-						title: "주소",
-						dataIndx: "address_full",
-						width: 250
-					},
-					{
-						title: "상세주소",
-						dataIndx: "member_address_detail",
-						width: 200
-					},
-					{
-						title: "관리",
-						dataIndx: "moim_idx",
-						width: 80,
-						align: "center",
-						render: function(ui) {
-							return `
-								<button type="button" class="btn btn-sm btn-outline-danger btn-delete-member" data-moim-idx="${ui.cellData}">
-									<i class="bi bi-trash"></i>
-								</button>
-							`;
-						}
-					}
-				],
-				strNoRows: '소모임 회원이 없습니다',
-				selectionModel: { type: 'row', mode: 'single' },
-				numberCell: { show: true },
-				title: false,
-				resizable: true,
-				sortable: true,
-				hoverMode: 'row',
-				wrap: false,
-				columnBorders: true,
-				rowBorders: true,
-				cellSave: function(event, ui) {
-					// 직책 변경 시 서버 업데이트
-					if (ui.dataIndx === 'moim_position') {
-						updateMoimPosition(ui.rowData.moim_idx, ui.newVal);
-					}
-				}
-			});
-
-			// 그리드 이벤트 바인딩
-			bindGridEvents();
-
-			hideGridSpinner();
-		} catch (error) {
-			console.error('ParamQuery Grid 초기화 실패:', error);
-			hideGridSpinner();
-			showToast('그리드 초기화에 실패했습니다.', 'error');
-		}
+		const selectionData = {
+			key: activeNode.key,
+			timestamp: Date.now()
+		};
+		localStorage.setItem('moim_selected_category', JSON.stringify(selectionData));
 	}
 
 	/**
-	 * 그리드 이벤트 바인딩
+	 * ParamQuery Grid 초기화
 	 */
-	function bindGridEvents() {
-		// 삭제 버튼 클릭
-		$(document).on('click', '.btn-delete-member', function(e) {
-			e.preventDefault();
-			const moimIdx = $(this).data('moim-idx');
-			confirmDeleteMember(moimIdx);
+	function initializeParamQuery() {
+		const colModel = [
+			{ title: "이름", dataIndx: "member_name", width: 120, align: "center" },
+			{ title: "성별", dataIndx: "member_sex_str", width: 60, align: "center" },
+			{ title: "생년월일", dataIndx: "member_birth_formatted", width: 120, align: "center" },
+			{ title: "휴대폰", dataIndx: "member_phone", width: 150, align: "center" },
+			{ title: "직분", dataIndx: "position_name", width: 120, align: "center" },
+			{ title: "모임 직책", dataIndx: "moim_position", width: 150, align: "center",
+				editor: {
+					type: 'select',
+					options: function(ui) {
+						const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+						if (node && node.data.type === 'category') {
+							return node.data.positions || [];
+						}
+						return [];
+					}
+				}
+			},
+			{ title: "관리", dataIndx: "manage", width: 80, align: "center", editable: false, sortable: false,
+				render: function (ui) {
+					return `<button type="button" class="btn btn-sm btn-danger btn-delete-member" data-idx="${ui.rowData.moim_idx}">삭제</button>`;
+				}
+			}
+		];
+
+		moimGrid = $("#moimGrid").pqGrid({
+			width: "100%",
+			height: "100%",
+			dataModel: { data: [] },
+			colModel: colModel,
+			strNoRows: '소모임 회원이 없습니다',
+			selectionModel: { type: 'row', mode: 'single' },
+			editable: true,
+			editModel: {
+				saveKey: $.ui.keyCode.ENTER,
+				onSave: 'next',
+				onBlur: 'save'
+			},
+			editor: {
+				select: function( event, ui ) {
+					moimGrid.pqGrid("saveEditCell");
+				}
+			},
+			beforeEdit: function( event, ui ) {
+				if (ui.dataIndx === "moim_position") {
+					const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+					if (!node || node.data.type !== 'category' || !node.data.positions || node.data.positions.length === 0) {
+						showToast('이 카테고리에는 설정된 직책이 없습니다.', 'warning');
+						return false;
+					}
+				}
+			},
+			cellSave: function( event, ui ) {
+				if (ui.dataIndx === "moim_position") {
+					updateMoimPosition(ui.rowData.moim_idx, ui.newVal);
+				}
+			},
+			numberCell: { show: false },
+			title: false,
+			resizable: true,
+			sortable: true,
+			wrap: false,
+			hwrap: false,
+			columnBorders: true,
+			rowBorders: true
 		});
 	}
 
@@ -390,47 +285,32 @@ $(document).ready(function () {
 	 */
 	function initializeSelect2() {
 		$('#memberSelect').select2({
-			width: '100%',
-			placeholder: '회원을 검색하세요',
+			dropdownParent: $('#addMemberModal'),
+			placeholder: '회원 검색',
 			allowClear: true,
-			multiple: true,
 			ajax: {
 				url: window.moimPageData.baseUrl + 'moim/search_members',
 				type: 'POST',
 				dataType: 'json',
 				delay: 250,
-				data: function(params) {
+				data: function (params) {
 					return {
-						org_id: window.moimPageData.currentOrgId,
+						org_id: selectedOrgId,
 						keyword: params.term
 					};
 				},
-				processResults: function(response) {
-					if (response.success) {
+				processResults: function (data) {
+					if (data.success) {
 						return {
-							results: response.data.map(function(member) {
-								return {
-									id: member.member_idx,
-									text: member.member_name + (member.member_phone ? ' (' + member.member_phone + ')' : '')
-								};
-							})
+							results: data.data.map(member => ({
+								id: member.member_idx,
+								text: `${member.member_name} (${member.member_phone || '연락처 없음'})`
+							}))
 						};
 					}
 					return { results: [] };
 				},
 				cache: true
-			},
-			minimumInputLength: 1,
-			language: {
-				inputTooShort: function() {
-					return '검색어를 입력하세요 (최소 1자)';
-				},
-				searching: function() {
-					return '검색 중...';
-				},
-				noResults: function() {
-					return '검색 결과가 없습니다.';
-				}
 			}
 		});
 	}
@@ -439,65 +319,33 @@ $(document).ready(function () {
 	 * 전역 이벤트 바인딩
 	 */
 	function bindGlobalEvents() {
-		// 회원 추가 버튼
-		$('#btnAddMembers').off('click').on('click', function() {
-			openAddMemberModal();
+		$('#btnSearch').on('click', () => filterGrid($('#searchKeyword').val().trim()));
+		$('#searchKeyword').on('keypress', e => e.which === 13 && $('#btnSearch').click());
+		$('#btnAddMembers').on('click', openAddMemberModal);
+		$('#btnSaveMembers').on('click', saveMembers);
+		$('#moimGrid').on('click', '.btn-delete-member', function() {
+			deleteMember($(this).data('idx'));
 		});
 
 		// 카테고리 관리 버튼
-		$('#btnManageCategory').off('click').on('click', function() {
-			openCategoryModal();
+		$('#btnAddCategory').on('click', function() {
+			addCategory('새 카테고리');
 		});
-
-		// 회원 추가 저장 버튼
-		$('#btnSaveMembers').off('click').on('click', function() {
-			saveMembers();
-		});
-
-		// 카테고리 저장 버튼
-		$('#btnSaveCategory').off('click').on('click', function() {
-			saveCategory();
-		});
-
-		// 검색 버튼
-		$('#btnSearch').off('click').on('click', function() {
-			const keyword = $('#searchKeyword').val().trim();
-			filterGrid(keyword);
-		});
-
-		// 검색 엔터키
-		$('#searchKeyword').off('keypress').on('keypress', function(e) {
-			if (e.which === 13) {
-				e.preventDefault();
-				const keyword = $(this).val().trim();
-				filterGrid(keyword);
-			}
-		});
-
-		// 윈도우 리사이즈
-		$(window).off('resize.moim').on('resize.moim', debounce(function() {
-			if (moimGrid) {
-				try {
-					moimGrid.pqGrid("refresh");
-				} catch (error) {
-					console.error('윈도우 리사이즈 시 그리드 리프레시 실패:', error);
-				}
-			}
-		}, 250));
+		$('#btnRenameCategory').on('click', openRenameCategoryModal);
+		$('#btnDeleteCategory').on('click', openDeleteCategoryModal);
+		$('#btnSaveCategory').on('click', saveCategory);
+		$('#confirmDeleteCategoryBtn').on('click', confirmDeleteCategory);
+		
+		$('#btnMoveCategory').on('click', openMoveCategoryModal);
+		$('#confirmMoveCategoryBtn').on('click', moveCategory);
 	}
 
 	/**
 	 * 정리 이벤트 설정
 	 */
 	function setupCleanupEvents() {
-		$(window).on('beforeunload', function() {
-			if (splitInstance) {
-				try {
-					splitInstance.destroy();
-				} catch (error) {
-					console.error('Split.js 인스턴스 정리 실패:', error);
-				}
-			}
+		$(window).on('beforeunload', function () {
+			if (splitInstance) splitInstance.destroy();
 		});
 	}
 
@@ -505,15 +353,8 @@ $(document).ready(function () {
 	 * 소모임 회원 목록 로드
 	 */
 	function loadMoimMembers() {
-		if (!selectedOrgId || !selectedType) {
-			return;
-		}
-
-		// 선택 정보 저장
-		saveCurrentSelection();
-
+		if (!selectedOrgId || !selectedType) return;
 		showGridSpinner();
-
 		$.ajax({
 			url: window.moimPageData.baseUrl + 'moim/get_moim_members',
 			method: 'POST',
@@ -523,136 +364,54 @@ $(document).ready(function () {
 				type: selectedType
 			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				hideGridSpinner();
-
 				if (response.success) {
-					updateGrid(response.data);
-					updatePositionEditor();
-					$('#totalMemberCount').text(response.total_count);
+					moimGrid.pqGrid("option", "dataModel.data", response.data);
+					moimGrid.pqGrid("refreshDataAndView");
 				} else {
-					showToast(response.message || '회원 목록을 불러오는데 실패했습니다.', 'error');
+					showToast(response.message || '회원 목록 로드 실패', 'error');
 				}
 			},
-			error: function(xhr, status, error) {
-				console.error('회원 목록 로드 실패:', error);
+			error: function (xhr, status, error) {
 				hideGridSpinner();
+				console.error('회원 목록 로드 실패:', error);
 				showToast('회원 목록을 불러오는 중 오류가 발생했습니다.', 'error');
 			}
 		});
 	}
 
 	/**
-	 * 직책 에디터 옵션 업데이트
-	 */
-	function updatePositionEditor() {
-		if (!moimGrid || !selectedPositions || selectedPositions.length === 0) {
-			return;
-		}
-
-		const colModel = moimGrid.pqGrid("option", "colModel");
-		const positionCol = colModel.find(col => col.dataIndx === 'moim_position');
-
-		if (positionCol && positionCol.editor) {
-			// 직책 옵션 생성
-			const options = [];
-			selectedPositions.forEach(function(position) {
-				options.push(position);
-			});
-
-			positionCol.editor.options = options;
-			moimGrid.pqGrid("option", "colModel", colModel);
-			moimGrid.pqGrid("refresh");
-		}
-	}
-
-	/**
-	 * 현재 선택 정보 저장
-	 */
-	function saveCurrentSelection() {
-		const selectionData = {
-			type: selectedType,
-			org_id: selectedOrgId,
-			category_code: selectedCategoryCode,
-			timestamp: Date.now()
-		};
-
-		try {
-			localStorage.setItem('moim_selected_category', JSON.stringify(selectionData));
-		} catch (error) {
-			console.error('선택 정보 저장 실패:', error);
-		}
-	}
-
-	/**
-	 * 그리드 업데이트
-	 */
-	function updateGrid(data) {
-		if (!moimGrid) {
-			return;
-		}
-
-		try {
-			moimGrid.pqGrid("option", "dataModel.data", data);
-			moimGrid.pqGrid("refreshDataAndView");
-		} catch (error) {
-			console.error('그리드 업데이트 실패:', error);
-		}
-	}
-
-	/**
 	 * 그리드 필터링
 	 */
 	function filterGrid(keyword) {
-		if (!moimGrid) {
-			return;
-		}
-
-		try {
-			if (!keyword) {
-				moimGrid.pqGrid("filter", {
-					mode: 'AND',
-					rules: []
-				});
-			} else {
-				moimGrid.pqGrid("filter", {
-					mode: 'OR',
-					rules: [
-						{ dataIndx: 'member_name', condition: 'contain', value: keyword },
-						{ dataIndx: 'member_phone', condition: 'contain', value: keyword }
-					]
-				});
-			}
-		} catch (error) {
-			console.error('그리드 필터링 실패:', error);
-		}
+		if (!moimGrid) return;
+		const rules = keyword ? [
+			{ dataIndx: 'member_name', condition: 'contain', value: keyword },
+			{ dataIndx: 'member_phone', condition: 'contain', value: keyword }
+		] : [];
+		moimGrid.pqGrid("filter", { mode: 'OR', rules: rules });
 	}
 
 	/**
 	 * 회원 추가 모달 열기
 	 */
 	function openAddMemberModal() {
-		if (!selectedCategoryCode) {
-			showToast('소모임 카테고리를 선택해주세요.', 'warning');
+		const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+		if (!node || node.data.type !== 'category') {
+			showToast('회원을 추가할 카테고리를 선택해주세요.', 'warning');
 			return;
 		}
 
-		$('#addMemberForm')[0].reset();
-		$('#addOrgId').val(selectedOrgId);
-		$('#addCategoryCode').val(selectedCategoryCode);
-		$('#addCategoryName').val(selectedCategoryName);
-
-		// Select2 초기화
+		$('#addCategoryName').val(node.title.split(' (')[0]);
+		$('#addCategoryCode').val(node.data.category_code);
 		$('#memberSelect').val(null).trigger('change');
 
-		// 직책 옵션 설정
 		const $positionSelect = $('#moimPosition');
-		$positionSelect.empty();
-		$positionSelect.append('<option value="">선택</option>');
-
-		if (selectedPositions && selectedPositions.length > 0) {
-			selectedPositions.forEach(function(position) {
-				$positionSelect.append('<option value="' + position + '">' + position + '</option>');
+		$positionSelect.empty().append('<option value="">선택</option>');
+		if (node.data.positions && node.data.positions.length > 0) {
+			node.data.positions.forEach(pos => {
+				$positionSelect.append(`<option value="${pos}">${pos}</option>`);
 			});
 		}
 
@@ -660,228 +419,101 @@ $(document).ready(function () {
 	}
 
 	/**
-	 * 회원 추가 저장
+	 * 회원 저장
 	 */
 	function saveMembers() {
 		const memberIndices = $('#memberSelect').val();
-
 		if (!memberIndices || memberIndices.length === 0) {
-			showToast('회원을 선택해주세요.', 'warning');
+			showToast('추가할 회원을 선택해주세요.', 'warning');
 			return;
 		}
 
-		const formData = {
-			org_id: $('#addOrgId').val(),
-			category_code: $('#addCategoryCode').val(),
-			member_indices: memberIndices,
-			moim_position: $('#moimPosition').val()
-		};
-
 		showSpinner();
-
 		$.ajax({
 			url: window.moimPageData.baseUrl + 'moim/add_moim_members',
 			method: 'POST',
-			data: formData,
+			data: {
+				org_id: selectedOrgId,
+				category_code: $('#addCategoryCode').val(),
+				member_indices: memberIndices,
+				moim_position: $('#moimPosition').val()
+			},
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
 				hideSpinner();
-
 				if (response.success) {
 					showToast(response.message, 'success');
 					$('#addMemberModal').modal('hide');
 					loadMoimMembers();
 					refreshCategoryTree();
 				} else {
-					showToast(response.message || '회원 추가에 실패했습니다.', 'error');
+					showToast(response.message || '회원 추가 실패', 'error');
 				}
 			},
-			error: function(xhr, status, error) {
-				console.error('회원 추가 실패:', error);
+			error: function (xhr, status, error) {
 				hideSpinner();
+				console.error('회원 추가 실패:', error);
 				showToast('회원 추가 중 오류가 발생했습니다.', 'error');
 			}
 		});
 	}
 
 	/**
-	 * 직책 수정
+	 * 소모임 직책 수정
 	 */
-	function updateMoimPosition(moimIdx, position) {
+	function updateMoimPosition(moimIdx, newPosition) {
+		showSpinner();
 		$.ajax({
 			url: window.moimPageData.baseUrl + 'moim/update_moim_position',
 			method: 'POST',
-			data: {
-				moim_idx: moimIdx,
-				moim_position: position
-			},
+			data: { moim_idx: moimIdx, moim_position: newPosition },
 			dataType: 'json',
-			success: function(response) {
+			success: function (response) {
+				hideSpinner();
 				if (response.success) {
 					showToast(response.message, 'success');
+					moimGrid.pqGrid("commit");
 				} else {
-					showToast(response.message || '직책 수정에 실패했습니다.', 'error');
-					loadMoimMembers(); // 실패 시 데이터 리로드
+					showToast(response.message || '직책 수정 실패', 'error');
+					moimGrid.pqGrid("rollback");
 				}
 			},
-			error: function(xhr, status, error) {
+			error: function (xhr, status, error) {
+				hideSpinner();
 				console.error('직책 수정 실패:', error);
 				showToast('직책 수정 중 오류가 발생했습니다.', 'error');
-				loadMoimMembers(); // 오류 시 데이터 리로드
+				moimGrid.pqGrid("rollback");
 			}
 		});
-	}
-
-	/**
-	 * 회원 삭제 확인
-	 */
-	function confirmDeleteMember(moimIdx) {
-		showConfirmModal(
-			'소모임 회원 삭제',
-			'정말로 이 회원을 소모임에서 삭제하시겠습니까?',
-			function() {
-				deleteMember(moimIdx);
-			}
-		);
 	}
 
 	/**
 	 * 회원 삭제
 	 */
 	function deleteMember(moimIdx) {
-		showSpinner();
-
-		$.ajax({
-			url: window.moimPageData.baseUrl + 'moim/delete_moim_member',
-			method: 'POST',
-			data: { moim_idx: moimIdx },
-			dataType: 'json',
-			success: function(response) {
-				hideSpinner();
-
-				if (response.success) {
-					showToast(response.message, 'success');
-					loadMoimMembers();
-					refreshCategoryTree();
-				} else {
-					showToast(response.message || '삭제에 실패했습니다.', 'error');
+		showConfirmModal('회원 삭제', '이 회원을 소모임에서 삭제하시겠습니까?', function() {
+			showSpinner();
+			$.ajax({
+				url: window.moimPageData.baseUrl + 'moim/delete_moim_member',
+				method: 'POST',
+				data: { moim_idx: moimIdx },
+				dataType: 'json',
+				success: function (response) {
+					hideSpinner();
+					if (response.success) {
+						showToast(response.message, 'success');
+						loadMoimMembers();
+						refreshCategoryTree();
+					} else {
+						showToast(response.message || '회원 삭제 실패', 'error');
+					}
+				},
+				error: function (xhr, status, error) {
+					hideSpinner();
+					console.error('회원 삭제 실패:', error);
+					showToast('회원 삭제 중 오류가 발생했습니다.', 'error');
 				}
-			},
-			error: function(xhr, status, error) {
-				console.error('회원 삭제 실패:', error);
-				hideSpinner();
-				showToast('회원 삭제 중 오류가 발생했습니다.', 'error');
-			}
-		});
-	}
-
-	/**
-	 * 카테고리 관리 모달 열기
-	 */
-	function openCategoryModal() {
-		showSpinner();
-
-		$.ajax({
-			url: window.moimPageData.baseUrl + 'moim/get_category_tree',
-			method: 'POST',
-			dataType: 'json',
-			success: function(treeData) {
-				hideSpinner();
-
-				// 조직 노드 제외하고 카테고리만 추출
-				let categories = [];
-				if (treeData && treeData.length > 0 && treeData[0].children) {
-					categories = extractCategories(treeData[0].children);
-				}
-
-				const categoryJson = {
-					categories: categories
-				};
-
-				$('#categoryJson').val(JSON.stringify(categoryJson, null, 2));
-				$('#categoryModal').modal('show');
-			},
-			error: function(xhr, status, error) {
-				console.error('카테고리 정보 로드 실패:', error);
-				hideSpinner();
-				showToast('카테고리 정보를 불러오는 중 오류가 발생했습니다.', 'error');
-			}
-		});
-	}
-
-	/**
-	 * 트리 데이터에서 카테고리 추출
-	 */
-	function extractCategories(nodes) {
-		const categories = [];
-
-		nodes.forEach(function(node) {
-			if (node.data && node.data.type === 'category') {
-				const category = {
-					code: node.data.category_code,
-					name: node.title.split(' (')[0],
-					order: categories.length + 1,
-					positions: node.data.positions || []
-				};
-
-				if (node.children && node.children.length > 0) {
-					category.children = extractCategories(node.children);
-				} else {
-					category.children = [];
-				}
-
-				categories.push(category);
-			}
-		});
-
-		return categories;
-	}
-
-	/**
-	 * 카테고리 저장
-	 */
-	function saveCategory() {
-		const categoryJsonStr = $('#categoryJson').val().trim();
-
-		// JSON 유효성 검증
-		try {
-			const categoryData = JSON.parse(categoryJsonStr);
-
-			if (!categoryData.categories || !Array.isArray(categoryData.categories)) {
-				showToast('올바른 카테고리 형식이 아닙니다.', 'warning');
-				return;
-			}
-		} catch (error) {
-			showToast('JSON 형식이 올바르지 않습니다.', 'error');
-			return;
-		}
-
-		showSpinner();
-
-		$.ajax({
-			url: window.moimPageData.baseUrl + 'moim/save_category',
-			method: 'POST',
-			data: {
-				org_id: window.moimPageData.currentOrgId,
-				category_json: categoryJsonStr
-			},
-			dataType: 'json',
-			success: function(response) {
-				hideSpinner();
-
-				if (response.success) {
-					showToast(response.message, 'success');
-					$('#categoryModal').modal('hide');
-					refreshCategoryTree();
-				} else {
-					showToast(response.message || '카테고리 저장에 실패했습니다.', 'error');
-				}
-			},
-			error: function(xhr, status, error) {
-				console.error('카테고리 저장 실패:', error);
-				hideSpinner();
-				showToast('카테고리 저장 중 오류가 발생했습니다.', 'error');
-			}
+			});
 		});
 	}
 
@@ -890,108 +522,250 @@ $(document).ready(function () {
 	 */
 	function refreshCategoryTree() {
 		showTreeSpinner();
-
 		$.ajax({
 			url: window.moimPageData.baseUrl + 'moim/get_category_tree',
 			method: 'POST',
 			dataType: 'json',
-			success: function(treeData) {
+			success: function (treeData) {
 				hideTreeSpinner();
-
-				if (treeData && treeData.length > 0) {
+				if (treeData) {
 					const tree = $("#categoryTree").fancytree("getTree");
-					tree.reload(treeData);
-
-					// 이전 선택 복원
-					restorePreviousSelection() || selectFirstNode();
+					tree.reload(treeData).done(function(){
+						restorePreviousSelection() || selectFirstNode();
+					});
 				}
 			},
-			error: function(xhr, status, error) {
-				console.error('트리 새로고침 실패:', error);
+			error: function () {
 				hideTreeSpinner();
 			}
 		});
 	}
 
 	/**
-	 * 스피너 표시 함수들
+	 * 카테고리명 변경 모달 열기
 	 */
-	function showAllSpinners() {
-		showTreeSpinner();
-		showGridSpinner();
-	}
-
-	function hideAllSpinners() {
-		hideTreeSpinner();
-		hideGridSpinner();
-	}
-
-	function showTreeSpinner() {
-		$('#treeSpinner').removeClass('d-none').addClass('d-flex');
-	}
-
-	function hideTreeSpinner() {
-		$('#treeSpinner').removeClass('d-flex').addClass('d-none');
-	}
-
-	function showGridSpinner() {
-		$('#gridSpinner').removeClass('d-none').addClass('d-flex');
-	}
-
-	function hideGridSpinner() {
-		$('#gridSpinner').removeClass('d-flex').addClass('d-none');
-	}
-
-	function showSpinner() {
-		if ($('.global-spinner').length > 0) {
-			$('.global-spinner').show();
+	function openRenameCategoryModal() {
+		const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+		if (!node || node.data.type !== 'category') {
+			showToast('이름을 변경할 카테고리를 선택하세요.', 'warning');
+			return;
 		}
+		const currentName = node.title.split(' (')[0];
+
+		$('#categoryFormModalTitle').text('카테고리명 변경');
+		$('#categoryAction').val('rename');
+		$('#categoryNameInput').val(currentName);
+		$('#categoryFormModal').modal('show');
 	}
 
-	function hideSpinner() {
-		if ($('.global-spinner').length > 0) {
-			$('.global-spinner').hide();
+	/**
+	 * 카테고리 저장 (생성/수정)
+	 */
+	function saveCategory() {
+		const action = $('#categoryAction').val();
+		const categoryName = $('#categoryNameInput').val().trim();
+		if (!categoryName) {
+			showToast('카테고리 이름을 입력해주세요.', 'warning');
+			return;
+		}
+
+		if (action === 'rename') {
+			renameCategory(categoryName);
 		}
 	}
 
 	/**
-	 * Toast 메시지 표시
+	 * 카테고리 추가
 	 */
-	function showToast(message, type) {
-		type = type || 'info';
+	function addCategory(categoryName) {
+		const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+		const parentCode = (node && node.data.type === 'category') ? node.data.category_code : null;
 
-		if (typeof window.showToast === 'function') {
-			window.showToast(message, type);
-		} else {
-			alert(message);
-		}
-	}
-
-	/**
-	 * Confirm 모달 표시
-	 */
-	function showConfirmModal(title, message, confirmCallback) {
-		if (typeof window.showConfirmModal === 'function') {
-			window.showConfirmModal(title, message, confirmCallback);
-		} else {
-			if (confirm(message)) {
-				confirmCallback();
+		showSpinner();
+		$.ajax({
+			url: window.moimPageData.baseUrl + 'moim/add_category',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				parent_code: parentCode,
+				category_name: categoryName
+			},
+			dataType: 'json',
+			success: function(response) {
+				hideSpinner();
+				if (response.success) {
+					showToast(response.message, 'success');
+					refreshCategoryTree();
+				} else {
+					showToast(response.message || '카테고리 생성 실패', 'error');
+				}
+			},
+			error: function() {
+				hideSpinner();
+				showToast('카테고리 생성 중 오류 발생', 'error');
 			}
-		}
+		});
 	}
 
 	/**
-	 * Debounce 함수
+	 * 카테고리명 변경
 	 */
-	function debounce(func, wait) {
-		let timeout;
-		return function() {
-			const context = this;
-			const args = arguments;
-			clearTimeout(timeout);
-			timeout = setTimeout(function() {
-				func.apply(context, args);
-			}, wait);
-		};
+	function renameCategory(newName) {
+		const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+		if (!node || node.data.type !== 'category') {
+			return;
+		}
+
+		showSpinner();
+		$.ajax({
+			url: window.moimPageData.baseUrl + 'moim/rename_category',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				category_code: node.data.category_code,
+				new_name: newName
+			},
+			dataType: 'json',
+			success: function(response) {
+				hideSpinner();
+				if (response.success) {
+					showToast(response.message, 'success');
+					$('#categoryFormModal').modal('hide');
+					refreshCategoryTree();
+				} else {
+					showToast(response.message || '이름 변경 실패', 'error');
+				}
+			},
+			error: function() {
+				hideSpinner();
+				showToast('이름 변경 중 오류 발생', 'error');
+			}
+		});
 	}
+
+	/**
+	 * 카테고리 삭제 모달 열기
+	 */
+	function openDeleteCategoryModal() {
+		const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+		if (!node || node.data.type !== 'category') {
+			showToast('삭제할 카테고리를 선택하세요.', 'warning');
+			return;
+		}
+		const categoryName = node.title.split(' (')[0];
+		$('#deleteCategoryMessage').text(`'${categoryName}' 카테고리를 삭제하시겠습니까?`);
+		$('#deleteCategoryModal').modal('show');
+	}
+
+	/**
+	 * 카테고리 삭제 확인
+	 */
+	function confirmDeleteCategory() {
+		const node = $("#categoryTree").fancytree("getTree").getActiveNode();
+		if (!node || node.data.type !== 'category') return;
+
+		showSpinner();
+		$.ajax({
+			url: window.moimPageData.baseUrl + 'moim/delete_category',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				category_code: node.data.category_code
+			},
+			dataType: 'json',
+			success: function(response) {
+				hideSpinner();
+				$('#deleteCategoryModal').modal('hide');
+				if (response.success) {
+					showToast(response.message, 'success');
+					refreshCategoryTree();
+				} else {
+					showToast(response.message || '카테고리 삭제 실패', 'error');
+				}
+			},
+			error: function() {
+				hideSpinner();
+				$('#deleteCategoryModal').modal('hide');
+				showToast('카테고리 삭제 중 오류 발생', 'error');
+			}
+		});
+	}
+
+	/**
+	 * 카테고리 이동 모달 열기
+	 */
+	function openMoveCategoryModal() {
+		const tree = $("#categoryTree").fancytree("getTree");
+		const node = tree.getActiveNode();
+
+		if (!node || node.data.type !== 'category') {
+			showToast('이동할 카테고리를 선택해주세요.', 'warning');
+			return;
+		}
+
+		const $select = $('#moveToCategoryCode');
+		$select.empty().append('<option value="">최상위로 이동</option>');
+
+		tree.visit(function (n) {
+			if (n.data.type === 'category' && n.key !== node.key && !n.isDescendantOf(node)) {
+				const level = n.getLevel() - 1;
+				const indent = '&nbsp;'.repeat(level * 4);
+				$select.append(
+					$('<option></option>')
+						.val(n.data.category_code)
+						.html(indent + n.title.split(' (')[0])
+				);
+			}
+		});
+
+		$('#moveCategoryMessage').text(`'${node.title.split(' (')[0]}' 카테고리를 어디로 이동하시겠습니까?`);
+		$('#moveCategoryModal').modal('show');
+	}
+
+	/**
+	 * 카테고리 이동
+	 */
+	function moveCategory() {
+		const tree = $("#categoryTree").fancytree("getTree");
+		const node = tree.getActiveNode();
+		const targetCode = $('#moveToCategoryCode').val() || null;
+
+		showSpinner();
+		$.ajax({
+			url: window.moimPageData.baseUrl + 'moim/move_category',
+			method: 'POST',
+			data: {
+				org_id: selectedOrgId,
+				source_code: node.data.category_code,
+				target_code: targetCode,
+				hit_mode: 'over'
+			},
+			dataType: 'json',
+			success: function(response) {
+				hideSpinner();
+				$('#moveCategoryModal').modal('hide');
+				if (response.success) {
+					showToast(response.message, 'success');
+					refreshCategoryTree();
+				} else {
+					showToast(response.message || '이동 실패', 'error');
+				}
+			},
+			error: function() {
+				hideSpinner();
+				$('#moveCategoryModal').modal('hide');
+				showToast('이동 중 오류 발생', 'error');
+			}
+		});
+	}
+
+	// 스피너 함수들
+	function showSpinner() { $('#globalSpinner').removeClass('d-none').addClass('d-flex'); }
+	function hideSpinner() { $('#globalSpinner').removeClass('d-flex').addClass('d-none'); }
+	function showAllSpinners() { showTreeSpinner(); showGridSpinner(); }
+	function hideAllSpinners() { hideTreeSpinner(); hideGridSpinner(); }
+	function showTreeSpinner() { $('#treeSpinner').removeClass('d-none').addClass('d-flex'); }
+	function hideTreeSpinner() { $('#treeSpinner').removeClass('d-flex').addClass('d-none'); }
+	function showGridSpinner() { $('#gridSpinner').removeClass('d-none').addClass('d-flex'); }
+	function hideGridSpinner() { $('#gridSpinner').removeClass('d-flex').addClass('d-none'); }
 });

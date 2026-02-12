@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>군선교연합회 양육마당</title>
+    <title>양육마당</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 	<link href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
@@ -40,8 +40,8 @@
             </div>
         <?php endif; ?>
         <div class="text-center mb-4">
-            <h1 class="display-5 fw-bold">군선교연합회 양육마당</h1>
-            <p class="fs-5 text-muted">군선교연합회의 양육에 참여하세요!</p>
+            <h1 class="display-5 fw-bold">양육마당</h1>
+            <p class="fs-5 text-muted">양육에 참여하세요!</p>
         </div>
 
         <div class="card mb-4">

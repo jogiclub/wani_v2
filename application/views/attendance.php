@@ -59,13 +59,13 @@
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-3 d-flex align-items-center">
+						<!--<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								조직을 선택해주세요
 							</h5>
-						</div>
+						</div>-->
 
-						<div class="col-12 col-lg-5 d-flex mt-2 mt-lg-0">
+						<div class="col-12 col-lg-6 d-flex mt-2 mt-lg-0">
 							<!-- 연도/월 선택 컨트롤 -->
 							<div class="d-flex gap-2">
 								<div class="input-group input-group-sm year-selector">
@@ -88,7 +88,7 @@
 							</div>
 						</div>
 
-						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 
 							<!-- 점수재계산 버튼 추가 -->
 
