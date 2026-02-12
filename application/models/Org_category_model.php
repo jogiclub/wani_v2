@@ -612,4 +612,46 @@ class Org_category_model extends CI_Model
 		return $query->result_array();
 	}
 
+/**
+ * 카테고리를 삭제하고 하위 항목들을 '미분류'로 변경
+ */
+public function delete_category_and_reassign($category_idx)
+{
+    $this->db->trans_start();
+
+    // 1. 하위 카테고리들의 parent_idx를 null로 변경 (최상위로 이동)
+    $this->db->where('parent_idx', $category_idx);
+    $this->db->update('wb_org_category', array('parent_idx' => null));
+
+    // 2. 해당 카테고리에 속한 조직들을 '미분류'로 변경
+    $this->db->where('category_idx', $category_idx);
+    $this->db->update('wb_org', array('category_idx' => null));
+
+    // 3. 카테고리 삭제
+    $this->db->where('category_idx', $category_idx);
+    $this->db->delete('wb_org_category');
+
+    $this->db->trans_complete();
+
+    return $this->db->trans_status();
+}
+
+/**
+ * 특정 카테고리의 모든 하위 카테고리 ID 목록을 재귀적으로 조회
+ */
+public function get_all_children_ids($category_idx)
+{
+    $children = array();
+    $this->db->select('category_idx');
+    $this->db->where('parent_idx', $category_idx);
+    $query = $this->db->get('wb_org_category');
+    
+    foreach ($query->result_array() as $row) {
+        $children[] = $row['category_idx'];
+        $children = array_merge($children, $this->get_all_children_ids($row['category_idx']));
+    }
+    
+    return $children;
+}
+
 }

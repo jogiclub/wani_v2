@@ -38,6 +38,22 @@ $this->load->view('mng/header');
 					</div>
 					<div id="categoryTree" class="tree-container"></div>
 				</div>
+				<div class="card-footer">
+					<div class="btn-group-vertical w-100" role="group" aria-label="Vertical button group" id="categoryManagementButtons">
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnAddCategory">
+							<i class="bi bi-folder-plus"></i> 카테고리 생성
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnRenameCategory">
+							<i class="bi bi-pencil-square"></i> 카테고리명 변경
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnDeleteCategory">
+							<i class="bi bi-folder-minus"></i> 카테고리 삭제
+						</button>
+						<button type="button" class="btn btn-sm btn-outline-secondary" id="btnMoveCategory">
+							<i class="bi bi-arrow-right-square"></i> 카테고리 이동
+						</button>
+					</div>
+				</div>
 			</div>
 		</div>
 
@@ -272,17 +288,62 @@ $this->load->view('mng/header');
 			</div>
 			<div class="modal-body">
 				<div class="mb-3">
-					<label for="renameCategoryName" class="form-label">카테고리명</label>
-					<input type="text" class="form-control" id="renameCategoryName" maxlength="50">
+					<label for="newCategoryName" class="form-label">새 카테고리명</label>
+					<input type="text" class="form-control" id="newCategoryName" maxlength="50">
 				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-				<button type="button" class="btn btn-primary" id="saveRenameBtn">수정</button>
+				<button type="button" class="btn btn-primary" id="confirmRenameCategoryBtn">수정</button>
 			</div>
 		</div>
 	</div>
 </div>
+
+<!-- 카테고리 삭제 확인 모달 -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">카테고리 삭제 확인</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<p id="deleteCategoryMessage"></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-danger" id="confirmDeleteCategoryBtn">삭제</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 카테고리 이동 모달 -->
+<div class="modal fade" id="moveCategoryModal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">카테고리 이동</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<p id="moveCategoryMessage"></p>
+				<div class="mb-3">
+					<label for="moveToCategoryCode" class="form-label">이동할 상위 카테고리 선택</label>
+					<select class="form-select" id="moveToCategoryCode">
+						<option value="">최상위로 이동</option>
+					</select>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+				<button type="button" class="btn btn-primary" id="confirmMoveCategoryBtn">이동</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 
 <!-- 조직 상세 정보 모달 -->
 <div class="modal fade" id="orgDetailModal" tabindex="-1">
@@ -302,7 +363,7 @@ $this->load->view('mng/header');
 </div>
 
 
-<!-- 카테고리 이동 확인 모달 -->
+<!-- 조직 이동 확인 모달 -->
 <div class="modal fade" id="moveOrgModal" tabindex="-1" aria-labelledby="moveOrgModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">

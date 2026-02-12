@@ -34,6 +34,190 @@
 		console.log('조직관리 페이지 초기화 완료');
 	}
 
+
+	/**
+	 * 카테고리 관리 이벤트 바인딩 (신규 추가)
+	 */
+	function bindCategoryManagementEvents() {
+		// 카테고리 생성
+		$('#btnAddCategory').on('click', function () {
+			const tree = $.ui.fancytree.getTree('#categoryTree');
+			const node = tree.getActiveNode();
+			let parentIdx = null;
+
+			if (node && node.data.type === 'category') {
+				parentIdx = node.data.category_idx;
+			}
+
+			$.ajax({
+				url: '/mng/mng_org/create_category',
+				method: 'POST',
+				data: {
+					parent_idx: parentIdx,
+					category_name: '새 카테고리'
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('새 카테고리가 생성되었습니다.', 'success');
+						refreshTreeAndGrid();
+					} else {
+						showToast(response.message || '카테고리 생성에 실패했습니다.', 'error');
+					}
+				},
+				error: function () {
+					showToast('카테고리 생성 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		});
+
+		// 카테고리명 변경
+		$('#btnRenameCategory').on('click', function () {
+			const tree = $.ui.fancytree.getTree('#categoryTree');
+			const node = tree.getActiveNode();
+
+			if (!node || node.data.type !== 'category') {
+				showToast('변경할 카테고리를 선택해주세요.', 'warning');
+				return;
+			}
+
+			const currentName = node.title.split(' (')[0];
+			$('#newCategoryName').val(currentName);
+			$('#renameCategoryModal').modal('show');
+		});
+
+		$('#confirmRenameCategoryBtn').on('click', function () {
+			const tree = $.ui.fancytree.getTree('#categoryTree');
+			const node = tree.getActiveNode();
+			const newName = $('#newCategoryName').val().trim();
+
+			if (!newName) {
+				showToast('카테고리명을 입력해주세요.', 'warning');
+				return;
+			}
+
+			$.ajax({
+				url: '/mng/mng_org/rename_category',
+				method: 'POST',
+				data: {
+					category_idx: node.data.category_idx,
+					category_name: newName
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('카테고리명이 변경되었습니다.', 'success');
+						$('#renameCategoryModal').modal('hide');
+						refreshTreeAndGrid();
+					} else {
+						showToast(response.message || '카테고리명 변경에 실패했습니다.', 'error');
+					}
+				},
+				error: function () {
+					showToast('카테고리명 변경 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		});
+
+		// 카테고리 삭제
+		$('#btnDeleteCategory').on('click', function () {
+			const tree = $.ui.fancytree.getTree('#categoryTree');
+			const node = tree.getActiveNode();
+
+			if (!node || node.data.type !== 'category') {
+				showToast('삭제할 카테고리를 선택해주세요.', 'warning');
+				return;
+			}
+
+			const message = `'${node.title.split(' (')[0]}' 카테고리를 삭제하시겠습니까? 하위 카테고리와 포함된 모든 조직이 '미분류'로 이동됩니다.`;
+			$('#deleteCategoryMessage').text(message);
+			$('#deleteCategoryModal').modal('show');
+		});
+
+		$('#confirmDeleteCategoryBtn').on('click', function () {
+			const tree = $.ui.fancytree.getTree('#categoryTree');
+			const node = tree.getActiveNode();
+
+			$.ajax({
+				url: '/mng/mng_org/delete_category',
+				method: 'POST',
+				data: {
+					category_idx: node.data.category_idx
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('카테고리가 삭제되었습니다.', 'success');
+						$('#deleteCategoryModal').modal('hide');
+						refreshTreeAndGrid();
+					} else {
+						showToast(response.message || '카테고리 삭제에 실패했습니다.', 'error');
+					}
+				},
+				error: function () {
+					showToast('카테고리 삭제 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		});
+
+		// 카테고리 이동
+		$('#btnMoveCategory').on('click', function () {
+			const tree = $.ui.fancytree.getTree('#categoryTree');
+			const node = tree.getActiveNode();
+
+			if (!node || node.data.type !== 'category') {
+				showToast('이동할 카테고리를 선택해주세요.', 'warning');
+				return;
+			}
+
+			const $select = $('#moveToCategoryCode');
+			$select.empty().append('<option value="">최상위로 이동</option>');
+
+			tree.visit(function (n) {
+				if (n.data.type === 'category' && n.key !== node.key && !n.isDescendantOf(node)) {
+					const level = n.getLevel() - 1;
+					const indent = '&nbsp;'.repeat(level * 4);
+					$select.append(
+						$('<option></option>')
+							.val(n.data.category_idx)
+							.html(indent + n.title.split(' (')[0])
+					);
+				}
+			});
+
+			$('#moveCategoryMessage').text(`'${node.title.split(' (')[0]}' 카테고리를 어디로 이동하시겠습니까?`);
+			$('#moveCategoryModal').modal('show');
+		});
+
+		$('#confirmMoveCategoryBtn').on('click', function () {
+			const tree = $.ui.fancytree.getTree('#categoryTree');
+			const node = tree.getActiveNode();
+			const targetParentIdx = $('#moveToCategoryCode').val();
+
+			$.ajax({
+				url: '/mng/mng_org/move_category',
+				method: 'POST',
+				data: {
+					source_idx: node.data.category_idx,
+					target_parent_idx: targetParentIdx
+				},
+				dataType: 'json',
+				success: function (response) {
+					if (response.success) {
+						showToast('카테고리가 이동되었습니다.', 'success');
+						$('#moveCategoryModal').modal('hide');
+						refreshTreeAndGrid();
+					} else {
+						showToast(response.message || '카테고리 이동에 실패했습니다.', 'error');
+					}
+				},
+				error: function () {
+					showToast('카테고리 이동 중 오류가 발생했습니다.', 'error');
+				}
+			});
+		});
+	}
+
 	/**
 	 * 기존 인스턴스 정리
 	 */
@@ -1482,6 +1666,9 @@
 
 		// 조직추가 버튼 이벤트
 		$('#btnAddOrg').on('click', addQuickOrg);
+
+		// 카테고리 관리 이벤트 바인딩 추가
+		bindCategoryManagementEvents();
 
 		$(window).on('resize', debounce(function() {
 			if (orgGrid) {

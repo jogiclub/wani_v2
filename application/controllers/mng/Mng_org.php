@@ -1055,4 +1055,85 @@ class Mng_org extends CI_Controller
 		}
 	}
 
+// 파일 위치: D:/git/wani_v2/application/controllers/mng/Mng_org.php
+// 역할: 카테고리 관리 함수 추가 및 수정
+
+/**
+ * 새 카테고리 생성 (AJAX) - mng_orglist.js 용
+ */
+public function create_category()
+{
+    if (!$this->input->is_ajax_request()) {
+        show_404();
+    }
+
+    $parent_idx = $this->input->post('parent_idx');
+    $category_name = trim($this->input->post('category_name')) ?: '새 카테고리';
+
+    $data = array(
+        'parent_idx' => empty($parent_idx) ? null : $parent_idx,
+        'category_name' => $category_name,
+        'category_order' => $this->Org_category_model->get_next_order(empty($parent_idx) ? null : $parent_idx)
+    );
+
+    $result = $this->Org_category_model->insert_category($data);
+
+    if ($result) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('success' => true, 'message' => '카테고리가 추가되었습니다.'));
+    } else {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('success' => false, 'message' => '카테고리 추가에 실패했습니다.'));
+    }
+}
+
+
+
+/**
+ * 카테고리 이동 (AJAX) - mng_orglist.js 용
+ */
+public function move_category()
+{
+    if (!$this->input->is_ajax_request()) {
+        show_404();
+    }
+
+    $source_idx = $this->input->post('source_idx');
+    $target_parent_idx = $this->input->post('target_parent_idx');
+
+    if (!$source_idx) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('success' => false, 'message' => '이동할 카테고리를 선택해주세요.'));
+        return;
+    }
+
+    // 자기 자신이나 자기 하위로 이동하는 것 방지
+    if ($source_idx == $target_parent_idx) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('success' => false, 'message' => '자기 자신에게로 이동할 수 없습니다.'));
+        return;
+    }
+    
+    $children = $this->Org_category_model->get_all_children_ids($source_idx);
+    if (in_array($target_parent_idx, $children)) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('success' => false, 'message' => '자신의 하위 카테고리로 이동할 수 없습니다.'));
+        return;
+    }
+
+    $data = array(
+        'parent_idx' => empty($target_parent_idx) ? null : $target_parent_idx
+    );
+
+    $result = $this->Org_category_model->update_category($source_idx, $data);
+
+    if ($result) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('success' => true, 'message' => '카테고리가 이동되었습니다.'));
+    } else {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('success' => false, 'message' => '카테고리 이동에 실패했습니다.'));
+    }
+}
+
 }
