@@ -51,23 +51,53 @@
 				$input.focus();
 			})
 
-			// 체크박스 터치 이벤트 (모바일)
-			.on('touchend.pqgrid-input-fix', '.pq-grid input:checkbox', function(e) {
+			// 체크박스 터치 및 클릭 이벤트 (모바일 & 데스크톱)
+			.on('touchend.pqgrid-input-fix click.pqgrid-input-fix', '.pq-grid input:checkbox', function(e) {
+				// 'click' 이벤트이고, 터치 이벤트에 의해 이미 처리되었다면 중복 실행 방지
+				if (e.type === 'click' && window.pqGridCheckboxTouched) {
+					window.pqGridCheckboxTouched = false;
+					return;
+				}
+				
 				e.stopPropagation();
 				e.preventDefault();
 
 				var $checkbox = $(this);
 				var newChecked = !$checkbox.prop('checked');
 				$checkbox.prop('checked', newChecked).trigger('change');
+
+				// 터치 이벤트 발생 플래그 설정
+				if (e.type === 'touchend') {
+					window.pqGridCheckboxTouched = true;
+					// 짧은 시간 후 플래그 리셋
+					setTimeout(function() {
+						window.pqGridCheckboxTouched = false;
+					}, 300);
+				}
 			})
 
-			// 라디오 터치 이벤트 (모바일)
-			.on('touchend.pqgrid-input-fix', '.pq-grid input:radio', function(e) {
+			// 라디오 터치 및 클릭 이벤트 (모바일 & 데스크톱)
+			.on('touchend.pqgrid-input-fix click.pqgrid-input-fix', '.pq-grid input:radio', function(e) {
+				// 'click' 이벤트이고, 터치 이벤트에 의해 이미 처리되었다면 중복 실행 방지
+				if (e.type === 'click' && window.pqGridRadioTouched) {
+					window.pqGridRadioTouched = false;
+					return;
+				}
+
 				e.stopPropagation();
 				e.preventDefault();
 
 				var $radio = $(this);
 				$radio.prop('checked', true).trigger('change');
+				
+				// 터치 이벤트 발생 플래그 설정
+				if (e.type === 'touchend') {
+					window.pqGridRadioTouched = true;
+					// 짧은 시간 후 플래그 리셋
+					setTimeout(function() {
+						window.pqGridRadioTouched = false;
+					}, 300);
+				}
 			})
 
 			// input 내부 이벤트가 pqGrid로 전파되지 않도록 처리
@@ -179,12 +209,24 @@
 					$input.focus();
 				}
 			})
-			.on('touchend.pqgrid-input-fix-local', 'input:checkbox', function(e) {
+			.on('touchend.pqgrid-input-fix-local click.pqgrid-input-fix-local', 'input:checkbox', function(e) {
+				if (e.type === 'click' && window.pqGridCheckboxTouched) {
+					window.pqGridCheckboxTouched = false;
+					return;
+				}
+				
 				e.stopPropagation();
 				e.preventDefault();
 
 				var $checkbox = $(this);
 				$checkbox.prop('checked', !$checkbox.prop('checked')).trigger('change');
+
+				if (e.type === 'touchend') {
+					window.pqGridCheckboxTouched = true;
+					setTimeout(function() {
+						window.pqGridCheckboxTouched = false;
+					}, 300);
+				}
 			});
 	};
 

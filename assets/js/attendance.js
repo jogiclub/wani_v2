@@ -1289,6 +1289,19 @@ $(document).ready(function () {
 		// 기존 이벤트 완전히 제거
 		$(document).off('change.attendance-detail click.attendance-detail touchend.attendance-detail');
 		$(document).off('input.attendance-detail change.attendance-detail');
+		$(document).off('touchstart.attendance-detail-focus touchend.attendance-detail-focus');
+
+		// 모바일에서 input 포커스 처리 - pqGrid의 터치 이벤트 간섭 방지
+		$(document).on('touchstart.attendance-detail-focus', '.memo-textbox, .attendance-textbox', function(e) {
+			e.stopPropagation();
+		});
+		$(document).on('touchend.attendance-detail-focus', '.memo-textbox, .attendance-textbox', function(e) {
+			e.stopPropagation();
+			var $input = $(this);
+			setTimeout(function() {
+				$input.focus();
+			}, 10);
+		});
 
 		// 체크박스 이벤트 - PC/모바일 통합 처리
 		$(document).on('change.attendance-detail click.attendance-detail touchend.attendance-detail', '.attendance-detail-checkbox', function(e) {

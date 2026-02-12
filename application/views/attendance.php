@@ -175,7 +175,7 @@
 <script src="/assets/js/custom/split.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/custom/jquery.fancytree-all-deps.min.js?<?php echo WB_VERSION; ?>"></script>
 <script src="/assets/js/custom/pqgrid.min.js?<?php echo WB_VERSION; ?>"></script>
-<script src="/assets/js/custom/pqgrid.fix.js?<?php echo WB_VERSION; ?>"></script>
+<!--<script src="/assets/js/custom/pqgrid.fix.js?--><?php //echo WB_VERSION; ?><!--"></script>-->
 
 <script>
 	window.attendancePageData = {

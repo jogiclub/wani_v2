@@ -997,15 +997,13 @@ function initializePastoralGrid() {
 					const checkboxId = 'checkbox_' + ui.rowIndx + '_' + attType.att_type_idx;
 
 					// label로 감싸서 모바일 터치 영역 확대
-					return '<label for="' + checkboxId + '" style="display: block; text-align: center; padding: 8px; margin: 0; cursor: pointer;">' +
-						'<input type="checkbox" ' + checkedAttr + ' ' +
+					return '<input type="checkbox" ' + checkedAttr + ' ' +
 						'id="' + checkboxId + '" ' +
 						'class="pastoral-checkbox" ' +
 						'data-row-indx="' + ui.rowIndx + '" ' +
 						'data-att-type-idx="' + attType.att_type_idx + '" ' +
 						'data-member-idx="' + ui.rowData.member_idx + '" ' +
-						'style="width: 20px; height: 20px; cursor: pointer;">' +
-						'</label>';
+						'style="width: 20px; height: 20px; cursor: pointer;">'
 				};
 			} else {
 				columnConfig.editable = true;
@@ -1073,55 +1071,18 @@ function initializePastoralGrid() {
 }
 
 /**
- * 직접 터치 이벤트 바인딩 - ParamQuery Grid 우회 (attendance.js 방식 적용)
+ * 파일 위치: D:/git/wani_v2/assets/js/qrcheck.js
+ * 역할: 그룹출석 Offcanvas 내 그리드 이벤트 핸들러 수정 (change 이벤트 사용)
  */
 function bindPastoralCheckboxEvents() {
-	// 기존 이벤트 제거
-	$('#pastoralAttendanceGrid').off('touchend.pastoral click.pastoral');
+	// 기존 이벤트 모두 제거
+	$('#pastoralAttendanceGrid').off('change.pastoral', '.pastoral-checkbox');
 
-	// 그리드 컨테이너에 직접 터치/클릭 이벤트 바인딩
-	$('#pastoralAttendanceGrid').on('touchend.pastoral click.pastoral', 'td', function (e) {
-		e.preventDefault();
-		e.stopPropagation();
-
-		const $cell = $(this);
-		const $row = $cell.closest('tr');
-
-		// 헤더 행 제외
-		if ($row.hasClass('pq-grid-header') || $row.find('th').length > 0) {
-			return;
-		}
-
-		// pqgrid의 데이터 속성을 사용하여 정확한 행/열 인덱스 찾기
-		const dataRowIndex = $row.attr('pq-row-indx');
-		const dataCellIndex = $cell.attr('pq-col-indx');
-
-		if (dataRowIndex === undefined || dataCellIndex === undefined) {
-			return;
-		}
-
-		const rowIndex = parseInt(dataRowIndex);
-		const cellIndex = parseInt(dataCellIndex);
-
-		if (rowIndex < 0 || cellIndex < 0 || isNaN(rowIndex) || isNaN(cellIndex)) {
-			return;
-		}
-
-		// 셀 내부의 체크박스 확인
-		const $checkbox = $cell.find('.pastoral-checkbox');
-		if ($checkbox.length > 0) {
-			const checked = !$checkbox.is(':checked');
-			$checkbox.prop('checked', checked);
-			updatePastoralCheckboxData($checkbox, checked);
-			return;
-		}
-
-		// 셀 내부의 메모 텍스트박스 확인
-		const $textbox = $cell.find('.memo-textbox');
-		if ($textbox.length > 0) {
-			$textbox.focus();
-			return;
-		}
+	// 'change' 이벤트를 사용하여 체크박스 상태 변경 감지
+	$('#pastoralAttendanceGrid').on('change.pastoral', '.pastoral-checkbox', function (e) {
+		const $checkbox = $(this);
+		const isChecked = $checkbox.is(':checked');
+		updatePastoralCheckboxData($checkbox, isChecked);
 	});
 }
 
@@ -2019,6 +1980,19 @@ function bindQrCameraOffcanvasEvents() {
 function bindMemoTextboxEvents() {
 	// 기존 이벤트 제거
 	$(document).off('input.memo blur.memo', '.memo-textbox');
+	$(document).off('touchstart.memo-focus touchend.memo-focus', '.memo-textbox');
+
+	// 모바일에서 input 포커스 처리 - pqGrid의 터치 이벤트 간섭 방지
+	$(document).on('touchstart.memo-focus', '.memo-textbox', function(e) {
+		e.stopPropagation();
+	});
+	$(document).on('touchend.memo-focus', '.memo-textbox', function(e) {
+		e.stopPropagation();
+		var $input = $(this);
+		setTimeout(function() {
+			$input.focus();
+		}, 10);
+	});
 
 	// 메모 입력 시 실시간 데이터 업데이트
 	$(document).on('input.memo blur.memo', '.memo-textbox', function (e) {
