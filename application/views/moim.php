@@ -29,14 +29,7 @@ $this->load->view('header');
 
 		<div class="col-12 my-1 d-flex align-items-center justify-content-between">
 			<h3 class="page-title mb-0">소모임</h3>
-			<div class="d-flex gap-2">
-				<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">
-					<i class="bi bi-folder"></i> 카테고리 관리
-				</button>
-				<button type="button" class="btn btn-sm btn-primary" id="btnAddMembers">
-					<i class="bi bi-plus-lg"></i> 회원 추가
-				</button>
-			</div>
+
 		</div>
 	
 
@@ -65,14 +58,14 @@ $this->load->view('header');
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-6 d-flex align-items-center">
+						<!--<div class="col-12 col-lg-6 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedCategoryName">
 								<i class="bi bi-people"></i> 소모임을 선택해주세요
 							</h5>
 							<small class="ms-3 text-muted">총 <span id="totalMemberCount">0</span>명</small>
-						</div>
+						</div>-->
 
-						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+						<div class="col-12 col-lg-6 d-flex justify-content-start mt-2 mt-lg-0">
 							<div class="input-group input-group-sm" style="max-width: 300px;">
 								<input type="text" class="form-control" placeholder="회원명 검색" id="searchKeyword">
 								<button class="btn btn-sm btn-outline-secondary" type="button" id="btnSearch">
@@ -80,6 +73,21 @@ $this->load->view('header');
 								</button>
 							</div>
 						</div>
+
+						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+
+							<div class="btn-group">
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="btnManageCategory">
+									<i class="bi bi-folder"></i> 카테고리 관리
+								</button>
+								<button type="button" class="btn btn-sm btn-primary" id="btnAddMembers">
+									<i class="bi bi-plus-lg"></i> 회원 추가
+								</button>
+							</div>
+
+						</div>
+
+
 					</div>
 				</div>
 				<div class="card-body card-height p-0 position-relative">

@@ -61,13 +61,13 @@ if ($org_type === 'meak' || $org_type === 'meakchurch') {
 			<div class="card">
 				<div class="card-header">
 					<div class="row flex-column flex-lg-row">
-						<div class="col-12 col-lg-3 d-flex align-items-center">
+						<!--<div class="col-12 col-lg-3 d-flex align-items-center">
 							<h5 class="mb-0 text-truncate" id="selectedOrgName">
 								<i class="bi bi-people"></i> 조직을 선택해주세요
 							</h5>
-						</div>
+						</div>-->
 
-						<div class="col-12 col-lg-4 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+						<div class="col-12 col-lg-6 d-flex justify-content-start mt-2 mt-lg-0">
 							<div class="input-group input-group-sm">
 								<button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" id="searchFieldBtn">
 									검색필드
@@ -88,7 +88,7 @@ if ($org_type === 'meak' || $org_type === 'meakchurch') {
 							</div>
 						</div>
 
-						<div class="col-12 col-lg-5 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
+						<div class="col-12 col-lg-6 d-flex justify-content-start justify-content-lg-end mt-2 mt-lg-0">
 							<div class="btn-group" role="group">
 								<button type="button" class="btn btn-sm btn-outline-primary" id="btnAddMember"><i class="bi bi-person-plus"></i> 회원추가</button>
 								<button type="button" class="btn btn-sm btn-outline-danger d-none d-md-block" id="btnSendMember" disabled><i class="bi bi-chat-dots"></i> 선택문자</button>
