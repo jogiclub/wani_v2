@@ -137,7 +137,7 @@ $this->load->view('header');
 
 					<div class="mb-3">
 						<label class="form-label">회원 선택 <span class="text-danger">*</span></label>
-						<select class="form-select" id="memberSelect" name="member_indices[]" multiple required>
+						<select class="form-select" id="memberSelect" name="member_indices[]" multiple required style="width: 100%">
 						</select>
 						<small class="text-muted">여러 회원을 선택할 수 있습니다</small>
 					</div>
