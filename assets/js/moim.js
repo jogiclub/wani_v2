@@ -291,6 +291,11 @@ $(document).ready(function () {
 			rowBorders: true,
 			refresh: function() {
 				updateSelectAllCheckbox();
+			},
+			cellClick: function(event, ui) {
+				if (ui.dataIndx === 'member_name' && ui.rowData && ui.rowData.member_idx) {
+					openMemberDetailPopup(ui.rowData);
+				}
 			}
 		});
 	}
@@ -362,6 +367,36 @@ $(document).ready(function () {
 		
 		$('#btnMoveCategory').on('click', openMoveCategoryModal);
 		$('#confirmMoveCategoryBtn').on('click', moveCategory);
+
+		$(window).off('message.memberDetailPopup').on('message.memberDetailPopup', function (event) {
+			const message = event.originalEvent ? event.originalEvent.data : null;
+			if (!message || message.type !== 'memberDetailSaved') {
+				return;
+			}
+
+			loadMoimMembers();
+			refreshCategoryTree();
+		});
+	}
+
+	function openMemberDetailPopup(rowData) {
+		const orgId = rowData.org_id || selectedOrgId;
+		if (!orgId) {
+			showToast('조직 정보를 확인할 수 없습니다.', 'warning');
+			return;
+		}
+
+		const url = window.moimPageData.baseUrl + 'member/member_detail_popup?member_idx=' + rowData.member_idx + '&org_id=' + orgId;
+		const popupWidth = 700;
+		const popupHeight = 850;
+		const left = (window.screen.width - popupWidth) / 2;
+		const top = (window.screen.height - popupHeight) / 2;
+
+		window.open(
+			url,
+			'memberDetailPopup',
+			'width=' + popupWidth + ',height=' + popupHeight + ',left=' + left + ',top=' + top + ',scrollbars=yes,resizable=yes'
+		);
 	}
 
 	/**

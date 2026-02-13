@@ -29,6 +29,7 @@ $(document).ready(function () {
 	let revisionLoading = false;
 	let revisionHasMore = true;
 	let currentRevisionMemberIdx = null;
+	const isMemberPopup = window.isMemberPopup === true;
 
 
 	/**
@@ -62,30 +63,34 @@ $(document).ready(function () {
 		bindMissionTabEvents(); // 추가
 		bindAutoMatchModalEvents(); // 추가
 
-		if (typeof $.fn.pqGrid === 'undefined') {
+		if (!isMemberPopup) {
+			if (typeof $.fn.pqGrid === 'undefined') {
 			console.error('ParamQuery 라이브러리가 로드되지 않았습니다.');
 			hideAllSpinners();
 			showToast('ParamQuery 라이브러리 로드 실패', 'error');
 			return;
 		}
 
-		if (typeof $.fn.fancytree === 'undefined') {
+			if (typeof $.fn.fancytree === 'undefined') {
 			console.error('Fancytree 라이브러리가 로드되지 않았습니다.');
 			hideAllSpinners();
 			showToast('Fancytree 라이브러리 로드 실패', 'error');
 			return;
 		}
 
-		if (typeof Split === 'undefined') {
+			if (typeof Split === 'undefined') {
 			console.error('Split.js 라이브러리가 로드되지 않았습니다.');
 			hideAllSpinners();
 			showToast('Split.js 라이브러리 로드 실패', 'error');
 			return;
 		}
+		}
 
 		try {
-			initializeSplitJS();
-			initializeFancytree();
+			if (!isMemberPopup) {
+				initializeSplitJS();
+				initializeFancytree();
+			}
 			// initializeParamQuery()는 여기서 호출하지 않고 loadMemberData()에서 처리
 			bindGlobalEvents();
 			setupCleanupEvents();
@@ -93,6 +98,10 @@ $(document).ready(function () {
 			bindMemoTabEvents();
 			bindTimelineTabEvents();
 			bindMissionTabEvents();
+			if (isMemberPopup) {
+				initPopupMode();
+			}
+			hideAllSpinners();
 		} catch (error) {
 			console.error('초기화 중 오류:', error);
 			hideAllSpinners();
@@ -100,6 +109,48 @@ $(document).ready(function () {
 		}
 	}
 
+	function initPopupMode() {
+		selectedOrgId = window.popupOrgId || null;
+		if (selectedOrgId) {
+			$('#org_id').val(selectedOrgId);
+		}
+
+		const areaSelect = $('#area_idx');
+		if (areaSelect.length) {
+			areaSelect.html('<option value="">그룹 선택</option>');
+			const memberAreas = Array.isArray(window.popupMemberAreas) ? window.popupMemberAreas : [];
+			if (memberAreas.length > 0) {
+				const childrenByParent = {};
+				memberAreas.forEach(function (area) {
+					const rawParent = area.parent_idx;
+					const parentKey = rawParent && rawParent !== '0' ? String(rawParent) : 'root';
+					if (!childrenByParent[parentKey]) {
+						childrenByParent[parentKey] = [];
+					}
+					childrenByParent[parentKey].push(area);
+				});
+
+				function appendOptions(parentKey, depth) {
+					const children = childrenByParent[parentKey] || [];
+					children.sort(function (a, b) {
+						return Number(a.area_order || 0) - Number(b.area_order || 0);
+					});
+
+					children.forEach(function (area) {
+						const indent = '  '.repeat(depth);
+						areaSelect.append(`<option value="${area.area_idx}">${indent}${area.area_name}</option>`);
+						appendOptions(String(area.area_idx), depth + 1);
+					});
+				}
+
+				appendOptions('root', 0);
+			}
+		}
+
+		if (window.popupMemberIdx && selectedOrgId) {
+			loadMemberDetail(window.popupMemberIdx, selectedOrgId);
+		}
+	}
 
 	/**
 	 * 파송 탭 이벤트 바인딩
@@ -2519,6 +2570,12 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 	 */
 	function loadAreaOptionsWithCallback(orgId, callback) {
 		const areaSelect = $('#area_idx');
+		if (isMemberPopup) {
+			if (typeof callback === 'function') {
+				callback();
+			}
+			return;
+		}
 		areaSelect.html('<option value="">소그룹 선택</option>');
 
 		try {
@@ -3329,6 +3386,18 @@ ${memberName}님이 ${churchName} 공동체 안에서 믿음의 뿌리를 깊이
 		showToast(response.message, toastType);
 
 		if (response.success) {
+			if (isMemberPopup) {
+				if (window.opener && !window.opener.closed) {
+					window.opener.postMessage({
+						type: 'memberDetailSaved',
+						member_idx: $('#member_idx').val(),
+						org_id: selectedOrgId
+					}, '*');
+				}
+				window.close();
+				return;
+			}
+
 			const offcanvasInstance = bootstrap.Offcanvas.getInstance($('#memberOffcanvas')[0]);
 			if (offcanvasInstance) {
 				offcanvasInstance.hide();

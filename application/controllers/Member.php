@@ -845,6 +845,39 @@ class Member extends My_Controller
 		$this->load->view('member_popup', $data);
 	}
 
+	public function member_detail_popup()
+	{
+		$user_id = $this->session->userdata('user_id');
+		$org_id = (int)$this->input->get('org_id');
+		$member_idx = (int)$this->input->get('member_idx');
+
+		if (!$user_id || !$org_id || !$member_idx) {
+			echo '<script>alert("잘못된 접근입니다."); window.close();</script>';
+			return;
+		}
+
+		// 조직 접근 권한 확인
+		$this->load->model('User_model');
+		$user_level = $this->User_model->get_org_user_level($user_id, $org_id);
+		$master_yn = $this->session->userdata('master_yn');
+
+		if (!$user_level && $master_yn !== 'Y') {
+			echo '<script>alert("접근 권한이 없습니다."); window.close();</script>';
+			return;
+		}
+
+		$this->load->model('Member_area_model');
+		$member_areas = $this->Member_area_model->get_member_areas($org_id);
+
+		$data = array(
+			'member_areas' => $member_areas,
+			'org_id' => $org_id,
+			'member_idx' => $member_idx
+		);
+
+		$this->load->view('member_detail_popup', $data);
+	}
+
 
 	/**
 	 * 일괄 편집 데이터 저장
